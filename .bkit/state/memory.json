@@ -1,8 +1,20 @@
 {
-  "sessionCount": 3,
+  "sessionCount": 11,
   "lastSession": {
-    "startedAt": "2026-04-05T07:09:30.379Z",
+    "startedAt": "2026-04-05T09:20:24.137Z",
     "platform": "claude",
     "level": "Starter"
+  },
+  "currentFeature": null,
+  "currentPhase": null,
+  "archive": {
+    "av-skill": {
+      "phase": "archived",
+      "matchRate": 93.6,
+      "iterationCount": 0,
+      "startedAt": "2026-04-05T00:00:00.000Z",
+      "archivedAt": "2026-04-05T00:00:00.000Z",
+      "archivedTo": "docs/archive/2026-04/av-skill/"
+    }
   }
 }

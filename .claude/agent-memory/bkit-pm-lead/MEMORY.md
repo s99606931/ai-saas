@@ -1,1 +1,2 @@
 - [Project Context](project_public_saas_framework.md) -- public-saas-framework PRD generated 2026-04-05, K8s/Gitea/AI stack for gov SaaS
+- [AV Skill PRD](project_av_skill_prd.md) -- /av Auto-Vibe Plugin Advisor PRD generated 2026-04-05, 6-intent router for 200+ components

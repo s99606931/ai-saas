@@ -105,8 +105,13 @@
 - 특정 비즈니스 서비스 도메인 구현 (미정)
 - 실제 CSAP 인증 심사 수행 (외부 기관)
 - 외부 클라우드 인프라 운영 (로컬 WSL2 전용)
-- AI/LLM 로컬 구현 (외부 서비스 연동만)
+- AI/LLM 모델 커스터마이징·파인튜닝·로컬 훈련 (Out of Scope 유지)
 - 마켓플레이스 실제 등록 (Phase 4, 별도 진행)
+
+> **범위 변경 (v0.2.0, 2026-04-05)**: 온프레미스 LLM **설치 및 연동 가이드**는 In Scope로 변경.
+> N2SF C/S등급 데이터를 AI로 처리하기 위한 필수 방안 (Llama 3.1 등 오픈웨이트 모델).
+> 모델 자체 수정(파인튜닝, 커스터마이징)은 Out of Scope 유지.
+> 근거: CTO 검토 R-02, 시장조사 반영 (하이브리드 LLM 전략)
 
 ### 2.3 전제 조건 및 제약사항
 
@@ -115,7 +120,8 @@
 | 운영 환경 | WSL2 (Ubuntu 22.04 LTS) on Windows 11 |
 | K8s 배포 | k3s v1.28+ (외부 클라우드 없음) |
 | CI/CD | Gitea + Gitea Actions (완전 자립형) |
-| AI/LLM | 외부 서비스 연동 (Claude API, GPT-4 등) — **로컬 구현 없음** |
+| AI/LLM (외부) | Claude API, GPT-4 등 외부 LLM — N2SF O등급 데이터 + PII 마스킹 후 사용 |
+| AI/LLM (온프레미스) | **LM Studio** (Windows 호스트 실행, `host.docker.internal:1234`) — N2SF C/S등급 데이터 전용 |
 | AI 데이터 제한 | N2SF C/S 등급 데이터 AI API 전송 금지 |
 | 문서 언어 | 한국어 전용 (공공기관 표준 용어) |
 | 구현 원칙 | Plan/Design 문서 완비 후에만 구현 착수 |
