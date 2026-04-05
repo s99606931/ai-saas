@@ -25,9 +25,9 @@
 
 | 파일 | 크기 | 정책 수 | CSAP/N2SF 매핑 |
 |------|------|--------|-------------|
-| `05-infra/policy-as-code/README.md` | 7.3KB | - | 아키텍처 + 전체 매핑 테이블 |
-| `05-infra/policy-as-code/kyverno-policies.md` | 13.9KB | 8개 | D06-01, D08-01, D08-05, D09-01, D09-02, D10-04, D11-03, D12-08 |
-| `05-infra/policy-as-code/opa-gatekeeper.md` | 12.3KB | 3개 | D06-02, N03, N05 |
+| `07-infra/policy-as-code/README.md` | 7.3KB | - | 아키텍처 + 전체 매핑 테이블 |
+| `07-infra/policy-as-code/kyverno-policies.md` | 13.9KB | 8개 | D06-01, D08-01, D08-05, D09-01, D09-02, D10-04, D11-03, D12-08 |
+| `07-infra/policy-as-code/opa-gatekeeper.md` | 12.3KB | 3개 | D06-02, N03, N05 |
 
 ---
 
