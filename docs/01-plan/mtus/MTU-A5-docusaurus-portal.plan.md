@@ -46,8 +46,8 @@ Docusaurus 기반 문서 포털을 구성합니다.
 
 | 파일 | 문서 유형 | 핵심 내용 |
 |------|---------|---------|
-| `08-documentation-portal/docusaurus-setup-guide.md` | 구현 가이드형 | Docusaurus 설치, 설정, k3s 배포, 플러그인 구성 |
-| `08-documentation-portal/content-organization.md` | 아키텍처 레퍼런스형 | 역할별 사이드바 구성, 콘텐츠 분류 체계, MDX 예시 |
+| `11-documentation-portal/docusaurus-setup-guide.md` | 구현 가이드형 | Docusaurus 설치, 설정, k3s 배포, 플러그인 구성 |
+| `11-documentation-portal/content-organization.md` | 아키텍처 레퍼런스형 | 역할별 사이드바 구성, 콘텐츠 분류 체계, MDX 예시 |
 
 ---
 

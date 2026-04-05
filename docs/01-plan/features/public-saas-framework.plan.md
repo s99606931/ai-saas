@@ -188,7 +188,7 @@ public-saas-framework/
 │       ├── grade-s-architecture.md
 │       └── grade-o-architecture.md
 │
-├── 04-audit-compliance/                             # Module 4
+├── 06-audit-compliance/                             # Module 4
 │   ├── templates/                                   # Phase 1~2 (M2~M3)
 │   │   ├── T01-business-plan.md                     # FR-4.1: 사업계획서
 │   │   ├── T02-requirements.md                      # FR-4.2: 요구사항 정의서
@@ -205,7 +205,7 @@ public-saas-framework/
 │   │   └── phase5-testing.md
 │   └── defect-response-guide.md                     # FR-4.7: 감리 지적사항 대응 가이드
 │
-├── 05-infra/                                        # Module 5 (Phase 2, M6)
+├── 07-infra/                                        # Module 5 (Phase 2, M6)
 │   ├── k3s-wsl2/
 │   │   ├── cluster-setup-recipe.md                  # FR-5.1: k3s 클러스터 구성 레시피
 │   │   └── scripts/                                 # FR-5.1a: 자동화 쉘 스크립트
@@ -219,7 +219,7 @@ public-saas-framework/
 │   ├── network-security.md                          # FR-5.5: 네트워크 보안 구성
 │   └── monitoring-logging.md                        # FR-5.6: 모니터링·로깅 설정
 │
-├── 06-ai-integration/                              # Module 6 (Phase 3, M7)
+├── 08-ai-integration/                              # Module 6 (Phase 3, M7)
 │   ├── security-gateway-pattern.md                 # FR-6.1: AI API 보안 게이트웨이
 │   ├── data-classification-masking.md              # FR-6.2: 데이터 분류 및 마스킹
 │   ├── audit-logging.md                            # FR-6.3: AI 감사 로깅 체계
@@ -282,35 +282,35 @@ public-saas-framework/
 
 | ID | 요구사항명 | 우선순위 | Phase | 산출물 파일 | 수용 기준 |
 |----|-----------|---------|-------|-----------|---------|
-| FR-4.1 | 사업계획서 템플릿 | P0 | 1 | `04-audit-compliance/templates/T01-business-plan.md` | 행안부 고시 감리기준 별표 형식 준수 |
-| FR-4.2 | 요구사항 정의서 템플릿 | P0 | 1 | `04-audit-compliance/templates/T02-requirements.md` | FR/NFR ID 체계 포함, 추적성 매트릭스 연동 |
-| FR-4.3 | 설계서 템플릿 (기본+상세) | P0 | 1 | `04-audit-compliance/templates/T03,T04-*.md` | 아키텍처·API 명세·DB 스키마 섹션 포함 |
-| FR-4.4 | 시험 산출물 템플릿 | P0 | 1 | `04-audit-compliance/templates/T05,T06-*.md` | 시험 케이스·결과·결함 목록 형식 포함 |
-| FR-4.5 | 추적성 매트릭스 | P0 | 3 | `04-audit-compliance/traceability-matrix.md` | FR↔설계↔시험 3방향 + FR↔CSAP 매핑 |
-| FR-4.6 | 단계별 감리 체크리스트 | P1 | 2 | `04-audit-compliance/audit-checklist/` | 5개 단계(계획~시험) 전수 체크리스트 |
-| FR-4.7 | 지적사항 대응 가이드 | P1 | 3 | `04-audit-compliance/defect-response-guide.md` | 유형별 지적사항 대응 절차 및 증빙 방법 |
+| FR-4.1 | 사업계획서 템플릿 | P0 | 1 | `06-audit-compliance/templates/T01-business-plan.md` | 행안부 고시 감리기준 별표 형식 준수 |
+| FR-4.2 | 요구사항 정의서 템플릿 | P0 | 1 | `06-audit-compliance/templates/T02-requirements.md` | FR/NFR ID 체계 포함, 추적성 매트릭스 연동 |
+| FR-4.3 | 설계서 템플릿 (기본+상세) | P0 | 1 | `06-audit-compliance/templates/T03,T04-*.md` | 아키텍처·API 명세·DB 스키마 섹션 포함 |
+| FR-4.4 | 시험 산출물 템플릿 | P0 | 1 | `06-audit-compliance/templates/T05,T06-*.md` | 시험 케이스·결과·결함 목록 형식 포함 |
+| FR-4.5 | 추적성 매트릭스 | P0 | 3 | `06-audit-compliance/traceability-matrix.md` | FR↔설계↔시험 3방향 + FR↔CSAP 매핑 |
+| FR-4.6 | 단계별 감리 체크리스트 | P1 | 2 | `06-audit-compliance/audit-checklist/` | 5개 단계(계획~시험) 전수 체크리스트 |
+| FR-4.7 | 지적사항 대응 가이드 | P1 | 3 | `06-audit-compliance/defect-response-guide.md` | 유형별 지적사항 대응 절차 및 증빙 방법 |
 
 ### 4.5 Module 5: 기술 인프라
 
 | ID | 요구사항명 | 우선순위 | Phase | 산출물 파일 | 수용 기준 |
 |----|-----------|---------|-------|-----------|---------|
-| FR-5.1 | k3s 클러스터 구성 레시피 | P0 | 2 | `05-infra/k3s-wsl2/cluster-setup-recipe.md` | WSL2 신규 환경에서 개발자가 10분 이내 재현 성공 |
-| FR-5.2 | Gitea 설치 가이드 | P0 | 2 | `05-infra/gitea/setup-guide.md` | Gitea v1.20+ 단독 컨테이너 구동 성공 |
-| FR-5.3 | CI/CD 파이프라인 템플릿 | P0 | 2 | `05-infra/gitea/cicd-pipeline-templates/` | 빌드·테스트·배포 워크플로우 즉시 적용 가능 |
-| FR-5.4 | 컨테이너 보안 베이스라인 | P1 | 2 | `05-infra/container-security-baseline.md` | CSAP D-11(가상화 보안) 7개 항목 커버 |
-| FR-5.5 | 네트워크 보안 구성 | P1 | 2 | `05-infra/network-security.md` | CSAP D-10(네트워크 보안) 8개 항목 커버 |
-| FR-5.6 | 모니터링·로깅 설정 | P1 | 2 | `05-infra/monitoring-logging.md` | CSAP D-08(접근통제) 중 감사 로그 항목 커버 |
+| FR-5.1 | k3s 클러스터 구성 레시피 | P0 | 2 | `07-infra/k3s-wsl2/cluster-setup-recipe.md` | WSL2 신규 환경에서 개발자가 10분 이내 재현 성공 |
+| FR-5.2 | Gitea 설치 가이드 | P0 | 2 | `07-infra/gitea/setup-guide.md` | Gitea v1.20+ 단독 컨테이너 구동 성공 |
+| FR-5.3 | CI/CD 파이프라인 템플릿 | P0 | 2 | `07-infra/gitea/cicd-pipeline-templates/` | 빌드·테스트·배포 워크플로우 즉시 적용 가능 |
+| FR-5.4 | 컨테이너 보안 베이스라인 | P1 | 2 | `07-infra/container-security-baseline.md` | CSAP D-11(가상화 보안) 7개 항목 커버 |
+| FR-5.5 | 네트워크 보안 구성 | P1 | 2 | `07-infra/network-security.md` | CSAP D-10(네트워크 보안) 8개 항목 커버 |
+| FR-5.6 | 모니터링·로깅 설정 | P1 | 2 | `07-infra/monitoring-logging.md` | CSAP D-08(접근통제) 중 감사 로그 항목 커버 |
 
 ### 4.6 Module 6: AI 서비스 연동
 
 | ID | 요구사항명 | 우선순위 | Phase | 산출물 파일 | 수용 기준 |
 |----|-----------|---------|-------|-----------|---------|
-| FR-6.1 | AI API 보안 게이트웨이 패턴 | P0 | 3 | `06-ai-integration/security-gateway-pattern.md` | 모든 AI API 호출이 게이트웨이 경유하는 구조 |
-| FR-6.2 | 데이터 분류 및 마스킹 | P0 | 3 | `06-ai-integration/data-classification-masking.md` | C/S 등급 데이터 AI 전송 차단 테스트 통과 |
-| FR-6.3 | AI 감사 로깅 체계 | P0 | 3 | `06-ai-integration/audit-logging.md` | 요청/응답 전수 로깅, 보존 기간 최소 1년 |
-| FR-6.4 | Claude API 연동 가이드 | P1 | 3 | `06-ai-integration/claude-api-guide.md` | claude-sonnet-4-6 기준 연동 예제 포함 |
-| FR-6.5 | GPT-4 연동 가이드 | P2 | 3 | `06-ai-integration/gpt4-api-guide.md` | FR-6.4와 동일한 게이트웨이 통과 구조 |
-| FR-6.6 | AI 장애 Fallback 패턴 | P1 | 3 | `06-ai-integration/fallback-patterns.md` | AI 서비스 장애 시 수동 전환 절차 명시 |
+| FR-6.1 | AI API 보안 게이트웨이 패턴 | P0 | 3 | `08-ai-integration/security-gateway-pattern.md` | 모든 AI API 호출이 게이트웨이 경유하는 구조 |
+| FR-6.2 | 데이터 분류 및 마스킹 | P0 | 3 | `08-ai-integration/data-classification-masking.md` | C/S 등급 데이터 AI 전송 차단 테스트 통과 |
+| FR-6.3 | AI 감사 로깅 체계 | P0 | 3 | `08-ai-integration/audit-logging.md` | 요청/응답 전수 로깅, 보존 기간 최소 1년 |
+| FR-6.4 | Claude API 연동 가이드 | P1 | 3 | `08-ai-integration/claude-api-guide.md` | claude-sonnet-4-6 기준 연동 예제 포함 |
+| FR-6.5 | GPT-4 연동 가이드 | P2 | 3 | `08-ai-integration/gpt4-api-guide.md` | FR-6.4와 동일한 게이트웨이 통과 구조 |
+| FR-6.6 | AI 장애 Fallback 패턴 | P1 | 3 | `08-ai-integration/fallback-patterns.md` | AI 서비스 장애 시 수동 전환 절차 명시 |
 
 ### 4.7 Module 7: 운영 가이드
 
@@ -377,11 +377,11 @@ public-saas-framework/
 | D-05 | 서비스 공급망 관리 | 4 | 2 | `02-csap/standard-grade/implementation-guide/D05-supply-chain.md` |
 | D-06 | 침해사고 관리 | 5 | 3 | `07-operations/incident-response.md` |
 | D-07 | 재해 복구 | 3 | 3 | `07-operations/backup-recovery.md` |
-| D-08 | 접근 통제 | 12 | 1+2 | `01-dev-standards/secure-coding-guide.md` + `05-infra/network-security.md` |
+| D-08 | 접근 통제 | 12 | 1+2 | `01-dev-standards/secure-coding-guide.md` + `07-infra/network-security.md` |
 | D-09 | 암호화 | 4 | 1 | `01-dev-standards/secure-coding-guide.md` |
-| D-10 | 네트워크 보안 | 8 | 2 | `05-infra/network-security.md` |
-| D-11 | 가상화 보안 | 7 | 2 | `05-infra/k3s-wsl2/cluster-setup-recipe.md` + `05-infra/container-security-baseline.md` |
-| D-12 | 시스템 개발 보안 | 10 | 1 | `01-dev-standards/` 전체 + `05-infra/gitea/` |
+| D-10 | 네트워크 보안 | 8 | 2 | `07-infra/network-security.md` |
+| D-11 | 가상화 보안 | 7 | 2 | `07-infra/k3s-wsl2/cluster-setup-recipe.md` + `07-infra/container-security-baseline.md` |
+| D-12 | 시스템 개발 보안 | 10 | 1 | `01-dev-standards/` 전체 + `07-infra/gitea/` |
 | D-13 | 공공기관 추가 보호조치 | 10 | 2 | `02-csap/standard-grade/implementation-guide/D13-public-additional.md` |
 | **합계** | | **79** | | **미매핑 목표: 0개** |
 
@@ -538,8 +538,8 @@ ECC v1.9.0 기반 Claude Code 오케스트레이션 요구사항.
 | Month | 산출물 |
 |-------|--------|
 | M1 | `00-getting-started/`, `01-dev-standards/` 전체, `02-csap/simple-grade/` |
-| M2 | `03-n2sf/grade-classification-guide.md`, `04-audit-compliance/templates/T01~T02` |
-| M3 | `04-audit-compliance/templates/T03~T06`, `audit-checklist/`, `99-references/` |
+| M2 | `03-n2sf/grade-classification-guide.md`, `06-audit-compliance/templates/T01~T02` |
+| M3 | `06-audit-compliance/templates/T03~T06`, `audit-checklist/`, `99-references/` |
 
 **Phase 1 완료 게이트 기준**:
 - CSAP 간편등급 31개 항목 체크리스트 완성 및 검토 완료
@@ -556,7 +556,7 @@ ECC v1.9.0 기반 Claude Code 오케스트레이션 요구사항.
 |-------|--------|
 | M4 | `02-csap/standard-grade/checklist-master.md`, `D01~D07 구현 가이드` |
 | M5 | `D08~D13 구현 가이드`, `self-diagnosis.md`, `certification-procedure.md` |
-| M6 | `03-n2sf/csap-to-n2sf-mapping.md`, `security-domains/`, `05-infra/` 전체 |
+| M6 | `03-n2sf/csap-to-n2sf-mapping.md`, `security-domains/`, `07-infra/` 전체 |
 
 **Phase 2 완료 게이트 기준**:
 - CSAP 표준등급 79개 항목 전수 커버 (미매핑 0개) (NFR-1)
@@ -571,8 +571,8 @@ ECC v1.9.0 기반 Claude Code 오케스트레이션 요구사항.
 
 | Month | 산출물 |
 |-------|--------|
-| M7 | `06-ai-integration/` 전체 (Claude API, GPT-4 포함) |
-| M8 | `02-csap/high-grade/`, `04-audit-compliance/traceability-matrix.md`, `defect-response-guide.md` |
+| M7 | `08-ai-integration/` 전체 (Claude API, GPT-4 포함) |
+| M8 | `02-csap/high-grade/`, `06-audit-compliance/traceability-matrix.md`, `defect-response-guide.md` |
 | M9 | `07-operations/` 전체, `03-n2sf/reference-architecture/` |
 
 **Phase 3 완료 게이트 기준**:

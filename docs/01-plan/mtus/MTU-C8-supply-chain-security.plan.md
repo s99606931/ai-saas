@@ -29,8 +29,8 @@
 
 | 파일 | 문서 유형 | 핵심 내용 |
 |------|---------|---------|
-| `05-infra/supply-chain/sbom-guide.md` | 구현 가이드형 | Syft/Trivy SBOM 생성, SPDX 포맷 |
-| `05-infra/supply-chain/sigstore-signing.md` | 구현 가이드형 | Cosign 이미지 서명, Fulcio/Rekor |
+| `07-infra/supply-chain/sbom-guide.md` | 구현 가이드형 | Syft/Trivy SBOM 생성, SPDX 포맷 |
+| `07-infra/supply-chain/sigstore-signing.md` | 구현 가이드형 | Cosign 이미지 서명, Fulcio/Rekor |
 
 ---
 

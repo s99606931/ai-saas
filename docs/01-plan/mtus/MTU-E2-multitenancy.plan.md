@@ -35,9 +35,9 @@ CSAP D-08 접근 통제 준수·Kyverno 정책 기반 리소스 강제·자동�
 
 | 파일 | 문서 유형 | 핵심 내용 |
 |------|---------|---------|
-| `10-multitenancy/architecture-guide.md` | 아키텍처 레퍼런스형 | N2SF 등급별 격리 전략 + 전체 구성도 |
-| `10-multitenancy/tenant-isolation-policy.md` | 구현 가이드형 | Kyverno 정책 예시 + C등급 에어갭 구성 |
-| `10-multitenancy/onboarding-procedure.md` | 절차서형 | 테넌트 온보딩 자동화 절차 (1일 이내) |
+| `13-multitenancy/architecture-guide.md` | 아키텍처 레퍼런스형 | N2SF 등급별 격리 전략 + 전체 구성도 |
+| `13-multitenancy/tenant-isolation-policy.md` | 구현 가이드형 | Kyverno 정책 예시 + C등급 에어갭 구성 |
+| `13-multitenancy/onboarding-procedure.md` | 절차서형 | 테넌트 온보딩 자동화 절차 (1일 이내) |
 
 ---
 

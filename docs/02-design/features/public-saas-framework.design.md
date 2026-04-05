@@ -41,9 +41,9 @@
      ↑ 참조
 03-n2sf/           ← CSAP→N2SF 매핑 레이어 (등급 분류, 영역 통제)
      ↑ 참조
-06-ai-integration/ ← AI 보안 패턴 레이어 (N2SF 분류 기반 게이트웨이)
+08-ai-integration/ ← AI 보안 패턴 레이어 (N2SF 분류 기반 게이트웨이)
      ↑ 참조
-04-audit-compliance/ ← 통합 추적성 레이어 (전체 FR↔CSAP↔테스트 매핑)
+06-audit-compliance/ ← 통합 추적성 레이어 (전체 FR↔CSAP↔테스트 매핑)
 ```
 
 **핵심 원칙**:
@@ -96,11 +96,11 @@
 | `02-csap/` → `99-references/` | ✅ 허용 |
 | `03-n2sf/` → `02-csap/` | ✅ 허용 |
 | `03-n2sf/` → `99-references/` | ✅ 허용 |
-| `06-ai-integration/` → `03-n2sf/` | ✅ 허용 |
-| `04-audit-compliance/` → 전체 | ✅ 허용 (통합 레이어) |
+| `08-ai-integration/` → `03-n2sf/` | ✅ 허용 |
+| `06-audit-compliance/` → 전체 | ✅ 허용 (통합 레이어) |
 | `01-dev-standards/` → `02-csap/` | ✅ 허용 |
-| `05-infra/` → `02-csap/` | ✅ 허용 |
-| `07-operations/` → `05-infra/` | ✅ 허용 |
+| `07-infra/` → `02-csap/` | ✅ 허용 |
+| `07-operations/` → `07-infra/` | ✅ 허용 |
 | 하위 레이어 → 상위 레이어 역참조 | ❌ 금지 |
 | 동일 레이어 상호 참조 | ⚠️ 최소화 |
 
@@ -110,12 +110,12 @@
 FR-2.1 (표준등급 79개 체크리스트)
   └── CSAP-D08-01 ~ CSAP-D08-12 (접근통제 12항목)
         └── N2SF-N02 (인증 영역)
-              └── 적용 모듈: 06-ai-integration/, 05-infra/
+              └── 적용 모듈: 08-ai-integration/, 07-infra/
                     └── 감리 산출물: T04 (상세설계서)
                           └── 테스트: TS-1 (CSAP 체크리스트 검증)
 ```
 
-이 매핑은 `04-audit-compliance/traceability-matrix.md`에 중앙 관리됩니다.
+이 매핑은 `06-audit-compliance/traceability-matrix.md`에 중앙 관리됩니다.
 
 ---
 
@@ -595,14 +595,14 @@ Phase 1 (의존성 없음 — 먼저 생성):
 Phase 2 (Phase 1 의존):
   6. 02-csap/standard-grade/checklist-master.md ← CSAP 원천 (표준) ★핵심
   7. 02-csap/standard-grade/D01~D13.md (13개)
-  8. 04-audit-compliance/templates/T01~T04.md
+  8. 06-audit-compliance/templates/T01~T04.md
   9. 03-n2sf/*.md (전체)
-  10. 05-infra/*.md (전체)
+  10. 07-infra/*.md (전체)
 
 Phase 3 (Phase 2 의존):
-  11. 06-ai-integration/*.md (6개)
-  12. 04-audit-compliance/traceability-matrix.md ← 전체 통합
-  13. 04-audit-compliance/defect-response-guide.md
+  11. 08-ai-integration/*.md (6개)
+  12. 06-audit-compliance/traceability-matrix.md ← 전체 통합
+  13. 06-audit-compliance/defect-response-guide.md
   14. 02-csap/high-grade/additional-requirements.md
   15. 07-operations/*.md (5개)
   16. 03-n2sf/reference-architecture/*.md (3개)

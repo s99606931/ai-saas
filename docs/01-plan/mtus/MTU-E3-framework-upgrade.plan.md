@@ -35,8 +35,8 @@ MTU-A7(N2SF 모니터링)에서 탐지한 규정 변경을 30일 SLA 내에 프�
 
 | 파일 | 문서 유형 | 핵심 내용 |
 |------|---------|---------|
-| `11-framework-upgrade/version-management-guide.md` | 절차서형 | 버전 체계·변경 분류·CHANGELOG 관리 기준 |
-| `11-framework-upgrade/upgrade-procedure.md` | 절차서형 | 규정 변경 탐지 → 업그레이드 → 검증 → 롤백 전 절차 |
+| `14-framework-upgrade/version-management-guide.md` | 절차서형 | 버전 체계·변경 분류·CHANGELOG 관리 기준 |
+| `14-framework-upgrade/upgrade-procedure.md` | 절차서형 | 규정 변경 탐지 → 업그레이드 → 검증 → 롤백 전 절차 |
 
 ---
 

@@ -41,8 +41,8 @@
 
 | 파일 | 감리 단계 | 문서 유형 | 핵심 내용 |
 |------|---------|---------|---------|
-| `04-audit-compliance/templates/T07-defect-management.md` | 결함 관리 | 감리 템플릿형 | 결함 목록, 심각도, 조치 계획, 재시험 결과 |
-| `04-audit-compliance/audit-completion-checklist.md` | 감리 완료 | 체크리스트형 | 감리 완료 기준 7개 항목 확인표 |
+| `06-audit-compliance/templates/T07-defect-management.md` | 결함 관리 | 감리 템플릿형 | 결함 목록, 심각도, 조치 계획, 재시험 결과 |
+| `06-audit-compliance/audit-completion-checklist.md` | 감리 완료 | 체크리스트형 | 감리 완료 기준 7개 항목 확인표 |
 
 ---
 

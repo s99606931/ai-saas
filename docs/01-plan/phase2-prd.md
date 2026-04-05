@@ -95,7 +95,7 @@
 **복잡도 평가**: HIGH (인프라 보안, 산출물 3개 + CSAP/N2SF 매핑 정책 10개+)
 - 의존: MTU-I1 (완료) -- 착수 가능
 
-**산출물**: 3개 파일 (`docs/framework/05-infra/policy-as-code/`)
+**산출물**: 3개 파일 (`docs/framework/07-infra/policy-as-code/`)
 **예상 세션**: 2 세션
 **Plan 파일**: `docs/01-plan/mtus/MTU-C7-policy-as-code.plan.md` (존재)
 
@@ -114,7 +114,7 @@
 **복잡도 평가**: MED (산출물 2개, Gitea Actions 연동 예시)
 - 의존: MTU-I2 (미완료) -- 문서는 선행 작성 가능, 실행 검증은 I2 후
 
-**산출물**: 2개 파일 (`docs/framework/05-infra/supply-chain/`)
+**산출물**: 2개 파일 (`docs/framework/07-infra/supply-chain/`)
 **예상 세션**: 1 세션
 **Plan 파일**: `docs/01-plan/mtus/MTU-C8-supply-chain-security.plan.md` (존재)
 

@@ -37,8 +37,8 @@ CSAP, N2SF, ISMS-P 세 가지 규제 프레임워크의 준수 현황을 단일 
 
 | 파일 | 문서 유형 | 핵심 내용 |
 |------|---------|---------|
-| `09-compliance-dashboard/dashboard-architecture.md` | 아키텍처 레퍼런스형 | OSCAL→OTel→Prometheus→Grafana 파이프라인 설계 |
-| `09-compliance-dashboard/grafana-dashboard-spec.md` | 구현 가이드형 | Grafana 패널 명세, 데이터소스 설정, 알림 규칙 |
+| `12-compliance-dashboard/dashboard-architecture.md` | 아키텍처 레퍼런스형 | OSCAL→OTel→Prometheus→Grafana 파이프라인 설계 |
+| `12-compliance-dashboard/grafana-dashboard-spec.md` | 구현 가이드형 | Grafana 패널 명세, 데이터소스 설정, 알림 규칙 |
 
 ---
 

@@ -30,9 +30,9 @@ MCP 프로토콜을 통한 표준화된 AI 도구 통합 패턴을 제공합니�
 
 | 파일 | 문서 유형 | 핵심 내용 |
 |------|---------|---------|
-| `06-ai-integration/security-gateway-pattern.md` | 아키텍처 레퍼런스형 | N2SF 등급 → AI API 허용/차단 결정 트리 |
-| `06-ai-integration/data-classification-masking.md` | 구현 가이드형 | C/S등급 차단, O등급 PII 마스킹 |
-| `06-ai-integration/mcp-integration-guide.md` | 구현 가이드형 | MCP 서버 구성 + 공공시스템 연동 |
+| `08-ai-integration/security-gateway-pattern.md` | 아키텍처 레퍼런스형 | N2SF 등급 → AI API 허용/차단 결정 트리 |
+| `08-ai-integration/data-classification-masking.md` | 구현 가이드형 | C/S등급 차단, O등급 PII 마스킹 |
+| `08-ai-integration/mcp-integration-guide.md` | 구현 가이드형 | MCP 서버 구성 + 공공시스템 연동 |
 
 > **참고**: LM Studio 연동 가이드는 **MTU-A2** (`lmstudio-guide.md`, `lmstudio-client-examples.md`)에서 전담 관리합니다.
 

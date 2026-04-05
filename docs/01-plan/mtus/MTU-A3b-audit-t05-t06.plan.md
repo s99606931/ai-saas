@@ -36,8 +36,8 @@ T05는 CSAP 항목별 시험 방법을 사전에 정의하고, T06은 실제 시
 
 | 파일 | 감리 단계 | 핵심 내용 |
 |------|---------|---------|
-| `04-audit-compliance/templates/T05-test-plan.md` | 시험 계획 | CSAP 항목별 시험 방법, 합격 기준, 담당자 |
-| `04-audit-compliance/templates/T06-test-result.md` | 시험 결과 | 시험 실행 결과, 결함 목록, 재시험 결과 |
+| `06-audit-compliance/templates/T05-test-plan.md` | 시험 계획 | CSAP 항목별 시험 방법, 합격 기준, 담당자 |
+| `06-audit-compliance/templates/T06-test-result.md` | 시험 결과 | 시험 실행 결과, 결함 목록, 재시험 결과 |
 
 ---
 

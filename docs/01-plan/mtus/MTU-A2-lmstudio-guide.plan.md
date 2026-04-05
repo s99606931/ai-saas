@@ -53,8 +53,8 @@ LM Studio는 Windows 호스트에서 실행되며, WSL2 및 k3s 파드에서
 
 | 파일 | 문서 유형 | 핵심 내용 |
 |------|---------|---------|
-| `06-ai-integration/lmstudio-guide.md` | 아키텍처 레퍼런스형 | LM Studio 설치·설정·모델 로드 + WSL2 접근 패턴 |
-| `06-ai-integration/lmstudio-client-examples.md` | 구현 가이드형 | Python/TypeScript 클라이언트 코드 예시 |
+| `08-ai-integration/lmstudio-guide.md` | 아키텍처 레퍼런스형 | LM Studio 설치·설정·모델 로드 + WSL2 접근 패턴 |
+| `08-ai-integration/lmstudio-client-examples.md` | 구현 가이드형 | Python/TypeScript 클라이언트 코드 예시 |
 
 ---
 
