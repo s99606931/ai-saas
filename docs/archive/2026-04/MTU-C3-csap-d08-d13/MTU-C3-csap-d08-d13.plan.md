@@ -187,7 +187,7 @@ CSAP-D12-08 (취약점)   → Kyverno: Trivy 통과 이미지만 허용
 CSAP-D12-10 (시크릿)   → OPA: Secret 리소스 직접 마운트 금지
 ```
 
-→ 상세 정책 구성: [`05-infra/policy-as-code/kyverno-policies.md`](../../05-infra/policy-as-code/kyverno-policies.md) (MTU-C7)
+→ 상세 정책 구성: [`07-infra/policy-as-code/kyverno-policies.md`](../../07-infra/policy-as-code/kyverno-policies.md) (MTU-C7)
 
 ### D13 → MTU-C8 Harbor + Sigstore 연계
 
@@ -201,7 +201,7 @@ CSAP-D13-05 (CI/CD 보안)  → Harbor 이미지 스캔 정책 통과 필수
 CSAP-D13-09 (감사 추적)   → audit.jsonl 자동 기록 (CI/CD 훅)
 ```
 
-→ 상세 구성: [`05-infra/supply-chain/sigstore-signing.md`](../../05-infra/supply-chain/sigstore-signing.md) (MTU-C8)
+→ 상세 구성: [`07-infra/supply-chain/sigstore-signing.md`](../../07-infra/supply-chain/sigstore-signing.md) (MTU-C8)
 
 ---
 
