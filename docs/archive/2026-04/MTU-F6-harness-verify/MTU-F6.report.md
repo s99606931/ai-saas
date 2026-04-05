@@ -27,7 +27,7 @@
 
 | 파일 | 위치 | 설명 |
 |------|------|------|
-| harness-verification-guide.md | `docs/framework/07-cc-harness/` | CC 하네스 검증 절차서 (5단계, 15항목 체크리스트) |
+| harness-verification-guide.md | `docs/framework/09-cc-harness/` | CC 하네스 검증 절차서 (5단계, 15항목 체크리스트) |
 
 ---
 

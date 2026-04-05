@@ -21,7 +21,7 @@
 | **WHO** | 프레임워크 사용 기업의 DevOps 담당자, 프로젝트 관리자 |
 | **RISK** | 에이전트 파일 누락, 훅 프로필 미적용, 환경변수 미설정 시 보안 게이트 무력화 |
 | **SUCCESS** | 구성 파일 10개 전수 확인, 5개 에이전트 모델 라우팅 확인, Q-Gate G1~G3 통과 |
-| **SCOPE** | `07-cc-harness/harness-verification-guide.md` 1개 파일 (절차서형) |
+| **SCOPE** | `09-cc-harness/harness-verification-guide.md` 1개 파일 (절차서형) |
 
 ---
 
@@ -74,12 +74,12 @@ settings.json에 다음 훅이 정의되어 있음:
 ### 3.1 파일 경로
 
 ```
-docs/framework/07-cc-harness/harness-verification-guide.md
+docs/framework/09-cc-harness/harness-verification-guide.md
 ```
 
 ### 3.2 구현 순서
 
-1. 디렉토리 생성 (`07-cc-harness/`)
+1. 디렉토리 생성 (`09-cc-harness/`)
 2. 절차서 메타데이터 헤더 작성
 3. 5개 섹션 순차 작성
 4. 검증 명령어 코드블록 포함

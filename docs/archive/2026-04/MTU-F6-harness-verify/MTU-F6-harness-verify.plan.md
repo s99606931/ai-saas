@@ -24,7 +24,7 @@ ECC(Everything Claude Code) v1.9.0 기반 공공기관 SaaS 하네스가 올바�
 
 | 파일 | 문서 유형 | 핵심 내용 |
 |------|---------|---------|
-| `07-cc-harness/harness-verification-guide.md` | 절차서형 | 하네스 검증 절차 + 에이전트별 동작 확인 + Q-GATE 검증 |
+| `09-cc-harness/harness-verification-guide.md` | 절차서형 | 하네스 검증 절차 + 에이전트별 동작 확인 + Q-GATE 검증 |
 
 ---
 
