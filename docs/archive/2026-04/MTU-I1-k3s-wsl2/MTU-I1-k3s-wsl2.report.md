@@ -26,9 +26,9 @@
 
 | 산출물 | 경로 | 크기 | 핵심 내용 |
 |--------|------|------|---------|
-| 클러스터 설치 레시피 | `docs/framework/05-infra/k3s-wsl2/cluster-setup-recipe.md` | 5개 섹션 | 사전 요건, CNI 선택, 수동/자동 설치, 보안 강화, FAQ |
-| 자동 설치 스크립트 | `docs/framework/05-infra/k3s-wsl2/scripts/install-k3s.sh` | 305행 | 6단계 자동화, 사전 요건 검증, 시간 측정 |
-| 컨테이너 보안 기준선 | `docs/framework/05-infra/container-security-baseline.md` | 7항목 | CSAP-D11 x CIS Benchmark 매핑, 검증 명령, 추적성 |
+| 클러스터 설치 레시피 | `docs/framework/07-infra/k3s-wsl2/cluster-setup-recipe.md` | 5개 섹션 | 사전 요건, CNI 선택, 수동/자동 설치, 보안 강화, FAQ |
+| 자동 설치 스크립트 | `docs/framework/07-infra/k3s-wsl2/scripts/install-k3s.sh` | 305행 | 6단계 자동화, 사전 요건 검증, 시간 측정 |
+| 컨테이너 보안 기준선 | `docs/framework/07-infra/container-security-baseline.md` | 7항목 | CSAP-D11 x CIS Benchmark 매핑, 검증 명령, 추적성 |
 
 ---
 
