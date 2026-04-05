@@ -1,12 +1,12 @@
 {
-  "sessionCount": 15,
+  "sessionCount": 19,
   "lastSession": {
-    "startedAt": "2026-04-05T11:14:34.953Z",
+    "startedAt": "2026-04-05T12:13:46.996Z",
     "platform": "claude",
     "level": "Starter"
   },
   "currentFeature": null,
-  "currentPhase": null,
+  "currentPhase": "completed",
   "archive": {
     "av-skill": {
       "phase": "archived",
@@ -15,6 +15,86 @@
       "startedAt": "2026-04-05T00:00:00.000Z",
       "archivedAt": "2026-04-05T00:00:00.000Z",
       "archivedTo": "docs/archive/2026-04/av-skill/"
+    },
+    "MTU-U1": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-05T12:00:00.000Z",
+      "archivedAt": "2026-04-05T12:07:00.000Z",
+      "description": "공공기관 SaaS UI/UX 디자인 시스템"
+    },
+    "MTU-C6b": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-05T13:00:00.000Z",
+      "archivedAt": "2026-04-05T13:30:00.000Z",
+      "description": "ISMS-P 보호 분야 + 개인정보 보호조치"
+    },
+    "MTU-A1": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-05T13:00:00.000Z",
+      "archivedAt": "2026-04-05T13:30:00.000Z",
+      "description": "AI 보안 게이트웨이 + MCP 통합"
+    },
+    "MTU-A3b": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-05T13:00:00.000Z",
+      "archivedAt": "2026-04-05T13:30:00.000Z",
+      "description": "감리 산출물 T05~T06"
+    },
+    "MTU-A4": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-05T13:00:00.000Z",
+      "archivedAt": "2026-04-05T13:30:00.000Z",
+      "description": "OSCAL 호환성 레이어"
+    },
+    "MTU-A5": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-05T13:00:00.000Z",
+      "archivedAt": "2026-04-05T13:30:00.000Z",
+      "description": "Docusaurus 문서 포털"
+    },
+    "MTU-A7": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-05T13:00:00.000Z",
+      "archivedAt": "2026-04-05T13:30:00.000Z",
+      "description": "N2SF 모니터링 프로세스"
+    },
+    "MTU-E2": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-05T13:00:00.000Z",
+      "archivedAt": "2026-04-05T13:30:00.000Z",
+      "description": "공공기관 멀티테넌시 SaaS 아���텍처"
+    },
+    "MTU-E1": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-05T13:30:00.000Z",
+      "archivedAt": "2026-04-05T13:45:00.000Z",
+      "description": "ISMS-P 2027 의무화 대응"
+    },
+    "MTU-E3": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-05T13:30:00.000Z",
+      "archivedAt": "2026-04-05T13:45:00.000Z",
+      "description": "프레임워크 버전 관리 및 업그레이드"
     }
   }
 }

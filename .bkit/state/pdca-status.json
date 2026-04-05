@@ -1,9 +1,10 @@
 {
   "version": "3.0",
-  "lastUpdated": "2026-04-05T11:16:25.240Z",
+  "lastUpdated": "2026-04-05T11:43:23.750Z",
   "activeFeatures": [
     "public-saas-framework",
-    "scripts"
+    "scripts",
+    ".claude"
   ],
   "primaryFeature": "public-saas-framework",
   "features": {
@@ -29,6 +30,19 @@
         "lastUpdated": "2026-04-05T11:16:25.238Z"
       },
       "lastFile": "/data/ai-saas/docs/framework/05-infra/k3s-wsl2/scripts/install-k3s.sh"
+    },
+    ".claude": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-05T11:30:55.635Z",
+        "lastUpdated": "2026-04-05T11:43:23.748Z"
+      },
+      "lastFile": "/data/ai-saas/.claude/hooks/archive-auto-commit.sh"
     }
   },
   "pipeline": {
@@ -39,7 +53,7 @@
   "session": {
     "startedAt": "2026-04-05T05:33:14.156Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-04-05T11:16:25.240Z"
+    "lastActivity": "2026-04-05T11:43:23.750Z"
   },
   "history": [
     {
@@ -69,6 +83,24 @@
     {
       "timestamp": "2026-04-05T11:16:25.240Z",
       "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-05T11:30:55.637Z",
+      "feature": ".claude",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-05T11:43:09.795Z",
+      "feature": ".claude",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-05T11:43:23.750Z",
+      "feature": ".claude",
       "phase": "do",
       "action": "updated"
     }
