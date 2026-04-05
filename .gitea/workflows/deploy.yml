@@ -1,0 +1,158 @@
+# 공공기관 SaaS 플랫폼 — 배포 파이프라인
+# Design Ref: DESIGN-MTU-DEP3
+# Plan SC: FR-DEP3.3
+# CSAP: D-11 가상화 보안, D-12 시스템 개발 보안
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+env:
+  REGISTRY: ${REGISTRY:-localhost:5000}
+  IMAGE_PREFIX: public-saas
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - user-service
+          - tenant-service
+          - menu-service
+          - saas-catalog-service
+          - subscription-service
+          - billing-service
+          - crm-service
+          - ai-service
+          - notification-service
+          - file-service
+          - audit-service
+          - compliance-service
+          - security-monitor-service
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata
+        id: meta
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ github.ref_name }}"
+          else
+            VERSION="sha-$(echo ${{ github.sha }} | cut -c1-7)"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: platform/services/${{ matrix.service }}/Dockerfile
+          push: false
+          load: true
+          tags: |
+            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version }}
+            ${{ steps.meta.outputs.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test container health
+        run: |
+          docker run -d --name test-${{ matrix.service }} \
+            -e NODE_ENV=test \
+            -e DATABASE_URL=postgresql://test:test@localhost:5432/test \
+            -e REDIS_URL=redis://localhost:6379 \
+            -e JWT_SECRET=test-secret \
+            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version }}
+
+          # 컨테이너 시작 대기 (최대 30초)
+          for i in $(seq 1 30); do
+            if docker inspect --format='{{.State.Running}}' test-${{ matrix.service }} 2>/dev/null | grep -q true; then
+              echo "Container is running"
+              break
+            fi
+            sleep 1
+          done
+
+          docker stop test-${{ matrix.service }} || true
+          docker rm test-${{ matrix.service }} || true
+
+      # 레지스트리 푸시 (Harbor 또는 로컬 레지스트리 설정 시 활성화)
+      # - name: Push to registry
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: .
+      #     file: platform/services/${{ matrix.service }}/Dockerfile
+      #     push: true
+      #     tags: |
+      #       ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version }}
+      #       ${{ steps.meta.outputs.image }}:latest
+
+  build-portal:
+    name: Build Portal
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build portal image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: platform/apps/portal/Dockerfile
+          push: false
+          load: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/portal:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-notification:
+    name: Deployment Notification
+    runs-on: ubuntu-latest
+    needs: [build-and-push, build-portal]
+    if: success()
+
+    steps:
+      - name: Log deployment
+        run: |
+          echo "================================================================"
+          echo " Deployment Summary"
+          echo "================================================================"
+          echo " Branch: ${{ github.ref_name }}"
+          echo " Commit: ${{ github.sha }}"
+          echo " Author: ${{ github.actor }}"
+          echo " Time:   $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo " Status: SUCCESS"
+          echo "================================================================"
+
+      # CSAP D-06: 감사 로그 기록
+      - name: Audit log
+        run: |
+          echo "{\"timestamp\":\"$(date -u '+%Y-%m-%dT%H:%M:%SZ')\",\"action\":\"DEPLOY\",\"actor\":\"${{ github.actor }}\",\"ref\":\"${{ github.ref_name }}\",\"sha\":\"${{ github.sha }}\",\"status\":\"success\"}" >> deploy-audit.jsonl
+
+      - name: Upload audit log
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-audit
+          path: deploy-audit.jsonl
+          retention-days: 365

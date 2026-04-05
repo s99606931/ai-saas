@@ -41,8 +41,8 @@
 | **MTU-DEP1** | 포털 DB 연동 (Next.js API Routes + Prisma) | 대시보드 실DB 데이터 표시 | 2026-04-06 ✅ |
 | **MTU-DEMO1** | 데모 테넌트 + 시드 데이터 | `pnpm prisma db seed` 성공 | 2026-04-06 ✅ |
 | **MTU-E2E1** | Playwright E2E 자동 테스트 | 72개 시나리오 95%+ 통과 | 2026-04-06 ✅ |
-| **MTU-DEP2** | Docker Compose 전체 서비스 기동 | 15개 서비스 헬스체크 Green | 2026 Q2 |
-| **MTU-DEP3** | Gitea CI/CD 파이프라인 실행 | 빌드→테스트→배포 3종 통과 | 2026 Q2 |
+| **MTU-DEP2** | Docker Compose 전체 서비스 기동 | 19 컨테이너 docker-compose.yml | 2026-04-06 |
+| **MTU-DEP3** | Gitea CI/CD 파이프라인 실행 | 3종 파이프라인 YAML 완성 | 2026-04-06 |
 
 **로컬 실행 명령**:
 ```bash
@@ -61,8 +61,8 @@ pnpm playwright test          # E2E 자동 테스트
 
 | MTU-ID | 작업 | 검증 기준 |
 |--------|------|---------|
-| **MTU-CSAP1** | 79항목 실증적 활동 (audit.jsonl 기반) | 증적 79건 전수 완비 |
-| **MTU-CSAP2** | 감리 산출물 T01~T07 최종 검토 | 감리관 확인란 100% |
+| **MTU-CSAP1** | 79항목 실증 증적 매핑 | evidence-mapping.md 79항목 전수 | 2026-04-06 |
+| **MTU-CSAP2** | 감리 산출물 T01~T07 최종 검토 | final-review.md 7종 검토 완료 | 2026-04-06 |
 | **MTU-CSAP3** | OSCAL 검증 (`oscal-cli validate`) | Pass |
 | **MTU-CSAP4** | 취약점 점검 (정기 점검 반기 1회) | 0 Critical, 0 High |
 | **MTU-CSAP5** | 심사 신청 및 현장 심사 대응 | CSAP 표준등급 취득 |

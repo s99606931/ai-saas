@@ -1,0 +1,94 @@
+# 공공기관 SaaS 플랫폼 — CI 파이프라인
+# Design Ref: DESIGN-MTU-DEP3
+# Plan SC: FR-DEP3.1, FR-DEP3.2, FR-DEP3.6
+# CSAP: D-12 시스템 개발 보안
+
+name: CI
+
+on:
+  push:
+    branches: [main, stg, "feat/*", "fix/*"]
+  pull_request:
+    branches: [main]
+
+env:
+  PNPM_VERSION: "9.15.0"
+  NODE_VERSION: "22"
+
+jobs:
+  ci:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: saas
+          POSTGRES_PASSWORD: saas_test_2026
+          POSTGRES_DB: saas_platform_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U saas"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run typecheck
+        continue-on-error: false
+
+      - name: Lint
+        run: pnpm run lint
+        continue-on-error: true
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Test
+        run: pnpm run test
+        env:
+          DATABASE_URL: postgresql://saas:saas_test_2026@localhost:5432/saas_platform_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret
+          NODE_ENV: test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            **/coverage/
+            **/test-results/
+          retention-days: 7

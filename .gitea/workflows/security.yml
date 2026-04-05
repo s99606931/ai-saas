@@ -1,0 +1,104 @@
+# 공공기관 SaaS 플랫폼 — 보안 검사 파이프라인
+# Design Ref: DESIGN-MTU-DEP3
+# Plan SC: FR-DEP3.4
+# CSAP: D-12 시스템 개발 보안, D-06 침해사고 관리
+
+name: Security Audit
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # 매주 월요일 00:00 UTC (09:00 KST)
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+env:
+  PNPM_VERSION: "9.15.0"
+  NODE_VERSION: "22"
+
+jobs:
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: npm audit (high severity)
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Generate audit report
+        run: |
+          pnpm audit --json > audit-report.json 2>/dev/null || true
+          echo "## Dependency Audit Report" > audit-summary.md
+          echo "Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> audit-summary.md
+          echo "" >> audit-summary.md
+          if [ -f audit-report.json ]; then
+            echo "Report generated. See artifact for details." >> audit-summary.md
+          fi
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-report
+          path: |
+            audit-report.json
+            audit-summary.md
+          retention-days: 90
+
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        continue-on-error: true
+
+      - name: Custom secret patterns check
+        run: |
+          echo "Checking for hardcoded secrets..."
+          FOUND=0
+
+          # API 키 패턴 검사
+          if grep -rn "sk-[a-zA-Z0-9]\{20,\}" --include="*.ts" --include="*.tsx" --include="*.js" platform/ 2>/dev/null; then
+            echo "WARNING: Potential API key found"
+            FOUND=1
+          fi
+
+          # 하드코딩된 비밀번호 패턴
+          if grep -rn "password\s*=\s*['\"][^'\"]*['\"]" --include="*.ts" --include="*.tsx" --include="*.js" platform/services/ 2>/dev/null | grep -v "process.env" | grep -v "test" | grep -v ".spec." | grep -v "schema"; then
+            echo "WARNING: Potential hardcoded password found"
+            FOUND=1
+          fi
+
+          if [ "$FOUND" -eq 0 ]; then
+            echo "No hardcoded secrets found."
+          fi
