@@ -1,0 +1,1 @@
+- [Project Context](project_public_saas_framework.md) -- public-saas-framework PRD generated 2026-04-05, K8s/Gitea/AI stack for gov SaaS

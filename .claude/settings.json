@@ -1,0 +1,147 @@
+{
+  "model": "claude-sonnet-4-6",
+  "effortLevel": "high",
+
+  "_comment": "공공기관 SaaS 프레임워크 — ECC v1.9.0 strict 프로필 기반 하네스 설정",
+  "_csap": "CSAP 중/상 등급 + 행안부 감리기준 최적화",
+  "_ecc": "https://github.com/affaan-m/everything-claude-code",
+
+  "env": {
+    "ECC_HOOK_PROFILE": "strict",
+    "ECC_GOVERNANCE_CAPTURE": "1",
+    "ENABLE_VERBOSE_LOGGING": "1",
+    "CLAUDE_CODE_PACKAGE_MANAGER": "npm"
+  },
+
+  "hooks": {
+    "PreToolUse": [
+      {
+        "_id": "pre:bash:block-no-verify",
+        "_desc": "git 훅 우회 차단 — 감사 추적성 보장 (ECC)",
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'no-verify\\|--no-gpg'; then echo '{\"decision\":\"block\",\"reason\":\"git 훅 우회는 감사 추적성을 위반합니다 (CSAP D-06)\"}'; exit 2; fi"
+          }
+        ]
+      },
+      {
+        "_id": "pre:bash:destructive-guard",
+        "_desc": "위험 명령어 차단 (rm -rf, DROP TABLE, force push)",
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE 'rm -rf /|DROP TABLE|DELETE FROM [a-z]+ *;|git push.*--force'; then echo '{\"decision\":\"block\",\"reason\":\"파괴적 작업 차단 — 감리 감사 추적 정책 위반\"}'; exit 2; fi"
+          }
+        ]
+      },
+      {
+        "_id": "pre:write:protect-secrets",
+        "_desc": ".env, secrets 파일 수정 차단",
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '\\.env$|\\.env\\.|secrets\\.|credentials\\.'; then echo '{\"decision\":\"block\",\"reason\":\"시크릿 파일 수정 차단 (CSAP D-09)\"}'; exit 2; fi"
+          }
+        ]
+      }
+    ],
+
+    "PostToolUse": [
+      {
+        "_id": "post:bash:command-log-audit",
+        "_desc": "모든 Bash 명령 감사 로그 기록 (CSAP D-06 — 침해사고 관리)",
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p .claude && echo \"{\\\"timestamp\\\":\\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\",\\\"tool\\\":\\\"Bash\\\",\\\"user\\\":\\\"${USER}\\\"}\" >> .claude/audit.jsonl",
+            "async": true
+          }
+        ]
+      },
+      {
+        "_id": "post:edit:format-and-log",
+        "_desc": "파일 수정 후 감사 로그 기록",
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"{\\\"timestamp\\\":\\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\",\\\"tool\\\":\\\"Edit/Write\\\",\\\"user\\\":\\\"${USER}\\\"}\" >> .claude/audit.jsonl",
+            "async": true
+          }
+        ]
+      }
+    ],
+
+    "Stop": [
+      {
+        "_id": "stop:session-end",
+        "_desc": "세션 종료 상태 저장",
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"{\\\"timestamp\\\":\\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\",\\\"event\\\":\\\"session-end\\\"}\" >> .claude/audit.jsonl",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      }
+    ],
+
+    "SessionStart": [
+      {
+        "_id": "start:harness-reminder",
+        "_desc": "세션 시작 시 하네스 제약 재주입",
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '## 하네스 리마인더\\n- 구현 전 Plan/Design 문서 필수\\n- Dead code 발견 즉시 제거\\n- AI API: C/S등급 데이터 전송 금지\\n- 감사 로그: .claude/audit.jsonl\\n- 7단계 Q-Gate 순서 준수'"
+          }
+        ]
+      }
+    ]
+  },
+
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(npm run build)",
+      "Bash(npm run lint)",
+      "Bash(npm run audit:dead-code)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(kubectl get *)",
+      "Bash(kubectl apply *)",
+      "Bash(kubectl describe *)",
+      "Bash(docker ps)",
+      "Bash(docker build *)",
+      "Bash(mkdir -p *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(grep *)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git commit --no-verify*)",
+      "Bash(rm -rf /*)",
+      "Bash(kubectl delete namespace*)",
+      "Bash(DROP TABLE*)",
+      "Edit(.env)",
+      "Edit(.env.*)",
+      "Write(.env)",
+      "Write(.env.*)"
+    ]
+  }
+}
