@@ -1,0 +1,184 @@
+# Gitea Actions: 보안 스캔 워크플로우
+# MTU-I2 | FR-5.3 | CSAP-D12-01, D12-02, D12-03
+#
+# 트리거: build-test 워크플로우 완료 후
+# 단계: gitleaks → Trivy 취약점 스캔 → SBOM 생성 → Cosign 이미지 서명
+
+name: Security Scan and Sign
+
+on:
+  workflow_run:
+    workflows: ["Build and Test"]
+    types: [completed]
+    branches: [main]
+
+env:
+  REGISTRY: harbor.internal.svc.cluster.local
+  IMAGE_NAME: public-saas/app
+
+jobs:
+  gitleaks:
+    name: 시크릿 하드코딩 탐지 (CSAP-D12-03)
+    runs-on: ubuntu-latest
+    if: ${{ gitea.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: 소스 코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0    # 전체 히스토리 (하드코딩 이력 탐지)
+
+      - name: gitleaks 실행
+        run: |
+          # gitleaks 설치 (폐쇄망: 사전 다운로드 바이너리)
+          wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz
+          tar xzf gitleaks_8.18.0_linux_x64.tar.gz
+
+          # 시크릿 탐지 실행
+          ./gitleaks detect --source . --report-format json --report-path gitleaks-report.json
+          GITLEAKS_EXIT=$?
+
+          if [ $GITLEAKS_EXIT -ne 0 ]; then
+            echo "[CSAP-D12-03] 하드코딩된 시크릿 발견! 파이프라인 중단"
+            cat gitleaks-report.json | jq '.[] | {file: .File, rule: .RuleID, line: .StartLine}'
+            exit 1
+          fi
+          echo "[PASS] 하드코딩 시크릿 미발견"
+
+      - name: 감사 로그 기록
+        if: always()
+        run: |
+          cat >> /shared/audit.jsonl << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "actor": "${{ gitea.actor }}",
+            "action": "SCAN",
+            "target": "${{ gitea.repository }}@${{ gitea.sha }}",
+            "pipelineRunId": "${{ gitea.run_id }}",
+            "n2sfDomain": "N06",
+            "csapControl": "D12-03",
+            "result": "${{ job.status == 'success' && 'SUCCESS' || 'FAILURE' }}",
+            "metadata": {"scanType": "gitleaks"}
+          }
+          EOF
+
+  trivy-scan:
+    name: 취약점 스캔 (CSAP-D12-01)
+    runs-on: ubuntu-latest
+    needs: gitleaks
+    steps:
+      - name: Trivy 이미지 스캔
+        run: |
+          # Trivy 설치 (폐쇄망: 오프라인 DB 사전 다운로드)
+          trivy image \
+            --severity HIGH,CRITICAL \
+            --format json \
+            --output trivy-report.json \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ gitea.sha }}
+
+          # Critical 취약점 존재 시 파이프라인 중단
+          CRITICAL=$(cat trivy-report.json | jq '[.Results[].Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length')
+          HIGH=$(cat trivy-report.json | jq '[.Results[].Vulnerabilities[]? | select(.Severity == "HIGH")] | length')
+
+          echo "Critical: $CRITICAL, High: $HIGH"
+
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "[CSAP-D12-01] Critical 취약점 ${CRITICAL}건 발견! 파이프라인 중단"
+            exit 1
+          fi
+          echo "[PASS] Critical 취약점 없음 (High: ${HIGH}건)"
+
+      - name: Trivy 보고서 아티팩트 저장
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: trivy-report
+          path: trivy-report.json
+
+      - name: 감사 로그 기록
+        if: always()
+        run: |
+          cat >> /shared/audit.jsonl << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "actor": "SYSTEM",
+            "action": "SCAN",
+            "target": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ gitea.sha }}",
+            "pipelineRunId": "${{ gitea.run_id }}",
+            "n2sfDomain": "N06",
+            "csapControl": "D12-01",
+            "result": "${{ job.status == 'success' && 'SUCCESS' || 'FAILURE' }}",
+            "metadata": {"scanType": "trivy"}
+          }
+          EOF
+
+  sbom-generate:
+    name: SBOM 생성 (MTU-C8 연동)
+    runs-on: ubuntu-latest
+    needs: trivy-scan
+    steps:
+      - name: Syft SBOM 생성 (SPDX 포맷)
+        run: |
+          # Syft 설치
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+          # SBOM 생성 (SPDX JSON 포맷)
+          syft ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ gitea.sha }} \
+            -o spdx-json=sbom.spdx.json
+
+          echo "SBOM 생성 완료: $(cat sbom.spdx.json | jq '.packages | length') 패키지"
+
+          # 금지 라이선스 검사 (MTU-C8)
+          FORBIDDEN=$(cat sbom.spdx.json | jq -r '.packages[].licenseConcluded' | \
+            grep -iE '(GPL-3.0|AGPL-3.0|SSPL)' | head -5)
+          if [ -n "$FORBIDDEN" ]; then
+            echo "[경고] 금지 라이선스 발견: $FORBIDDEN"
+            # 경고만 발생 (차단은 MTU-C8에서 정책 결정)
+          fi
+
+      - name: SBOM 아티팩트 저장
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom
+          path: sbom.spdx.json
+
+  cosign-sign:
+    name: 이미지 서명 (CSAP-D12-02)
+    runs-on: ubuntu-latest
+    needs: sbom-generate
+    steps:
+      - name: Cosign 이미지 서명
+        run: |
+          # Cosign 설치
+          wget -q https://github.com/sigstore/cosign/releases/download/v2.2.0/cosign-linux-amd64
+          chmod +x cosign-linux-amd64
+          mv cosign-linux-amd64 /usr/local/bin/cosign
+
+          # 이미지 서명 (폐쇄망 모드: 로컬 키 사용)
+          cosign sign --key env://COSIGN_KEY \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ gitea.sha }}
+
+          # 서명 검증
+          cosign verify --key env://COSIGN_PUB_KEY \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ gitea.sha }}
+
+          echo "[PASS] 이미지 서명 및 검증 완료"
+        env:
+          COSIGN_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PUB_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+      - name: 감사 로그 기록
+        run: |
+          cat >> /shared/audit.jsonl << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "actor": "SYSTEM",
+            "action": "SIGN",
+            "target": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ gitea.sha }}",
+            "pipelineRunId": "${{ gitea.run_id }}",
+            "n2sfDomain": "N06",
+            "csapControl": "D12-02",
+            "result": "SUCCESS",
+            "metadata": {"imageSigned": true, "sbomGenerated": true}
+          }
+          EOF

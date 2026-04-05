@@ -47,7 +47,7 @@
 
 ### 단계 2: CSAP 등급 체계 이해 (5분)
 
-`02-csap-simple/quick-start-guide.md`의 **등급별 비교표**를 읽으세요.
+`02-csap/simple-grade/quick-start-guide.md`의 **등급별 비교표**를 읽으세요.
 
 **확인 사항**:
 - [ ] 일반/표준/중요 3등급 차이 파악
@@ -69,7 +69,7 @@
 - 귀사에 적합한 CSAP 등급
 - 감리 산출물 준비 규모
 
-**다음 단계**: `02-csap-simple/quick-start-guide.md` 전체 읽기 -> CSAP 자가진단 시작
+**다음 단계**: `02-csap/simple-grade/quick-start-guide.md` 전체 읽기 -> CSAP 자가진단 시작
 
 ---
 
@@ -80,7 +80,7 @@
 
 ### 단계 1: CSAP 등급 비교 (3분)
 
-`02-csap-simple/quick-start-guide.md`의 **등급별 비교표**를 읽으세요.
+`02-csap/simple-grade/quick-start-guide.md`의 **등급별 비교표**를 읽으세요.
 
 **확인 사항**:
 - [ ] 일반등급 30개 항목 vs 표준등급 79개 항목 차이 이해
@@ -88,7 +88,7 @@
 
 ### 단계 2: 자가진단 체크리스트 시작 (7분)
 
-`02-csap-simple/checklist-simple.md`의 **영역 A: 정보보호 정책** 5개 항목을 읽으세요.
+`02-csap/simple-grade/checklist-simple.md`의 **영역 A: 정보보호 정책** 5개 항목을 읽으세요.
 
 **확인 사항**:
 - [ ] 체크리스트 형식 이해 (항목 ID, 확인 방법, 증거 자료)
@@ -110,7 +110,7 @@
 - 자가진단 진행 방법
 - 요구사항 정의서 작성 체계
 
-**다음 단계**: `02-csap-simple/checklist-simple.md` 영역 A~G 전수 자가진단 (예상 3일)
+**다음 단계**: `02-csap/simple-grade/checklist-simple.md` 영역 A~G 전수 자가진단 (예상 3일)
 
 ---
 

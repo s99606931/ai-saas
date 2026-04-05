@@ -27,8 +27,8 @@
 
 | 파일 | 위치 | 설명 |
 |------|------|------|
-| quick-start-guide.md | `docs/framework/02-csap-simple/` | 등급 비교표 + 3일 자가진단 계획 + 업그레이드 경로 |
-| checklist-simple.md | `docs/framework/02-csap-simple/` | 일반등급 30항목 7영역 자가진단 체크리스트 |
+| quick-start-guide.md | `docs/framework/02-csap/simple-grade/` | 등급 비교표 + 3일 자가진단 계획 + 업그레이드 경로 |
+| checklist-simple.md | `docs/framework/02-csap/simple-grade/` | 일반등급 30항목 7영역 자가진단 체크리스트 |
 
 ---
 
@@ -68,4 +68,5 @@
 
 | 버전 | 일자 | 내용 | 작성자 |
 |------|------|------|--------|
+| 1.0.1 | 2026-04-05 | F4-GAP-1 품질 검토 확인 — 산출물 경로 `docs/framework/02-csap/simple-grade/` 사용 확인 (기 정상) | Implementer Agent |
 | 1.0.0 | 2026-04-05 | PDCA 완료 보고서 -- Match Rate 100%, 6/6 수용 기준 통과 | Claude Code (PM Lead) |

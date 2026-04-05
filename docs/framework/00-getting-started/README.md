@@ -32,11 +32,12 @@
 docs/framework/
 ├── 00-getting-started/     ← 지금 여기 (시작하기)
 ├── 01-dev-standards/       ← 개발 표준 가이드
-├── 02-csap-simple/         ← CSAP 일반등급 빠른 시작
+├── 02-csap/               ← CSAP 통합 (일반등급 + 표준등급)
+│   ├── simple-grade/      ←   일반등급 빠른 시작
+│   └── standard-grade/    ←   표준등급 79항목 마스터 체크리스트
 ├── 03-audit-docs/          ← 감리 산출물 T01~T02
 ├── 04-audit-compliance/    ← 감리 T03~T07 (Phase 3)
-├── 05-infra/               ← 인프라 (k3s/Gitea/네트워크, Phase 2)
-├── 06-csap-standard/       ← CSAP 표준등급 79항목 (Phase 2)
+├── 05-infra/               ← 인프라 (k3s/Gitea/네트워크)
 ├── 07-cc-harness/          ← CC 하네스 검증 절차서
 └── 99-references/          ← 규정 인덱스 + 용어 사전
 ```
@@ -47,11 +48,11 @@ docs/framework/
 |---------|--------|------|-------|-----|------|
 | `00-getting-started/` | 시작하기 | 진입점, 역할별 경로, 사전 요건 | 1 | MTU-F1 | 완료 |
 | `01-dev-standards/` | 개발 표준 | 6가지 문서 유형 템플릿, ID 체계, 코딩 가이드, 리뷰 체크리스트 | 1 | MTU-F3 | 완료 |
-| `02-csap-simple/` | CSAP 일반등급 | 일반등급 30항목 체크리스트, 등급 비교표, 업그레이드 경로 | 1 | MTU-F4 | 완료 |
+| `02-csap/simple-grade/` | CSAP 일반등급 | 일반등급 30항목 체크리스트, 등급 비교표, 업그레이드 경로 | 1 | MTU-F4 | 완료 |
+| `02-csap/standard-grade/` | CSAP 표준등급 | 79항목 마스터 체크리스트, D01~D13 구현 가이드 | 2 | MTU-C1~C3 | 진행 중 |
 | `03-audit-docs/` | 감리 산출물 | T01 사업계획서, T02 요구사항정의서 템플릿 | 1 | MTU-F5 | 완료 |
 | `04-audit-compliance/` | 감리 T03~T07 | 설계서, 테스트, 추적성 매트릭스 등 추가 산출물 | 3 | MTU-A3 | 미착수 |
 | `05-infra/` | 인프라 | k3s 클러스터 구성, Gitea CI/CD, Flux, 네트워크, OTel | 2 | MTU-I1~I5 | 미착수 |
-| `06-csap-standard/` | CSAP 표준등급 | 79항목 마스터 체크리스트, N2SF 매핑, ISMS-P | 2 | MTU-C1~C6 | 미착수 |
 | `07-cc-harness/` | CC 하네스 | 하네스 구성 검증 절차서 (5단계, 15항목 체크리스트) | 1 | MTU-F6 | 완료 |
 | `99-references/` | 참조 | 외부 규정 인덱스 14건, 용어 35개, 약어 37개 | 1 | MTU-F2 | 완료 |
 
@@ -64,10 +65,10 @@ docs/framework/
 | 역할 | 목표 | 첫 번째 파일 | 소요 시간 |
 |------|------|-----------|---------|
 | **CTO/팀장** | 프레임워크 전체 파악 + 인증 로드맵 | 본 README.md -> [quick-start.md](quick-start.md) 경로 A | 15분 |
-| **PM/기획자** | CSAP 인증 준비 시작 | [quick-start.md](quick-start.md) 경로 B -> `02-csap-simple/` | 15분 |
+| **PM/기획자** | CSAP 인증 준비 시작 | [quick-start.md](quick-start.md) 경로 B -> `02-csap/simple-grade/` | 15분 |
 | **개발자/DevOps** | 개발 환경 구성 | [quick-start.md](quick-start.md) 경로 C -> `01-dev-standards/` | 15분 |
 | **감리 담당** | 산출물 준비 | `03-audit-docs/T01-business-plan.md` | 20분 |
-| **보안 담당** | CSAP/N2SF 확인 | `02-csap-simple/checklist-simple.md` | 15분 |
+| **보안 담당** | CSAP/N2SF 확인 | `02-csap/simple-grade/checklist-simple.md` | 15분 |
 
 > 어디서 시작할지 모르겠다면 [quick-start.md](quick-start.md)를 읽으세요.
 

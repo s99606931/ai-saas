@@ -185,7 +185,7 @@ KISA 표준등급 인증 신청
 
 | 문서 | 위치 | 용도 |
 |------|------|------|
-| 일반등급 체크리스트 | `02-csap-simple/checklist-simple.md` | 30항목 자가진단 |
+| 일반등급 체크리스트 | `02-csap/simple-grade/checklist-simple.md` | 30항목 자가진단 |
 | 규정 인덱스 | `99-references/regulations-index.md` | CSAP 관련 법령 원문 링크 |
 | 용어 사전 | `99-references/glossary-and-acronyms.md` | CSAP/N2SF 용어 확인 |
 | 표준등급 마스터 체크리스트 | `06-csap-standard/checklist-master.md` | Phase 2에서 생성 예정 |

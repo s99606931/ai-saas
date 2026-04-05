@@ -1,0 +1,153 @@
+# Gitea Actions: k3s 배포 워크플로우
+# MTU-I2 | FR-5.2 | CSAP-D06, D12-04, D12-05
+#
+# 트리거: security-scan 워크플로우 완료 후 (main 브랜치)
+# 단계: 배포 → 헬스 체크 → 감사 로그 → 롤백 (실패 시)
+
+name: Deploy to k3s
+
+on:
+  workflow_run:
+    workflows: ["Security Scan and Sign"]
+    types: [completed]
+    branches: [main]
+
+env:
+  REGISTRY: harbor.internal.svc.cluster.local
+  IMAGE_NAME: public-saas/app
+  NAMESPACE: grade-o
+  DEPLOYMENT: app-deployment
+
+jobs:
+  deploy:
+    name: k3s 배포 (CSAP-D12-04)
+    runs-on: ubuntu-latest
+    if: ${{ gitea.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: 소스 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: kubeconfig 설정
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: 배포 전 상태 기록 (롤백용)
+        id: pre-deploy
+        run: |
+          CURRENT_IMAGE=$(kubectl get deployment ${{ env.DEPLOYMENT }} \
+            -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "none")
+          CURRENT_REVISION=$(kubectl rollout history deployment/${{ env.DEPLOYMENT }} \
+            -n ${{ env.NAMESPACE }} --revision 2>/dev/null | tail -1 | awk '{print $1}' || echo "0")
+          echo "current_image=$CURRENT_IMAGE" >> $GITHUB_OUTPUT
+          echo "current_revision=$CURRENT_REVISION" >> $GITHUB_OUTPUT
+          echo "이전 이미지: $CURRENT_IMAGE (revision: $CURRENT_REVISION)"
+
+      - name: 이미지 업데이트 배포
+        run: |
+          kubectl set image deployment/${{ env.DEPLOYMENT }} \
+            app=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ gitea.sha }} \
+            -n ${{ env.NAMESPACE }}
+
+          # 배포 완료 대기 (5분 타임아웃)
+          kubectl rollout status deployment/${{ env.DEPLOYMENT }} \
+            -n ${{ env.NAMESPACE }} --timeout=300s
+
+      - name: 헬스 체크
+        run: |
+          # Pod Ready 상태 확인
+          READY=$(kubectl get deployment ${{ env.DEPLOYMENT }} \
+            -n ${{ env.NAMESPACE }} -o jsonpath='{.status.readyReplicas}')
+          DESIRED=$(kubectl get deployment ${{ env.DEPLOYMENT }} \
+            -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.replicas}')
+
+          echo "Ready: $READY / Desired: $DESIRED"
+
+          if [ "$READY" != "$DESIRED" ]; then
+            echo "[FAIL] Pod Ready 수 불일치 — 롤백 필요"
+            exit 1
+          fi
+
+          # HTTP 헬스 체크 (애플리케이션 레벨)
+          SVC_IP=$(kubectl get svc app-service -n ${{ env.NAMESPACE }} \
+            -o jsonpath='{.spec.clusterIP}')
+          HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" \
+            "https://${SVC_IP}:443/health" --max-time 10)
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "[FAIL] 헬스 체크 실패 (HTTP $HTTP_CODE) — 롤백 필요"
+            exit 1
+          fi
+          echo "[PASS] 헬스 체크 통과 (HTTP 200)"
+
+      - name: 배포 성공 감사 로그 (CSAP-D06-01)
+        if: success()
+        run: |
+          cat >> /shared/audit.jsonl << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "actor": "${{ gitea.actor }}",
+            "action": "DEPLOY",
+            "target": "${{ gitea.repository }}@${{ gitea.sha }}",
+            "pipelineRunId": "${{ gitea.run_id }}",
+            "environment": "production",
+            "n2sfDomain": "N06",
+            "csapControl": "D06-01",
+            "result": "SUCCESS",
+            "metadata": {
+              "imageTag": "${{ gitea.sha }}",
+              "namespace": "${{ env.NAMESPACE }}",
+              "previousImage": "${{ steps.pre-deploy.outputs.current_image }}"
+            }
+          }
+          EOF
+
+      - name: 롤백 (배포 실패 시, CSAP-D12-05)
+        if: failure()
+        run: |
+          echo "[경고] 배포 실패 — 이전 버전으로 롤백 시작"
+
+          kubectl rollout undo deployment/${{ env.DEPLOYMENT }} \
+            -n ${{ env.NAMESPACE }}
+
+          kubectl rollout status deployment/${{ env.DEPLOYMENT }} \
+            -n ${{ env.NAMESPACE }} --timeout=120s
+
+          echo "[롤백 완료] 이전 이미지: ${{ steps.pre-deploy.outputs.current_image }}"
+
+          # 롤백 감사 로그
+          cat >> /shared/audit.jsonl << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "actor": "SYSTEM",
+            "action": "DEPLOY_ROLLBACK",
+            "target": "${{ gitea.repository }}@${{ gitea.sha }}",
+            "pipelineRunId": "${{ gitea.run_id }}",
+            "environment": "production",
+            "n2sfDomain": "N06",
+            "csapControl": "D12-05",
+            "result": "SUCCESS",
+            "metadata": {
+              "failedImage": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ gitea.sha }}",
+              "rolledBackTo": "${{ steps.pre-deploy.outputs.current_image }}"
+            }
+          }
+          EOF
+
+  notify:
+    name: 배포 결과 알림
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+    steps:
+      - name: 배포 결과 출력
+        run: |
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "=== 배포 성공 ==="
+            echo "이미지: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ gitea.sha }}"
+            echo "Namespace: ${{ env.NAMESPACE }}"
+          else
+            echo "=== 배포 실패 (롤백 수행) ==="
+            echo "실패 이미지: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ gitea.sha }}"
+          fi

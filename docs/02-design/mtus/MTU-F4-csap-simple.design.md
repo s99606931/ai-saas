@@ -20,7 +20,7 @@
 | **WHO** | 공공 SaaS 사업자의 PM/기획자, 보안 담당자 |
 | **RISK** | CSAP 등급 오해(일반 vs 표준 혼동), 체크리스트 항목 누락, 업그레이드 경로 불명확 |
 | **SUCCESS** | 3등급 비교표 완비, 30항목 전수 체크리스트, 표준등급 업그레이드 경로 명시 |
-| **SCOPE** | `02-csap-simple/` 디렉토리 2개 파일 (checklist-simple.md, quick-start-guide.md) |
+| **SCOPE** | `02-csap/simple-grade/` 디렉토리 2개 파일 (checklist-simple.md, quick-start-guide.md) |
 
 ---
 
@@ -57,8 +57,8 @@ CSAP 일반등급(간편등급) 인증 준비를 위한 최소 요건 체크리�
 
 ## 3. 구현 순서
 
-1. `02-csap-simple/quick-start-guide.md` -- 등급 비교표 + 로드맵 + 업그레이드 경로
-2. `02-csap-simple/checklist-simple.md` -- 30항목 체크리스트
+1. `02-csap/simple-grade/quick-start-guide.md` -- 등급 비교표 + 로드맵 + 업그레이드 경로
+2. `02-csap/simple-grade/checklist-simple.md` -- 30항목 체크리스트
 
 ---
 
@@ -66,4 +66,5 @@ CSAP 일반등급(간편등급) 인증 준비를 위한 최소 요건 체크리�
 
 | 버전 | 일자 | 내용 | 작성자 |
 |------|------|------|--------|
+| 0.1.1 | 2026-04-05 | F4-GAP-1 품질 검토 확인 — 산출물 경로 `02-csap/simple-grade/` 사용 확인 (기 정상) | Implementer Agent |
 | 0.1.0 | 2026-04-05 | 최초 작성 -- 2개 파일 설계, 7영역 30항목 구조 | PM Lead Agent |

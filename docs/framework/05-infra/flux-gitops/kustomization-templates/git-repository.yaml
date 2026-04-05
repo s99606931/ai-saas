@@ -1,0 +1,98 @@
+# Flux GitRepository: Gitea 저장소 연결
+# MTU-I3: Flux GitOps + Harbor
+# CSAP-D05-03: 커밋 서명 검증 (Cosign)
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: saas-app
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/part-of: saas-framework
+    app.kubernetes.io/managed-by: flux
+spec:
+  interval: 1m
+  url: https://gitea.internal.svc.cluster.local:3000/saas-org/saas-app.git
+  ref:
+    branch: main
+  secretRef:
+    name: gitea-credentials
+  verify:
+    provider: cosign
+    secretRef:
+      name: cosign-public-key
+---
+# Flux Kustomization: 자동 배포 적용
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: saas-app-production
+  namespace: flux-system
+spec:
+  interval: 5m
+  path: "./k8s/production"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: saas-app
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: saas-app
+      namespace: production
+  timeout: 5m
+  retryInterval: 1m
+  wait: true
+---
+# Flux ImageRepository + ImagePolicy: 자동 이미지 업데이트
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: saas-app
+  namespace: flux-system
+spec:
+  image: harbor.internal.svc.cluster.local/saas-org/saas-app
+  interval: 1m
+  secretRef:
+    name: harbor-credentials
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: saas-app
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: saas-app
+  policy:
+    semver:
+      range: ">=1.0.0"
+  filterTags:
+    pattern: '^v(?P<version>[0-9]+\.[0-9]+\.[0-9]+)$'
+    extract: '$version'
+---
+# Flux Notification: Gitea 배포 알림
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: gitea-notification
+  namespace: flux-system
+spec:
+  type: gitea
+  address: https://gitea.internal.svc.cluster.local:3000
+  secretRef:
+    name: gitea-credentials
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: deployment-alert
+  namespace: flux-system
+spec:
+  providerRef:
+    name: gitea-notification
+  eventSeverity: error
+  eventSources:
+    - kind: Kustomization
+      name: saas-app-production
+    - kind: GitRepository
+      name: saas-app
