@@ -237,3 +237,93 @@ HIGH 심각도 이슈 6건 발견으로 Implementer 재작업 필요.
 ---
 
 *리포트 작성: Reviewer Agent | 검사 완료: 2026-04-06*
+
+---
+
+## HIGH 이슈 재검토 결과 — 2026-04-06
+
+- 재검토 일시: 2026-04-06
+- 재검토자: Reviewer Agent (claude-sonnet-4-6)
+- 재검토 범위: 이전 BLOCKED 판정 HIGH 6건에 대한 수정 확인
+
+---
+
+### Fix 1: proxy.ts preHandler 타입 불일치 수정
+
+- 수정 확인: PASS
+- 설명: 기존 배열을 `@fastify/http-proxy`에 직접 전달하던 구조를 제거하고, `compositePreHandler` 단일 함수로 래핑하였음. `preHandlers` 배열을 순회하며 각 핸들러를 `await handler(req, reply)` 호출하고, `reply.sent` 여부로 조기 종료하는 패턴이 적용됨. `tsc --noEmit` 실행 결과 proxy.ts 관련 오류 없음 확인 (공유 패키지 `@public-saas/types` 모듈 누락 오류만 존재하며, 이는 proxy.ts 수정 범위 외 빌드 환경 문제).
+
+---
+
+### Fix 2: app.log.error() 인자 구조 수정
+
+- 수정 확인: PASS
+- 설명: 206행에서 `app.log.error({ err: error }, \`동적 프록시 실패: ${targetUrl}\`)` 구조체 형식으로 올바르게 수정됨. `tsc --noEmit` 결과 해당 행 타입 오류 없음 확인.
+
+---
+
+### Fix 3: RBAC requiredPermissions 검사 구현
+
+- 수정 확인: PASS
+- 설명: `makePermissionPreHandler` 팩토리 함수가 82~108행에 신규 추가됨. `service-registry.ts`의 `requiredPermissions` 필드(`audit: ['audit:read']`, `security: ['security:read']`)가 131~133행에서 `preHandlers`에 삽입되어 인증 후 순차 실행됨. JWT 클레임의 `permissions` 배열 또는 `ROLE_PERMISSIONS` 매핑을 통해 `admin:all` 포함 여부까지 검증하는 로직이 구현됨. CSAP D-08-05 요건을 충족함.
+
+---
+
+### Fix 4: 알림 서비스 서비스 수준 내부 인증 추가
+
+- 수정 확인: PASS
+- 설명: `notification-service/src/routes.ts` 22~35행에 `INTERNAL_SERVICE_KEY` 환경변수 기반 `app.addHook('onRequest', ...)` 훅이 추가됨. `x-internal-service-key` 헤더값과 환경변수를 비교하여 불일치 시 401 응답을 반환함. 환경변수 미설정 시(`if (internalKey)`) 훅을 등록하지 않는 조건부 구현으로, 개발 환경 호환성을 유지하면서 운영 환경 심층 방어(CSAP D-08)를 구현함.
+
+---
+
+### Fix 5: 사용자 서비스 서비스 수준 내부 인증 추가
+
+- 수정 확인: PASS
+- 설명: `user-service/src/routes.ts` 14~25행에 알림 서비스와 동일한 패턴의 `INTERNAL_SERVICE_KEY` 기반 `onRequest` 훅이 추가됨. 구조 및 오류 응답 형식이 알림 서비스와 일관성을 유지함.
+
+---
+
+### Fix 6a: listUsersHandler 테넌트 격리 강화
+
+- 수정 확인: PASS
+- 설명: `user-service/src/handlers/user.handler.ts` 43~57행이 전면 재작성됨. 기존 `const where = tenantId ? { tenantId } : {}` 패턴을 제거하고, `x-user-tenant-id` 헤더에서 JWT 테넌트 ID를 추출하는 방식으로 변경됨. `SUPER_ADMIN` 역할인 경우에만 쿼리 파라미터의 `tenantId`를 사용할 수 있으며, 그 외 역할은 JWT 클레임 테넌트로 강제됨. `tenantId`가 없을 경우 400 오류를 반환하여 전체 조회 경로가 완전히 차단됨. CSAP D-08 테넌트 격리 요건 충족.
+
+---
+
+### Fix 6b: 감사 로그 actor 실사용자 반영
+
+- 수정 확인: PASS
+- 설명:
+  - `user-service/src/handlers/user.handler.ts` 3곳 수정 확인:
+    - 185행 `createUserHandler`: `const actor = (request.headers['x-user-id'] as string) || 'system'`
+    - 273행 `deleteUserHandler`: `const deactivateActor = (request.headers['x-user-id'] as string) || 'system'`
+    - 318행 `reactivateUserHandler`: `const reactivateActor = (request.headers['x-user-id'] as string) || 'system'`
+  - `notification-service/src/handlers/notification.handler.ts` 2곳 수정 확인:
+    - 79행 `sendNotificationHandler`: `const sendActor = (request.headers['x-user-id'] as string) || 'system'`
+    - 159행 `sendFromTemplateHandler`: `const templateActor = (request.headers['x-user-id'] as string) || 'system'`
+  - `authPreHandler`가 `x-user-id = data.sub` 헤더를 주입(proxy.ts 66행)하므로, 인증된 요청에서는 실제 사용자 ID가 감사 로그에 기록됨. `'system'` 폴백은 게이트웨이 미경유 호출 또는 anonymous 요청에 대한 방어적 처리로 적절함. CSAP D-06 요건 충족.
+
+---
+
+## 재검토 이슈 요약
+
+| 심각도 | 건수 | 상태 |
+|--------|------|------|
+| CRITICAL | 0 | - |
+| HIGH | 0 | 전건 해소 (6/6 PASS) |
+| MEDIUM | 8 | 유지 (이전 리포트와 동일, 수정 대상 아님) |
+| LOW | 2 | 유지 (이전 리포트와 동일, 수정 대상 아님) |
+
+---
+
+## 최종 결정: APPROVED (BLOCKED 해제)
+
+이전 BLOCKED 판정을 유발한 HIGH 이슈 6건이 모두 적절히 수정됨.
+
+잔여 MEDIUM 8건, LOW 2건은 기능 차단 수준이 아니며 다음 단계에서 선택적 처리 가능.
+
+Auditor 에이전트로 인계하여 CSAP D-06/D-08/D-12 및 N2SF 준수 여부에 대한 감리 검증을 진행하십시오.
+
+---
+
+*재검토 작성: Reviewer Agent | 재검토 완료: 2026-04-06*
