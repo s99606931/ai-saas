@@ -20,6 +20,25 @@
 | **MTU-C5** N2SF 6개 영역 통제 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-C5-n2sf-domains/` |
 | **MTU-C7** Policy as Code | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-C7-policy-as-code/` |
 | **MTU-I2** Gitea CI/CD 파이프라인 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-I2-gitea-cicd/` |
+| **MTU-C8** Supply Chain Security | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-C8-supply-chain/` |
+| **MTU-C6a** ISMS-P 체크리스트 + CSAP 매핑 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-C6a-isms-p-management/` |
+| **MTU-I3** Flux GitOps + Harbor | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-I3-flux-harbor/` |
+| **MTU-I4** 네트워크 보안 + OpenTelemetry | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-I4-network-otel/` |
+| **MTU-I5** N2SF 레퍼런스 아키텍처 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-I5-n2sf-architecture/` |
+| **MTU-A3a** 감리 산출물 T03~T04 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-A3a-audit-t01-t04/` |
+| **MTU-U1** 공공기관 SaaS UI/UX 디자인 시스템 | 2026-04-05 | 100% | Plan + Design + Report (설계 문서 MTU) |
+| **MTU-C6b** ISMS-P 보호 분야 + 개인정보 보호조치 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-C6b-isms-p-protection/` |
+| **MTU-A1** AI 보안 게이트웨이 + MCP 통합 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-A1-ai-gateway-mcp/` |
+| **MTU-A2** LM Studio 연동 가이드 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-A2-lmstudio-guide/` |
+| **MTU-A3b** 감리 산출물 T05~T06 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-A3b-audit-t05-t06/` |
+| **MTU-A3c** 감리 T07 + 감리 완료 체크리스트 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-A3c-audit-t07-checklist/` |
+| **MTU-A5** Docusaurus 문서 포털 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-A5-docusaurus-portal/` |
+| **MTU-A6** 준수 현황 대시보드 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-A6-compliance-dashboard/` |
+| **MTU-A7** N2SF 모니터링 프로세스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-A7-n2sf-monitoring/` |
+| **MTU-A4** OSCAL 호환성 레이어 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-A4-oscal-mapping/` |
+| **MTU-E2** 공공기관 멀티테넌시 SaaS 아키텍처 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-E2-multitenancy/` |
+| **MTU-E1** ISMS-P 2027 의무화 대응 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-E1-isms-p-2027/` |
+| **MTU-E3** 프레임워크 버전 관리/업그레이드 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-E3-framework-upgrade/` |
 
 ## av-skill 요약
 
@@ -48,7 +67,7 @@
 
 - **설명**: ECC 하네스 5개 에이전트 + Q-Gate G1~G7 검증 절차
 - **최종 매치율**: 100% (7/7 수용 기준 통과)
-- **산출물**: `docs/framework/07-cc-harness/harness-verification-guide.md`
+- **산출물**: `docs/framework/09-cc-harness/harness-verification-guide.md`
 - **문서**: Plan + Design + Report
 
 ## MTU-F1 Getting Started 레이어 요약
@@ -69,7 +88,7 @@
 
 - **설명**: 행안부 감리기준 T01(사업계획서) + T02(요구사항정의서) 템플릿
 - **최종 매치율**: 100% (6/6 수용 기준 통과)
-- **산출물**: `docs/framework/03-audit-docs/` (T01-business-plan.md, T02-requirements.md)
+- **산출물**: `docs/framework/05-audit-docs/` (T01-business-plan.md, T02-requirements.md)
 - **문서**: Plan + Design + Report
 
 ## MTU-F3 개발 표준 가이드 요약
@@ -136,7 +155,7 @@
 - **설명**: WSL2에서 CSAP-D11 보안 설정이 적용된 k3s 클러스터 10분 이내 구성 레시피
 - **PDCA 사이클**: Plan -> Design -> Do -> Check (100%) -> Report -> Archive
 - **최종 매치율**: 100% (5/5 합격 기준 통과, 27/27 검증 항목 충족)
-- **산출물**: `docs/framework/05-infra/` (cluster-setup-recipe.md, install-k3s.sh, container-security-baseline.md)
+- **산출물**: `docs/framework/07-infra/` (cluster-setup-recipe.md, install-k3s.sh, container-security-baseline.md)
 - **주요 성과**: kube-router CNI + PSS restricted + deny-all NetworkPolicy 표준 조합, CSAP-D11 7항목 x CIS Benchmark 매핑
 - **후속 영향**: MTU-I2, I3, I4, C7 착수 가능
 - **문서**: Plan + Design + Analysis + Report
@@ -158,7 +177,7 @@
 - **설명**: Kyverno + OPA(Open Policy Agent) 기반 Policy as Code 구현 가이드 — k3s 환경 자동화 정책 적용
 - **PDCA 사이클**: Plan (기존) -> Do -> Check (100%) -> Report -> Archive
 - **최종 매치율**: 100%
-- **산출물**: `docs/framework/05-infra/policy-as-code/` (Kyverno 정책 + OPA Rego 정책 파일)
+- **산출물**: `docs/framework/07-infra/policy-as-code/` (Kyverno 정책 + OPA Rego 정책 파일)
 - **포함 항목**: PSS restricted 정책, 이미지 서명 검증, NetworkPolicy 자동 적용, RBAC 감사 정책
 - **주요 성과**: CSAP-D08/D11/D12 통제항목 코드 자동화, CI/CD 파이프라인 정책 게이트 연동
 - **후속 영향**: MTU-I2(Gitea CI/CD) 정책 게이트 연계, MTU-C3 준수 자동화
@@ -167,4 +186,21 @@
 
 ---
 
+## MTU-U1 공공기관 SaaS UI/UX 디자인 시스템 요약
+
+- **설명**: 공공기관 SaaS 프론트엔드 UI/UX 디자인 시스템 전체 설계 — 디자인 토큰, 테마 5종, 다크모드, 반응형, 테넌트 커스터마이제이션, AI Assistant UI, 동적 레이아웃, KWCAG 2.2 접근성, 컴포넌트 카탈로그
+- **PDCA 사이클**: PM 분석 (웹검색 8건) -> Plan -> Design -> Check (100%) -> Report -> Archive
+- **최종 매치율**: 100% (10/10 수용 기준 통과)
+- **산출물**: Plan 문서 + Design 문서 (A~I 9개 섹션) + Report 문서
+- **기술 스택**: Next.js 15, React 19, Tailwind CSS v4, shadcn/ui CLI v4, Radix UI, Zustand 5, AI SDK 5, Motion v12, dnd-kit, Storybook 8
+- **주요 성과**: 3계층 디자인 토큰 95개+, 테마 5종, 다크모드 3모드, 반응형 4단계, AI UI 6종, KWCAG 2.2 33항목 전수 매트릭스, Atomic Design 41개 컴포넌트, KRDS 14개 매핑
+- **후속 영향**: MTU-E2(멀티테넌시), MTU-A1(AI 게이트웨이), MTU-A5(Docusaurus), MTU-A6(대시보드) 연계
+- **문서**:
+  - `MTU-U1-ui-design-system.plan.md` — Plan 문서
+  - `MTU-U1-ui-design-system.design.md` — Design 문서
+  - `MTU-U1.report.md` — 완료 보고서
+
+---
+
 > IDX-GAP-1/IDX-GAP-2 수정 (2026-04-05): MTU-C5, MTU-C7 요약 섹션 추가 | Implementer Agent
+> MTU-U1 추가 (2026-04-05): 공공 SaaS UI/UX 디자인 시스템 PDCA 완료 | PM Agent

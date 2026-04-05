@@ -25,10 +25,10 @@
 
 | 파일 | 크기 | 역할 |
 |------|------|------|
-| `05-infra/gitea-cicd-guide.md` | 11.0KB | 설치 및 구성 가이드 |
-| `05-infra/gitea-actions-templates/build-test.yml` | 3.7KB | 빌드 + 테스트 워크플로우 |
-| `05-infra/gitea-actions-templates/security-scan.yml` | 6.6KB | 보안 스캔 + SBOM + 서명 |
-| `05-infra/gitea-actions-templates/deploy-k3s.yml` | 5.7KB | k3s 배포 + 롤백 + 감사 |
+| `07-infra/gitea-cicd-guide.md` | 11.0KB | 설치 및 구성 가이드 |
+| `07-infra/gitea-actions-templates/build-test.yml` | 3.7KB | 빌드 + 테스트 워크플로우 |
+| `07-infra/gitea-actions-templates/security-scan.yml` | 6.6KB | 보안 스캔 + SBOM + 서명 |
+| `07-infra/gitea-actions-templates/deploy-k3s.yml` | 5.7KB | k3s 배포 + 롤백 + 감사 |
 
 **후속 영향**: MTU-C8 (SBOM 연동), MTU-I3 (Harbor 연동)
 
