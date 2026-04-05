@@ -1,0 +1,49 @@
+# N2SF N03-02: S등급 민감 데이터 제한적 통신
+# MTU-I4: 네트워크 보안 정책
+# CSAP-D10-02: 네트워크 접근 통제
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: grade-s-restricted
+  namespace: grade-s
+  labels:
+    n2sf.area: "N03"
+    csap.control: "D10-02"
+  annotations:
+    description: "S등급 민감 네임스페이스 제한적 내부 통신"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              n2sf.grade: "S"
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              n2sf.grade: "O"
+      ports:
+        - protocol: TCP
+          port: 443
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              n2sf.grade: "S"
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              n2sf.grade: "infra"
+      ports:
+        - protocol: TCP
+          port: 4317

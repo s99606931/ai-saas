@@ -43,9 +43,9 @@ FR ID의 모듈 번호는 프레임워크 구조에 대응합니다.
 | 0 | Foundation | `00-getting-started/`, `01-dev-standards/`, `99-references/` | 1 | MTU-F1~F6 |
 | 1 | CSAP 표준등급 | `02-csap/standard-grade/` | 2 | MTU-C1~C3 |
 | 2 | N2SF | `03-n2sf/` | 2 | MTU-C4~C5 |
-| 3 | Infrastructure | `05-infra/` | 2 | MTU-I1~I5 |
+| 3 | Infrastructure | `07-infra/` | 2 | MTU-I1~I5 |
 | 4 | AI Integration | (Phase 3) | 3 | MTU-A1~A2 |
-| 5 | Audit Compliance | `03-audit-docs/`, `04-audit-compliance/` | 1, 3 | MTU-F5, MTU-A3~A4 |
+| 5 | Audit Compliance | `05-audit-docs/`, `06-audit-compliance/` | 1, 3 | MTU-F5, MTU-A3~A4 |
 
 ### FR 번호 부여 규칙
 

@@ -304,7 +304,7 @@ echo "=== 탐지 완료 ==="
 - [CSAP D09 암호화 구현 가이드](../../02-csap/standard-grade/implementation-guide/D09-encryption.md)
 - [N03 격리 구현 가이드](./N03-isolation.md) (암호화 + 격리 연계)
 - [N05 데이터 구현 가이드](./N05-data.md) (데이터 암호화 저장)
-- [컨테이너 보안 베이스라인](../../05-infra/container-security-baseline.md) (MTU-I1)
+- [컨테이너 보안 베이스라인](../../07-infra/container-security-baseline.md) (MTU-I1)
 
 ---
 

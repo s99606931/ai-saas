@@ -336,7 +336,7 @@ echo "etcd 백업 완료: $BACKUP_DIR/$SNAPSHOT.enc"
 - [CSAP D12 시스템 개발 보안 구현 가이드](../../02-csap/standard-grade/implementation-guide/D12-development-security.md)
 - [N03 격리 구현 가이드](./N03-isolation.md) (사고 시 격리 대응)
 - [N05 데이터 구현 가이드](./N05-data.md) (데이터 폐기 연계)
-- [컨테이너 보안 베이스라인](../../05-infra/container-security-baseline.md) (MTU-I1)
+- [컨테이너 보안 베이스라인](../../07-infra/container-security-baseline.md) (MTU-I1)
 
 ---
 

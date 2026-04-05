@@ -415,7 +415,7 @@ echo "=== 검증 완료 ==="
 - [CSAP x N2SF 전수 매핑 테이블](../csap-n2sf-mapping.md) (MTU-C4)
 - [데이터 등급 분류 체계](../data-grade-classification.md) (MTU-C4)
 - [CSAP D10 네트워크 보안 구현 가이드](../../02-csap/standard-grade/implementation-guide/D10-network.md)
-- [컨테이너 보안 베이스라인](../../05-infra/container-security-baseline.md) (MTU-I1)
+- [컨테이너 보안 베이스라인](../../07-infra/container-security-baseline.md) (MTU-I1)
 - [N02 인증 구현 가이드](./N02-authentication.md) (인증 + 격리 연계)
 - [N05 데이터 구현 가이드](./N05-data.md) (AI 라우팅 관련)
 

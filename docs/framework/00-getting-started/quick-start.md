@@ -56,7 +56,7 @@
 
 ### 단계 3: 사업계획서 템플릿 확인 (5분)
 
-`03-audit-docs/T01-business-plan.md`의 **필수 섹션 목록**을 스캔하세요.
+`05-audit-docs/T01-business-plan.md`의 **필수 섹션 목록**을 스캔하세요.
 
 **확인 사항**:
 - [ ] 감리 필수 산출물 구성 파악
@@ -97,7 +97,7 @@
 
 ### 단계 3: 감리 T02 요구사항 확인 (5분)
 
-`03-audit-docs/T02-requirements.md`의 **요구사항 ID 체계**를 읽으세요.
+`05-audit-docs/T02-requirements.md`의 **요구사항 ID 체계**를 읽으세요.
 
 **확인 사항**:
 - [ ] FR/NFR/INFR/AI-REQ/CC-REQ 5종 ID 체계 이해

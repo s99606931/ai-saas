@@ -1,0 +1,48 @@
+# N2SF N05: O등급 공개 데이터 AI API 게이트웨이 경유 외부 통신
+# MTU-I4: 네트워크 보안 정책
+# CSAP-D10-03: 외부 연결 통제
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: grade-o-ai-gateway-only
+  namespace: grade-o
+  labels:
+    n2sf.area: "N05"
+    csap.control: "D10-03"
+  annotations:
+    description: "O등급 AI API 게이트웨이만 외부 HTTPS 통신 허용"
+spec:
+  podSelector:
+    matchLabels:
+      app: ai-gateway
+  policyTypes:
+    - Egress
+  egress:
+    # AI API 엔드포인트 (HTTPS 443만)
+    # 보안 주의: to: [] (전체 허용)은 N2SF N05 위반
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+    # 클러스터 내부 DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # OTel Collector
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              n2sf.grade: "infra"
+      ports:
+        - protocol: TCP
+          port: 4317

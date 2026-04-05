@@ -119,6 +119,18 @@
 
 ---
 
+### Phase U: UI/UX 확장 — 1 MTU [신규]
+
+> **v1.4.0 추가**: 공공기관 SaaS 프론트엔드 디자인 시스템 설계 (독립 Phase)
+
+| ID | MTU명 | 파일 수 | 의존 MTU | 검증 기준 |
+|----|-------|---------|---------|---------|
+| **MTU-U1** | 공공기관 SaaS UI/UX 디자인 시스템 [신규] | 2 | MTU-E2 (멀티테넌시) | 디자인 토큰 80개+, 테마 5종, KWCAG 2.2 AA 33항목 전수, 컴포넌트 41개, AI UI 3종 |
+
+**Phase U 완료 게이트**: 디자인 토큰 체계 + KWCAG 2.2 AA 전수 매트릭스 + 컴포넌트 카탈로그 41개 + AI UI 설계
+
+---
+
 ## MTU 의존성 그래프
 
 ```
@@ -152,6 +164,8 @@ MTU-A1 ── MTU-A2 (LM Studio 연동)
 MTU-C6a+b ── MTU-E1 (ISMS-P 2027 의무화)
 MTU-C3 + MTU-I1 + MTU-I3 ── MTU-E2 (멀티테넌시)
 MTU-A7 + 모든 MTU 완료 ── MTU-E3 (프레임워크 업그레이드)
+
+MTU-E2 (멀티테넌시) ── MTU-U1 (공공 SaaS UI/UX 디자인 시스템) [신규]
 ```
 
 ---
@@ -166,24 +180,24 @@ MTU-A7 + 모든 MTU 완료 ── MTU-E3 (프레임워크 업그레이드)
 | 번호 | 파일 경로 | MTU | 근거 |
 |------|---------|-----|------|
 | 55 | `03-n2sf/mls-implementation-guide.md` | MTU-C5 | N2SF MLS 다층보안 2026 |
-| 56 | `05-infra/flux-gitops/` | MTU-I3 | 폐쇄망 GitOps 표준 |
-| 57 | `05-infra/harbor-registry.md` | MTU-I3 | 이미지 보안 강화 |
-| 58 | `05-infra/opentelemetry-config.md` | MTU-I4 | 관찰성 표준화 |
-| 59 | `05-infra/policy-as-code/kyverno-policies.md` | MTU-C7 | K8s 정책 자동화 |
-| 60 | `05-infra/policy-as-code/opa-gatekeeper.md` | MTU-C7 | 복잡한 컴플라이언스 정책 |
-| 61 | `05-infra/supply-chain/sbom-guide.md` | MTU-C8 | 공급망 보안 |
-| 62 | `05-infra/supply-chain/sigstore-signing.md` | MTU-C8 | 이미지 서명 검증 |
-| 63 | `06-ai-integration/mcp-integration-guide.md` | MTU-A1 | MCP 표준 AI 연동 |
-| 64 | `06-ai-integration/lmstudio-guide.md` | MTU-A2 | LM Studio (Windows 호스트, host.docker.internal:1234) 연동 |
-| 65 | `07-isms-p/checklist-101.md` | MTU-C6a | ISMS-P 101항목 (신규 모듈) |
-| 66 | `07-isms-p/evidence-automation-guide.md` | MTU-C6b | 2027 의무화 자동 증적 |
-| 67 | `07-isms-p/self-diagnosis.md` | MTU-C6b | ISMS-P 자가진단 |
-| 68 | `08-oscal/csap-oscal-mapping.md` | MTU-A6 | NIST OSCAL 호환성 |
+| 56 | `07-infra/flux-gitops/` | MTU-I3 | 폐쇄망 GitOps 표준 |
+| 57 | `07-infra/harbor-registry.md` | MTU-I3 | 이미지 보안 강화 |
+| 58 | `07-infra/opentelemetry-config.md` | MTU-I4 | 관찰성 표준화 |
+| 59 | `07-infra/policy-as-code/kyverno-policies.md` | MTU-C7 | K8s 정책 자동화 |
+| 60 | `07-infra/policy-as-code/opa-gatekeeper.md` | MTU-C7 | 복잡한 컴플라이언스 정책 |
+| 61 | `07-infra/supply-chain/sbom-guide.md` | MTU-C8 | 공급망 보안 |
+| 62 | `07-infra/supply-chain/sigstore-signing.md` | MTU-C8 | 이미지 서명 검증 |
+| 63 | `08-ai-integration/mcp-integration-guide.md` | MTU-A1 | MCP 표준 AI 연동 |
+| 64 | `08-ai-integration/lmstudio-guide.md` | MTU-A2 | LM Studio (Windows 호스트, host.docker.internal:1234) 연동 |
+| 65 | `04-isms-p/checklist-101.md` | MTU-C6a | ISMS-P 101항목 (신규 모듈) |
+| 66 | `04-isms-p/evidence-automation-guide.md` | MTU-C6b | 2027 의무화 자동 증적 |
+| 67 | `04-isms-p/self-diagnosis.md` | MTU-C6b | ISMS-P 자가진단 |
+| 68 | `10-oscal/csap-oscal-mapping.md` | MTU-A6 | NIST OSCAL 호환성 |
 | 69 | `05-isms-p/certification-guide.md` | MTU-E1 | ISMS-P 심사 절차 + 2027 타임라인 |
 | 70 | `05-isms-p/auto-evidence-collection.md` | MTU-E1 | 자동 증적 수집 → ISMS-P 보고서 생성 |
-| 71 | `10-multitenancy/architecture-guide.md` | MTU-E2 | N2SF 등급별 테넌트 격리 아키텍처 |
-| 72 | `10-multitenancy/tenant-isolation-policy.md` | MTU-E2 | Kyverno 테넌트 격리 정책 |
-| 73 | `10-multitenancy/onboarding-procedure.md` | MTU-E2 | 테넌트 온보딩 자동화 (1일 이내) |
+| 71 | `13-multitenancy/architecture-guide.md` | MTU-E2 | N2SF 등급별 테넌트 격리 아키텍처 |
+| 72 | `13-multitenancy/tenant-isolation-policy.md` | MTU-E2 | Kyverno 테넌트 격리 정책 |
+| 73 | `13-multitenancy/onboarding-procedure.md` | MTU-E2 | 테넌트 온보딩 자동화 (1일 이내) |
 
 ---
 
@@ -196,6 +210,7 @@ MTU-A7 + 모든 MTU 완료 ── MTU-E3 (프레임워크 업그레이드)
 | Phase 3 Infrastructure | M5~M7 | 5 MTUs | k3s + Gitea + Policy as Code |
 | Phase 4 Advanced | M7~M10 | 6 MTUs | AI 게이트웨이 + 감리 + OSCAL |
 | Phase 5 Ecosystem | M10~M12 | 3 MTUs | ISMS-P 의무화 + 멀티테넌시 + 프레임워크 업그레이드 |
+| Phase U UI/UX | M10~M12 | 1 MTU | 공공 SaaS UI/UX 디자인 시스템 |
 
 ---
 
@@ -223,7 +238,8 @@ MTU-A7 + 모든 MTU 완료 ── MTU-E3 (프레임워크 업그레이드)
 | Phase 3 Infrastructure | 5 | 8 | 8 | 변경 없음 |
 | Phase 4 Advanced | 6 | 8 | 11 | MTU-A4(OSCAL 호환성), MTU-A5(Docusaurus 문서 포털), MTU-A6(준수 현황 대시보드) 정합 완료 |
 | Phase 5 Ecosystem | 3 | 3 | 3 | MTU-E1~E3 내용 재정의 (ISMS-P/멀티테넌시/업그레이드) |
-| **합계** | **28** | **32** | **35** | Phase 4 MTU 명확화 +3 = **+3** |
+| Phase U UI/UX | — | — | 1 | MTU-U1 신규 추가 (프론트엔드 디자인 시스템) |
+| **합계** | **28** | **32** | **36** | Phase 4 MTU 명확화 +3 + Phase U +1 = **+4** |
 
 ---
 
@@ -246,3 +262,7 @@ MTU-A7 + 모든 MTU 완료 ── MTU-E3 (프레임워크 업그레이드)
 | — | — | MTU-A4: 추적성 매트릭스 T07 → OSCAL 호환성 레이어 (실제 Plan 파일 기준 정합) | — |
 | — | — | MTU-A5: CSAP 상등급+인증 절차 → Docusaurus 문서 포털 (실제 Plan 파일 기준 정합) | — |
 | — | — | MTU-A6: OSCAL 호환성 레이어 → 준수 현황 대시보드 (실제 Plan 파일 기준 정합) | — |
+| v1.4.0 | 2026-04-05 | Phase U 신규 추가: MTU-U1 공공 SaaS UI/UX 디자인 시스템 | Claude Code (PM) |
+| — | — | Next.js 15 + Tailwind v4 + shadcn/ui CLI v4 + AI SDK 5 기반 | — |
+| — | — | KWCAG 2.2 AA 33항목 전수 대응, KRDS 참조, 컴포넌트 41개 | — |
+| — | — | 총 MTU 36개로 업데이트 | — |

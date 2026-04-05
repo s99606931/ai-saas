@@ -1,0 +1,42 @@
+# N2SF N03-01: C등급 기밀 데이터 완전 격리
+# MTU-I4: 네트워크 보안 정책
+# CSAP-D10-01: 네트워크 분리
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: grade-c-full-isolation
+  namespace: grade-c
+  labels:
+    n2sf.area: "N03"
+    csap.control: "D10-01"
+  annotations:
+    description: "C등급 기밀 네임스페이스 완전 격리"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              n2sf.grade: "C"
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              n2sf.grade: "C"
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              n2sf.grade: "infra"
+      ports:
+        - protocol: TCP
+          port: 4317

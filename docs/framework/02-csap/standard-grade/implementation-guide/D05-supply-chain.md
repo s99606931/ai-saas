@@ -24,7 +24,7 @@
 **핵심 키워드**: 공급망 보안 정책, 외부 서비스 보안 평가, 계약 보안 조항, SBOM 관리
 
 **연계 MTU**:
-- MTU-C8 공급망 보안 (SBOM + Sigstore): [`05-infra/supply-chain/`](../../../05-infra/supply-chain/) (Phase 2)
+- MTU-C8 공급망 보안 (SBOM + Sigstore): [`07-infra/supply-chain/`](../../../07-infra/supply-chain/) (Phase 2)
 - MTU-A1 AI 보안 게이트웨이: 외부 AI API 서비스 공급망 보안 관리
 
 ---
@@ -208,7 +208,7 @@
 | 배포 | 이용기관에 SBOM 공유 | 포털/API | 릴리스 시 |
 | 업데이트 | CVE 발표 시 영향 분석 | Grype, Trivy | 일간 자동 |
 
-> 상세 SBOM 관리 절차: MTU-C8 [`05-infra/supply-chain/sbom-guide.md`](../../../05-infra/supply-chain/sbom-guide.md) (Phase 2)
+> 상세 SBOM 관리 절차: MTU-C8 [`07-infra/supply-chain/sbom-guide.md`](../../../07-infra/supply-chain/sbom-guide.md) (Phase 2)
 
 **단계 3: 보안 사고 통보 체계**
 
