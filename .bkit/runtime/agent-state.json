@@ -1,14 +1,25 @@
 {
   "version": "1.0",
-  "enabled": false,
+  "enabled": true,
   "teamName": "",
   "feature": "public-saas-framework",
   "pdcaPhase": "design",
   "orchestrationPattern": "leader",
   "ctoAgent": "opus",
-  "startedAt": "2026-04-05T12:25:24.359Z",
-  "lastUpdated": "2026-04-05T12:27:21.356Z",
-  "teammates": [],
+  "startedAt": "2026-04-05T12:50:23.900Z",
+  "lastUpdated": "2026-04-05T12:50:23.905Z",
+  "teammates": [
+    {
+      "name": "a326b2b697b0e71bd",
+      "role": "bkit:frontend-architect",
+      "model": "sonnet",
+      "status": "spawning",
+      "currentTask": null,
+      "taskId": null,
+      "startedAt": "2026-04-05T12:50:23.901Z",
+      "lastActivityAt": "2026-04-05T12:50:23.901Z"
+    }
+  ],
   "progress": {
     "totalTasks": 0,
     "completedTasks": 0,
@@ -17,5 +28,5 @@
     "pendingTasks": 0
   },
   "recentMessages": [],
-  "sessionId": "ef7b0242-be70-403e-b23a-a2a64b243ae8"
+  "sessionId": "ed9385db-0f23-4590-a272-6c9c2946eab4"
 }
