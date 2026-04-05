@@ -215,18 +215,40 @@ export async function updateUserHandler(
 }
 
 /**
- * 사용자 비활성화 (소프트 삭제)
+ * 사용자 비활성화 (소프트 삭제 개선)
+ * Design Ref: DESIGN-MTU-Q3 §1
  * Plan SC: FR-P02.4
+ * CSAP D-08-10: 계정 비활성화
+ *
+ * 개선: lockedUntil을 9999-12-31로 설정하여 영구 비활성화 표시
+ * 기존 role 변경 방식에서 lockedUntil 기반으로 전환
  */
 export async function deleteUserHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
-  // 소프트 삭제: role을 VIEWER로 변경하고 세션 무효화
-  // NOTE: 실제 소프트 삭제 필드(isDeleted, deletedAt)는 Prisma 스키마 마이그레이션 시 추가 예정
+  const existingUser = await prisma.user.findUnique({
+    where: { id: request.params.id },
+    select: { id: true, tenantId: true, lockedUntil: true },
+  });
+
+  if (!existingUser) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'USER_NOT_FOUND', message: '사용자를 찾을 수 없습니다' },
+    });
+    return;
+  }
+
+  // 영구 비활성화: lockedUntil = 9999-12-31T23:59:59Z
+  const PERMANENT_LOCK = new Date('9999-12-31T23:59:59.000Z');
+
   await prisma.user.update({
     where: { id: request.params.id },
-    data: { role: 'VIEWER' },
+    data: {
+      lockedUntil: PERMANENT_LOCK,
+      failedLogins: 0, // 잠금 카운터 초기화
+    },
   });
 
   // 감사 로그 기록 (FR-P02.10, CSAP D-06)
@@ -234,10 +256,54 @@ export async function deleteUserHandler(
     'USER_DEACTIVATED',
     'system',
     request.params.id,
+    existingUser.tenantId,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { reason: 'soft_delete', previousLockState: existingUser.lockedUntil?.toISOString() ?? null },
+  );
+
+  await reply.send({ success: true, message: '사용자가 비활성화되었습니다' });
+}
+
+/**
+ * 사용자 복원 (소프트 삭제 복원)
+ * Design Ref: DESIGN-MTU-Q3 §1
+ * Plan SC: FR-P02.4
+ */
+export async function reactivateUserHandler(
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const existingUser = await prisma.user.findUnique({
+    where: { id: request.params.id },
+    select: { id: true, tenantId: true, lockedUntil: true },
+  });
+
+  if (!existingUser) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'USER_NOT_FOUND', message: '사용자를 찾을 수 없습니다' },
+    });
+    return;
+  }
+
+  await prisma.user.update({
+    where: { id: request.params.id },
+    data: {
+      lockedUntil: null,
+      failedLogins: 0,
+    },
+  });
+
+  // 감사 로그 기록 (CSAP D-06)
+  await logUserEvent(
+    'USER_REACTIVATED',
     'system',
+    request.params.id,
+    existingUser.tenantId,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
   );
 
-  await reply.send({ success: true, message: '사용자가 비활성화되었습니다' });
+  await reply.send({ success: true, message: '사용자가 복원되었습니다' });
 }
