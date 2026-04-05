@@ -66,11 +66,11 @@ README.md (진입점)
 | 00-getting-started | 시작하기 | 진입점 + 역할별 경로 | 1 |
 | 01-dev-standards | 개발 표준 | 문서 유형 템플릿 + ID 체계 + 코딩 가이드 | 1 |
 | 02-csap-simple | CSAP 일반등급 | 일반등급 30항목 체크리스트 + 빠른 시작 | 1 |
-| 03-audit-docs | 감리 산출물 | T01~T02 감리 템플릿 | 1 |
-| 04-audit-compliance | 감리 T03~T07 | 추가 감리 산출물 (Phase 3) | 3 |
-| 05-infra | 인프라 | k3s/WSL2/Gitea/Flux/네트워크 | 2 |
+| 05-audit-docs | 감리 산출물 | T01~T02 감리 템플릿 | 1 |
+| 06-audit-compliance | 감리 T03~T07 | 추가 감리 산출물 (Phase 3) | 3 |
+| 07-infra | 인프라 | k3s/WSL2/Gitea/Flux/네트워크 | 2 |
 | 06-csap-standard | CSAP 표준등급 | 79항목 체크리스트 + N2SF + ISMS-P | 2 |
-| 07-cc-harness | CC 하네스 | 하네스 검증 절차서 | 1 |
+| 09-cc-harness | CC 하네스 | 하네스 검증 절차서 | 1 |
 | 99-references | 참조 | 규정 인덱스 + 용어 사전 | 1 |
 
 ### 2.2 quick-start.md (역할별 15분 경로)
