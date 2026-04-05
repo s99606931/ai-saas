@@ -39,6 +39,11 @@
 | **MTU-E2** 공공기관 멀티테넌시 SaaS 아키텍처 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-E2-multitenancy/` |
 | **MTU-E1** ISMS-P 2027 의무화 대응 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-E1-isms-p-2027/` |
 | **MTU-E3** 프레임워크 버전 관리/업그레이드 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-E3-framework-upgrade/` |
+| **MTU-P00** 공통 기반 설정 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P00-common-foundation/` |
+| **MTU-P01** 인증 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P01-auth-service/` |
+| **MTU-P02** 사용자 관리 서비스 | 2026-04-05 | 77.8% | `docs/archive/2026-04/MTU-P02-user-service/` |
+| **MTU-P03** 테넌트 관리 서비스 | 2026-04-05 | 87.5% | `docs/archive/2026-04/MTU-P03-tenant-service/` |
+| **MTU-P04** API 게이트웨이 | 2026-04-05 | 66.7% | `docs/archive/2026-04/MTU-P04-api-gateway/` |
 
 ## av-skill 요약
 
@@ -210,6 +215,37 @@
 
 ---
 
+## MTU-P00 공통 기반 설정 요약
+
+- **설명**: pnpm workspaces + Turborepo 모노레포, PostgreSQL 16 + Prisma 6, Docker Compose, 공통 패키지 5종
+- **PDCA 사이클**: Plan -> Design -> Do -> Report -> Archive
+- **최종 매치율**: 100% (10/10 FR 완료)
+- **산출물**: 모노레포 루트 설정, Prisma 스키마 18개 모델, 공통 패키지 (types, auth-sdk, audit-sdk, ui, business-plugin-sdk)
+- **아카이브 경로**: `docs/archive/2026-04/MTU-P00-common-foundation/`
+
+---
+
+## MTU-P01 인증 서비스 요약
+
+- **설명**: JWT RS256 인증/인가, RBAC 5종 역할, 멀티테넌트 세션 격리, Redis 블랙리스트, 계정 잠금
+- **PDCA 사이클**: Plan -> Design -> Do -> Check (100% MUST) -> Report -> Archive
+- **최종 매치율**: 100% (MUST 10/10 통과, SHOULD 2건 DEFER)
+- **산출물**: auth-service 15개 파일 (핸들러 4, 미들웨어 2, 라이브러리 4, 스키마 1, 라우트 1, 진입점 1, Dockerfile 1)
+- **CSAP 매핑**: D-08-01~D-08-08 전수 구현, D-06-01 감사 로그 연동
+- **아카이브 경로**: `docs/archive/2026-04/MTU-P01-auth-service/`
+- **문서**:
+  - `MTU-P01-auth-service.plan.md` -- Plan 문서
+  - `MTU-P01-auth-service.design.md` -- Design 문서
+  - `MTU-P01-auth-service.analysis.md` -- 갭 분석
+  - `MTU-P01-auth-service.report.md` -- 완료 보고서
+
+---
+
 > IDX-GAP-1/IDX-GAP-2 수정 (2026-04-05): MTU-C5, MTU-C7 요약 섹션 추가 | Implementer Agent
 > MTU-U1 추가 (2026-04-05): 공공 SaaS UI/UX 디자인 시스템 PDCA 완료 | PM Agent
 > 아카이브 정리 (2026-04-05): MTU-U1 아카이브 이동, 중복 파일 삭제, MTU-C6 원본 보존, docs/*/mtus/ 완전 정리 | PM Team Lead
+> MTU-P00 추가 (2026-04-05): 플랫폼 공통 기반 설정 PDCA 완료 (Phase P0) | PM Agent
+> MTU-P01 추가 (2026-04-05): 인증 서비스 PDCA 완료 (Phase P1) -- MUST 100%, CSAP D-08 전수 | PM Agent
+> MTU-P02 추가 (2026-04-05): 사용자 관리 서비스 PDCA 완료 -- MUST 7/9, CRUD+역할+비밀번호 구현 | PM Agent
+> MTU-P03 추가 (2026-04-05): 테넌트 관리 서비스 PDCA 완료 -- 87.5%, N2SF N-03 격리 미들웨어 완비 | PM Agent
+> MTU-P04 추가 (2026-04-05): API 게이트웨이 PDCA 완료 -- 66.7%, 프록시14개+Rate Limit+CORS | PM Agent
