@@ -26,7 +26,7 @@
 | **MTU-I4** 네트워크 보안 + OpenTelemetry | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-I4-network-otel/` |
 | **MTU-I5** N2SF 레퍼런스 아키텍처 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-I5-n2sf-architecture/` |
 | **MTU-A3a** 감리 산출물 T03~T04 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-A3a-audit-t01-t04/` |
-| **MTU-U1** 공공기관 SaaS UI/UX 디자인 시스템 | 2026-04-05 | 100% | Plan + Design + Report (설계 문서 MTU) |
+| **MTU-U1** 공공기관 SaaS UI/UX 디자인 시스템 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-U1-ui-design-system/` |
 | **MTU-C6b** ISMS-P 보호 분야 + 개인정보 보호조치 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-C6b-isms-p-protection/` |
 | **MTU-A1** AI 보안 게이트웨이 + MCP 통합 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-A1-ai-gateway-mcp/` |
 | **MTU-A2** LM Studio 연동 가이드 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-A2-lmstudio-guide/` |
@@ -195,10 +195,16 @@
 - **기술 스택**: Next.js 15, React 19, Tailwind CSS v4, shadcn/ui CLI v4, Radix UI, Zustand 5, AI SDK 5, Motion v12, dnd-kit, Storybook 8
 - **주요 성과**: 3계층 디자인 토큰 95개+, 테마 5종, 다크모드 3모드, 반응형 4단계, AI UI 6종, KWCAG 2.2 33항목 전수 매트릭스, Atomic Design 41개 컴포넌트, KRDS 14개 매핑
 - **후속 영향**: MTU-E2(멀티테넌시), MTU-A1(AI 게이트웨이), MTU-A5(Docusaurus), MTU-A6(대시보드) 연계
+- **아카이브 경로**: `docs/archive/2026-04/MTU-U1-ui-design-system/`
 - **문서**:
   - `MTU-U1-ui-design-system.plan.md` — Plan 문서
   - `MTU-U1-ui-design-system.design.md` — Design 문서
+  - `MTU-U1-impl-S1S2-tokens-layout.md` — 구현 상세 S1~S2
+  - `MTU-U1-impl-S3-tenant-ai.md` — 구현 상세 S3
+  - `MTU-U1-impl-S4-dnd-a11y-storybook.md` — 구현 상세 S4
   - `MTU-U1.report.md` — 완료 보고서
+  - `MTU-U1-review-typescript.md` — TypeScript 리뷰
+  - `MTU-U1-review-security.md` — 보안 리뷰
 
 ---
 
