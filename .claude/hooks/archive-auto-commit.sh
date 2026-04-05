@@ -3,7 +3,9 @@
 # Claude Code PostToolUse 훅 — archive 디렉터리에 report.md 추가 시 자동 git 커밋
 #
 # 트리거: Write 도구로 docs/archive/**/*.report.md 작성 완료 시
-# 동작:   해당 MTU 아카이브 디렉터리 전체 + 매칭 design.md 자동 스테이징 후 커밋
+# 동작1:  해당 MTU 아카이브 디렉터리 전체 자동 스테이징 후 커밋
+# 동작2:  PDCA 진행 폴더(01-plan, 02-design, 03-analysis, 03-report, 04-report)의
+#         동일 MTU 파일을 git rm으로 정리 후 커밋
 
 set -euo pipefail
 
@@ -64,7 +66,7 @@ TITLE=$(grep -m1 "^# " "$FILE_PATH" 2>/dev/null | sed 's/^# //' | head -c 60 || 
 echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"event\":\"archive-auto-commit\",\"mtu\":\"${MTU_ID}\",\"dir\":\"${ARCHIVE_DIR}\"}" \
   >> .claude/audit.jsonl 2>/dev/null || true
 
-# 자동 커밋
+# 자동 커밋 (아카이브)
 git commit -m "$(cat <<EOF
 archive(${MTU_ID}): ${TITLE}
 
@@ -74,4 +76,36 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 EOF
 )"
 
-echo "[archive-hook] 자동 커밋 완료: archive(${MTU_ID}) — ${TITLE}"
+echo "[archive-hook] 아카이브 커밋 완료: archive(${MTU_ID}) — ${TITLE}"
+
+# ── PDCA 진행 파일 정리 ──────────────────────────────────────────────────────
+# 아카이브 완료 후 PDCA 진행 폴더의 동일 MTU 파일을 git rm으로 제거
+
+PDCA_TARGETS=()
+for f in \
+  "docs/01-plan/mtus/${DIR_NAME}.plan.md" \
+  "docs/02-design/mtus/${DIR_NAME}.design.md" \
+  "docs/03-analysis/features/${DIR_NAME}.analysis.md" \
+  "docs/03-report/mtus/${MTU_ID}.report.md" \
+  "docs/04-report/features/${DIR_NAME}.report.md" \
+  "docs/04-report/${DIR_NAME}.report.md"; do
+  if [[ -f "$f" ]]; then
+    PDCA_TARGETS+=("$f")
+  fi
+done
+
+if [[ ${#PDCA_TARGETS[@]} -gt 0 ]]; then
+  git rm "${PDCA_TARGETS[@]}"
+  git commit -m "$(cat <<EOF
+refactor(docs): ${MTU_ID} PDCA 진행 파일 ${#PDCA_TARGETS[@]}개 정리 (아카이브 완료)
+
+아카이브 경로: ${ARCHIVE_DIR}
+제거 파일: ${PDCA_TARGETS[*]}
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+EOF
+)"
+  echo "[archive-hook] PDCA 파일 정리 완료: ${MTU_ID} (${#PDCA_TARGETS[@]}개 제거)"
+else
+  echo "[archive-hook] PDCA 정리 대상 없음: ${MTU_ID}"
+fi
