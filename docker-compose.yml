@@ -1,9 +1,29 @@
-# 공공기관 SaaS 플랫폼 — 로컬 개발환경
-# Design Ref: D-P00.7 Docker Compose
-# Plan SC: FR-P00.7
-version: "3.9"
+# 공공기관 SaaS 플랫폼 — 전체 서비스 Docker Compose
+# Design Ref: DESIGN-MTU-DEP2
+# Plan SC: FR-DEP2.1~FR-DEP2.9
+# CSAP: D-11 가상화 보안
+
+x-service-common: &service-common
+  restart: unless-stopped
+  networks:
+    - saas-network
+  deploy:
+    resources:
+      limits:
+        memory: 256M
+
+x-service-env: &service-env
+  NODE_ENV: ${NODE_ENV:-production}
+  DATABASE_URL: postgresql://${DB_USER:-saas}:${DB_PASSWORD:-saas_dev_2026}@postgres:5432/${DB_NAME:-saas_platform}
+  REDIS_URL: redis://default:${REDIS_PASSWORD:-redis_dev_2026}@redis:6379
+  JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
 
 services:
+  # ============================================================
+  # 인프라 서비스 (3종)
+  # ============================================================
+
   postgres:
     image: postgres:16-alpine
     container_name: saas-postgres
@@ -20,6 +40,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - saas-network
     restart: unless-stopped
 
   redis:
@@ -35,6 +57,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - saas-network
     restart: unless-stopped
 
   minio:
@@ -54,8 +78,310 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - saas-network
     restart: unless-stopped
 
+  # ============================================================
+  # 마이크로서비스 (15종) — Plan SC: FR-DEP2.1
+  # ============================================================
+
+  # --- 핵심 인프라 서비스 ---
+
+  api-gateway:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/api-gateway/Dockerfile
+    container_name: saas-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      <<: *service-env
+      API_GATEWAY_PORT: "3000"
+      AUTH_SERVICE_URL: http://auth-service:3001
+      USER_SERVICE_URL: http://user-service:3002
+      TENANT_SERVICE_URL: http://tenant-service:3003
+      MENU_SERVICE_URL: http://menu-service:3004
+      CATALOG_SERVICE_URL: http://saas-catalog-service:3005
+      SUBSCRIPTION_SERVICE_URL: http://subscription-service:3006
+      BILLING_SERVICE_URL: http://billing-service:3007
+      CRM_SERVICE_URL: http://crm-service:3008
+      AI_SERVICE_URL: http://ai-service:3009
+      NOTIFICATION_SERVICE_URL: http://notification-service:3010
+      FILE_SERVICE_URL: http://file-service:3011
+      AUDIT_SERVICE_URL: http://audit-service:3012
+      COMPLIANCE_SERVICE_URL: http://compliance-service:3013
+      SECURITY_MONITOR_URL: http://security-monitor-service:3014
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  auth-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/auth-service/Dockerfile
+    container_name: saas-auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      <<: *service-env
+      AUTH_SERVICE_PORT: "3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # --- 사용자/테넌트 관리 ---
+
+  user-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/user-service/Dockerfile
+    container_name: saas-user-service
+    ports:
+      - "3002:3002"
+    environment:
+      <<: *service-env
+      USER_SERVICE_PORT: "3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  tenant-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/tenant-service/Dockerfile
+    container_name: saas-tenant-service
+    ports:
+      - "3003:3003"
+    environment:
+      <<: *service-env
+      TENANT_SERVICE_PORT: "3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # --- 비즈니스 서비스 ---
+
+  menu-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/menu-service/Dockerfile
+    container_name: saas-menu-service
+    ports:
+      - "3004:3004"
+    environment:
+      <<: *service-env
+      MENU_SERVICE_PORT: "3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  saas-catalog-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/saas-catalog-service/Dockerfile
+    container_name: saas-catalog-service
+    ports:
+      - "3005:3005"
+    environment:
+      <<: *service-env
+      CATALOG_SERVICE_PORT: "3005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  subscription-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/subscription-service/Dockerfile
+    container_name: saas-subscription-service
+    ports:
+      - "3006:3006"
+    environment:
+      <<: *service-env
+      SUBSCRIPTION_SERVICE_PORT: "3006"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  billing-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/billing-service/Dockerfile
+    container_name: saas-billing-service
+    ports:
+      - "3007:3007"
+    environment:
+      <<: *service-env
+      BILLING_SERVICE_PORT: "3007"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  crm-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/crm-service/Dockerfile
+    container_name: saas-crm-service
+    ports:
+      - "3008:3008"
+    environment:
+      <<: *service-env
+      CRM_SERVICE_PORT: "3008"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # --- AI/알림/파일 ---
+
+  ai-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/ai-service/Dockerfile
+    container_name: saas-ai-service
+    ports:
+      - "3009:3009"
+    environment:
+      <<: *service-env
+      AI_SERVICE_PORT: "3009"
+      LM_STUDIO_URL: ${LM_STUDIO_URL:-http://host.docker.internal:1234}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  notification-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/notification-service/Dockerfile
+    container_name: saas-notification-service
+    ports:
+      - "3010:3010"
+    environment:
+      <<: *service-env
+      NOTIFICATION_SERVICE_PORT: "3010"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  file-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/file-service/Dockerfile
+    container_name: saas-file-service
+    ports:
+      - "3011:3011"
+    environment:
+      <<: *service-env
+      FILE_SERVICE_PORT: "3011"
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: ${MINIO_USER:-minio_admin}
+      MINIO_SECRET_KEY: ${MINIO_PASSWORD:-minio_dev_2026}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  # --- 감사/준수/보안 ---
+
+  audit-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/audit-service/Dockerfile
+    container_name: saas-audit-service
+    ports:
+      - "3012:3012"
+    environment:
+      <<: *service-env
+      AUDIT_SERVICE_PORT: "3012"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  compliance-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/compliance-service/Dockerfile
+    container_name: saas-compliance-service
+    ports:
+      - "3013:3013"
+    environment:
+      <<: *service-env
+      COMPLIANCE_SERVICE_PORT: "3013"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  security-monitor-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/security-monitor-service/Dockerfile
+    container_name: saas-security-monitor
+    ports:
+      - "3014:3014"
+    environment:
+      <<: *service-env
+      SECURITY_MONITOR_PORT: "3014"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ============================================================
+  # 포털 (Next.js) — Plan SC: FR-DEP2.8
+  # ============================================================
+
+  portal:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/apps/portal/Dockerfile
+    container_name: saas-portal
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: "4000"
+      NEXT_PUBLIC_API_URL: http://api-gateway:3000
+    depends_on:
+      api-gateway:
+        condition: service_started
+
+# ============================================================
+# 네트워크 — Plan SC: FR-DEP2.4
+# ============================================================
+networks:
+  saas-network:
+    driver: bridge
+
+# ============================================================
+# 볼륨
+# ============================================================
 volumes:
   postgres_data:
     driver: local
