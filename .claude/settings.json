@@ -74,6 +74,17 @@
             "async": true
           }
         ]
+      },
+      {
+        "_id": "post:write:archive-auto-commit",
+        "_desc": "archive 디렉터리에 *.report.md 추가 시 MTU 단위 자동 git 커밋 (PDCA 완료 신호)",
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /data/ai-saas/.claude/hooks/archive-auto-commit.sh"
+          }
+        ]
       }
     ],
 
