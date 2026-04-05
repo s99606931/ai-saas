@@ -7,6 +7,9 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// 시드 실행: cd prisma/seed && npm install && npx ts-node index.ts
+// 또는 루트에서: npx ts-node --project prisma/seed/tsconfig.json prisma/seed/index.ts
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")

@@ -101,9 +101,12 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
       return;
     }
 
-    // 동적 프록시 전달 (undici fetch)
+    // 동적 프록시 전달 (undici fetch) — 쿼리스트링 보존
     const targetPath = params['*'] || '';
-    const targetUrl = `${pluginEntry.url}/${targetPath}`;
+    const queryString = (request.url.split('?')[1]) ?? '';
+    const targetUrl = queryString
+      ? `${pluginEntry.url}/${targetPath}?${queryString}`
+      : `${pluginEntry.url}/${targetPath}`;
 
     try {
       const proxyResponse = await fetch(targetUrl, {

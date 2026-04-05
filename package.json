@@ -1,0 +1,27 @@
+{
+  "name": "@public-saas/workspace",
+  "private": true,
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "prisma": "^6.19.3",
+    "tsx": "^4.19.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "^2.4.3"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed/index.ts"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "bcrypt",
+      "bcryptjs",
+      "esbuild",
+      "prisma",
+      "sharp"
+    ]
+  }
+}

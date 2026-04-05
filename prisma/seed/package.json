@@ -1,0 +1,20 @@
+{
+  "name": "@public-saas/seed",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "seed": "ts-node --esm index.ts",
+    "seed:js": "node dist/index.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.0",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.0.0",
+    "prisma": "^6.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.0"
+  }
+}
