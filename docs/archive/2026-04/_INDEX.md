@@ -204,9 +204,12 @@
   - `MTU-U1-impl-S4-dnd-a11y-storybook.md` — 구현 상세 S4
   - `MTU-U1.report.md` — 완료 보고서
   - `MTU-U1-review-typescript.md` — TypeScript 리뷰
+  - `MTU-U1-review-typescript.md` — TypeScript 리뷰
   - `MTU-U1-review-security.md` — 보안 리뷰
+  - `MTU-U1-review-gap.md` — 갭 분석 리뷰
 
 ---
 
 > IDX-GAP-1/IDX-GAP-2 수정 (2026-04-05): MTU-C5, MTU-C7 요약 섹션 추가 | Implementer Agent
 > MTU-U1 추가 (2026-04-05): 공공 SaaS UI/UX 디자인 시스템 PDCA 완료 | PM Agent
+> 아카이브 정리 (2026-04-05): MTU-U1 아카이브 이동, 중복 파일 삭제, MTU-C6 원본 보존, docs/*/mtus/ 완전 정리 | PM Team Lead
