@@ -1,0 +1,58 @@
+# ============================================================
+# 공공기관 SaaS 프레임워크 .gitignore
+# CLAUDE.md 절대 제약: .env, secrets.* 커밋 절대 금지
+# ============================================================
+
+# ─── 환경 변수 / 시크릿 (커밋 절대 금지) ─────────────────────
+.env
+.env.*
+!.env.example
+secrets.*
+*credential*
+*.pem
+*.key
+*.cert
+.npmrc
+
+# ─── Node.js 의존성 ───────────────────────────────────────
+node_modules/
+**/node_modules/
+
+# ─── 빌드 산출물 ───────────────────────────────────────────
+dist/
+build/
+.next/
+**/.next/
+*.tsbuildinfo
+**/*.tsbuildinfo
+.turbo/
+**/.turbo/
+
+# ─── 런타임 / 캐시 ─────────────────────────────────────────
+.cache/
+**/.cache/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── 테스트 산출물 ─────────────────────────────────────────
+playwright-report/
+test-results/
+coverage/
+.nyc_output/
+
+# ─── bkit 런타임 (세션 임시 파일) ────────────────────────────
+.bkit/snapshots/
+
+# ─── 에이전트 로컬 상태 (서비스별 하위 .claude/) ──────────────
+platform/services/**/.claude/
+
+# ─── IDE / OS ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
