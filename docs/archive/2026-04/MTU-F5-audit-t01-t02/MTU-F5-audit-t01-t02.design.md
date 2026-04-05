@@ -20,7 +20,7 @@
 | **WHO** | PM/기획자 (사업계획서 작성), 분석 담당 (요구사항정의서 작성), 감리관 (검토) |
 | **RISK** | 감리기준 필수 항목 누락, ID 체계 불일치, 추적성 매트릭스 미연계 |
 | **SUCCESS** | T01 10+2 필수 섹션, T02 8 필수 섹션, 5종 ID 체계, CSAP 교차 참조 |
-| **SCOPE** | `03-audit-docs/` 디렉토리 2개 파일 (T01-business-plan.md, T02-requirements.md) |
+| **SCOPE** | `05-audit-docs/` 디렉토리 2개 파일 (T01-business-plan.md, T02-requirements.md) |
 
 ---
 
@@ -63,8 +63,8 @@
 
 ## 3. 구현 순서
 
-1. `03-audit-docs/T01-business-plan.md` -- 감리 사업계획서 템플릿
-2. `03-audit-docs/T02-requirements.md` -- 감리 요구사항정의서 템플릿
+1. `05-audit-docs/T01-business-plan.md` -- 감리 사업계획서 템플릿
+2. `05-audit-docs/T02-requirements.md` -- 감리 요구사항정의서 템플릿
 
 ---
 

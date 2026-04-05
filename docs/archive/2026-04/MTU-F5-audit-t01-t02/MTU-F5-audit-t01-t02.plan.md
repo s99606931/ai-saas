@@ -27,8 +27,8 @@
 
 | 파일 | 문서 유형 | 핵심 내용 |
 |------|---------|---------|
-| `04-audit-compliance/templates/T01-business-plan.md` | 감리 템플릿형 | 사업계획서 — 사업목적·범위·예산·일정·위험 |
-| `04-audit-compliance/templates/T02-requirements.md` | 감리 템플릿형 | 요구사항정의서 — FR/NFR/INFR 전수, ID 체계 적용 |
+| `06-audit-compliance/templates/T01-business-plan.md` | 감리 템플릿형 | 사업계획서 — 사업목적·범위·예산·일정·위험 |
+| `06-audit-compliance/templates/T02-requirements.md` | 감리 템플릿형 | 요구사항정의서 — FR/NFR/INFR 전수, ID 체계 적용 |
 
 ---
 

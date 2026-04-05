@@ -27,8 +27,8 @@
 
 | 파일 | 위치 | 설명 |
 |------|------|------|
-| T01-business-plan.md | `docs/framework/03-audit-docs/` | 감리 사업계획서 템플릿 -- 10섹션 + 부록 2개, 감리관 확인란 |
-| T02-requirements.md | `docs/framework/03-audit-docs/` | 감리 요구사항정의서 템플릿 -- 8섹션, 5종 ID 체계, 추적성 준비 |
+| T01-business-plan.md | `docs/framework/05-audit-docs/` | 감리 사업계획서 템플릿 -- 10섹션 + 부록 2개, 감리관 확인란 |
+| T02-requirements.md | `docs/framework/05-audit-docs/` | 감리 요구사항정의서 템플릿 -- 8섹션, 5종 ID 체계, 추적성 준비 |
 
 ---
 
