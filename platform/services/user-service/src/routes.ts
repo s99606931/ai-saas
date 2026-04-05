@@ -9,6 +9,21 @@ import { changePasswordHandler } from './handlers/password.handler.js';
 import { requestPasswordResetHandler, confirmPasswordResetHandler } from './handlers/password-reset.handler.js';
 
 export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
+  // 서비스 수준 내부 인증 (CSAP D-08: 심층 방어)
+  // API 게이트웨이가 인증 후 x-internal-service-key 헤더를 주입
+  const internalKey = process.env['INTERNAL_SERVICE_KEY'];
+  if (internalKey) {
+    app.addHook('onRequest', async (request, reply) => {
+      const provided = request.headers['x-internal-service-key'];
+      if (provided !== internalKey) {
+        await reply.status(401).send({
+          success: false,
+          error: { code: 'UNAUTHORIZED', message: '내부 서비스 인증 실패' },
+        });
+      }
+    });
+  }
+
   // Plan SC: FR-P02.2
   app.get('/users', listUsersHandler);
   app.get('/users/:id', getUserHandler);

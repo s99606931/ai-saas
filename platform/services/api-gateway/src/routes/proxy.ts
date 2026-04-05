@@ -9,10 +9,27 @@ import { dataGradeMiddleware } from '../middleware/data-grade.middleware.js';
 
 const AUTH_SERVICE_URL = `http://localhost:${process.env['AUTH_SERVICE_PORT'] ?? '3001'}`;
 
+interface JwtUser {
+  sub?: string;
+  tenantId?: string;
+  role?: string;
+  permissions?: string[];
+}
+
+/** 역할별 기본 권한 매핑 (CSAP D-08-05) */
+const ROLE_PERMISSIONS: Record<string, string[]> = {
+  SUPER_ADMIN: ['audit:read', 'security:read', 'admin:all'],
+  TENANT_ADMIN: ['audit:read'],
+  AUDITOR: ['audit:read', 'security:read'],
+  USER: [],
+  VIEWER: [],
+};
+
 /**
  * 인증 검사 preHandler (FR-P04.2)
  * auth-service의 /auth/verify 엔드포인트를 통해 JWT 검증
  * CSAP D-08-01: 중앙 인증 게이트웨이
+ * 인증 성공 시 x-user-id, x-user-tenant-id, x-user-role 헤더 주입 (하위 서비스 actor 추적용)
  */
 async function authPreHandler(
   request: FastifyRequest,
@@ -41,14 +58,53 @@ async function authPreHandler(
       return;
     }
 
-    const { data } = await verifyResponse.json() as { data: unknown };
-    (request as FastifyRequest & { user?: unknown }).user = data;
+    const { data } = await verifyResponse.json() as { data: JwtUser };
+    (request as FastifyRequest & { user?: JwtUser }).user = data;
+
+    // 하위 서비스 actor 추적 및 테넌트 격리를 위한 헤더 주입 (CSAP D-06, D-08)
+    const mutableHeaders = request.headers as Record<string, string | undefined>;
+    mutableHeaders['x-user-id'] = data.sub ?? 'anonymous';
+    mutableHeaders['x-user-tenant-id'] = data.tenantId ?? '';
+    mutableHeaders['x-user-role'] = data.role ?? '';
+    mutableHeaders['x-internal-service-key'] = process.env['INTERNAL_SERVICE_KEY'] ?? '';
   } catch {
     await reply.status(401).send({
       success: false,
       error: { code: 'AUTH_SERVICE_UNAVAILABLE', message: '인증 서비스에 연결할 수 없습니다' },
     });
   }
+}
+
+/**
+ * RBAC 권한 검사 preHandler 팩토리 (FR-P04.2, CSAP D-08-05)
+ * service-registry에 선언된 requiredPermissions를 JWT 클레임과 비교
+ */
+function makePermissionPreHandler(requiredPermissions: string[]) {
+  return async function permissionPreHandler(
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ): Promise<void> {
+    const user = (request as FastifyRequest & { user?: JwtUser }).user;
+    if (!user) {
+      await reply.status(401).send({
+        success: false,
+        error: { code: 'AUTH_REQUIRED', message: '인증이 필요합니다' },
+      });
+      return;
+    }
+
+    const userPermissions = user.permissions ?? ROLE_PERMISSIONS[user.role ?? ''] ?? [];
+    const hasAll = requiredPermissions.every(
+      (p) => userPermissions.includes(p) || userPermissions.includes('admin:all'),
+    );
+
+    if (!hasAll) {
+      await reply.status(403).send({
+        success: false,
+        error: { code: 'FORBIDDEN', message: '이 리소스에 접근할 권한이 없습니다' },
+      });
+    }
+  };
 }
 
 /**
@@ -71,12 +127,27 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
       preHandlers.push(dataGradeMiddleware(['O']));
     }
 
+    // FR-P04.2 RBAC: requiredPermissions 검사 (CSAP D-08-05)
+    if (entry.requiredPermissions?.length) {
+      preHandlers.push(makePermissionPreHandler(entry.requiredPermissions));
+    }
+
+    // @fastify/http-proxy는 단일 함수 preHandler만 허용 — 복합 함수로 래핑
+    const compositePreHandler = preHandlers.length > 0
+      ? async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
+          for (const handler of preHandlers) {
+            await handler(req, reply);
+            if (reply.sent) return;
+          }
+        }
+      : undefined;
+
     await app.register(httpProxy, {
       upstream: entry.url,
       prefix: `/api/v1/${serviceId}`,
       rewritePrefix: `/${serviceId === 'auth' ? 'auth' : serviceId}`,
       http2: false,
-      preHandler: preHandlers.length > 0 ? preHandlers : undefined,
+      preHandler: compositePreHandler,
     });
 
     app.log.info(`프록시 등록: /api/v1/${serviceId} -> ${entry.url}${entry.requireAuth ? ' [인증]' : ''}${serviceId === 'ai' ? ' [등급검증]' : ''}`);
@@ -132,7 +203,7 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
         ))
         .send(responseBody);
     } catch (error) {
-      app.log.error(`동적 프록시 실패: ${targetUrl}`, error);
+      app.log.error({ err: error }, `동적 프록시 실패: ${targetUrl}`);
       await reply.status(502).send({
         success: false,
         error: {

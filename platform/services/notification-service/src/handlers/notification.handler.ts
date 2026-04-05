@@ -76,9 +76,10 @@ export async function sendNotificationHandler(
   });
 
   // 감사 로그 (FR-P11.5, CSAP D-06)
+  const sendActor = (request.headers['x-user-id'] as string) || 'system';
   await logNotificationEvent(
     'NOTIFICATION_SENT',
-    'system',
+    sendActor,
     notification.id,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
@@ -155,9 +156,10 @@ export async function sendFromTemplateHandler(
     },
   });
 
+  const templateActor = (request.headers['x-user-id'] as string) || 'system';
   await logNotificationEvent(
     'NOTIFICATION_SENT_FROM_TEMPLATE',
-    'system',
+    templateActor,
     notification.id,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',

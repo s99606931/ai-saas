@@ -48,7 +48,7 @@ async function auditLoggerPlugin(app: FastifyInstance): Promise<void> {
 
   // onResponse: 감사 로그 기록
   app.addHook('onResponse', async (request: FastifyRequest, reply: FastifyReply) => {
-    const url = request.url.split('?')[0];
+    const url = request.url.split('?')[0] ?? request.url;
 
     // 헬스체크 경로 제외
     if (EXCLUDED_PATHS.has(url)) return;

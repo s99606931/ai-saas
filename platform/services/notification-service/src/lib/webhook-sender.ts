@@ -23,14 +23,15 @@ function isInternalUrl(urlString: string): boolean {
 
     if (blockedPatterns.includes(hostname)) return true;
 
-    // 사설 IP 대역 차단
+    // 사설 IP 대역 및 클라우드 메타데이터 엔드포인트 차단 (CSAP D-12-04 SSRF 방지)
     const parts = hostname.split('.');
     if (parts.length === 4) {
-      const first = parseInt(parts[0], 10);
-      const second = parseInt(parts[1], 10);
+      const first = parseInt(parts[0] ?? '', 10);
+      const second = parseInt(parts[1] ?? '', 10);
       if (first === 10) return true;
       if (first === 172 && second >= 16 && second <= 31) return true;
       if (first === 192 && second === 168) return true;
+      if (first === 169 && second === 254) return true; // 클라우드 메타데이터 (AWS/GCP/Azure)
     }
 
     return false;

@@ -29,7 +29,8 @@ const updateUserSchema = z.object({
 
 /**
  * 사용자 목록 조회 (테넌트 격리)
- * CSAP D-08-05: 테넌트 범위 내에서만 조회
+ * CSAP D-08-05: JWT 클레임 기반 테넌트 강제 격리
+ * SUPER_ADMIN만 tenantId 파라미터로 교차 테넌트 조회 가능
  */
 export async function listUsersHandler(
   request: FastifyRequest<{ Querystring: { page?: string; pageSize?: string; tenantId?: string } }>,
@@ -37,9 +38,25 @@ export async function listUsersHandler(
 ): Promise<void> {
   const page = parseInt(request.query.page ?? '1', 10);
   const pageSize = Math.min(parseInt(request.query.pageSize ?? '20', 10), 100);
-  const tenantId = request.query.tenantId;
 
-  const where = tenantId ? { tenantId } : {};
+  // 게이트웨이가 주입한 JWT 클레임 헤더에서 테넌트 ID 추출
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+
+  // SUPER_ADMIN은 쿼리 파라미터로 테넌트 지정 가능, 그 외는 JWT 테넌트로 강제
+  const tenantId = jwtRole === 'SUPER_ADMIN'
+    ? (request.query.tenantId ?? jwtTenantId)
+    : jwtTenantId;
+
+  if (!tenantId) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'TENANT_REQUIRED', message: '테넌트 ID가 필요합니다' },
+    });
+    return;
+  }
+
+  const where = { tenantId };
 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
@@ -165,9 +182,10 @@ export async function createUserHandler(
     });
 
     // 감사 로그 기록 (FR-P02.10, CSAP D-06)
+    const actor = (request.headers['x-user-id'] as string) || 'system';
     await logUserEvent(
       'USER_CREATED',
-      'system',
+      actor,
       user.id,
       tenantId,
       request.ip,
@@ -252,9 +270,10 @@ export async function deleteUserHandler(
   });
 
   // 감사 로그 기록 (FR-P02.10, CSAP D-06)
+  const deactivateActor = (request.headers['x-user-id'] as string) || 'system';
   await logUserEvent(
     'USER_DEACTIVATED',
-    'system',
+    deactivateActor,
     request.params.id,
     existingUser.tenantId,
     request.ip,
@@ -296,9 +315,10 @@ export async function reactivateUserHandler(
   });
 
   // 감사 로그 기록 (CSAP D-06)
+  const reactivateActor = (request.headers['x-user-id'] as string) || 'system';
   await logUserEvent(
     'USER_REACTIVATED',
-    'system',
+    reactivateActor,
     request.params.id,
     existingUser.tenantId,
     request.ip,
