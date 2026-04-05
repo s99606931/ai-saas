@@ -11,11 +11,11 @@ interface TabItem {
 }
 
 const TABS: TabItem[] = [
-  { id: 'home', label: '홈', icon: '🏠', href: '/' },
-  { id: 'services', label: '서비스', icon: '📦', href: '/services' },
-  { id: 'ai', label: 'AI', icon: '🤖', href: '/ai' },
-  { id: 'notifications', label: '알림', icon: '🔔', href: '/notifications' },
-  { id: 'settings', label: '설정', icon: '⚙️', href: '/settings' },
+  { id: 'home', label: '홈', icon: '🏠', href: '/admin/dashboard' },
+  { id: 'services', label: '서비스', icon: '📦', href: '/admin/catalog' },
+  { id: 'ai', label: 'AI', icon: '🤖', href: '/admin/ai' },
+  { id: 'notifications', label: '알림', icon: '🔔', href: '/admin/notifications' },
+  { id: 'settings', label: '설정', icon: '⚙️', href: '/admin/security' },
 ];
 
 export function BottomTabBar() {

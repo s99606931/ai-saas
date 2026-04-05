@@ -17,8 +17,8 @@ export function RecentTabsBar() {
   // FR-UP.26: 최근 표시 모드 개인 설정 (localStorage)
   const [mode, setMode] = useState<RecentMode>('tabs');
   const [tabs, setTabs] = useState<RecentTab[]>([
-    { id: '1', label: '대시보드', href: '/dashboard' },
-    { id: '2', label: '테넌트 관리', href: '/tenants' },
+    { id: '1', label: '대시보드', href: '/admin/dashboard' },
+    { id: '2', label: '테넌트 관리', href: '/admin/tenants' },
   ]);
 
   useEffect(() => {
