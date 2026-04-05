@@ -1,0 +1,21 @@
+// 보안 모니터링 서비스 감사 로깅
+// Design Ref: DESIGN-MTU-P15
+// CSAP: D-06
+
+import { createAuditLogger } from '@public-saas/audit-sdk';
+import type { AuditEntry } from '@public-saas/types';
+
+const auditLogger = createAuditLogger({
+  serviceName: 'security-service',
+  transport: async (entry: AuditEntry) => {
+    // TODO: MTU-P13 HTTP 전송으로 교체
+    console.log(JSON.stringify({ level: 'audit', ...entry }));
+  },
+});
+
+export async function logSecurityEvent(
+  action: string,
+  metadata?: Record<string, unknown>,
+): Promise<void> {
+  await auditLogger.log({ action, metadata });
+}

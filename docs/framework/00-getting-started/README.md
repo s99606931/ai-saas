@@ -36,40 +36,38 @@ docs/framework/
 │   ├── simple-grade/        ←   일반등급 빠른 시작
 │   └── standard-grade/      ←   표준등급 79항목 + D01~D13 구현 가이드
 ├── 03-n2sf/                 ← N2SF 등급 분류·영역별 통제
-├── 04-isms-p/               ← ISMS-P 체크리스트·증적 자동화
+├── 04-isms-p/               ← ISMS-P 체크리스트·이중 인증·증적 자동화
 ├── 05-audit-docs/           ← 감리 산출물 T01~T02
 ├── 06-audit-compliance/     ← 감리 T03~T07·감리 체크리스트
 ├── 07-infra/                ← 인프라 (k3s/Gitea/Flux/네트워크/OTel)
 ├── 08-ai-integration/       ← AI 보안 게이트웨이·LM Studio
 ├── 09-cc-harness/           ← CC 하네스 검증 절차서
-├── 10-oscal/                ← OSCAL 호환성 레이어
+├── 10-multitenancy/         ← 멀티테넌시 SaaS 아키텍처
 ├── 11-documentation-portal/ ← Docusaurus 문서 포털
 ├── 12-compliance-dashboard/ ← 준수 현황 대시보드
-├── 13-multitenancy/         ← 멀티테넌시 SaaS 아키텍처
 ├── 14-framework-upgrade/    ← 프레임워크 버전 관리
-└── 99-references/           ← 규정 인덱스 + 용어 사전
+└── 99-references/           ← 규정 인덱스 + 용어 사전 + OSCAL
 ```
 
 ### 모듈 상세
 
 | 디렉토리 | 모듈명 | 설명 | Phase | MTU | 상태 |
 |---------|--------|------|-------|-----|------|
-| `00-getting-started/` | 시작하기 | 진입점, 역할별 경로, 사전 요건 | 1 | MTU-F1 | 완료 |
+| `00-getting-started/` | 시작하기 | 진입점, 역할별 경로, 사전 요건, 감리/CSAP 가이드 | 1 | MTU-F1 | 완료 |
 | `01-dev-standards/` | 개발 표준 | 문서 유형 템플릿, ID 체계, 코딩 가이드, 리뷰 체크리스트 | 1 | MTU-F3 | 완료 |
 | `02-csap/` | CSAP | 일반등급 30항목 + 표준등급 79항목 + D01~D13 구현 가이드 | 1~2 | MTU-F4, C1~C3 | 완료 |
 | `03-n2sf/` | N2SF | 등급 분류, CSAP 매핑, 6개 영역 통제, 아키텍처 | 2~3 | MTU-C4~C5, I5 | 완료 |
-| `04-isms-p/` | ISMS-P | 101항목 체크리스트, 증적 자동화, 자가진단 | 3 | MTU-C6a~C6b | 진행 중 |
-| `05-audit-docs/` | 감리 T01~T02 | 사업계획서, 요구사항정의서 템플릿 | 1 | MTU-F5 | 완료 |
+| `04-isms-p/` | ISMS-P | 101항목 체크리스트, 증적 자동화, 이중 인증 절차, 자가진단 | 3 | MTU-C6a~C6b, E1 | 진행 중 |
+| `05-audit-docs/` | 감리 T01~T02 | 사업계획서, 요구사항정의서 템플릿 (참조본) | 1 | MTU-F5 | 완료 |
 | `06-audit-compliance/` | 감리 T03~T07 | 설계서, 테스트, 추적성, 감리 체크리스트 | 3~4 | MTU-A3a~A3c | 진행 중 |
 | `07-infra/` | 인프라 | k3s, Gitea CI/CD, Flux, Harbor, OTel, Policy as Code | 2~3 | MTU-I1~I4, C7~C8 | 완료 |
 | `08-ai-integration/` | AI 연동 | AI 보안 게이트웨이, MCP, LM Studio 가이드 | 4 | MTU-A1~A2 | 진행 중 |
 | `09-cc-harness/` | CC 하네스 | 하네스 구성 검증 절차서 | 1 | MTU-F6 | 완료 |
-| `10-oscal/` | OSCAL | CSAP+N2SF 기계가독형 매핑, oscal-cli 검증 | 4 | MTU-A4 | 진행 중 |
+| `10-multitenancy/` | 멀티테넌시 | N2SF 등급별 격리, Kyverno 정책, 온보딩 자동화 | 5 | MTU-E2 | 진행 중 |
 | `11-documentation-portal/` | 문서 포털 | Docusaurus 역할별 사이드바, MDX 인터랙티브 뷰어 | 4 | MTU-A5 | 진행 중 |
 | `12-compliance-dashboard/` | 준수 대시보드 | CSAP+N2SF+ISMS-P 실시간 Grafana 대시보드 | 4 | MTU-A6 | 미착수 |
-| `13-multitenancy/` | 멀티테넌시 | N2SF 등급별 격리, Kyverno 정책, 온보딩 자동화 | 5 | MTU-E2 | 미착수 |
 | `14-framework-upgrade/` | 버전 관리 | 시맨틱 버저닝, 30일 SLA, 롤백 절차 | 5 | MTU-E3 | 미착수 |
-| `99-references/` | 참조 | 외부 규정 인덱스 14건, 용어 35개, 약어 37개 | 1 | MTU-F2 | 완료 |
+| `99-references/` | 참조 | 외부 규정 인덱스 14건, 용어 35개, 약어 37개, OSCAL | 1 | MTU-F2, A4 | 완료 |
 
 ---
 
@@ -130,10 +128,17 @@ docs/framework/
 1. [prerequisites.md](prerequisites.md)에서 사전 요건을 확인하세요
 2. [quick-start.md](quick-start.md)에서 본인 역할에 맞는 15분 경로를 따라가세요
 
+### 감리·CSAP 인증을 준비한다면
+
+1. [FRAMEWORK-GUIDE.md](FRAMEWORK-GUIDE.md)에서 전체 문서 목적과 활용법을 파악하세요
+2. [AUDIT-CSAP-SUBMISSION-GUIDE.md](AUDIT-CSAP-SUBMISSION-GUIDE.md)에서 단계별 제출 절차를 확인하세요
+
 ### 참조 문서
 
 | 문서 | 위치 | 용도 |
 |------|------|------|
+| **프레임워크 문서 안내서** | `00-getting-started/FRAMEWORK-GUIDE.md` | 전체 문서 목적·활용법·감리/CSAP 가이드 |
+| **감리·CSAP 제출 가이드** | `00-getting-started/AUDIT-CSAP-SUBMISSION-GUIDE.md` | 감리·CSAP 인증 단계별 제출 절차 |
 | 외부 규정 인덱스 | `99-references/regulations-index.md` | CSAP/N2SF/감리 관련 법령 참조 |
 | 용어·약어 사전 | `99-references/glossary-and-acronyms.md` | 공공 SaaS 전문 용어 확인 |
 | 하네스 검증 | `09-cc-harness/harness-verification-guide.md` | CC 하네스 구성 검증 |
@@ -145,3 +150,4 @@ docs/framework/
 | 버전 | 일자 | 내용 | 작성자 |
 |------|------|------|--------|
 | 0.1.0 | 2026-04-05 | 최초 작성 -- 프레임워크 구조 8+1 모듈, 5개 역할 진입점, Phase 1~5 로드맵 | Claude Code (PM Lead) |
+| 0.2.0 | 2026-04-05 | 디렉토리 번호 중복 해소 — 07-isms-p→04-isms-p 통합, 10-oscal·13-multitenancy 빈 폴더 제거, 구조도·모듈 테이블 최신화 | Claude Code |

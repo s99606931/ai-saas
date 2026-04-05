@@ -1,0 +1,746 @@
+{
+  "timestamp": "2026-04-05T14:25:32.925Z",
+  "reason": "compaction",
+  "status": {
+    "version": "3.0",
+    "lastUpdated": "2026-04-05T14:25:32.725Z",
+    "activeFeatures": [
+      "public-saas-framework",
+      "scripts",
+      ".claude",
+      "packages",
+      "auth-sdk",
+      "audit-sdk",
+      "ui",
+      "business-plugin-sdk",
+      "auth-service",
+      "user-service",
+      "tenant-service",
+      "api-gateway",
+      "ai-service",
+      "audit-service"
+    ],
+    "primaryFeature": "public-saas-framework",
+    "features": {
+      "public-saas-framework": {
+        "phase": "design",
+        "level": "Dynamic",
+        "architecture": "Option C - Progressive Enhancement",
+        "planFile": "docs/01-plan/features/public-saas-framework.plan.md",
+        "designFile": "docs/02-design/features/public-saas-framework.design.md",
+        "startedAt": "2026-04-05T05:33:14.156Z",
+        "designCompletedAt": "2026-04-05T09:00:00.000Z",
+        "matchRate": null
+      },
+      "scripts": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-04-05T10:19:06.640Z",
+          "lastUpdated": "2026-04-05T11:16:25.238Z"
+        },
+        "lastFile": "/data/ai-saas/docs/framework/05-infra/k3s-wsl2/scripts/install-k3s.sh"
+      },
+      ".claude": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-04-05T11:30:55.635Z",
+          "lastUpdated": "2026-04-05T11:43:23.748Z"
+        },
+        "lastFile": "/data/ai-saas/.claude/hooks/archive-auto-commit.sh"
+      },
+      "packages": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-04-05T13:32:55.739Z",
+          "lastUpdated": "2026-04-05T13:33:30.691Z"
+        },
+        "lastFile": "/data/ai-saas/platform/packages/types/src/api.ts"
+      },
+      "auth-sdk": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-04-05T13:33:40.641Z",
+          "lastUpdated": "2026-04-05T13:34:00.045Z"
+        },
+        "lastFile": "/data/ai-saas/platform/packages/auth-sdk/src/constants.ts"
+      },
+      "audit-sdk": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-04-05T13:34:09.212Z",
+          "lastUpdated": "2026-04-05T13:34:28.925Z"
+        },
+        "lastFile": "/data/ai-saas/platform/packages/audit-sdk/src/integrity.ts"
+      },
+      "ui": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-04-05T13:34:45.237Z",
+          "lastUpdated": "2026-04-05T13:34:57.196Z"
+        },
+        "lastFile": "/data/ai-saas/platform/packages/ui/src/organisms/types.ts"
+      },
+      "business-plugin-sdk": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-04-05T13:35:07.516Z",
+          "lastUpdated": "2026-04-05T13:35:26.426Z"
+        },
+        "lastFile": "/data/ai-saas/platform/packages/business-plugin-sdk/src/register-service.ts"
+      },
+      "auth-service": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": "100%",
+        "iterationCount": 1,
+        "requirements": [
+          "FR-P01.1~FR-P01.12"
+        ],
+        "documents": {
+          "plan": "docs/archive/2026-04/MTU-P01-auth-service/MTU-P01-auth-service.plan.md",
+          "design": "docs/archive/2026-04/MTU-P01-auth-service/MTU-P01-auth-service.design.md",
+          "analysis": "docs/archive/2026-04/MTU-P01-auth-service/MTU-P01-auth-service.analysis.md",
+          "report": "docs/archive/2026-04/MTU-P01-auth-service/MTU-P01-auth-service.report.md"
+        },
+        "timestamps": {
+          "started": "2026-04-05T13:38:58.114Z",
+          "lastUpdated": "2026-04-05T14:22:20.557Z",
+          "archivedAt": "2026-04-05T15:15:00.000Z"
+        },
+        "lastFile": "/data/ai-saas/platform/services/auth-service/src/routes.ts"
+      },
+      "user-service": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": "77.8%",
+        "iterationCount": 1,
+        "requirements": [
+          "FR-P02.1~FR-P02.10"
+        ],
+        "documents": {
+          "plan": "docs/archive/2026-04/MTU-P02-user-service/MTU-P02-user-service.plan.md",
+          "design": "docs/archive/2026-04/MTU-P02-user-service/MTU-P02-user-service.design.md",
+          "analysis": "docs/archive/2026-04/MTU-P02-user-service/MTU-P02-user-service.analysis.md",
+          "report": "docs/archive/2026-04/MTU-P02-user-service/MTU-P02-user-service.report.md"
+        },
+        "timestamps": {
+          "started": "2026-04-05T13:41:58.767Z",
+          "lastUpdated": "2026-04-05T14:23:56.225Z",
+          "archivedAt": "2026-04-05T15:15:00.000Z"
+        },
+        "lastFile": "/data/ai-saas/platform/services/user-service/src/handlers/user.handler.ts"
+      },
+      "tenant-service": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": "87.5%",
+        "iterationCount": 1,
+        "requirements": [
+          "FR-P03.1~FR-P03.8"
+        ],
+        "documents": {
+          "plan": "docs/archive/2026-04/MTU-P03-tenant-service/MTU-P03-tenant-service.plan.md",
+          "design": "docs/archive/2026-04/MTU-P03-tenant-service/MTU-P03-tenant-service.design.md",
+          "analysis": "docs/archive/2026-04/MTU-P03-tenant-service/MTU-P03-tenant-service.analysis.md",
+          "report": "docs/archive/2026-04/MTU-P03-tenant-service/MTU-P03-tenant-service.report.md"
+        },
+        "timestamps": {
+          "started": "2026-04-05T13:43:00.403Z",
+          "lastUpdated": "2026-04-05T14:24:35.299Z",
+          "archivedAt": "2026-04-05T15:15:00.000Z"
+        },
+        "lastFile": "/data/ai-saas/platform/services/tenant-service/src/handlers/tenant.handler.ts"
+      },
+      "api-gateway": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": "66.7%",
+        "iterationCount": 1,
+        "requirements": [
+          "FR-P04.1~FR-P04.11"
+        ],
+        "documents": {
+          "plan": "docs/archive/2026-04/MTU-P04-api-gateway/MTU-P04-api-gateway.plan.md",
+          "design": "docs/archive/2026-04/MTU-P04-api-gateway/MTU-P04-api-gateway.design.md",
+          "analysis": "docs/archive/2026-04/MTU-P04-api-gateway/MTU-P04-api-gateway.analysis.md",
+          "report": "docs/archive/2026-04/MTU-P04-api-gateway/MTU-P04-api-gateway.report.md"
+        },
+        "timestamps": {
+          "started": "2026-04-05T13:43:52.165Z",
+          "lastUpdated": "2026-04-05T14:25:32.724Z",
+          "archivedAt": "2026-04-05T15:15:00.000Z"
+        },
+        "lastFile": "/data/ai-saas/platform/services/api-gateway/src/routes/proxy.ts"
+      },
+      "ai-service": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-04-05T13:47:08.863Z",
+          "lastUpdated": "2026-04-05T13:47:16.178Z"
+        },
+        "lastFile": "/data/ai-saas/platform/services/ai-service/src/lib/pii-masking.ts"
+      },
+      "audit-service": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-04-05T13:47:23.809Z",
+          "lastUpdated": "2026-04-05T13:47:34.306Z"
+        },
+        "lastFile": "/data/ai-saas/platform/services/audit-service/src/lib/integrity.ts"
+      }
+    },
+    "pipeline": {
+      "currentPhase": 1,
+      "level": "Dynamic",
+      "phaseHistory": []
+    },
+    "session": {
+      "startedAt": "2026-04-05T05:33:14.156Z",
+      "onboardingCompleted": false,
+      "lastActivity": "2026-04-05T14:25:32.725Z"
+    },
+    "history": [
+      {
+        "timestamp": "2026-04-05T10:19:06.649Z",
+        "feature": "scripts",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T11:16:08.475Z",
+        "feature": "scripts",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T11:16:11.928Z",
+        "feature": "scripts",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T11:16:15.545Z",
+        "feature": "scripts",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T11:16:25.240Z",
+        "feature": "scripts",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T11:30:55.637Z",
+        "feature": ".claude",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T11:43:09.795Z",
+        "feature": ".claude",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T11:43:23.750Z",
+        "feature": ".claude",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:32:55.740Z",
+        "feature": "packages",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:33:01.973Z",
+        "feature": "packages",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:33:07.747Z",
+        "feature": "packages",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:33:08.832Z",
+        "feature": "packages",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:33:15.724Z",
+        "feature": "packages",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:33:22.135Z",
+        "feature": "packages",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:33:24.389Z",
+        "feature": "packages",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:33:26.401Z",
+        "feature": "packages",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:33:30.692Z",
+        "feature": "packages",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:33:40.642Z",
+        "feature": "auth-sdk",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:33:48.499Z",
+        "feature": "auth-sdk",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:33:54.436Z",
+        "feature": "auth-sdk",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:34:00.046Z",
+        "feature": "auth-sdk",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:34:09.213Z",
+        "feature": "audit-sdk",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:34:20.171Z",
+        "feature": "audit-sdk",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:34:28.927Z",
+        "feature": "audit-sdk",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:34:45.239Z",
+        "feature": "ui",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:34:49.300Z",
+        "feature": "ui",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:34:53.588Z",
+        "feature": "ui",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:34:57.197Z",
+        "feature": "ui",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:35:07.517Z",
+        "feature": "business-plugin-sdk",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:35:13.384Z",
+        "feature": "business-plugin-sdk",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:35:26.427Z",
+        "feature": "business-plugin-sdk",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:38:58.115Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:39:01.751Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:39:23.537Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:39:30.311Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:39:42.335Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:39:47.266Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:39:58.801Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:40:20.196Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:40:27.966Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:40:40.107Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:40:42.421Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:40:52.843Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:41:01.708Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:41:58.769Z",
+        "feature": "user-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:42:02.735Z",
+        "feature": "user-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:42:27.182Z",
+        "feature": "user-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:42:31.695Z",
+        "feature": "user-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:42:40.295Z",
+        "feature": "user-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:43:00.404Z",
+        "feature": "tenant-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:43:02.858Z",
+        "feature": "tenant-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:43:21.582Z",
+        "feature": "tenant-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:43:32.033Z",
+        "feature": "tenant-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:43:52.165Z",
+        "feature": "api-gateway",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:44:05.660Z",
+        "feature": "api-gateway",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:44:13.776Z",
+        "feature": "api-gateway",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:44:16.998Z",
+        "feature": "api-gateway",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:47:08.864Z",
+        "feature": "ai-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:47:16.179Z",
+        "feature": "ai-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:47:23.810Z",
+        "feature": "audit-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T13:47:34.307Z",
+        "feature": "audit-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:02:23.358Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:02:30.094Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:21:18.655Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:21:56.269Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:22:20.558Z",
+        "feature": "auth-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:22:43.296Z",
+        "feature": "user-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:22:53.486Z",
+        "feature": "user-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:22:58.890Z",
+        "feature": "user-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:23:09.509Z",
+        "feature": "user-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:23:17.514Z",
+        "feature": "user-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:23:30.903Z",
+        "feature": "user-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:23:43.546Z",
+        "feature": "user-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:23:56.226Z",
+        "feature": "user-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:24:11.779Z",
+        "feature": "tenant-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:24:22.671Z",
+        "feature": "tenant-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:24:27.174Z",
+        "feature": "tenant-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:24:35.300Z",
+        "feature": "tenant-service",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:25:06.689Z",
+        "feature": "api-gateway",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-04-05T14:25:32.725Z",
+        "feature": "api-gateway",
+        "phase": "do",
+        "action": "updated"
+      }
+    ],
+    "stateMachine": {
+      "defaultWorkflow": "default",
+      "activeWorkflows": {},
+      "totalTransitions": 0
+    },
+    "automation": {
+      "globalLevel": 2,
+      "trustScore": 40,
+      "pendingApprovals": 0,
+      "lastGateResult": null
+    },
+    "team": {
+      "enabled": true,
+      "stateFile": ".bkit/runtime/agent-state.json",
+      "eventsFile": ".bkit/runtime/agent-events.jsonl"
+    }
+  }
+}

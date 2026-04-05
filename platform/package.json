@@ -1,0 +1,38 @@
+{
+  "name": "@public-saas/root",
+  "version": "0.1.0",
+  "private": true,
+  "description": "공공기관 SaaS 플랫폼 프레임워크 — 모노레포 루트",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v && docker compose up -d",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "audit:dead-code": "echo 'TODO: ts-prune + depcheck 설정 후 활성화'"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "prettier": "^3.4.0",
+    "turbo": "^2.4.0",
+    "typescript": "^5.7.0"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed/index.ts"
+  }
+}

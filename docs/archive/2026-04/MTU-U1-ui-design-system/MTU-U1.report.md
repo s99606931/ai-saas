@@ -146,6 +146,7 @@
 | MTU-A5 (Docusaurus 포털) | H섹션 컴포넌트 카탈로그가 문서 포털 UI에 적용 가능 |
 | MTU-A6 (준수 현황 대시보드) | F.1 대시보드 위젯 시스템이 Grafana 대시보드 UI와 연계 |
 | MTU-I1 (k3s) | A.2 standalone 출력이 k3s 컨테이너 배포와 연계 |
+| **MTU-U1-P** (플랫폼 포털 UI) | **본 MTU 후속 확장.** CONDITIONAL PASS 갭(G-01 유기체 컴포넌트, G-02 템플릿, SG-01 감사로그 DB, SG-02 IDOR)을 해결하고 플랫폼 포털 전용 컴포넌트 추가. 설계 참조: `docs/02-design/mtus/MTU-U1-P-platform-portal-ui.design.md` |
 
 ---
 

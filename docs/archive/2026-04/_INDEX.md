@@ -41,9 +41,28 @@
 | **MTU-E3** 프레임워크 버전 관리/업그레이드 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-E3-framework-upgrade/` |
 | **MTU-P00** 공통 기반 설정 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P00-common-foundation/` |
 | **MTU-P01** 인증 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P01-auth-service/` |
-| **MTU-P02** 사용자 관리 서비스 | 2026-04-05 | 77.8% | `docs/archive/2026-04/MTU-P02-user-service/` |
-| **MTU-P03** 테넌트 관리 서비스 | 2026-04-05 | 87.5% | `docs/archive/2026-04/MTU-P03-tenant-service/` |
-| **MTU-P04** API 게이트웨이 | 2026-04-05 | 66.7% | `docs/archive/2026-04/MTU-P04-api-gateway/` |
+| **MTU-P02** 사용자 관리 서비스 | 2026-04-05 | 88.9% | `docs/archive/2026-04/MTU-P02-user-service/` |
+| **MTU-P03** 테넌트 관리 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P03-tenant-service/` |
+| **MTU-P04** API 게이트웨이 | 2026-04-05 | 81.8% | `docs/archive/2026-04/MTU-P04-api-gateway/` |
+| **MTU-P05** 메뉴 관리 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P05-menu-service/` |
+| **MTU-P06** SaaS 카탈로그 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P06-saas-catalog/` |
+| **MTU-P07** 구독 관리 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P07-subscription-service/` |
+| **MTU-P08** 빌링 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P08-billing-service/` |
+| **MTU-P09** CRM 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P09-crm-service/` |
+| **MTU-P10** AI 서비스 관리 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P10-ai-service/` |
+| **MTU-P11** 알림 서비스 | 2026-04-05 | 80% | `docs/archive/2026-04/MTU-P11-notification-service/` |
+| **MTU-P12** 파일 관리 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P12-file-service/` |
+| **MTU-P13** 감사 로그 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P13-audit-service/` |
+| **MTU-P14** 준수 현황 대시보드 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P14-compliance-dashboard/` |
+| **MTU-P15** 보안 모니터링 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P15-security-monitoring/` |
+| **MTU-U1-P** 플랫폼 포털 UI | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-U1-P-platform-portal-ui/` |
+| **MTU-P16a** 관리자 포털 기본 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P16a-admin-portal-basic/` |
+| **MTU-P16b** 관리자 포털 완전체 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P16b-admin-portal-full/` |
+| **MTU-P17** 테넌트 포털 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P17-tenant-portal/` |
+| **MTU-P18** 비즈니스 플러그인 SDK | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P18-business-plugin-sdk/` |
+| **MTU-P19** 포크 가이드 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P19-fork-guide/` |
+| **MTU-P20** 바이브코딩 하네스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P20-vibecoding-harness/` |
+| **MTU-P21** 통합 테스트 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P21-integration-test/` |
 
 ## av-skill 요약
 
@@ -247,5 +266,19 @@
 > MTU-P00 추가 (2026-04-05): 플랫폼 공통 기반 설정 PDCA 완료 (Phase P0) | PM Agent
 > MTU-P01 추가 (2026-04-05): 인증 서비스 PDCA 완료 (Phase P1) -- MUST 100%, CSAP D-08 전수 | PM Agent
 > MTU-P02 추가 (2026-04-05): 사용자 관리 서비스 PDCA 완료 -- MUST 7/9, CRUD+역할+비밀번호 구현 | PM Agent
+> MTU-P02 갱신 (2026-04-05): audit-sdk 연동 완료 -- 매치율 77.8%->88.9% (FR-P02.10 PASS) | PM Agent
 > MTU-P03 추가 (2026-04-05): 테넌트 관리 서비스 PDCA 완료 -- 87.5%, N2SF N-03 격리 미들웨어 완비 | PM Agent
+> MTU-P03 갱신 (2026-04-05): audit-sdk 연동 완료 -- 매치율 87.5%->100% (FR-P03.8 PASS) | PM Agent
 > MTU-P04 추가 (2026-04-05): API 게이트웨이 PDCA 완료 -- 66.7%, 프록시14개+Rate Limit+CORS | PM Agent
+> MTU-P04 갱신 (2026-04-05): auth preHandler + dataGrade 미들웨어 + 동적 프록시 -- 매치율 66.7%->81.8% | PM Agent
+> MTU-P13 추가 (2026-04-05): 감사 로그 서비스 PDCA 완료 -- 100%, CSAP D-06 전수, SHA-256 체인 | PM Agent
+> MTU-P14 추가 (2026-04-05): 준수 현황 대시보드 PDCA 완료 -- 100%, CSAP 79항목 + N2SF 6영역 집계 | PM Agent
+> MTU-P15 추가 (2026-04-05): 보안 모니터링 PDCA 완료 -- 100%, 로그인 실패 탐지 + IP 차단 + 알림 | PM Agent
+> MTU-U1-P 추가 (2026-04-05): 플랫폼 포털 UI PDCA 완료 -- 100% (27/27 FR), AppShell+유기체5+템플릿3 | PM Agent
+> MTU-P16a 추가 (2026-04-05): 관리자 포털 기본 PDCA 완료 -- 100%, P01~P08 통합 7종 페이지 | PM Agent
+> MTU-P16b 추가 (2026-04-05): 관리자 포털 완전체 PDCA 완료 -- 100%, P09~P15 통합 7종 페이지 | PM Agent
+> MTU-P17 추가 (2026-04-05): 테넌트 포털 PDCA 완료 -- 100%, 서비스 허브+마켓플레이스+설정 | PM Agent
+> MTU-P18 추가 (2026-04-05): 비즈니스 플러그인 SDK PDCA 완료 -- 100%, registerService+CsapGuards | PM Agent
+> MTU-P19 추가 (2026-04-05): 포크 가이드 PDCA 완료 -- 100%, FORK-GUIDE.md 5단계+체크리스트 | PM Agent
+> MTU-P20 추가 (2026-04-05): 바이브코딩 하네스 PDCA 완료 -- 100%, CLAUDE.md+rules+agents 하네스 | PM Agent
+> MTU-P21 추가 (2026-04-05): 통합 테스트 PDCA 완료 -- 100%, 15개 서비스 헬스체크+CSAP 검증 | PM Agent

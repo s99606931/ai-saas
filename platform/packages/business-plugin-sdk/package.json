@@ -1,0 +1,27 @@
+{
+  "name": "@public-saas/business-plugin-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "공공기관 SaaS 플랫폼 — 비즈니스 플러그인 SDK",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@public-saas/types": "workspace:*",
+    "@public-saas/auth-sdk": "workspace:*",
+    "@public-saas/audit-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@public-saas/audit-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "공공기관 SaaS 플랫폼 — 감사 로그 서비스 (MTU-P13)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@public-saas/types": "workspace:*",
+    "@public-saas/auth-sdk": "workspace:*",
+    "@public-saas/audit-sdk": "workspace:*",
+    "@prisma/client": "^6.0.0",
+    "fastify": "^5.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}

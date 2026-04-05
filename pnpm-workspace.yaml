@@ -1,0 +1,7 @@
+# 공공기관 SaaS 플랫폼 — pnpm 워크스페이스 정의
+# Design Ref: D-P00.1 모노레포 구조
+packages:
+  - "platform/apps/*"
+  - "platform/services/*"
+  - "platform/packages/*"
+  - "business-template/*"

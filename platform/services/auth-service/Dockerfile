@@ -1,0 +1,50 @@
+# 인증 서비스 Dockerfile
+# Design Ref: DESIGN-MTU-P01
+# CSAP: D-11 가상화 보안 — non-root, 읽기 전용
+
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+# pnpm 설치
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+# 의존성 설치
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY platform/services/auth-service/package.json ./platform/services/auth-service/
+COPY platform/packages/types/package.json ./platform/packages/types/
+COPY platform/packages/auth-sdk/package.json ./platform/packages/auth-sdk/
+COPY platform/packages/audit-sdk/package.json ./platform/packages/audit-sdk/
+
+RUN pnpm install --frozen-lockfile --filter @public-saas/auth-service...
+
+# 소스 복사 + 빌드
+COPY tsconfig.base.json ./
+COPY platform/packages/ ./platform/packages/
+COPY platform/services/auth-service/ ./platform/services/auth-service/
+COPY prisma/ ./prisma/
+
+RUN pnpm --filter @public-saas/auth-service... build
+
+# 프로덕션 이미지
+FROM node:22-alpine AS runner
+
+# CSAP D-11: non-root 사용자
+RUN addgroup --system --gid 1001 saas && \
+    adduser --system --uid 1001 saas
+
+WORKDIR /app
+
+COPY --from=builder --chown=saas:saas /app/platform/services/auth-service/dist ./dist
+COPY --from=builder --chown=saas:saas /app/node_modules ./node_modules
+COPY --from=builder --chown=saas:saas /app/platform/packages/*/dist ./packages/
+
+USER saas
+
+EXPOSE 3001
+
+# 헬스체크
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
+
+CMD ["node", "dist/index.js"]

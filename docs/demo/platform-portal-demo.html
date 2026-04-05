@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>공공기관 SaaS 플랫폼 포털 — UI/UX 데모 v2 (MTU-U1-P)</title>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   Design Tokens
+═══════════════════════════════════════════════════════════ */
+:root {
+  --color-primary:         #2563eb;
+  --color-primary-hover:   #1d4ed8;
+  --color-primary-light:   #eff6ff;
+  --color-success:         #16a34a;
+  --color-warning:         #d97706;
+  --color-danger:          #dc2626;
+  --color-bg:              #f1f5f9;
+  --color-surface:         #ffffff;
+  --color-surface-hover:   #f8fafc;
+  --color-border:          #e2e8f0;
+  --color-rail-bg:         #1e293b;
+  --color-rail-hover:      #334155;
+  --color-rail-active:     #3b82f6;
+  --color-rail-text:       #94a3b8;
+  --color-rail-text-active:#ffffff;
+  --color-header-bg:       #ffffff;
+  --color-text-primary:    #0f172a;
+  --color-text-secondary:  #64748b;
+  --color-text-muted:      #94a3b8;
+  --rail-w:                52px;
+  --rail-expanded-w:       200px;
+  --navbar-h:              52px;
+  --tabs-h:                36px;
+  --sidebar-w:             240px;
+  --ai-panel-w:            360px;
+  --radius:                8px;
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:  0 4px 12px rgba(0,0,0,.12);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,.18);
+  --shadow-xl:  0 16px 48px rgba(0,0,0,.22);
+  --transition: .18s ease;
+}
+[data-theme="dark"] {
+  --color-primary:        #3b82f6;
+  --color-primary-light:  #1e3a5f;
+  --color-bg:             #0f172a;
+  --color-surface:        #1e293b;
+  --color-surface-hover:  #2d3f57;
+  --color-border:         #334155;
+  --color-header-bg:      #1e293b;
+  --color-rail-bg:        #0a1628;
+  --color-text-primary:   #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted:     #64748b;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Reset
+═══════════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--color-bg);color:var(--color-text-primary);
+  font-size:14px;line-height:1.5;height:100vh;overflow:hidden}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;border:none;background:none;font-family:inherit;font-size:inherit;color:inherit}
+input,select{font-family:inherit;font-size:inherit}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--color-border);border-radius:2px}
+
+/* ═══════════════════════════════════════════════════════════
+   App Shell — Flex Column
+═══════════════════════════════════════════════════════════ */
+.app-shell{
+  display:flex;flex-direction:column;height:100vh;overflow:hidden;
+}
+/* ── Navbar ──────────────────────────────────────────────── */
+.navbar{
+  flex-shrink:0;height:var(--navbar-h);
+  display:flex;align-items:center;gap:10px;padding:0 14px;
+  background:var(--color-header-bg);border-bottom:1px solid var(--color-border);
+  box-shadow:var(--shadow-sm);z-index:300;position:relative;
+}
+.navbar-brand{display:flex;align-items:center;gap:8px;min-width:0}
+.logo-mark{
+  width:28px;height:28px;border-radius:7px;
+  background:linear-gradient(135deg,#2563eb,#7c3aed);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;font-size:13px;flex-shrink:0
+}
+.logo-text{font-weight:700;font-size:14px;white-space:nowrap}
+.tenant-badge{
+  font-size:11px;padding:2px 7px;border-radius:10px;
+  background:var(--color-primary-light);color:var(--color-primary);
+  font-weight:600;white-space:nowrap;flex-shrink:0
+}
+.portal-switcher{
+  display:flex;border:1px solid var(--color-border);border-radius:7px;
+  padding:2px;background:var(--color-bg);flex-shrink:0
+}
+.portal-btn{
+  padding:3px 10px;border-radius:5px;font-size:12px;font-weight:500;
+  color:var(--color-text-secondary);transition:all var(--transition)
+}
+.portal-btn.active{background:var(--color-surface);color:var(--color-primary);box-shadow:var(--shadow-sm)}
+.navbar-search{
+  flex:1;max-width:400px;min-width:0;
+  display:flex;align-items:center;gap:8px;
+  background:var(--color-bg);border:1px solid var(--color-border);
+  border-radius:var(--radius);padding:5px 12px;
+  cursor:pointer;color:var(--color-text-secondary);
+  transition:border-color var(--transition)
+}
+.navbar-search:hover{border-color:var(--color-primary)}
+.navbar-search .kbd{
+  margin-left:auto;font-size:11px;padding:1px 5px;
+  border:1px solid var(--color-border);border-radius:4px;
+  background:var(--color-surface);flex-shrink:0
+}
+.navbar-right{display:flex;align-items:center;gap:4px;margin-left:auto}
+.icon-btn{
+  width:32px;height:32px;border-radius:var(--radius);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--color-text-secondary);transition:background var(--transition);
+  position:relative;font-size:16px
+}
+.icon-btn:hover{background:var(--color-surface-hover)}
+.badge-dot{
+  position:absolute;top:5px;right:5px;width:7px;height:7px;
+  border-radius:50%;background:var(--color-danger);
+  border:2px solid var(--color-header-bg)
+}
+.avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,#2563eb,#7c3aed);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:12px;cursor:pointer;flex-shrink:0
+}
+/* Recent mode toggle in navbar */
+.mode-toggle{
+  display:flex;align-items:center;gap:6px;font-size:12px;
+  color:var(--color-text-secondary);padding:4px 8px;
+  border-radius:var(--radius);background:var(--color-bg);
+  border:1px solid var(--color-border);cursor:pointer;
+  transition:all var(--transition);white-space:nowrap
+}
+.mode-toggle:hover{border-color:var(--color-primary);color:var(--color-primary)}
+
+/* ── Recent Tabs Bar — lives inside .main-area ───────────── */
+.recent-tabs-bar{
+  flex-shrink:0;height:var(--tabs-h);
+  display:none;align-items:stretch;
+  background:var(--color-bg);border-bottom:1px solid var(--color-border);
+  overflow-x:auto;overflow-y:hidden;
+  /* starts right after the rail — no full-width stretch */
+}
+.recent-tabs-bar.visible{display:flex}
+.rtab{
+  display:flex;align-items:center;gap:6px;
+  padding:0 10px 0 12px;min-width:100px;max-width:160px;
+  border-right:1px solid var(--color-border);cursor:pointer;
+  white-space:nowrap;font-size:12px;color:var(--color-text-secondary);
+  transition:background var(--transition);flex-shrink:0;position:relative;
+}
+.rtab:hover{background:var(--color-surface-hover)}
+.rtab.active{
+  background:var(--color-surface);color:var(--color-text-primary);
+  font-weight:600;
+}
+.rtab.active::after{
+  content:'';position:absolute;bottom:-1px;left:0;right:0;
+  height:2px;background:var(--color-primary)
+}
+.rtab-icon{font-size:13px;flex-shrink:0}
+.rtab-label{flex:1;overflow:hidden;text-overflow:ellipsis}
+.rtab-close{
+  width:16px;height:16px;border-radius:3px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;opacity:0;transition:opacity var(--transition);
+  flex-shrink:0;color:var(--color-text-secondary)
+}
+.rtab:hover .rtab-close{opacity:1}
+.rtab-close:hover{background:var(--color-border);color:var(--color-danger)}
+
+/* ── App Body — Flex Row ─────────────────────────────────── */
+.app-body{
+  display:flex;flex:1;min-height:0;overflow:hidden;position:relative
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Service Rail
+═══════════════════════════════════════════════════════════ */
+.service-rail{
+  flex-shrink:0;width:var(--rail-w);
+  display:flex;flex-direction:column;align-items:center;
+  background:var(--color-rail-bg);border-right:1px solid rgba(255,255,255,.06);
+  overflow:hidden;transition:width var(--transition);z-index:200;
+}
+.service-rail.expanded{
+  width:var(--rail-expanded-w);align-items:stretch
+}
+/* Rail toggle button */
+.rail-toggle{
+  width:100%;padding:10px 0;display:flex;justify-content:center;align-items:center;
+  color:var(--color-rail-text);border-bottom:1px solid rgba(255,255,255,.06);
+  font-size:12px;transition:background var(--transition);flex-shrink:0
+}
+.rail-toggle:hover{background:var(--color-rail-hover)}
+.service-rail.expanded .rail-toggle{justify-content:space-between;padding:10px 14px}
+.rail-toggle-logo{display:none;font-weight:700;font-size:13px;color:#fff}
+.service-rail.expanded .rail-toggle-logo{display:flex;align-items:center;gap:6px}
+/* Rail item */
+.rail-item{
+  display:flex;align-items:center;
+  width:38px;height:38px;
+  border-radius:var(--radius);margin:1px 7px;
+  color:var(--color-rail-text);cursor:pointer;
+  transition:background var(--transition),color var(--transition);
+  position:relative;flex-shrink:0;justify-content:center;
+  font-size:18px;
+}
+.service-rail.expanded .rail-item{
+  width:auto;padding:0 10px;gap:10px;justify-content:flex-start;margin:1px 6px;
+}
+.rail-item:hover{background:var(--color-rail-hover);color:#fff}
+.rail-item.active{background:var(--color-rail-active);color:#fff}
+.rail-name{
+  font-size:13px;font-weight:500;white-space:nowrap;
+  display:none;flex:1;
+}
+.service-rail.expanded .rail-name{display:block}
+/* Tooltip (only when collapsed) */
+.rail-tip{
+  position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);
+  background:#1e293b;color:#fff;font-size:12px;padding:4px 8px;
+  border-radius:5px;white-space:nowrap;pointer-events:none;
+  opacity:0;transition:opacity var(--transition);z-index:500;
+  box-shadow:var(--shadow-md);border:1px solid rgba(255,255,255,.08)
+}
+.service-rail:not(.expanded) .rail-item:hover .rail-tip{opacity:1}
+.rail-badge{
+  position:absolute;top:3px;right:3px;min-width:16px;height:16px;
+  border-radius:8px;background:var(--color-danger);color:#fff;
+  font-size:10px;font-weight:700;display:flex;align-items:center;
+  justify-content:center;padding:0 3px;border:2px solid var(--color-rail-bg)
+}
+.service-rail.expanded .rail-badge{position:static;margin-left:auto}
+.rail-div{width:24px;height:1px;background:rgba(255,255,255,.1);margin:5px 14px}
+.service-rail.expanded .rail-div{width:auto;margin:5px 12px}
+.rail-spacer{flex:1}
+
+/* ═══════════════════════════════════════════════════════════
+   Main Area
+═══════════════════════════════════════════════════════════ */
+.main-area{
+  flex:1;display:flex;flex-direction:column;min-width:0;
+  position:relative;overflow:hidden
+}
+
+/* ── Floating Sidebar ────────────────────────────────────── */
+.sidebar-overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,.2);
+  z-index:190;display:none;backdrop-filter:blur(1px)
+}
+.sidebar-overlay.visible{display:block}
+.floating-sidebar{
+  position:absolute;left:0;top:0;bottom:0;width:var(--sidebar-w);
+  background:var(--color-surface);border-right:1px solid var(--color-border);
+  box-shadow:var(--shadow-xl);z-index:200;
+  transform:translateX(-100%);transition:transform var(--transition);
+  display:flex;flex-direction:column;
+}
+.floating-sidebar.open{transform:translateX(0)}
+/* Pinned mode: sidebar takes space instead of floating */
+.floating-sidebar.pinned{
+  position:relative;transform:none;box-shadow:none;flex-shrink:0
+}
+.sidebar-header{
+  display:flex;align-items:center;gap:8px;
+  padding:12px 12px 12px 14px;border-bottom:1px solid var(--color-border);
+  flex-shrink:0
+}
+.sidebar-svc-icon{
+  width:26px;height:26px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0
+}
+.sidebar-svc-name{font-weight:600;font-size:13px;flex:1;truncate:overflow}
+.sidebar-actions{display:flex;gap:2px;flex-shrink:0}
+.sidebar-action-btn{
+  width:24px;height:24px;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:var(--color-text-secondary);
+  transition:background var(--transition)
+}
+.sidebar-action-btn:hover{background:var(--color-surface-hover);color:var(--color-text-primary)}
+.sidebar-action-btn.active{color:var(--color-primary)}
+.sidebar-nav{flex:1;overflow-y:auto;padding:6px 0}
+.sidebar-sec-title{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--color-text-muted);padding:10px 14px 4px
+}
+.sidebar-item{
+  display:flex;align-items:center;gap:9px;
+  padding:6px 14px;font-size:13px;color:var(--color-text-secondary);
+  cursor:pointer;transition:all var(--transition);position:relative
+}
+.sidebar-item:hover{background:var(--color-surface-hover);color:var(--color-text-primary)}
+.sidebar-item.active{
+  background:var(--color-primary-light);color:var(--color-primary);font-weight:600
+}
+.sidebar-item.active::before{
+  content:'';position:absolute;left:0;top:20%;bottom:20%;
+  width:3px;background:var(--color-primary);border-radius:0 2px 2px 0
+}
+.sidebar-item-icon{width:16px;text-align:center;flex-shrink:0;font-size:14px}
+.sidebar-item-badge{
+  margin-left:auto;font-size:11px;font-weight:600;
+  padding:1px 6px;border-radius:10px;
+  background:var(--color-primary-light);color:var(--color-primary)
+}
+/* Recent section in sidebar (list mode) */
+.sidebar-recent-section{
+  border-top:1px solid var(--color-border);padding:8px 0;
+  flex-shrink:0
+}
+
+/* ── Main Content ────────────────────────────────────────── */
+.main-content{
+  flex:1;overflow-y:auto;background:var(--color-bg);
+  display:flex;flex-direction:column
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AI Side Panel
+═══════════════════════════════════════════════════════════ */
+.ai-panel{
+  flex-shrink:0;width:var(--ai-panel-w);
+  display:none;flex-direction:column;
+  background:var(--color-surface);border-left:1px solid var(--color-border);
+  position:relative;min-width:260px;max-width:600px;
+  box-shadow:var(--shadow-lg)
+}
+.ai-panel.open{display:flex}
+.ai-resize-handle{
+  position:absolute;left:-3px;top:0;bottom:0;width:6px;
+  cursor:ew-resize;z-index:10;border-radius:3px;
+  transition:background var(--transition)
+}
+.ai-resize-handle:hover,.ai-resize-handle.dragging{background:var(--color-primary);opacity:.5}
+.ai-panel-header{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;border-bottom:1px solid var(--color-border);
+  flex-shrink:0
+}
+.ai-panel-header-title{
+  font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px;flex:1
+}
+.ai-status-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--color-success);
+  box-shadow:0 0 0 2px rgba(22,163,74,.2)
+}
+.ai-panel-actions{display:flex;gap:2px}
+.ai-panel-btn{
+  width:26px;height:26px;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:var(--color-text-secondary);
+  transition:background var(--transition)
+}
+.ai-panel-btn:hover{background:var(--color-surface-hover)}
+.ai-chat-wrap{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.chat-msg{display:flex;flex-direction:column;gap:3px}
+.chat-msg.user{align-items:flex-end}
+.chat-bubble{
+  max-width:88%;padding:8px 12px;border-radius:10px;
+  font-size:13px;line-height:1.6
+}
+.chat-msg.bot .chat-bubble{background:var(--color-bg);border:1px solid var(--color-border)}
+.chat-msg.user .chat-bubble{background:var(--color-primary);color:#fff}
+.chat-time{font-size:10px;color:var(--color-text-muted)}
+.ai-input-row{
+  padding:10px 12px;border-top:1px solid var(--color-border);
+  display:flex;gap:8px;flex-shrink:0
+}
+.ai-data-warn{
+  margin:0 12px 8px;padding:7px 10px;border-radius:6px;
+  background:#fef9c3;border:1px solid #fbbf24;
+  font-size:11px;color:#92400e;flex-shrink:0
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Mobile Bottom Tab
+═══════════════════════════════════════════════════════════ */
+.bottom-tab{
+  display:none;flex-shrink:0;
+  background:var(--color-surface);border-top:1px solid var(--color-border);
+  box-shadow:0 -2px 8px rgba(0,0,0,.08)
+}
+.btab-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:2px;padding:8px 4px;
+  color:var(--color-text-muted);cursor:pointer;transition:color var(--transition)
+}
+.btab-item.active{color:var(--color-primary)}
+.btab-icon{font-size:20px}
+.btab-label{font-size:10px;font-weight:600}
+
+/* ═══════════════════════════════════════════════════════════
+   Page Layout
+═══════════════════════════════════════════════════════════ */
+.page{padding:20px;display:none;flex:1}
+.page.active{display:block}
+.page-header{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:20px
+}
+.page-title-wrap .breadcrumb{
+  font-size:12px;color:var(--color-text-muted);margin-bottom:4px
+}
+.breadcrumb span{color:var(--color-text-muted);margin:0 4px}
+.page-title{font-size:20px;font-weight:700}
+.page-subtitle{font-size:13px;color:var(--color-text-secondary);margin-top:2px}
+
+/* ═══════════════════════════════════════════════════════════
+   Component Library
+═══════════════════════════════════════════════════════════ */
+/* Cards */
+.card{
+  background:var(--color-surface);border:1px solid var(--color-border);
+  border-radius:10px;padding:16px;box-shadow:var(--shadow-sm)
+}
+/* KPI Grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:14px}
+.kpi-label{font-size:12px;color:var(--color-text-secondary);font-weight:500}
+.kpi-value{font-size:22px;font-weight:800;margin:5px 0 3px}
+.kpi-trend{font-size:12px;display:flex;align-items:center;gap:3px}
+.kpi-trend.up{color:var(--color-success)}
+.kpi-trend.down{color:var(--color-danger)}
+.kpi-trend.neutral{color:var(--color-text-secondary)}
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-blue{background:#dbeafe;color:#1d4ed8}
+.badge-green{background:#dcfce7;color:#15803d}
+.badge-yellow{background:#fef9c3;color:#a16207}
+.badge-red{background:#fee2e2;color:#b91c1c}
+.badge-purple{background:#ede9fe;color:#6d28d9}
+.badge-gray{background:#f1f5f9;color:#475569}
+.badge-orange{background:#ffedd5;color:#c2410c}
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 13px;border-radius:var(--radius);font-weight:600;font-size:13px;
+  cursor:pointer;transition:all var(--transition);border:none
+}
+.btn-primary{background:var(--color-primary);color:#fff}
+.btn-primary:hover{background:var(--color-primary-hover)}
+.btn-secondary{background:transparent;color:var(--color-text-primary);border:1px solid var(--color-border)}
+.btn-secondary:hover{background:var(--color-surface-hover)}
+.btn-sm{padding:5px 10px;font-size:12px}
+/* Tables */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{
+  text-align:left;padding:9px 12px;font-size:12px;font-weight:600;
+  color:var(--color-text-secondary);border-bottom:1px solid var(--color-border);
+  background:var(--color-bg)
+}
+.data-table td{padding:11px 12px;border-bottom:1px solid var(--color-border);font-size:13px;vertical-align:middle}
+.data-table tr:hover td{background:var(--color-surface-hover)}
+.data-table tr:last-child td{border-bottom:none}
+/* Progress */
+.progress-bar{height:6px;background:var(--color-border);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width .3s}
+.pf-primary{background:var(--color-primary)}
+.pf-success{background:var(--color-success)}
+.pf-warning{background:var(--color-warning)}
+.pf-danger{background:var(--color-danger)}
+/* Status dot */
+.status-dot{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600}
+.status-dot::before{content:'';width:7px;height:7px;border-radius:50%}
+.status-dot.active::before{background:var(--color-success);box-shadow:0 0 0 3px rgba(22,163,74,.15)}
+.status-dot.inactive::before{background:var(--color-text-muted)}
+.status-dot.warning::before{background:var(--color-warning)}
+/* Input */
+.input{
+  width:100%;padding:7px 11px;border-radius:var(--radius);
+  border:1px solid var(--color-border);background:var(--color-surface);
+  color:var(--color-text-primary);outline:none;font-size:13px
+}
+.input:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.form-row{margin-bottom:13px}
+.form-label{font-size:12px;font-weight:600;margin-bottom:5px;display:block}
+/* Charts */
+.bar-chart{display:flex;align-items:flex-end;gap:7px;height:90px}
+.bar-col{display:flex;flex-direction:column;align-items:center;flex:1}
+.bar-fill{background:var(--color-primary);border-radius:3px 3px 0 0;width:100%;opacity:.8}
+.bar-label{font-size:10px;color:var(--color-text-secondary);margin-top:4px}
+.chart-grid{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:18px}
+.chart-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;padding:14px}
+.chart-title{font-size:13px;font-weight:600;margin-bottom:12px}
+.donut-wrap{display:flex;gap:14px;align-items:center}
+.donut{width:72px;height:72px;border-radius:50%;flex-shrink:0}
+.donut-legend{display:flex;flex-direction:column;gap:5px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px}
+.legend-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+/* Category filter */
+.cat-filter{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.cat-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 11px;border-radius:20px;font-size:12px;font-weight:600;
+  border:1px solid var(--color-border);background:var(--color-surface);
+  color:var(--color-text-secondary);cursor:pointer;transition:all var(--transition)
+}
+.cat-btn.active{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
+.cat-btn:hover:not(.active){border-color:var(--color-primary);color:var(--color-primary)}
+/* Tab bar */
+.tab-bar{display:flex;border-bottom:1px solid var(--color-border);margin-bottom:18px}
+.tab-btn{
+  padding:9px 14px;font-size:13px;font-weight:500;
+  color:var(--color-text-secondary);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all var(--transition)
+}
+.tab-btn.active{color:var(--color-primary);border-bottom-color:var(--color-primary);font-weight:600}
+/* Service cards */
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+.svc-card{
+  background:var(--color-surface);border:1px solid var(--color-border);
+  border-radius:10px;padding:15px;cursor:pointer;
+  transition:box-shadow var(--transition),border-color var(--transition)
+}
+.svc-card:hover{box-shadow:var(--shadow-md);border-color:var(--color-primary)}
+.svc-icon{
+  width:38px;height:38px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0
+}
+.svc-name{font-weight:700;font-size:14px;margin-bottom:2px}
+.svc-desc{font-size:12px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:11px}
+.svc-footer{display:flex;align-items:center;justify-content:space-between}
+.svc-price{font-size:13px;font-weight:700;color:var(--color-primary)}
+/* Compliance */
+.compliance-row{display:flex;align-items:center;gap:11px;margin-bottom:9px}
+.comp-name{width:130px;font-size:12px;font-weight:600;flex-shrink:0}
+.comp-bar{flex:1}
+.comp-pct{width:38px;text-align:right;font-size:12px;font-weight:700}
+/* Wizard */
+.wizard-steps{display:flex;align-items:center;gap:0;margin-bottom:22px}
+.step-circle{
+  width:26px;height:26px;border-radius:50%;border:2px solid var(--color-border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--color-text-muted);transition:all .2s
+}
+.step-circle.done{background:var(--color-success);border-color:var(--color-success);color:#fff}
+.step-circle.curr{background:var(--color-primary);border-color:var(--color-primary);color:#fff}
+.step-label{margin-left:7px;font-size:12px;font-weight:600;color:var(--color-text-secondary)}
+.step-line{flex:1;height:2px;background:var(--color-border);margin:0 7px;min-width:24px}
+.step-line.done{background:var(--color-success)}
+/* Notifications */
+.notif-item{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--color-border)}
+.notif-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.notif-title{font-size:13px;font-weight:600}
+.notif-desc{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.notif-time{font-size:11px;color:var(--color-text-muted);margin-top:2px}
+.notif-unread{background:var(--color-primary-light);border-radius:8px;padding:8px 10px}
+/* Grid utils */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
+.gap-6{gap:6px}.gap-8{gap:8px}.gap-12{gap:12px}
+.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
+.mb-12{margin-bottom:12px}.mb-16{margin-bottom:16px}.mb-20{margin-bottom:20px}
+.font-bold{font-weight:700}.font-semibold{font-weight:600}
+.text-sm{font-size:12px}.text-secondary{color:var(--color-text-secondary)}
+.overflow-hidden{overflow:hidden}
+/* Demo label */
+.demo-label{
+  position:fixed;bottom:10px;right:10px;z-index:9999;
+  background:rgba(15,23,42,.88);color:#fff;padding:5px 11px;
+  border-radius:6px;font-size:11px;font-weight:600;pointer-events:none;
+  backdrop-filter:blur(4px)
+}
+/* Mobile floating AI */
+.ai-mobile-close{display:none}
+
+/* ═══════════════════════════════════════════════════════════
+   Responsive — Tablet (≤ 1024px)
+═══════════════════════════════════════════════════════════ */
+@media(max-width:1024px){
+  .navbar-search .kbd{display:none}
+  .mode-toggle{padding:4px 6px}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Responsive — Mobile (≤ 768px)
+═══════════════════════════════════════════════════════════ */
+@media(max-width:768px){
+  /* ── Navbar: compact ── */
+  .navbar{gap:6px;padding:0 10px}
+  .logo-text{display:none}
+  .navbar-search{display:none}
+  .mode-toggle{display:none}
+  .portal-switcher{order:-1}/* move to front for demo */
+
+  /* ── Rail: hidden → replaced by bottom tab ── */
+  .service-rail{display:none!important}
+
+  /* ── Tabs bar: hidden on mobile ── */
+  .recent-tabs-bar.visible{display:none!important}
+
+  /* ── Bottom tab: always visible ── */
+  .bottom-tab{display:flex!important}
+
+  /* ── App body: take full width ── */
+  .app-body{overflow:visible}
+
+  /* ── Main area: full width ── */
+  .main-area{width:100%;min-width:0}
+
+  /* ── Floating sidebar → bottom sheet ── */
+  .floating-sidebar{
+    position:fixed!important;
+    top:auto!important;left:0!important;right:0!important;bottom:56px!important;
+    width:100%!important;max-height:72vh;
+    border-radius:16px 16px 0 0;
+    border-right:none!important;border-top:1px solid var(--color-border);
+    box-shadow:0 -4px 24px rgba(0,0,0,.18)!important;
+    transform:translateY(100%)!important;z-index:500!important;
+  }
+  .floating-sidebar.open{transform:translateY(0)!important}
+  .floating-sidebar.pinned{
+    position:fixed!important;transform:translateY(0)!important
+  }
+  /* bottom sheet drag handle */
+  .floating-sidebar::before{
+    content:'';display:block;width:40px;height:4px;
+    background:var(--color-border);border-radius:2px;
+    margin:10px auto 2px;
+  }
+  /* overlay covers full screen on mobile */
+  .sidebar-overlay{position:fixed!important;bottom:56px}
+
+  /* ── AI panel → full-screen overlay ── */
+  .ai-panel.open{
+    position:fixed!important;inset:0!important;bottom:56px!important;
+    z-index:600;max-width:100%!important;
+    width:100%!important;border-left:none!important;
+    box-shadow:none!important;
+  }
+  .ai-resize-handle{display:none!important}
+  .ai-mobile-close{display:flex!important}
+
+  /* ── Grid fixes ── */
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .svc-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .chart-grid{grid-template-columns:1fr}
+  .grid-2{grid-template-columns:1fr}
+
+  /* ── Page layout ── */
+  .page{padding:12px}
+  .page-header{flex-direction:column;gap:8px;align-items:flex-start}
+  .page-header .flex{flex-wrap:wrap}
+
+  /* ── Table: horizontal scroll ── */
+  .card.overflow-hidden{overflow-x:auto}
+  .data-table{min-width:500px}
+
+  /* ── Hide non-essential columns ── */
+  .data-table th:nth-child(n+6),
+  .data-table td:nth-child(n+6){display:none}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Responsive — Small mobile (≤ 480px)
+═══════════════════════════════════════════════════════════ */
+@media(max-width:480px){
+  .kpi-grid{grid-template-columns:1fr}
+  .svc-grid{grid-template-columns:1fr}
+  .portal-switcher{display:none}
+  .wizard-steps .step-label{display:none}/* compact wizard */
+}
+
+/* ── Mobile simulation class (JS switchPortal) ────────────── */
+.mobile-sim{max-width:390px!important;margin:0 auto!important;box-shadow:var(--shadow-xl)!important}
+.mobile-sim .service-rail{display:none!important}
+.mobile-sim .recent-tabs-bar.visible{display:none!important}
+.mobile-sim .bottom-tab{display:flex!important}
+.mobile-sim .navbar{gap:6px;padding:0 10px}
+.mobile-sim .logo-text{display:none}
+.mobile-sim .navbar-search{display:none}
+.mobile-sim .mode-toggle{display:none}
+.mobile-sim .floating-sidebar{
+  position:fixed!important;top:auto!important;left:0!important;right:0!important;
+  bottom:56px!important;width:100%!important;max-height:72vh;
+  border-radius:16px 16px 0 0;border-right:none!important;
+  border-top:1px solid var(--color-border);
+  box-shadow:0 -4px 24px rgba(0,0,0,.18)!important;
+  transform:translateY(100%)!important;z-index:500!important;
+}
+.mobile-sim .floating-sidebar.open{transform:translateY(0)!important}
+.mobile-sim .kpi-grid{grid-template-columns:1fr 1fr;gap:8px}
+.mobile-sim .svc-grid{grid-template-columns:1fr 1fr;gap:10px}
+.mobile-sim .chart-grid{grid-template-columns:1fr}
+.mobile-sim .grid-2{grid-template-columns:1fr}
+.mobile-sim .page{padding:12px}
+.mobile-sim .page-header{flex-direction:column;gap:8px;align-items:flex-start}
+.mobile-sim .data-table{min-width:500px}
+.mobile-sim .data-table th:nth-child(n+6),
+.mobile-sim .data-table td:nth-child(n+6){display:none}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     APP SHELL
+═══════════════════════════════════════════════════════ -->
+<div class="app-shell" id="appShell">
+
+  <!-- ── NAVBAR ─────────────────────────────────────────── -->
+  <header class="navbar">
+    <!-- Brand -->
+    <div class="navbar-brand">
+      <div class="logo-mark">G</div>
+      <span class="logo-text" id="logoText">Gov SaaS</span>
+      <span class="tenant-badge" id="tenantBadge">슈퍼 어드민</span>
+    </div>
+
+    <!-- Portal Switcher -->
+    <div class="portal-switcher">
+      <button class="portal-btn active" onclick="switchPortal('admin')" id="pAdmin">관리자</button>
+      <button class="portal-btn" onclick="switchPortal('tenant')" id="pTenant">테넌트</button>
+      <button class="portal-btn" onclick="switchPortal('mobile')" id="pMobile">📱 모바일</button>
+    </div>
+
+    <!-- Recent Mode Toggle -->
+    <button class="mode-toggle" onclick="toggleRecentMode()" id="modeToggle" title="최근 메뉴 표시 방식 전환">
+      <span id="modeIcon">🗂️</span>
+      <span id="modeLabelText">탭 모드</span>
+    </button>
+
+    <!-- Search -->
+    <div class="navbar-search">
+      <span>🔍</span>
+      <span style="color:var(--color-text-muted)">테넌트, 서비스, 페이지 검색...</span>
+      <span class="kbd">⌘K</span>
+    </div>
+
+    <!-- Right Actions -->
+    <div class="navbar-right">
+      <!-- AI Toggle -->
+      <button class="icon-btn" onclick="toggleAiPanel()" title="AI 어시스턴트" id="aiToggleBtn">✨</button>
+      <!-- Notifications -->
+      <button class="icon-btn" onclick="go('notifications')" title="알림">
+        🔔<span class="badge-dot"></span>
+      </button>
+      <!-- Theme -->
+      <button class="icon-btn" onclick="toggleTheme()" title="테마 전환" id="themeBtn">🌙</button>
+      <!-- User -->
+      <div class="avatar" title="계정 메뉴">관</div>
+    </div>
+  </header>
+
+  <!-- ── APP BODY ───────────────────────────────────────── -->
+  <div class="app-body" id="appBody">
+
+    <!-- SERVICE RAIL -->
+    <nav class="service-rail" id="serviceRail" aria-label="서비스 탐색">
+
+      <!-- Toggle expand/collapse -->
+      <button class="rail-toggle" onclick="toggleRail()" id="railToggle" title="메뉴 펼치기/접기">
+        <span class="rail-toggle-logo">
+          <div class="logo-mark" style="width:20px;height:20px;font-size:10px">G</div>
+          Gov SaaS
+        </span>
+        <span id="railToggleIcon">☰</span>
+      </button>
+
+      <!-- Dashboard -->
+      <div class="rail-item active" id="ri-dashboard" onclick="selectSvc('dashboard')">
+        <span>🏠</span><span class="rail-name">대시보드</span>
+        <span class="rail-tip">대시보드</span>
+      </div>
+
+      <div class="rail-div"></div>
+
+      <!-- Services -->
+      <div class="rail-item" id="ri-tenant" onclick="selectSvc('tenant')">
+        <span>🏢</span><span class="rail-name">테넌트 관리</span>
+        <span class="rail-tip">테넌트 관리</span>
+      </div>
+      <div class="rail-item" id="ri-billing" onclick="selectSvc('billing')">
+        <span>💳</span><span class="rail-name">빌링</span>
+        <span class="rail-tip">빌링</span>
+      </div>
+      <div class="rail-item" id="ri-catalog" onclick="selectSvc('catalog')">
+        <span>🛒</span><span class="rail-name">서비스 카탈로그</span>
+        <span class="rail-tip">서비스 카탈로그</span>
+      </div>
+      <div class="rail-item" id="ri-csap" onclick="selectSvc('csap')">
+        <span>🛡️</span><span class="rail-name">CSAP 준수</span>
+        <span class="rail-tip">CSAP 준수</span>
+      </div>
+      <div class="rail-item" id="ri-marketplace" onclick="selectSvc('marketplace')">
+        <span>🏪</span><span class="rail-name">마켓플레이스</span>
+        <span class="rail-tip">마켓플레이스</span>
+      </div>
+      <div class="rail-item" id="ri-crm" onclick="selectSvc('crm')">
+        <span>👥</span><span class="rail-name">민원 CRM</span>
+        <span class="rail-tip">민원 CRM</span>
+      </div>
+      <div class="rail-item" id="ri-analytics" onclick="selectSvc('analytics')">
+        <span>📊</span><span class="rail-name">분석 &amp; BI</span>
+        <span class="rail-tip">분석 &amp; BI</span>
+      </div>
+
+      <!-- More overflow -->
+      <div class="rail-item" onclick="showOverflow(event)" style="font-size:15px">
+        ···<span class="rail-name" style="font-size:13px">더 보기</span>
+        <span class="rail-tip">더 많은 서비스</span>
+      </div>
+
+      <div class="rail-spacer"></div>
+      <div class="rail-div"></div>
+
+      <!-- Bottom fixed -->
+      <div class="rail-item" id="ri-ai" onclick="toggleAiPanel()">
+        <span>✨</span><span class="rail-name">AI 어시스턴트</span>
+        <span class="rail-tip">AI 어시스턴트</span>
+      </div>
+      <div class="rail-item" onclick="go('notifications')">
+        <span>🔔</span><span class="rail-name">알림</span>
+        <span class="rail-tip">알림</span>
+        <span class="rail-badge">3</span>
+      </div>
+      <div class="rail-item" onclick="go('settings')">
+        <span>⚙️</span><span class="rail-name">설정</span>
+        <span class="rail-tip">설정</span>
+      </div>
+    </nav>
+
+    <!-- MAIN AREA -->
+    <div class="main-area" id="mainArea">
+
+      <!-- ── RECENT TABS BAR (레일 다음에서 시작) ──────────── -->
+      <div class="recent-tabs-bar" id="recentTabsBar" role="tablist"></div>
+
+      <!-- Floating sidebar overlay (click outside closes) -->
+      <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+      <!-- Floating Sidebar -->
+      <div class="floating-sidebar" id="floatSidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-svc-icon" id="sbIcon">🏠</div>
+          <span class="sidebar-svc-name" id="sbTitle">대시보드</span>
+          <div class="sidebar-actions">
+            <button class="sidebar-action-btn" onclick="toggleSidebarPin()" id="pinBtn" title="고정/플로팅 전환">📌</button>
+            <button class="sidebar-action-btn" onclick="closeSidebar()" title="닫기">✕</button>
+          </div>
+        </div>
+        <nav class="sidebar-nav" id="sbNav"></nav>
+
+        <!-- Recent in sidebar (list mode) -->
+        <div class="sidebar-recent-section" id="sidebarRecentSection" style="display:none">
+          <div class="sidebar-sec-title">최근 방문</div>
+          <div id="sidebarRecentList"></div>
+        </div>
+      </div>
+
+      <!-- MAIN CONTENT -->
+      <main class="main-content" id="mainContent">
+
+        <!-- ══ 1. Dashboard ══════════════════════════════ -->
+        <div class="page active" id="page-dashboard">
+          <div class="page-header">
+            <div class="page-title-wrap">
+              <div class="breadcrumb">플랫폼 <span>›</span> 대시보드</div>
+              <div class="page-title">플랫폼 대시보드</div>
+              <div class="page-subtitle">2026년 4월 5일 기준</div>
+            </div>
+            <div class="flex gap-8">
+              <button class="btn btn-secondary btn-sm">📤 보고서</button>
+              <button class="btn btn-primary btn-sm" onclick="go('tenant-register')">+ 테넌트 등록</button>
+            </div>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-label">활성 테넌트</div><div class="kpi-value" style="color:var(--color-primary)">247</div><div class="kpi-trend up">▲ 12% 전월 대비</div></div>
+            <div class="kpi-card"><div class="kpi-label">월 반복 수익 MRR</div><div class="kpi-value" style="color:var(--color-success)">₩38.4M</div><div class="kpi-trend up">▲ 8.3%</div></div>
+            <div class="kpi-card"><div class="kpi-label">CSAP 준수율</div><div class="kpi-value" style="color:var(--color-success)">94.9%</div><div class="kpi-trend up">▲ 2.1%p</div></div>
+            <div class="kpi-card"><div class="kpi-label">시스템 가용성</div><div class="kpi-value" style="color:var(--color-success)">99.97%</div><div class="kpi-trend neutral">– 30일</div></div>
+          </div>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <div class="chart-title">월별 신규 테넌트</div>
+              <div class="bar-chart">
+                <div class="bar-col"><div class="bar-fill" style="height:50%"></div><div class="bar-label">10월</div></div>
+                <div class="bar-col"><div class="bar-fill" style="height:64%"></div><div class="bar-label">11월</div></div>
+                <div class="bar-col"><div class="bar-fill" style="height:55%"></div><div class="bar-label">12월</div></div>
+                <div class="bar-col"><div class="bar-fill" style="height:73%"></div><div class="bar-label">1월</div></div>
+                <div class="bar-col"><div class="bar-fill" style="height:84%"></div><div class="bar-label">2월</div></div>
+                <div class="bar-col"><div class="bar-fill" style="height:90%"></div><div class="bar-label">3월</div></div>
+                <div class="bar-col"><div class="bar-fill" style="height:100%;opacity:1"></div><div class="bar-label">4월</div></div>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title">플랜 분포</div>
+              <div class="donut-wrap">
+                <div class="donut" style="background:conic-gradient(#2563eb 0% 45%,#16a34a 45% 75%,#d97706 75% 92%,#94a3b8 92% 100%)"></div>
+                <div class="donut-legend">
+                  <div class="legend-item"><div class="legend-dot" style="background:#2563eb"></div>표준 45%</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div>프로 30%</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div>엔터프라이즈 17%</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div>평가판 8%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card overflow-hidden">
+            <div class="flex items-center justify-between mb-12">
+              <div class="font-semibold">최근 테넌트</div>
+              <button class="btn btn-secondary btn-sm" onclick="selectSvc('tenant')">전체 →</button>
+            </div>
+            <table class="data-table">
+              <thead><tr><th>테넌트명</th><th>플랜</th><th>상태</th><th>사용자</th><th>CSAP</th></tr></thead>
+              <tbody>
+                <tr><td><strong>행정안전부 산하기관 A</strong></td><td><span class="badge badge-purple">엔터프라이즈</span></td><td><span class="status-dot active">운영</span></td><td>1,248</td><td><div class="flex items-center gap-6"><div class="progress-bar" style="width:60px"><div class="progress-fill pf-success" style="width:98%"></div></div><span class="text-sm">98%</span></div></td></tr>
+                <tr><td><strong>서울특별시청</strong></td><td><span class="badge badge-blue">표준</span></td><td><span class="status-dot active">운영</span></td><td>432</td><td><div class="flex items-center gap-6"><div class="progress-bar" style="width:60px"><div class="progress-fill pf-success" style="width:91%"></div></div><span class="text-sm">91%</span></div></td></tr>
+                <tr><td><strong>경기도청</strong></td><td><span class="badge badge-green">프로</span></td><td><span class="status-dot warning">점검</span></td><td>876</td><td><div class="flex items-center gap-6"><div class="progress-bar" style="width:60px"><div class="progress-fill pf-warning" style="width:72%"></div></div><span class="text-sm">72%</span></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ══ 2. Tenant List ════════════════════════════ -->
+        <div class="page" id="page-tenant">
+          <div class="page-header">
+            <div class="page-title-wrap">
+              <div class="breadcrumb">테넌트 관리 <span>›</span> 전체 목록</div>
+              <div class="page-title">테넌트 관리</div>
+              <div class="page-subtitle">총 247개 테넌트</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="go('tenant-register')">+ 테넌트 등록</button>
+          </div>
+          <div class="card mb-16" style="padding:10px 14px">
+            <div class="flex items-center gap-8">
+              <input class="input" style="max-width:260px" placeholder="🔍 테넌트명 검색">
+              <select class="input" style="width:auto"><option>모든 플랜</option><option>표준</option><option>프로</option><option>엔터프라이즈</option></select>
+              <select class="input" style="width:auto"><option>모든 상태</option><option>운영 중</option><option>정지</option></select>
+              <button class="btn btn-primary btn-sm">검색</button>
+            </div>
+          </div>
+          <div class="card overflow-hidden">
+            <table class="data-table">
+              <thead><tr><th><input type="checkbox"></th><th>테넌트명</th><th>플랜</th><th>상태</th><th>사용자</th><th>서비스</th><th>CSAP</th><th>작업</th></tr></thead>
+              <tbody>
+                <tr><td><input type="checkbox"></td><td><strong>행정안전부 산하기관 A</strong><br><small class="text-secondary">mois-sub-a.gov.kr</small></td><td><span class="badge badge-purple">엔터프라이즈</span></td><td><span class="status-dot active">운영</span></td><td>1,248</td><td>12</td><td><div class="flex items-center gap-6"><div class="progress-bar" style="flex:1"><div class="progress-fill pf-success" style="width:98%"></div></div><span class="text-sm font-bold" style="color:var(--color-success)">98%</span></div></td><td><button class="btn btn-secondary btn-sm">관리</button></td></tr>
+                <tr><td><input type="checkbox"></td><td><strong>서울특별시청</strong><br><small class="text-secondary">seoul.go.kr</small></td><td><span class="badge badge-blue">표준</span></td><td><span class="status-dot active">운영</span></td><td>432</td><td>5</td><td><div class="flex items-center gap-6"><div class="progress-bar" style="flex:1"><div class="progress-fill pf-success" style="width:91%"></div></div><span class="text-sm font-bold" style="color:var(--color-success)">91%</span></div></td><td><button class="btn btn-secondary btn-sm">관리</button></td></tr>
+                <tr><td><input type="checkbox"></td><td><strong>경기도청</strong><br><small class="text-secondary">gg.go.kr</small></td><td><span class="badge badge-green">프로</span></td><td><span class="status-dot warning">점검</span></td><td>876</td><td>8</td><td><div class="flex items-center gap-6"><div class="progress-bar" style="flex:1"><div class="progress-fill pf-warning" style="width:72%"></div></div><span class="text-sm font-bold" style="color:var(--color-warning)">72%</span></div></td><td><button class="btn btn-secondary btn-sm">관리</button></td></tr>
+                <tr><td><input type="checkbox"></td><td><strong>부산광역시</strong><br><small class="text-secondary">busan.go.kr</small></td><td><span class="badge badge-blue">표준</span></td><td><span class="status-dot active">운영</span></td><td>291</td><td>4</td><td><div class="flex items-center gap-6"><div class="progress-bar" style="flex:1"><div class="progress-fill pf-success" style="width:88%"></div></div><span class="text-sm font-bold" style="color:var(--color-success)">88%</span></div></td><td><button class="btn btn-secondary btn-sm">관리</button></td></tr>
+              </tbody>
+            </table>
+            <div class="flex items-center justify-between" style="padding:10px 14px;border-top:1px solid var(--color-border)">
+              <div class="text-secondary text-sm">247개 중 1-4 표시</div>
+              <div class="flex gap-6">
+                <button class="btn btn-secondary btn-sm">이전</button>
+                <button class="btn btn-primary btn-sm">1</button>
+                <button class="btn btn-secondary btn-sm">2</button>
+                <button class="btn btn-secondary btn-sm">3</button>
+                <button class="btn btn-secondary btn-sm">다음</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ 3. Billing ════════════════════════════════ -->
+        <div class="page" id="page-billing">
+          <div class="page-header">
+            <div class="page-title-wrap">
+              <div class="breadcrumb">빌링 <span>›</span> 대시보드</div>
+              <div class="page-title">빌링 &amp; 구독</div>
+            </div>
+            <button class="btn btn-secondary btn-sm">📊 인보이스 내보내기</button>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-label">MRR</div><div class="kpi-value" style="color:var(--color-success)">₩38.4M</div><div class="kpi-trend up">▲ 8.3%</div></div>
+            <div class="kpi-card"><div class="kpi-label">ARR</div><div class="kpi-value">₩461M</div><div class="kpi-trend up">▲ 14.2%</div></div>
+            <div class="kpi-card"><div class="kpi-label">신규 구독</div><div class="kpi-value" style="color:var(--color-primary)">+23</div><div class="kpi-trend up">▲ +5 전월</div></div>
+            <div class="kpi-card"><div class="kpi-label">이탈률</div><div class="kpi-value" style="color:var(--color-warning)">1.8%</div><div class="kpi-trend down">▼ 0.3%p</div></div>
+          </div>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <div class="chart-title">월별 수익</div>
+              <div class="bar-chart">
+                <div class="bar-col"><div class="bar-fill" style="height:55%;background:var(--color-success)"></div><div class="bar-label">10월</div></div>
+                <div class="bar-col"><div class="bar-fill" style="height:64%;background:var(--color-success)"></div><div class="bar-label">11월</div></div>
+                <div class="bar-col"><div class="bar-fill" style="height:70%;background:var(--color-success)"></div><div class="bar-label">12월</div></div>
+                <div class="bar-col"><div class="bar-fill" style="height:77%;background:var(--color-success)"></div><div class="bar-label">1월</div></div>
+                <div class="bar-col"><div class="bar-fill" style="height:84%;background:var(--color-success)"></div><div class="bar-label">2월</div></div>
+                <div class="bar-col"><div class="bar-fill" style="height:91%;background:var(--color-success)"></div><div class="bar-label">3월</div></div>
+                <div class="bar-col"><div class="bar-fill" style="height:100%;background:var(--color-success);opacity:1"></div><div class="bar-label">4월</div></div>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title">플랜별 수익</div>
+              <div class="donut-wrap">
+                <div class="donut" style="background:conic-gradient(#7c3aed 0% 42%,#2563eb 42% 68%,#16a34a 68% 87%,#94a3b8 87% 100%)"></div>
+                <div class="donut-legend">
+                  <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div>엔터프라이즈 42%</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#2563eb"></div>프로 26%</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div>표준 19%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="chart-title">최근 인보이스</div>
+            <table class="data-table"><thead><tr><th>ID</th><th>테넌트</th><th>금액</th><th>상태</th><th>발행일</th></tr></thead>
+            <tbody>
+              <tr><td><code style="font-size:11px">INV-0412</code></td><td>행정안전부</td><td style="font-weight:700;color:var(--color-success)">₩4,800,000</td><td><span class="badge badge-green">완료</span></td><td class="text-secondary">2026-04-01</td></tr>
+              <tr><td><code style="font-size:11px">INV-0411</code></td><td>서울특별시청</td><td style="font-weight:700;color:var(--color-success)">₩1,200,000</td><td><span class="badge badge-green">완료</span></td><td class="text-secondary">2026-04-01</td></tr>
+              <tr><td><code style="font-size:11px">INV-0410</code></td><td>경기도청</td><td style="font-weight:700;color:var(--color-warning)">₩2,400,000</td><td><span class="badge badge-yellow">대기</span></td><td class="text-secondary">2026-04-01</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+
+        <!-- ══ 4. CSAP ════════════════════════════════════ -->
+        <div class="page" id="page-csap">
+          <div class="page-header">
+            <div class="page-title-wrap">
+              <div class="breadcrumb">규제 <span>›</span> CSAP 현황</div>
+              <div class="page-title">CSAP / N2SF 준수 현황</div>
+            </div>
+            <div class="flex gap-8">
+              <button class="btn btn-secondary btn-sm">📋 감리 보고서</button>
+              <button class="btn btn-primary btn-sm">♻️ 갱신</button>
+            </div>
+          </div>
+          <div class="grid-2 mb-16">
+            <div class="card flex items-center gap-12">
+              <div style="width:70px;height:70px;border-radius:50%;background:conic-gradient(var(--color-success) 0% 94.9%,var(--color-border) 94.9%);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <div style="width:52px;height:52px;border-radius:50%;background:var(--color-surface);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:var(--color-success)">94.9%</div>
+              </div>
+              <div><div class="font-bold">CSAP 표준등급</div><div class="text-sm text-secondary mt-8">79항목 중 75항목 통과</div><div class="mt-8"><span class="badge badge-green">75 PASS</span> <span class="badge badge-red" style="margin-left:4px">4 이슈</span></div></div>
+            </div>
+            <div class="card flex items-center gap-12">
+              <div style="width:70px;height:70px;border-radius:50%;background:conic-gradient(var(--color-primary) 0% 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <div style="width:52px;height:52px;border-radius:50%;background:var(--color-surface);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:var(--color-primary)">100%</div>
+              </div>
+              <div><div class="font-bold">N2SF 보안 영역</div><div class="text-sm text-secondary mt-8">6개 영역 전체 통과</div><div class="mt-8"><span class="badge badge-green">N-01~N-06 PASS</span></div></div>
+            </div>
+          </div>
+          <div class="card mb-16">
+            <div class="chart-title">CSAP 영역별 준수율</div>
+            <div style="display:flex;flex-direction:column;gap:11px">
+              <div class="compliance-row"><div class="comp-name">D-05 물리적 보안</div><div class="comp-bar"><div class="progress-bar"><div class="progress-fill pf-success" style="width:100%"></div></div></div><div class="comp-pct" style="color:var(--color-success)">100%</div></div>
+              <div class="compliance-row"><div class="comp-name">D-06 침해사고 관리</div><div class="comp-bar"><div class="progress-bar"><div class="progress-fill pf-success" style="width:92%"></div></div></div><div class="comp-pct" style="color:var(--color-success)">92%</div></div>
+              <div class="compliance-row"><div class="comp-name">D-08 접근 통제</div><div class="comp-bar"><div class="progress-bar"><div class="progress-fill pf-warning" style="width:83%"></div></div></div><div class="comp-pct" style="color:var(--color-warning)">83%</div></div>
+              <div class="compliance-row"><div class="comp-name">D-09 암호화</div><div class="comp-bar"><div class="progress-bar"><div class="progress-fill pf-success" style="width:100%"></div></div></div><div class="comp-pct" style="color:var(--color-success)">100%</div></div>
+              <div class="compliance-row"><div class="comp-name">D-12 개발 보안</div><div class="comp-bar"><div class="progress-bar"><div class="progress-fill pf-warning" style="width:75%"></div></div></div><div class="comp-pct" style="color:var(--color-warning)">75%</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="chart-title">미해결 이슈</div>
+            <table class="data-table"><thead><tr><th>항목 ID</th><th>제목</th><th>영역</th><th>심각도</th><th>기한</th></tr></thead>
+            <tbody>
+              <tr><td><code style="font-size:11px">D-06-03</code></td><td>감사 로그 DB append-only 미적용</td><td><span class="badge badge-orange">D-06</span></td><td><span class="badge badge-red">CRITICAL</span></td><td style="color:var(--color-danger);font-weight:600">2026-04-10</td></tr>
+              <tr><td><code style="font-size:11px">D-08-07</code></td><td>대시보드 IDOR 취약점</td><td><span class="badge badge-orange">D-08</span></td><td><span class="badge badge-red">HIGH</span></td><td style="color:var(--color-warning);font-weight:600">2026-04-15</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+
+        <!-- ══ 5. Catalog ════════════════════════════════ -->
+        <div class="page" id="page-catalog">
+          <div class="page-header">
+            <div class="page-title-wrap">
+              <div class="breadcrumb">서비스 카탈로그 <span>›</span> 전체</div>
+              <div class="page-title">서비스 카탈로그</div>
+            </div>
+            <button class="btn btn-primary btn-sm">+ 서비스 등록</button>
+          </div>
+          <div class="cat-filter">
+            <button class="cat-btn active">전체 (14)</button>
+            <button class="cat-btn">📋 업무 관리</button>
+            <button class="cat-btn">📄 문서 관리</button>
+            <button class="cat-btn">👥 고객/민원</button>
+            <button class="cat-btn">📊 분석 &amp; BI</button>
+            <button class="cat-btn">✨ AI</button>
+          </div>
+          <div class="svc-grid">
+            <div class="svc-card"><div class="flex items-center gap-8 mb-12"><div class="svc-icon" style="background:#dbeafe">📋</div><div><div class="svc-name">업무 관리 플러스</div><span class="badge badge-blue">업무 관리</span></div></div><div class="svc-desc">공공기관 업무 프로세스 자동화. 결재·위임전결·기안 통합.</div><div class="svc-footer"><span class="svc-price">₩120,000/월</span><div class="flex gap-6"><span class="badge badge-green">활성</span><button class="btn btn-secondary btn-sm">설정</button></div></div></div>
+            <div class="svc-card"><div class="flex items-center gap-8 mb-12"><div class="svc-icon" style="background:#dcfce7">📄</div><div><div class="svc-name">전자문서 관리</div><span class="badge badge-green">문서 관리</span></div></div><div class="svc-desc">ISO 15489 및 공공기록물관리법 준거 문서 시스템.</div><div class="svc-footer"><span class="svc-price">₩80,000/월</span><div class="flex gap-6"><span class="badge badge-green">활성</span><button class="btn btn-secondary btn-sm">설정</button></div></div></div>
+            <div class="svc-card"><div class="flex items-center gap-8 mb-12"><div class="svc-icon" style="background:#ede9fe">✨</div><div><div class="svc-name">AI 챗봇 어시스턴트</div><span class="badge badge-purple">AI</span></div></div><div class="svc-desc">LLM 기반 민원 응대. N2SF O등급. LM Studio 로컬 모델.</div><div class="svc-footer"><span class="svc-price">₩200,000/월</span><div class="flex gap-6"><span class="badge badge-green">활성</span><button class="btn btn-secondary btn-sm">설정</button></div></div></div>
+            <div class="svc-card"><div class="flex items-center gap-8 mb-12"><div class="svc-icon" style="background:#ffedd5">📊</div><div><div class="svc-name">통합 분석 대시보드</div><span class="badge badge-orange">분석 &amp; BI</span></div></div><div class="svc-desc">공공기관 KPI 시각화. Grafana 연동, 자동 보고서.</div><div class="svc-footer"><span class="svc-price">₩150,000/월</span><div class="flex gap-6"><span class="badge badge-yellow">점검</span><button class="btn btn-secondary btn-sm">설정</button></div></div></div>
+            <div class="svc-card"><div class="flex items-center gap-8 mb-12"><div class="svc-icon" style="background:#fce7f3">👥</div><div><div class="svc-name">민원 CRM</div><span class="badge badge-purple">고객/민원</span></div></div><div class="svc-desc">민원 접수·처리·추적. 국민신문고 API 연동, SLA 관리.</div><div class="svc-footer"><span class="svc-price">₩100,000/월</span><div class="flex gap-6"><span class="badge badge-green">활성</span><button class="btn btn-secondary btn-sm">설정</button></div></div></div>
+            <div class="svc-card" style="border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:130px;cursor:pointer" onclick="alert('SDK registerService() 가이드 참고')"><div style="font-size:24px;margin-bottom:6px">+</div><div class="font-semibold text-secondary">서비스 등록</div><div class="text-sm text-secondary mt-8">SDK registerService()</div></div>
+          </div>
+        </div>
+
+        <!-- ══ 6. Marketplace ════════════════════════════ -->
+        <div class="page" id="page-marketplace">
+          <div class="page-header">
+            <div class="page-title-wrap">
+              <div class="breadcrumb">서비스 <span>›</span> 마켓플레이스</div>
+              <div class="page-title">서비스 마켓플레이스</div>
+            </div>
+          </div>
+          <div class="card mb-16" style="background:linear-gradient(135deg,var(--color-primary),#7c3aed);color:#fff;border:none">
+            <div class="flex items-center justify-between">
+              <div><div class="font-bold" style="font-size:16px">✨ 새 서비스 구독</div><div style="font-size:13px;opacity:.85;margin-top:3px">3단계 위저드로 빠르게 구독 신청</div></div>
+              <button class="btn" style="background:#fff;color:var(--color-primary)" onclick="go('wizard')">구독 시작 →</button>
+            </div>
+          </div>
+          <div class="cat-filter">
+            <button class="cat-btn active">전체</button>
+            <button class="cat-btn">📋 업무</button>
+            <button class="cat-btn">📄 문서</button>
+            <button class="cat-btn">👥 민원</button>
+            <button class="cat-btn">✨ AI</button>
+          </div>
+          <div class="svc-grid">
+            <div class="svc-card" style="border-color:var(--color-success)"><div class="flex items-center gap-8 mb-12"><div class="svc-icon" style="background:#dbeafe">📋</div><div><div class="svc-name">업무 관리 플러스</div><span class="badge badge-green">구독 중</span></div></div><div class="svc-desc">공공기관 업무 프로세스 자동화.</div><div class="svc-footer"><span class="svc-price">₩120,000/월</span><button class="btn btn-secondary btn-sm">이동 →</button></div></div>
+            <div class="svc-card"><div class="flex items-center gap-8 mb-12"><div class="svc-icon" style="background:#dcfce7">📄</div><div><div class="svc-name">전자문서 관리</div><span class="badge badge-blue">문서</span></div></div><div class="svc-desc">ISO 15489 준거 전자문서 시스템.</div><div class="svc-footer"><span class="svc-price">₩80,000/월</span><button class="btn btn-primary btn-sm" onclick="go('wizard')">구독하기</button></div></div>
+            <div class="svc-card"><div class="flex items-center gap-8 mb-12"><div class="svc-icon" style="background:#ede9fe">✨</div><div><div class="svc-name">AI 챗봇 어시스턴트</div><span class="badge badge-purple">AI</span></div></div><div class="svc-desc">LLM 기반 민원 응대 (O등급 전용).</div><div class="svc-footer"><span class="svc-price">₩200,000/월</span><button class="btn btn-primary btn-sm" onclick="go('wizard')">구독하기</button></div></div>
+            <div class="svc-card"><div class="flex items-center gap-8 mb-12"><div class="svc-icon" style="background:#ffedd5">📊</div><div><div class="svc-name">통합 분석 대시보드</div><span class="badge badge-orange">BI</span></div></div><div class="svc-desc">KPI 시각화, 자동 보고서.</div><div class="svc-footer"><span class="svc-price">₩150,000/월</span><button class="btn btn-primary btn-sm" onclick="go('wizard')">구독하기</button></div></div>
+            <div class="svc-card"><div class="flex items-center gap-8 mb-12"><div class="svc-icon" style="background:#fce7f3">👥</div><div><div class="svc-name">민원 CRM</div><span class="badge badge-purple">민원</span></div></div><div class="svc-desc">민원 접수·처리·SLA 관리.</div><div class="svc-footer"><span class="svc-price">₩100,000/월</span><button class="btn btn-primary btn-sm" onclick="go('wizard')">구독하기</button></div></div>
+            <div class="svc-card"><div class="flex items-center gap-8 mb-12"><div class="svc-icon" style="background:#e0f2fe">🔍</div><div><div class="svc-name">감사 추적 시스템</div><span class="badge badge-gray">시스템</span></div></div><div class="svc-desc">CSAP D-06 완전 준수 감사 로그.</div><div class="svc-footer"><span class="svc-price">₩60,000/월</span><button class="btn btn-primary btn-sm" onclick="go('wizard')">구독하기</button></div></div>
+          </div>
+        </div>
+
+        <!-- ══ 7. Wizard ══════════════════════════════════ -->
+        <div class="page" id="page-wizard">
+          <div class="page-header">
+            <div class="page-title-wrap">
+              <div class="breadcrumb">마켓플레이스 <span>›</span> 구독 신청</div>
+              <div class="page-title">서비스 구독 신청</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="go('marketplace')">← 돌아가기</button>
+          </div>
+          <div class="wizard-steps">
+            <div style="display:flex;align-items:center"><div class="step-circle done">✓</div><span class="step-label" style="color:var(--color-success)">서비스 선택</span></div>
+            <div class="step-line done"></div>
+            <div style="display:flex;align-items:center"><div class="step-circle curr">2</div><span class="step-label" style="color:var(--color-primary)">플랜 선택</span></div>
+            <div class="step-line"></div>
+            <div style="display:flex;align-items:center"><div class="step-circle">3</div><span class="step-label">결제 확인</span></div>
+          </div>
+          <div class="grid-2" style="max-width:660px">
+            <div class="card" style="border-color:var(--color-primary);background:var(--color-primary-light);cursor:pointer">
+              <div class="flex items-center justify-between mb-12"><div class="font-bold" style="font-size:15px">표준 플랜</div><div style="width:18px;height:18px;border-radius:50%;background:var(--color-primary)"></div></div>
+              <div style="font-size:22px;font-weight:800;color:var(--color-primary);margin-bottom:11px">₩80,000<span style="font-size:12px;font-weight:400;color:var(--color-text-secondary)">/월</span></div>
+              <ul style="font-size:12px;color:var(--color-text-secondary);list-style:none;display:flex;flex-direction:column;gap:5px">
+                <li>✅ 사용자 100명</li><li>✅ 보관 500GB</li><li>✅ 기본 감사 로그</li><li>❌ AI 미포함</li>
+              </ul>
+            </div>
+            <div class="card" style="cursor:pointer">
+              <div class="flex items-center justify-between mb-12"><div class="font-bold" style="font-size:15px">프로 플랜</div><span class="badge badge-purple">추천</span></div>
+              <div style="font-size:22px;font-weight:800;color:var(--color-primary);margin-bottom:11px">₩150,000<span style="font-size:12px;font-weight:400;color:var(--color-text-secondary)">/월</span></div>
+              <ul style="font-size:12px;color:var(--color-text-secondary);list-style:none;display:flex;flex-direction:column;gap:5px">
+                <li>✅ 사용자 무제한</li><li>✅ 보관 2TB</li><li>✅ CSAP 전체 감사</li><li>✅ AI 포함</li>
+              </ul>
+            </div>
+          </div>
+          <div class="mt-16 flex gap-8"><button class="btn btn-secondary">이전</button><button class="btn btn-primary">다음 →</button></div>
+        </div>
+
+        <!-- ══ 8. Notifications ══════════════════════════ -->
+        <div class="page" id="page-notifications">
+          <div class="page-header">
+            <div class="page-title-wrap">
+              <div class="page-title">알림</div>
+              <div class="page-subtitle">읽지 않은 알림 3개</div>
+            </div>
+            <button class="btn btn-secondary btn-sm">모두 읽음</button>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-btn active">전체 (8)</div>
+            <div class="tab-btn">보안 (2)</div>
+            <div class="tab-btn">구독 (3)</div>
+            <div class="tab-btn">시스템 (3)</div>
+          </div>
+          <div class="card" style="max-width:660px">
+            <div class="notif-item notif-unread"><div class="notif-icon" style="background:#fee2e2">🛡️</div><div><div class="notif-title">CSAP D-06-03 위반 감지 <span class="badge badge-red" style="margin-left:4px">긴급</span></div><div class="notif-desc">감사 로그가 DB에 기록되지 않습니다.</div><div class="notif-time">5분 전</div></div></div>
+            <div class="notif-item notif-unread"><div class="notif-icon" style="background:#dbeafe">🏢</div><div><div class="notif-title">신규 테넌트 — 인천광역시교육청</div><div class="notif-desc">프로 플랜으로 등록 신청. 검토 필요.</div><div class="notif-time">23분 전</div></div></div>
+            <div class="notif-item notif-unread"><div class="notif-icon" style="background:#dcfce7">💳</div><div><div class="notif-title">경기도청 인보이스 결제 대기</div><div class="notif-desc">₩2,400,000 — 만료: 2026-04-15</div><div class="notif-time">1시간 전</div></div></div>
+            <div class="notif-item"><div class="notif-icon" style="background:#f1f5f9">⚙️</div><div><div class="notif-title">시스템 업데이트 v2.1.3 완료</div><div class="notif-desc">무중단 배포 성공. 다운타임 0분.</div><div class="notif-time">어제</div></div></div>
+          </div>
+        </div>
+
+        <!-- ══ 9. Settings ════════════════════════════════ -->
+        <div class="page" id="page-settings">
+          <div class="page-header"><div class="page-title">설정</div></div>
+          <div class="grid-2" style="max-width:760px">
+            <div class="card">
+              <div class="chart-title mb-16">테넌트 브랜딩</div>
+              <div class="form-row"><label class="form-label">플랫폼 이름</label><input class="input" value="Gov SaaS Platform"></div>
+              <div class="form-row"><label class="form-label">기본 언어</label><select class="input"><option>한국어</option><option>English</option></select></div>
+              <div class="form-row"><label class="form-label">대표 색상</label><div class="flex items-center gap-8"><input type="color" value="#2563eb" style="width:38px;height:30px;border-radius:5px;border:1px solid var(--color-border)"><input class="input" value="#2563eb" style="max-width:110px"></div></div>
+              <button class="btn btn-primary btn-sm">저장</button>
+            </div>
+            <div class="card">
+              <div class="chart-title mb-16">보안 설정</div>
+              <div style="display:flex;flex-direction:column;gap:13px">
+                <div class="flex items-center justify-between"><div><div class="font-semibold">2단계 인증 (MFA)</div><div class="text-sm text-secondary">관리자 계정 강제 적용</div></div><div style="width:38px;height:20px;background:var(--color-success);border-radius:10px;cursor:pointer;display:flex;align-items:center;padding:2px;justify-content:flex-end"><div style="width:16px;height:16px;background:#fff;border-radius:50%"></div></div></div>
+                <div class="flex items-center justify-between"><div><div class="font-semibold">세션 타임아웃</div><div class="text-sm text-secondary">JWT 접근 토큰 만료</div></div><select class="input" style="width:auto"><option>15분</option><option>30분</option><option>1시간</option></select></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ 10. Tenant Register ════════════════════════ -->
+        <div class="page" id="page-tenant-register">
+          <div class="page-header">
+            <div class="page-title-wrap">
+              <div class="breadcrumb">테넌트 관리 <span>›</span> 신규 등록</div>
+              <div class="page-title">테넌트 등록</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="go('tenant')">← 목록</button>
+          </div>
+          <div style="max-width:520px">
+            <div class="card">
+              <div class="form-row"><label class="form-label">기관명 *</label><input class="input" placeholder="예: 강남구청"></div>
+              <div class="form-row"><label class="form-label">도메인 *</label><input class="input" placeholder="예: gangnam.seoul.go.kr"></div>
+              <div class="form-row"><label class="form-label">구독 플랜 *</label><select class="input"><option>-- 선택 --</option><option>표준</option><option>프로</option><option>엔터프라이즈</option></select></div>
+              <div class="form-row"><label class="form-label">관리자 이메일 *</label><input class="input" type="email" placeholder="admin@example.go.kr"></div>
+              <div class="form-row"><label class="form-label">N2SF 최고 등급</label><select class="input"><option>O등급 (공개)</option><option>S등급 (민감)</option><option>C등급 (기밀)</option></select></div>
+              <div class="mt-16 flex gap-8"><button class="btn btn-primary">등록</button><button class="btn btn-secondary" onclick="go('tenant')">취소</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ 11. CRM ════════════════════════════════════ -->
+        <div class="page" id="page-crm">
+          <div class="page-header">
+            <div class="page-title-wrap">
+              <div class="breadcrumb">서비스 <span>›</span> 민원 CRM</div>
+              <div class="page-title">민원 CRM</div>
+            </div>
+            <button class="btn btn-primary btn-sm">+ 민원 등록</button>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-label">전체 민원</div><div class="kpi-value">1,284</div><div class="kpi-trend up">▲ 23 신규</div></div>
+            <div class="kpi-card"><div class="kpi-label">처리 중</div><div class="kpi-value" style="color:var(--color-warning)">47</div><div class="kpi-trend neutral">평균 2.3일</div></div>
+            <div class="kpi-card"><div class="kpi-label">완료</div><div class="kpi-value" style="color:var(--color-success)">1,221</div><div class="kpi-trend up">96.8%</div></div>
+            <div class="kpi-card"><div class="kpi-label">SLA 초과</div><div class="kpi-value" style="color:var(--color-danger)">16</div><div class="kpi-trend down">▼ 1.2%</div></div>
+          </div>
+          <div class="card">
+            <table class="data-table"><thead><tr><th>ID</th><th>제목</th><th>분류</th><th>접수일</th><th>상태</th></tr></thead>
+            <tbody>
+              <tr><td><code style="font-size:11px">CRM-0412</code></td><td>도로 보수 요청 — 테헤란로 123</td><td><span class="badge badge-blue">도로/교통</span></td><td>2026-04-05</td><td><span class="status-dot active">처리 중</span></td></tr>
+              <tr><td><code style="font-size:11px">CRM-0411</code></td><td>소음 민원 — 야간 공사</td><td><span class="badge badge-orange">환경</span></td><td>2026-04-04</td><td><span class="status-dot warning">검토</span></td></tr>
+              <tr><td><code style="font-size:11px">CRM-0408</code></td><td>주민세 환급 요청</td><td><span class="badge badge-green">세금</span></td><td>2026-04-02</td><td><span class="status-dot active">완료</span></td></tr>
+            </tbody></table>
+          </div>
+        </div>
+
+        <!-- ══ 12. Analytics ══════════════════════════════ -->
+        <div class="page" id="page-analytics">
+          <div class="page-header">
+            <div class="page-title-wrap">
+              <div class="page-title">분석 &amp; BI 대시보드</div>
+            </div>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-label">일일 활성 사용자</div><div class="kpi-value">8,432</div><div class="kpi-trend up">▲ 5.2%</div></div>
+            <div class="kpi-card"><div class="kpi-label">평균 응답 시간</div><div class="kpi-value">142ms</div><div class="kpi-trend down">▼ 12ms 개선</div></div>
+            <div class="kpi-card"><div class="kpi-label">API 호출 수</div><div class="kpi-value">2.1M</div><div class="kpi-trend up">▲ 8.7%</div></div>
+            <div class="kpi-card"><div class="kpi-label">오류율</div><div class="kpi-value" style="color:var(--color-success)">0.03%</div><div class="kpi-trend down">▼ 0.01%</div></div>
+          </div>
+          <div class="card"><div class="chart-title">서비스별 사용량</div><div class="bar-chart" style="height:100px">
+            <div class="bar-col"><div class="bar-fill" style="height:85%;background:#2563eb"></div><div class="bar-label">업무</div></div>
+            <div class="bar-col"><div class="bar-fill" style="height:62%;background:#7c3aed"></div><div class="bar-label">문서</div></div>
+            <div class="bar-col"><div class="bar-fill" style="height:45%;background:#16a34a"></div><div class="bar-label">CRM</div></div>
+            <div class="bar-col"><div class="bar-fill" style="height:78%;background:#d97706"></div><div class="bar-label">BI</div></div>
+            <div class="bar-col"><div class="bar-fill" style="height:55%;background:#0891b2"></div><div class="bar-label">AI</div></div>
+          </div></div>
+        </div>
+
+      </main><!-- end main-content -->
+    </div><!-- end main-area -->
+
+    <!-- ── AI SIDE PANEL ─────────────────────────────────── -->
+    <div class="ai-panel" id="aiPanel">
+      <!-- Resize handle -->
+      <div class="ai-resize-handle" id="aiResizeHandle"></div>
+
+      <div class="ai-panel-header">
+        <div class="ai-panel-header-title">
+          <div class="ai-status-dot"></div>
+          ✨ AI 어시스턴트
+          <span style="font-size:11px;color:var(--color-text-muted);font-weight:400">(LM Studio)</span>
+        </div>
+        <div class="ai-panel-actions">
+          <button class="ai-panel-btn" onclick="expandAiPanel()" title="최대화">⤢</button>
+          <button class="ai-panel-btn ai-mobile-close" onclick="closeAiPanel()" title="닫기">✕</button>
+          <button class="ai-panel-btn" onclick="closeAiPanel()" title="닫기" style="display:none" id="aiCloseDesktop">✕</button>
+          <button class="ai-panel-btn" onclick="closeAiPanel()" title="닫기">✕</button>
+        </div>
+      </div>
+
+      <div class="ai-data-warn">⚠️ <strong>N2SF O등급</strong> 공개 데이터만 입력 가능. C/S등급 차단.</div>
+
+      <div class="ai-chat-wrap" id="aiChatWrap">
+        <div class="chat-msg bot">
+          <div class="chat-bubble">
+            Gov SaaS AI 어시스턴트입니다.<br>
+            O등급 공개 데이터에 대한 질문을 도와드립니다.<br><br>
+            <strong>예시:</strong> "CSAP D-08 요건 설명", "이번달 현황 요약", "SDK 사용법"
+          </div>
+          <div class="chat-time">방금</div>
+        </div>
+      </div>
+
+      <div class="ai-input-row">
+        <input class="input" id="aiInput" placeholder="질문 입력... (Enter)" onkeydown="if(event.key==='Enter')sendAiMsg()" style="flex:1">
+        <button class="btn btn-primary btn-sm" onclick="sendAiMsg()">↑</button>
+      </div>
+    </div>
+
+  </div><!-- end app-body -->
+
+  <!-- ── MOBILE BOTTOM TAB ──────────────────────────────── -->
+  <nav class="bottom-tab" id="bottomTab">
+    <div class="btab-item active" onclick="go('dashboard')"><span class="btab-icon">🏠</span><span class="btab-label">홈</span></div>
+    <div class="btab-item" onclick="go('marketplace')"><span class="btab-icon">🛒</span><span class="btab-label">서비스</span></div>
+    <div class="btab-item" onclick="toggleAiPanel()"><span class="btab-icon">✨</span><span class="btab-label">AI</span></div>
+    <div class="btab-item" onclick="go('notifications')"><span class="btab-icon">🔔</span><span class="btab-label">알림</span></div>
+    <div class="btab-item" onclick="go('settings')"><span class="btab-icon">⚙️</span><span class="btab-label">설정</span></div>
+  </nav>
+
+</div><!-- end app-shell -->
+
+<!-- Overflow popover -->
+<div id="overflowPop" style="
+  display:none;position:fixed;z-index:9000;
+  background:var(--color-surface);border:1px solid var(--color-border);
+  border-radius:10px;box-shadow:var(--shadow-xl);width:220px;padding:8px;
+" onclick="event.stopPropagation()">
+  <div style="font-size:11px;font-weight:700;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.06em;padding:4px 8px 8px">추가 서비스</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+    <div class="overflow-svc-item" onclick="selectSvc('doc');hideOverflow()">📄 문서관리</div>
+    <div class="overflow-svc-item" onclick="selectSvc('hr');hideOverflow()">👨‍💼 인사관리</div>
+    <div class="overflow-svc-item" onclick="selectSvc('task');hideOverflow()">✅ 업무관리</div>
+    <div class="overflow-svc-item" onclick="selectSvc('audit');hideOverflow()">📋 감사로그</div>
+  </div>
+  <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--color-border);font-size:12px;color:var(--color-primary);cursor:pointer;padding-left:4px" onclick="go('catalog');hideOverflow()">+ 서비스 마켓플레이스</div>
+</div>
+
+<div class="demo-label">MTU-U1-P 데모 v2.0 | ☰ 레일 확장 · 📌 플로팅 사이드바 · ✨ AI 패널</div>
+
+<style>
+.overflow-svc-item{
+  padding:7px 8px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;
+  border:1px solid var(--color-border);transition:background var(--transition)
+}
+.overflow-svc-item:hover{background:var(--color-surface-hover);border-color:var(--color-primary);color:var(--color-primary)}
+</style>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════ -->
+<script>
+/* ── State ───────────────────────────────────────────────── */
+let curSvc    = 'dashboard';
+let curPage   = 'dashboard';
+let curPortal = 'admin';
+let railExpanded = false;
+let sidebarPinned = false;
+let aiOpen    = false;
+let recentMode = 'tabs'; // 'tabs' | 'list'
+let recentHistory = []; // [{id, title, icon, svc}]
+
+/* ── Sidebar Config ──────────────────────────────────────── */
+const SIDEBARS = {
+  dashboard: {
+    icon:'🏠', bg:'#dbeafe', title:'대시보드',
+    sections:[
+      {items:[
+        {icon:'📊',label:'개요',page:'dashboard'},
+        {icon:'📈',label:'실시간 모니터링',page:'dashboard'},
+        {icon:'🔔',label:'알림 센터',page:'notifications',badge:'3'},
+      ]},
+      {title:'빠른 실행',items:[
+        {icon:'🏢',label:'테넌트 등록',page:'tenant-register'},
+        {icon:'📋',label:'감리 보고서',page:'csap'},
+      ]}
+    ]
+  },
+  tenant: {
+    icon:'🏢', bg:'#dcfce7', title:'테넌트 관리',
+    sections:[
+      {items:[
+        {icon:'📋',label:'전체 목록',page:'tenant'},
+        {icon:'➕',label:'신규 등록',page:'tenant-register'},
+        {icon:'⚙️',label:'일괄 설정',page:'tenant'},
+      ]},
+      {title:'구독',items:[
+        {icon:'💳',label:'구독 현황',page:'billing'},
+        {icon:'📊',label:'사용량',page:'analytics'},
+      ]}
+    ]
+  },
+  billing: {
+    icon:'💳', bg:'#fef9c3', title:'빌링',
+    sections:[{items:[
+      {icon:'📊',label:'대시보드',page:'billing'},
+      {icon:'📄',label:'인보이스',page:'billing'},
+      {icon:'📈',label:'수익 분석',page:'billing'},
+      {icon:'⚙️',label:'결제 설정',page:'settings'},
+    ]}]
+  },
+  catalog: {
+    icon:'🛒', bg:'#e0f2fe', title:'서비스 카탈로그',
+    sections:[
+      {items:[
+        {icon:'📋',label:'전체 서비스',page:'catalog'},
+        {icon:'➕',label:'서비스 등록',page:'catalog'},
+        {icon:'📊',label:'사용 통계',page:'analytics'},
+      ]},
+      {title:'카테고리',items:[
+        {icon:'📋',label:'업무 관리',page:'catalog'},
+        {icon:'📄',label:'문서 관리',page:'catalog'},
+        {icon:'✨',label:'AI 서비스',page:'catalog'},
+      ]}
+    ]
+  },
+  csap: {
+    icon:'🛡️', bg:'#ede9fe', title:'CSAP 준수',
+    sections:[
+      {items:[
+        {icon:'📊',label:'전체 현황',page:'csap'},
+        {icon:'🔍',label:'항목 점검',page:'csap'},
+        {icon:'📋',label:'감리 보고서',page:'csap'},
+      ]},
+      {title:'표준',items:[
+        {icon:'🛡️',label:'CSAP 79항목',page:'csap'},
+        {icon:'🔒',label:'N2SF 6영역',page:'csap'},
+        {icon:'📑',label:'ISMS-P',page:'csap'},
+      ]}
+    ]
+  },
+  marketplace: {
+    icon:'🏪', bg:'#fce7f3', title:'마켓플레이스',
+    sections:[{items:[
+      {icon:'🏪',label:'서비스 탐색',page:'marketplace'},
+      {icon:'💳',label:'구독 신청',page:'wizard'},
+      {icon:'📋',label:'내 구독',page:'marketplace'},
+    ]}]
+  },
+  crm: {
+    icon:'👥', bg:'#fce7f3', title:'민원 CRM',
+    sections:[{items:[
+      {icon:'📋',label:'민원 목록',page:'crm'},
+      {icon:'➕',label:'민원 접수',page:'crm'},
+      {icon:'📊',label:'처리 현황',page:'crm'},
+      {icon:'⏱️',label:'SLA 관리',page:'crm'},
+    ]}]
+  },
+  analytics: {
+    icon:'📊', bg:'#ffedd5', title:'분석 & BI',
+    sections:[{items:[
+      {icon:'📊',label:'대시보드',page:'analytics'},
+      {icon:'📈',label:'트렌드',page:'analytics'},
+      {icon:'📋',label:'보고서',page:'analytics'},
+    ]}]
+  },
+  ai: {
+    icon:'✨', bg:'#ede9fe', title:'AI 어시스턴트',
+    sections:[{items:[
+      {icon:'💬',label:'대화',page:'dashboard'},
+      {icon:'📋',label:'대화 기록',page:'dashboard'},
+      {icon:'⚙️',label:'AI 설정',page:'settings'},
+    ]}]
+  },
+};
+
+const PAGE_META = {
+  dashboard:       {title:'대시보드',    icon:'🏠', svc:'dashboard'},
+  tenant:          {title:'테넌트 관리',  icon:'🏢', svc:'tenant'},
+  billing:         {title:'빌링',        icon:'💳', svc:'billing'},
+  csap:            {title:'CSAP 준수',   icon:'🛡️', svc:'csap'},
+  catalog:         {title:'서비스 카탈로그',icon:'🛒',svc:'catalog'},
+  marketplace:     {title:'마켓플레이스', icon:'🏪', svc:'marketplace'},
+  wizard:          {title:'구독 신청',   icon:'💳', svc:'marketplace'},
+  notifications:   {title:'알림',        icon:'🔔', svc:'dashboard'},
+  settings:        {title:'설정',        icon:'⚙️', svc:'dashboard'},
+  'tenant-register':{title:'테넌트 등록', icon:'➕', svc:'tenant'},
+  crm:             {title:'민원 CRM',    icon:'👥', svc:'crm'},
+  analytics:       {title:'분석 & BI',  icon:'📊', svc:'analytics'},
+};
+
+/* ── toggleRail() ────────────────────────────────────────── */
+function toggleRail() {
+  railExpanded = !railExpanded;
+  const rail = document.getElementById('serviceRail');
+  rail.classList.toggle('expanded', railExpanded);
+  document.getElementById('railToggleIcon').textContent = railExpanded ? '←' : '☰';
+}
+
+/* ── selectSvc() ─────────────────────────────────────────── */
+function selectSvc(svcId) {
+  // Update rail active state
+  document.querySelectorAll('.rail-item').forEach(el => el.classList.remove('active'));
+  const ri = document.getElementById('ri-' + svcId);
+  if (ri) ri.classList.add('active');
+  curSvc = svcId;
+
+  // Update floating sidebar
+  const def = SIDEBARS[svcId];
+  if (def) {
+    document.getElementById('sbIcon').textContent     = def.icon;
+    document.getElementById('sbIcon').style.background = def.bg;
+    document.getElementById('sbTitle').textContent    = def.title;
+    let html = '';
+    def.sections.forEach(sec => {
+      if (sec.title) html += `<div class="sidebar-sec-title">${sec.title}</div>`;
+      sec.items.forEach(item => {
+        html += `<div class="sidebar-item" onclick="go('${item.page}')">
+          <span class="sidebar-item-icon">${item.icon}</span>
+          <span>${item.label}</span>
+          ${item.badge ? `<span class="sidebar-item-badge">${item.badge}</span>` : ''}
+        </div>`;
+      });
+    });
+    document.getElementById('sbNav').innerHTML = html;
+    renderSidebarRecent();
+  }
+
+  // Open sidebar (floating by default)
+  openSidebar();
+
+  // Navigate to default page
+  const pageMap = {
+    dashboard:'dashboard', tenant:'tenant', billing:'billing',
+    catalog:'catalog', csap:'csap', marketplace:'marketplace',
+    crm:'crm', analytics:'analytics', ai:'dashboard',
+    doc:'catalog', hr:'catalog', task:'catalog', audit:'csap',
+  };
+  if (pageMap[svcId]) go(pageMap[svcId], false);
+}
+
+/* ── openSidebar / closeSidebar ──────────────────────────── */
+function openSidebar() {
+  if (sidebarPinned) return; // pinned = always visible
+  const sb = document.getElementById('floatSidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  sb.classList.add('open');
+  ov.classList.add('visible');
+}
+function closeSidebar() {
+  if (sidebarPinned) return;
+  document.getElementById('floatSidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('visible');
+}
+function toggleSidebarPin() {
+  sidebarPinned = !sidebarPinned;
+  const sb = document.getElementById('floatSidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  const pinBtn = document.getElementById('pinBtn');
+  if (sidebarPinned) {
+    sb.classList.add('pinned','open');
+    sb.style.position = 'relative';
+    sb.style.transform = 'none';
+    sb.style.boxShadow = 'none';
+    sb.style.flexShrink = '0';
+    ov.classList.remove('visible');
+    pinBtn.style.color = 'var(--color-primary)';
+    // Insert sidebar before main-content
+    const ma = document.getElementById('mainArea');
+    ma.style.flexDirection = 'row';
+    ma.insertBefore(sb, ma.querySelector('.main-content'));
+  } else {
+    sb.classList.remove('pinned');
+    sb.style.position = '';
+    sb.style.transform = '';
+    sb.style.boxShadow = '';
+    sb.style.flexShrink = '';
+    pinBtn.style.color = '';
+    // Move sidebar back to absolute
+    const ma = document.getElementById('mainArea');
+    ma.style.flexDirection = '';
+    ma.insertBefore(sb, ma.querySelector('.sidebar-overlay').nextSibling);
+    sb.classList.add('open');
+    ov.classList.add('visible');
+  }
+}
+
+/* ── go(pageId) ──────────────────────────────────────────── */
+function go(pageId, addHistory = true) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  const pg = document.getElementById('page-' + pageId);
+  if (pg) pg.classList.add('active');
+  curPage = pageId;
+
+  // Update sidebar active item
+  document.querySelectorAll('.sidebar-item').forEach(el => {
+    el.classList.remove('active');
+    if (el.getAttribute('onclick')?.includes(`'${pageId}'`)) el.classList.add('active');
+  });
+
+  // Add to history
+  if (addHistory) addToHistory(pageId);
+
+  // Mobile tab
+  document.querySelectorAll('.btab-item').forEach(el => el.classList.remove('active'));
+  const tabMap = {dashboard:0, marketplace:1, notifications:3, settings:4};
+  if (tabMap[pageId] !== undefined) document.querySelectorAll('.btab-item')[tabMap[pageId]]?.classList.add('active');
+
+  // Close floating sidebar on mobile
+  if (window.innerWidth <= 768) closeSidebar();
+
+  // Scroll top
+  document.getElementById('mainContent')?.scrollTo(0,0);
+}
+
+/* ── Recent History ──────────────────────────────────────── */
+function addToHistory(pageId) {
+  const meta = PAGE_META[pageId];
+  if (!meta) return;
+  recentHistory = recentHistory.filter(h => h.id !== pageId);
+  recentHistory.unshift({id:pageId, title:meta.title, icon:meta.icon, svc:meta.svc});
+  if (recentHistory.length > 8) recentHistory.pop();
+  renderRecentTabs();
+  renderSidebarRecent();
+}
+
+function renderRecentTabs() {
+  const bar = document.getElementById('recentTabsBar');
+  if (recentMode !== 'tabs') { bar.classList.remove('visible'); return; }
+  bar.classList.add('visible');
+  bar.innerHTML = recentHistory.map(h => `
+    <div class="rtab ${h.id === curPage ? 'active':''}" onclick="go('${h.id}')">
+      <span class="rtab-icon">${h.icon}</span>
+      <span class="rtab-label">${h.title}</span>
+      <button class="rtab-close" onclick="event.stopPropagation();removeTab('${h.id}')">✕</button>
+    </div>`).join('');
+}
+function removeTab(pageId) {
+  recentHistory = recentHistory.filter(h => h.id !== pageId);
+  renderRecentTabs();
+  renderSidebarRecent();
+}
+
+function renderSidebarRecent() {
+  const sec = document.getElementById('sidebarRecentSection');
+  const list = document.getElementById('sidebarRecentList');
+  if (recentMode !== 'list' || recentHistory.length === 0) { sec.style.display='none'; return; }
+  sec.style.display='block';
+  list.innerHTML = recentHistory.slice(0,5).map(h => `
+    <div class="sidebar-item" onclick="go('${h.id}')">
+      <span class="sidebar-item-icon">${h.icon}</span>
+      <span>${h.title}</span>
+    </div>`).join('');
+}
+
+function toggleRecentMode() {
+  recentMode = recentMode === 'tabs' ? 'list' : 'tabs';
+  const icon = document.getElementById('modeIcon');
+  const label = document.getElementById('modeLabelText');
+  if (recentMode === 'tabs') {
+    icon.textContent = '🗂️'; label.textContent = '탭 모드';
+  } else {
+    icon.textContent = '📋'; label.textContent = '목록 모드';
+  }
+  renderRecentTabs();
+  renderSidebarRecent();
+}
+
+/* ── AI Panel ────────────────────────────────────────────── */
+function toggleAiPanel() {
+  aiOpen ? closeAiPanel() : openAiPanel();
+}
+function openAiPanel() {
+  aiOpen = true;
+  document.getElementById('aiPanel').classList.add('open');
+  document.getElementById('ri-ai')?.classList.add('active');
+}
+function closeAiPanel() {
+  aiOpen = false;
+  document.getElementById('aiPanel').classList.remove('open');
+  document.getElementById('ri-ai')?.classList.remove('active');
+}
+function expandAiPanel() {
+  const panel = document.getElementById('aiPanel');
+  const curW = panel.offsetWidth;
+  panel.style.width = curW >= 500 ? '360px' : '520px';
+}
+
+/* ── AI Panel Resize (drag) ──────────────────────────────── */
+let resizing = false, resX = 0, resW = 0;
+document.getElementById('aiResizeHandle').addEventListener('mousedown', e => {
+  if (window.innerWidth <= 768) return;
+  resizing = true; resX = e.clientX;
+  resW = document.getElementById('aiPanel').offsetWidth;
+  document.getElementById('aiResizeHandle').classList.add('dragging');
+  e.preventDefault();
+});
+document.addEventListener('mousemove', e => {
+  if (!resizing) return;
+  const diff = resX - e.clientX;
+  const newW = Math.max(260, Math.min(600, resW + diff));
+  document.getElementById('aiPanel').style.width = newW + 'px';
+});
+document.addEventListener('mouseup', () => {
+  resizing = false;
+  document.getElementById('aiResizeHandle')?.classList.remove('dragging');
+});
+/* Touch resize for tablets */
+document.getElementById('aiResizeHandle').addEventListener('touchstart', e => {
+  if (window.innerWidth <= 768) return;
+  resizing = true; resX = e.touches[0].clientX;
+  resW = document.getElementById('aiPanel').offsetWidth;
+  e.preventDefault();
+}, {passive:false});
+document.addEventListener('touchmove', e => {
+  if (!resizing) return;
+  const diff = resX - e.touches[0].clientX;
+  const newW = Math.max(260, Math.min(600, resW + diff));
+  document.getElementById('aiPanel').style.width = newW + 'px';
+});
+document.addEventListener('touchend', () => { resizing = false; });
+
+/* ── AI Chat ─────────────────────────────────────────────── */
+const AI_ANSWERS = {
+  csap:   'CSAP D-08 접근통제 12개 항목 핵심: ① JWT 15분 만료 ② RBAC 모든 엔드포인트 ③ IDOR 방지 ④ 동시 세션 ≤3개. 현재 준수율 83%. D-08-07 IDOR 취약점 즉시 해결이 필요합니다.',
+  테넌트: '활성 테넌트 247개. 이번달 +23개. CSAP 평균 94.9%. 주의 필요: 경기도청(CSAP 72%, 결제 대기), 인천광역시교육청(미활성).',
+  sdk:    '```\nregisterService({\n  id: "my-svc",\n  name: "내 서비스",\n  category: "TASK",\n  version: "1.0.0",\n  menuItems: [{label:"홈",path:"/home"}],\n  csapGuards: {dataGrade:"O"}\n})\n```\n등록 즉시 서비스 레일에 반영됩니다.',
+  n2sf:   'N2SF 데이터 등급: O등급(공개) AI 전송 가능, S등급(민감) 차단, C등급(기밀) 차단. 개인정보(PII)는 O등급이라도 마스킹 후 전송 필수.',
+  default:'공개(O등급) 데이터에 대한 질문을 도와드립니다. "csap", "테넌트", "sdk", "n2sf" 관련 질문을 해보세요.',
+};
+function sendAiMsg() {
+  const inp = document.getElementById('aiInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  const wrap = document.getElementById('aiChatWrap');
+  const now = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+  wrap.innerHTML += `<div class="chat-msg user"><div class="chat-bubble">${text}</div><div class="chat-time">${now}</div></div>`;
+  inp.value = '';
+  wrap.scrollTop = wrap.scrollHeight;
+  const key = Object.keys(AI_ANSWERS).find(k => text.includes(k)) || 'default';
+  setTimeout(() => {
+    wrap.innerHTML += `<div class="chat-msg bot"><div class="chat-bubble">${AI_ANSWERS[key]}</div><div class="chat-time">방금</div></div>`;
+    wrap.scrollTop = wrap.scrollHeight;
+  }, 600);
+}
+
+/* ── Portal Switcher ─────────────────────────────────────── */
+function switchPortal(p) {
+  curPortal = p;
+  ['admin','tenant','mobile'].forEach(id => {
+    document.getElementById('p'+id.charAt(0).toUpperCase()+id.slice(1))?.classList.remove('active');
+  });
+  document.getElementById('p'+p.charAt(0).toUpperCase()+p.slice(1))?.classList.add('active');
+
+  const shell = document.getElementById('appShell');
+  const badge = document.getElementById('tenantBadge');
+
+  // Remove all portal classes first
+  shell.classList.remove('mobile-sim');
+
+  if (p === 'mobile') {
+    // Use CSS class for mobile simulation — no inline style hacks
+    shell.classList.add('mobile-sim');
+    badge.textContent = '모바일 뷰';
+    closeAiPanel();
+    closeSidebar();
+    go('marketplace');
+  } else {
+    if (p === 'tenant') {
+      badge.textContent = '서울특별시청';
+      selectSvc('marketplace');
+    } else {
+      badge.textContent = '슈퍼 어드민';
+      selectSvc('dashboard');
+    }
+  }
+}
+
+/* ── Theme Toggle ────────────────────────────────────────── */
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
+}
+
+/* ── Category filter buttons ────────────────────────────── */
+document.querySelectorAll('.cat-filter').forEach(bar => {
+  bar.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      bar.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+});
+document.querySelectorAll('.tab-bar').forEach(bar => {
+  bar.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      bar.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+});
+
+/* ── Overflow Popover ───────────────────────────────────── */
+function showOverflow(e) {
+  e.stopPropagation();
+  const pop = document.getElementById('overflowPop');
+  const rect = e.currentTarget.getBoundingClientRect();
+  pop.style.display = 'block';
+  pop.style.left = (rect.right + 8) + 'px';
+  pop.style.top  = rect.top + 'px';
+}
+function hideOverflow() { document.getElementById('overflowPop').style.display='none'; }
+document.addEventListener('click', hideOverflow);
+
+/* ── Init ────────────────────────────────────────────────── */
+selectSvc('dashboard');
+go('dashboard', false);
+// Start with a few history items to demonstrate recent tabs
+['dashboard','tenant','billing'].forEach(p => addToHistory(p));
+go('dashboard', false);
+</script>
+</body>
+</html>

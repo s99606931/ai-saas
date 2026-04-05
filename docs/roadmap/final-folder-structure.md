@@ -2,7 +2,7 @@
 
 > **문서 ID**: FINAL-FOLDER-STRUCTURE-2026
 > **작성일**: 2026-04-05
-> **버전**: 1.0.0
+> **버전**: 1.1.0
 > **상태**: Draft (사용자 확인 요청)
 > **목적**: 플랫폼 구현 완료 후 전체 레포지토리 구조 확인
 
@@ -13,15 +13,27 @@
 ```
 public-saas-framework/                ← 레포 루트 (포크 단위)
 │
+├── docker-compose.yml                ★ 로컬 개발용 전체 서비스 구동
+├── docker-compose.prod.yml           운영 참조용 (k3s Helm 배포 기반)
+├── .env.example                      전체 환경변수 템플릿
+├── .env.local                        로컬 전용 (gitignore)
+│
 ├── platform/                         ★ 플랫폼 구현체 (PRE-BUILT 서비스)
 ├── business-template/                ★ 비즈니스 로직 템플릿 (포크 후 이곳만 개발)
 ├── docs/                             ★ 문서 프레임워크 (35 MTU 기존 완료)
 ├── infra/                            ★ 인프라 설정 (k3s, Gitea, Helm)
+├── scripts/                          ★ 유틸리티 스크립트 (환경 구성, CSAP 체크)
+├── e2e/                              ★ E2E 테스트 (Playwright)
+├── prisma/                           ★ 공통 DB 스키마 (PostgreSQL + Prisma)
+│
 ├── .claude/                          CC 하네스 설정
 ├── .bkit/                            bkit PDCA 엔진
 ├── CLAUDE.md                         프로젝트 하네스 규칙
 ├── FORK-GUIDE.md                     → 포크 시작 가이드 (신규)
 ├── CHANGELOG.md                      변경 이력
+├── package.json                      모노레포 루트 (pnpm workspaces)
+├── pnpm-workspace.yaml               워크스페이스 설정
+├── turbo.json                        Turborepo 빌드 파이프라인
 └── README.md                         프로젝트 소개
 ```
 
@@ -87,6 +99,10 @@ platform/
 │   │   │   └── lib/
 │   │   │       ├── jwt.ts            # RS256 JWT (CSAP D-08: 15분 만료)
 │   │   │       └── audit.ts          # 인증 이벤트 감사 로그
+│   │   ├── tests/
+│   │   │   ├── unit/                 # 단위 테스트
+│   │   │   ├── integration/          # 통합 테스트
+│   │   │   └── csap/                 # CSAP D-08 전용 보안 테스트
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -96,6 +112,10 @@ platform/
 │   │   │   ├── models/               # User, UserRole, MfaConfig
 │   │   │   └── lib/
 │   │   │       └── password-policy.ts # CSAP D-08 비밀번호 정책
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   ├── integration/
+│   │   │   └── csap/                 # CSAP D-08 비밀번호 정책 검증
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -105,6 +125,10 @@ platform/
 │   │   │   ├── models/               # Tenant, TenantConfig, TenantTheme
 │   │   │   └── lib/
 │   │   │       └── isolation.ts      # N2SF 테넌트 격리 로직
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   ├── integration/
+│   │   │   └── csap/                 # N2SF 테넌트 격리 검증
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -114,6 +138,10 @@ platform/
 │   │   │   ├── plugins/              # Fastify 플러그인 (인증, Rate Limit)
 │   │   │   ├── middleware/           # N2SF 데이터 등급 검증
 │   │   │   └── registry/             # 비즈니스 서비스 등록 레지스트리
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   ├── integration/
+│   │   │   └── csap/                 # Rate Limiting, 인증 미들웨어 검증
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -121,6 +149,9 @@ platform/
 │   │   ├── src/
 │   │   │   ├── handlers/             # 메뉴 CRUD, 권한 매핑, 트리 구성
 │   │   │   └── models/               # MenuItem, MenuPermission
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   └── integration/
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -128,6 +159,9 @@ platform/
 │   │   ├── src/
 │   │   │   ├── handlers/             # 서비스 등록, Feature Flag, 버전
 │   │   │   └── models/               # Service, ServiceVersion, FeatureFlag
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   └── integration/
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -135,6 +169,9 @@ platform/
 │   │   ├── src/
 │   │   │   ├── handlers/             # 플랜 관리, 구독 CRUD, 사용량 추적
 │   │   │   └── models/               # Plan, Subscription, UsageRecord
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   └── integration/
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -142,6 +179,9 @@ platform/
 │   │   ├── src/
 │   │   │   ├── handlers/             # 청구 계산, 인보이스, 세금계산서
 │   │   │   └── models/               # Invoice, Payment, TaxDocument
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   └── integration/
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -149,6 +189,9 @@ platform/
 │   │   ├── src/
 │   │   │   ├── handlers/             # 고객사, 담당자, 계약, 파이프라인
 │   │   │   └── models/               # Customer, Contact, Contract, Deal
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   └── integration/
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -160,6 +203,10 @@ platform/
 │   │   │   └── lib/
 │   │   │       ├── grade-check.ts    # C/S등급 → AI API 전송 차단 (N2SF N-05)
 │   │   │       └── pii-masking.ts    # PII 마스킹 (O등급 전송 전)
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   ├── integration/
+│   │   │   └── csap/                 # N2SF N-05 등급 검증 테스트
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -168,6 +215,9 @@ platform/
 │   │   │   ├── handlers/             # 이메일/SMS/인앱 알림
 │   │   │   ├── templates/            # 알림 템플릿 (한국어)
 │   │   │   └── models/               # NotificationTemplate, NotificationLog
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   └── integration/
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -177,6 +227,10 @@ platform/
 │   │   │   └── lib/
 │   │   │       ├── encrypt.ts        # AES-256 암호화 (CSAP D-09)
 │   │   │       └── minio-client.ts   # MinIO 클라이언트 (폐쇄망 S3)
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   ├── integration/
+│   │   │   └── csap/                 # CSAP D-09 암호화 검증
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -186,6 +240,10 @@ platform/
 │   │   │   └── lib/
 │   │   │       ├── append-only.ts    # append-only 로그 구조
 │   │   │       └── integrity.ts      # SHA-256 체인 검증
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   ├── integration/
+│   │   │   └── csap/                 # CSAP D-06 무결성 검증 테스트
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -193,6 +251,9 @@ platform/
 │   │   ├── src/
 │   │   │   ├── handlers/             # CSAP/N2SF/ISMS-P 현황 조회
 │   │   │   └── metrics/              # OpenTelemetry 메트릭 수집
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   └── integration/
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
@@ -200,6 +261,10 @@ platform/
 │       ├── src/
 │       │   ├── detectors/            # 이상 접근, 로그인 실패, IP 차단
 │       │   └── handlers/             # 보안 이벤트 처리
+│       ├── tests/
+│       │   ├── unit/
+│       │   ├── integration/
+│       │   └── csap/                 # 이상 탐지 정확도 검증
 │       ├── Dockerfile
 │       └── package.json
 │
@@ -230,11 +295,16 @@ platform/
 │   │
 │   ├── business-plugin-sdk/          # 비즈니스 서비스 플러그인 SDK ★
 │   │   ├── src/
-│   │   │   ├── register-service.ts   # API 게이트웨이 서비스 등록
-│   │   │   ├── csap-guard.ts         # CSAP 준수 자동 체크 훅
-│   │   │   ├── audit-hook.ts         # 감사 로그 자동 기록 훅
-│   │   │   └── types.ts              # 플러그인 인터페이스
-│   │   ├── README.md                 # SDK 사용법
+│   │   │   ├── register-service.ts   # 서비스 등록 API (API GW 연동)
+│   │   │   ├── service-manifest.ts   # 서비스 매니페스트 스키마 (Zod 검증)
+│   │   │   ├── csap-guard.ts         # CSAP 자동 준수 검사 훅
+│   │   │   ├── audit-hook.ts         # 감사 로그 자동 기록
+│   │   │   ├── menu-builder.ts       # 동적 메뉴 아이템 빌더
+│   │   │   └── types.ts              # 플러그인 인터페이스 타입
+│   │   ├── templates/                # 비즈니스 서비스 코드 템플릿
+│   │   │   ├── handler.template.ts   # 핸들러 보일러플레이트
+│   │   │   └── model.template.ts     # 도메인 모델 보일러플레이트
+│   │   ├── README.md                 # SDK 사용법 (포크 가이드)
 │   │   └── package.json
 │   │
 │   └── types/                        # 공통 TypeScript 타입
@@ -244,10 +314,6 @@ platform/
 │       │   ├── subscription.ts
 │       │   └── csap.ts
 │       └── package.json
-│
-├── prisma/                           # 공통 데이터베이스 스키마
-│   ├── schema.prisma                 # 전체 모델 정의
-│   └── migrations/                   # 마이그레이션 이력
 │
 ├── styles/                           # 공통 스타일 (Tailwind v4)
 │   ├── tailwind.css
@@ -275,19 +341,34 @@ business-template/
 │   │   ├── models/                   # 비즈니스 도메인 모델
 │   │   │   └── example.model.ts      # 예시 모델 (Zod 검증 포함)
 │   │   ├── services/                 # 비즈니스 도메인 서비스
-│   │   └── index.ts                  # SDK 등록 진입점
+│   │   └── index.ts                  # SDK registerService() 호출
+│   │
+│   ├── tests/
+│   │   ├── unit/                     # 비즈니스 로직 단위 테스트
+│   │   └── csap/                     # CSAP 준수 테스트 (SDK 자동 생성)
 │   │
 │   ├── docs/                         # 비즈니스 서비스 감리 산출물
-│   │   ├── plan.md                   # 자동 생성 템플릿 (FR-ID 포함)
-│   │   ├── design.md                 # 자동 생성 템플릿
-│   │   └── test-plan.md              # T05 시험계획서 템플릿
+│   │   ├── plan.md                   # 감리 Plan 템플릿 (FR-ID 포함)
+│   │   ├── design.md                 # 감리 Design 템플릿
+│   │   └── test-plan.md              # T05 시험계획서
 │   │
+│   ├── service-manifest.yaml         # 메뉴, 라우트, CSAP 설정
 │   ├── Dockerfile                    # k3s 배포용
-│   ├── service-manifest.yaml         # API 게이트웨이 등록 설정
 │   └── package.json
 │
-└── FORK-GUIDE.md                     # 포크 시작 체크리스트
+└── FORK-CHECKLIST.md                 # 단계별 체크리스트 (Day 1~10)
 ```
+
+### FORK-CHECKLIST.md 개요
+
+| Day | 작업 | 산출물 |
+|-----|------|--------|
+| Day 1 | 레포 포크, `.env.local` 설정, `docker compose up` 확인 | 개발환경 기동 |
+| Day 2 | `service-manifest.yaml` 작성, SDK `registerService()` 호출 | 서비스 등록 |
+| Day 3~5 | 비즈니스 핸들러/모델/서비스 구현 | 핵심 API |
+| Day 6~7 | 단위 테스트 + CSAP 테스트 작성 | 테스트 커버리지 80%+ |
+| Day 8 | 감리 산출물 자동 생성 확인 (`plan.md`, `design.md`) | 감리 준비 |
+| Day 9~10 | Gitea Actions 파이프라인, k3s 배포 | 운영 환경 |
 
 ---
 
@@ -315,7 +396,7 @@ docs/
 │
 ├── roadmap/                          # 로드맵
 │   ├── master-roadmap.md             # 기존 35 MTU 로드맵
-│   ├── saas-platform-roadmap.md      # ★ 신규 플랫폼 로드맵 (본 문서)
+│   ├── saas-platform-roadmap.md      # ★ 신규 플랫폼 로드맵 (v2.1.0)
 │   ├── final-folder-structure.md     # ★ 본 문서
 │   └── final-menu-structure.md       # ★ 메뉴 구조 문서
 │
@@ -326,7 +407,80 @@ docs/
 
 ---
 
-## 4. infra/ — 인프라 설정
+## 4. scripts/ — 유틸리티 스크립트
+
+```
+scripts/
+├── setup.sh                          # 초기 환경 구성 (pnpm install, docker pull, DB init)
+├── check-csap.sh                     # CSAP 준수 항목 자동 체크 (79항목 스캔)
+├── generate-audit.sh                 # 감리 산출물 자동 생성 (Plan/Design/Test 문서)
+└── seed-db.sh                        # 개발용 DB 시드 데이터 (테넌트, 사용자, 서비스)
+```
+
+### 스크립트 실행 예시
+
+```bash
+# 최초 환경 구성 (1회)
+./scripts/setup.sh
+
+# CSAP 준수 현황 체크 (수시)
+./scripts/check-csap.sh --report
+
+# 감리 산출물 자동 생성 (감리 전)
+./scripts/generate-audit.sh --service my-business-service
+
+# 시드 데이터 투입 (개발 환경)
+./scripts/seed-db.sh --env local
+```
+
+---
+
+## 5. prisma/ — 공통 데이터베이스 스키마
+
+```
+prisma/
+├── schema.prisma                     # 전체 모델 정의
+│   # 포함 모델:
+│   #   인증: User, Session, Role, Permission
+│   #   테넌트: Tenant, TenantTheme, TenantConfig
+│   #   SaaS: Service, ServiceVersion, FeatureFlag
+│   #   구독: Plan, Subscription, UsageRecord
+│   #   빌링: Invoice, Payment, TaxDocument
+│   #   CRM: Customer, Contact, Contract, Deal
+│   #   AI: AiModel, AiUsage, DataGradePolicy
+│   #   공통: Notification, File, AuditLog, MenuItem
+├── migrations/
+│   └── YYYYMMDDHHMMSS_init/          # 초기 마이그레이션
+└── seed/
+    ├── 00-tenants.ts                 # 기본 테넌트 (데모, 테스트)
+    ├── 01-users.ts                   # 관리자, 테스트 사용자
+    └── 02-services.ts                # 기본 SaaS 서비스 카탈로그
+```
+
+---
+
+## 6. e2e/ — E2E 테스트 (Playwright)
+
+```
+e2e/
+├── admin-portal/
+│   ├── tenant-management.spec.ts     # 테넌트 CRUD E2E
+│   ├── user-management.spec.ts       # 사용자 관리 E2E
+│   ├── billing-dashboard.spec.ts     # 빌링 대시보드 E2E
+│   └── csap-compliance.spec.ts       # CSAP D-08 E2E 검증
+├── tenant-portal/
+│   ├── service-subscription.spec.ts  # 서비스 구독 흐름 E2E
+│   ├── menu-customization.spec.ts    # 메뉴 편집 E2E
+│   └── ai-service-usage.spec.ts      # AI 서비스 사용 E2E
+├── fixtures/
+│   ├── test-tenant.ts                # 테스트 테넌트 데이터
+│   └── test-users.ts                 # 테스트 사용자 데이터
+└── playwright.config.ts              # Playwright 설정 (CI 포함)
+```
+
+---
+
+## 7. infra/ — 인프라 설정
 
 ```
 infra/
@@ -348,7 +502,7 @@ infra/
 
 ---
 
-## 5. .claude/ — CC 하네스 (기존 유지)
+## 8. .claude/ — CC 하네스 (기존 유지)
 
 ```
 .claude/
@@ -365,3 +519,4 @@ infra/
 | 버전 | 일자 | 내용 | 작성자 |
 |------|------|------|--------|
 | 1.0.0 | 2026-04-05 | 최종 폴더 구조 초안 작성 (사용자 확인 요청) | PM Agent |
+| 1.1.0 | 2026-04-05 | CTO 검토 반영: Docker Compose + .env 최상위 추가, scripts/ 디렉토리 추가, 전 서비스 tests/ 구조 추가(unit/integration/csap), business-plugin-sdk 상세화(manifest/menu-builder/templates), business-template 상세화(tests/csap, docs 템플릿, FORK-CHECKLIST), prisma/ 스키마 상세화(18개 모델, seed 디렉토리), e2e/ 테스트 디렉토리 추가(Playwright), prisma/e2e 최상위 분리 | Enterprise Expert |

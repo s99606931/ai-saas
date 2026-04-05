@@ -1,0 +1,43 @@
+{
+  "name": "@public-saas/ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "공공기관 SaaS 플랫폼 — 공통 UI 컴포넌트 (shadcn/ui 확장)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./atoms/*": {
+      "types": "./dist/atoms/*.d.ts",
+      "import": "./dist/atoms/*.js"
+    },
+    "./molecules/*": {
+      "types": "./dist/molecules/*.d.ts",
+      "import": "./dist/molecules/*.js"
+    },
+    "./organisms/*": {
+      "types": "./dist/organisms/*.d.ts",
+      "import": "./dist/organisms/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@public-saas/types": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}
