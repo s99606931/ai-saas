@@ -1,6 +1,6 @@
 {
   "version": "3.0",
-  "lastUpdated": "2026-04-06T11:52:06.924Z",
+  "lastUpdated": "2026-04-06T13:49:12.551Z",
   "activeFeatures": [
     "public-saas-framework",
     "scripts",
@@ -41,7 +41,8 @@
     "electronic-approval",
     "schemas",
     "handlers",
-    "public-data-integration"
+    "public-data-integration",
+    "tmp"
   ],
   "primaryFeature": "public-saas-framework",
   "features": {
@@ -64,9 +65,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T10:19:06.640Z",
-        "lastUpdated": "2026-04-05T22:05:56.343Z"
+        "lastUpdated": "2026-04-06T12:40:22.171Z"
       },
-      "lastFile": "/data/ai-saas/scripts/security-audit.sh"
+      "lastFile": "/data/ai-saas/docs/framework/07-infra/k3s-wsl2/scripts/install-k3s.sh"
     },
     ".claude": {
       "phase": "do",
@@ -189,7 +190,7 @@
       "lastFile": "/data/ai-saas/platform/services/user-service/src/routes.ts"
     },
     "tenant-service": {
-      "phase": "archived",
+      "phase": "do",
       "phaseNumber": 3,
       "matchRate": "100%",
       "iterationCount": 1,
@@ -204,7 +205,7 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:43:00.403Z",
-        "lastUpdated": "2026-04-05T14:24:35.299Z",
+        "lastUpdated": "2026-04-06T12:32:14.383Z",
         "archivedAt": "2026-04-05T15:15:00.000Z"
       },
       "lastFile": "/data/ai-saas/platform/services/tenant-service/src/handlers/tenant.handler.ts"
@@ -225,10 +226,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:43:52.165Z",
-        "lastUpdated": "2026-04-05T21:36:53.741Z",
+        "lastUpdated": "2026-04-06T12:09:58.576Z",
         "archivedAt": "2026-04-05T15:15:00.000Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/api-gateway/src/plugins/audit-logger.ts"
+      "lastFile": "/data/ai-saas/platform/services/api-gateway/src/routes/proxy.ts"
     },
     "ai-service": {
       "phase": "do",
@@ -239,9 +240,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T13:47:08.863Z",
-        "lastUpdated": "2026-04-05T14:40:16.501Z"
+        "lastUpdated": "2026-04-06T12:15:16.511Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/ai-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/ai-service/src/handlers/ai.handler.ts"
     },
     "audit-service": {
       "phase": "do",
@@ -252,9 +253,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T13:47:23.809Z",
-        "lastUpdated": "2026-04-05T14:51:42.069Z"
+        "lastUpdated": "2026-04-06T12:15:40.153Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/audit-service/src/routes.ts"
+      "lastFile": "/data/ai-saas/platform/services/audit-service/src/lib/append-only.ts"
     },
     "menu-service": {
       "phase": "do",
@@ -382,9 +383,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T14:53:26.213Z",
-        "lastUpdated": "2026-04-06T11:52:06.922Z"
+        "lastUpdated": "2026-04-06T12:20:24.364Z"
       },
-      "lastFile": "/data/ai-saas/platform/apps/portal/src/components/admin/TenantDataGrid.tsx"
+      "lastFile": "/data/ai-saas/platform/apps/portal/next.config.ts"
     },
     "security-monitor-service": {
       "phase": "do",
@@ -651,6 +652,19 @@
         "lastUpdated": "2026-04-06T11:47:29.979Z"
       },
       "lastFile": "/data/ai-saas/platform/plugins/public-data-integration/src/index.ts"
+    },
+    "tmp": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-06T13:49:12.550Z",
+        "lastUpdated": "2026-04-06T13:49:12.550Z"
+      },
+      "lastFile": "/tmp/test-services.sh"
     }
   },
   "pipeline": {
@@ -661,7 +675,7 @@
   "session": {
     "startedAt": "2026-04-05T05:33:14.156Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-04-06T11:52:06.924Z"
+    "lastActivity": "2026-04-06T13:49:12.551Z"
   },
   "history": [
     {
@@ -2383,6 +2397,108 @@
     {
       "timestamp": "2026-04-06T11:52:06.923Z",
       "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T11:53:58.464Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:09:50.193Z",
+      "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:09:58.577Z",
+      "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:13:18.598Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:15:11.519Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:15:16.512Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:15:40.154Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:20:24.365Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:32:03.112Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:32:05.477Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:32:14.384Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:39:41.226Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:39:50.378Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:39:54.369Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:40:15.626Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T12:40:22.172Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T13:49:12.551Z",
+      "feature": "tmp",
       "phase": "do",
       "action": "updated"
     }
