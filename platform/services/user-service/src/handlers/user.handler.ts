@@ -302,6 +302,17 @@ export async function deleteUserHandler(
     return;
   }
 
+  // 테넌트 격리 (CSAP D-08-05): SUPER_ADMIN 제외 타 테넌트 사용자 비활성화 금지
+  const deleteJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const deleteJwtRole = request.headers['x-user-role'] as string | undefined;
+  if (deleteJwtRole !== 'SUPER_ADMIN' && deleteJwtTenantId && existingUser.tenantId !== deleteJwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
+    });
+    return;
+  }
+
   // 영구 비활성화: lockedUntil = 9999-12-31T23:59:59Z
   const PERMANENT_LOCK = new Date('9999-12-31T23:59:59.000Z');
 
@@ -346,6 +357,17 @@ export async function reactivateUserHandler(
     await reply.status(404).send({
       success: false,
       error: { code: 'USER_NOT_FOUND', message: '사용자를 찾을 수 없습니다' },
+    });
+    return;
+  }
+
+  // 테넌트 격리 (CSAP D-08-05): SUPER_ADMIN 제외 타 테넌트 사용자 복원 금지
+  const reactivateJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const reactivateJwtRole = request.headers['x-user-role'] as string | undefined;
+  if (reactivateJwtRole !== 'SUPER_ADMIN' && reactivateJwtTenantId && existingUser.tenantId !== reactivateJwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
     });
     return;
   }

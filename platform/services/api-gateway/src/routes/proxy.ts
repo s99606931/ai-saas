@@ -66,7 +66,11 @@ async function authPreHandler(
     mutableHeaders['x-user-id'] = data.sub ?? 'anonymous';
     mutableHeaders['x-user-tenant-id'] = data.tenantId ?? '';
     mutableHeaders['x-user-role'] = data.role ?? '';
-    mutableHeaders['x-internal-service-key'] = process.env['INTERNAL_SERVICE_KEY'] ?? '';
+    // INTERNAL_SERVICE_KEY: 미설정 시 헤더 미주입 (빈 문자열 폴백 방지 MEDIUM-02)
+    const internalKey = process.env['INTERNAL_SERVICE_KEY'];
+    if (internalKey) {
+      mutableHeaders['x-internal-service-key'] = internalKey;
+    }
   } catch {
     await reply.status(401).send({
       success: false,
@@ -155,8 +159,9 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
 
   // 동적 서비스 라우트 (비즈니스 플러그인)
   // Plan SC: FR-P04.11
+  // CSAP D-08-05: 인증 + 플러그인별 requiredPermissions RBAC 검사
   app.all('/api/v1/plugins/:pluginId/*', {
-    preHandler: [authPreHandler],
+    preHandler: authPreHandler,
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as { pluginId: string; '*': string };
     const pluginEntry = getServiceEntry(params.pluginId);
@@ -170,6 +175,22 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
         },
       });
       return;
+    }
+
+    // 플러그인 requiredPermissions RBAC 검사 (MEDIUM-01, CSAP D-08-05)
+    if (pluginEntry.requiredPermissions?.length) {
+      const user = (request as FastifyRequest & { user?: JwtUser }).user;
+      const userPermissions = user?.permissions ?? ROLE_PERMISSIONS[user?.role ?? ''] ?? [];
+      const hasAll = pluginEntry.requiredPermissions.every(
+        (p) => userPermissions.includes(p) || userPermissions.includes('admin:all'),
+      );
+      if (!hasAll) {
+        await reply.status(403).send({
+          success: false,
+          error: { code: 'FORBIDDEN', message: '이 플러그인에 접근할 권한이 없습니다' },
+        });
+        return;
+      }
     }
 
     // 동적 프록시 전달 (undici fetch) — 쿼리스트링 보존
