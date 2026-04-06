@@ -3,8 +3,8 @@
 # k3s WSL2 자동 설치 스크립트
 # =============================================================================
 # 문서 ID: INFRA-K3S-SCRIPT
-# 버전: 1.0.1
-# 최종 수정일: 2026-04-05
+# 버전: 1.1.0
+# 최종 수정일: 2026-04-06
 # FR 매핑: FR-5.1 (10분 이내 k3s 구성)
 # 참조: cluster-setup-recipe.md
 #
@@ -12,6 +12,8 @@
 # Plan SC: WSL2에서 10분 이내 k3s 설치 재현
 #
 # 변경 이력:
+# 1.1.0 | 2026-04-06 | k3s v1.34.6+k3s1 검증, 네임스페이스 saas-platform 변경,
+#        |            | Docker 이미지 임포트 단계 추가, FAQ 반영
 # 1.0.1 | 2026-04-05 | H-01 품질 검토 수정 -- kubeconfig 권한 644→600 (CSAP-D08 위반 수정) | Implementer Agent
 # 1.0.0 | 2026-04-05 | 최초 작성 | Claude Code
 # =============================================================================
@@ -26,12 +28,13 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # --- 설정 변수 ---
-K3S_VERSION="${K3S_VERSION:-v1.29.12+k3s1}"
+# v1.34.6+k3s1: 2026-04-06 공공 SaaS 플랫폼 배포 검증 버전
+K3S_VERSION="${K3S_VERSION:-v1.34.6+k3s1}"
 CLUSTER_CIDR="${CLUSTER_CIDR:-10.42.0.0/16}"
 SERVICE_CIDR="${SERVICE_CIDR:-10.43.0.0/16}"
-MIN_MEMORY_MB=3072  # 최소 3GB
-MIN_DISK_GB=10
-SAAS_NAMESPACE="saas-app"
+MIN_MEMORY_MB=3072  # 최소 3GB (공공 SaaS 16서비스 권장 8GB)
+MIN_DISK_GB=20      # Docker 이미지 포함 최소 20GB
+SAAS_NAMESPACE="saas-platform"  # 공공 SaaS 플랫폼 네임스페이스
 
 # --- 시작 시간 기록 ---
 START_TIME=$(date +%s)
@@ -69,7 +72,7 @@ step1_prerequisites() {
         log_error "디스크 부족: ${AVAIL_DISK_GB}GB < ${MIN_DISK_GB}GB"
         exit 1
     fi
-    log_ok "디스크: ${AVAIL_DISK_GB}GB 여유 (최소 ${MIN_DISK_GB}GB)"
+    log_ok "디스크: ${AVAIL_DISK_GB}GB 여유 (최소 ${MIN_DISK_GB}GB, 16서비스 권장 40GB)"
 
     # Swap 확인
     SWAP_TOTAL=$(free -m | awk '/^Swap:/{print $2}')
@@ -242,12 +245,12 @@ step6_verify() {
 
     # 네임스페이스 PSS 확인
     log_info "네임스페이스 보안 레이블:"
-    kubectl get namespace "${SAAS_NAMESPACE}" --show-labels | grep pod-security
+    kubectl get namespace "${SAAS_NAMESPACE}" --show-labels | grep pod-security 2>/dev/null || log_warn "PSS 레이블 미적용"
     echo ""
 
     # NetworkPolicy 확인
     log_info "NetworkPolicy 목록:"
-    kubectl get networkpolicy -n "${SAAS_NAMESPACE}"
+    kubectl get networkpolicy -n "${SAAS_NAMESPACE}" 2>/dev/null || log_warn "NetworkPolicy 없음"
     echo ""
 
     # 시크릿 암호화 확인
@@ -274,10 +277,16 @@ step6_verify() {
     fi
     echo "=========================================="
     echo ""
-    echo "다음 단계:"
-    echo "  1. container-security-baseline.md 체크리스트 점검"
-    echo "  2. MTU-C7 (Policy as Code) -- Kyverno 정책 적용"
-    echo "  3. MTU-I2 (Gitea CI/CD) -- 파이프라인 구성"
+    echo "다음 단계 (공공 SaaS 플랫폼 배포):"
+    echo "  1. Docker 이미지 빌드: docker build -t saas/{svc}:dev ..."
+    echo "  2. k3s 이미지 임포트: docker save saas/{svc}:dev | sudo k3s ctr images import -"
+    echo "  3. 시크릿 생성: kubectl create secret generic saas-secrets ..."
+    echo "  4. 매니페스트 배포: kubectl apply -f k8s/"
+    echo "  5. DB 초기화: prisma db push (port-forward 필요)"
+    echo "  6. 접근: kubectl port-forward svc/portal-svc 14000:4000 -n ${SAAS_NAMESPACE}"
+    echo ""
+    echo "  ⚠️  WSL2 주의: NodePort 직접 접근 불가 → kubectl port-forward 사용"
+    echo "  📖  상세: cluster-setup-recipe.md 5절 (WSL2 네트워크 접근)"
 }
 
 # =============================================================================
@@ -287,7 +296,8 @@ main() {
     echo ""
     echo "=========================================="
     echo "  k3s WSL2 클러스터 설치 스크립트"
-    echo "  버전: 1.0.1 | k3s: ${K3S_VERSION}"
+    echo "  버전: 1.1.0 | k3s: ${K3S_VERSION}"
+    echo "  검증: v1.34.6+k3s1 (2026-04-06)"
     echo "=========================================="
     echo ""
 

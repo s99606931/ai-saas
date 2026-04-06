@@ -1,0 +1,830 @@
+# 공공기관 SaaS 플랫폼 — 마이크로서비스 15종 k8s 매니페스트
+# Design Ref: DESIGN-MTU-DEP2 | CSAP: D-11
+---
+# auth-service (3001)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+      - name: auth-service
+        image: saas/auth-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3001
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: AUTH_SERVICE_PORT
+          value: "3001"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: auth-service
+  ports:
+  - port: 3001
+    targetPort: 3001
+---
+# user-service (3002)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: saas/user-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3002
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: USER_SERVICE_PORT
+          value: "3002"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3002
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: user-service
+  ports:
+  - port: 3002
+    targetPort: 3002
+---
+# tenant-service (3003)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tenant-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tenant-service
+  template:
+    metadata:
+      labels:
+        app: tenant-service
+    spec:
+      containers:
+      - name: tenant-service
+        image: saas/tenant-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3003
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: TENANT_SERVICE_PORT
+          value: "3003"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3003
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tenant-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: tenant-service
+  ports:
+  - port: 3003
+    targetPort: 3003
+---
+# menu-service (3004)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: menu-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: menu-service
+  template:
+    metadata:
+      labels:
+        app: menu-service
+    spec:
+      containers:
+      - name: menu-service
+        image: saas/menu-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3004
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: MENU_SERVICE_PORT
+          value: "3004"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3004
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: menu-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: menu-service
+  ports:
+  - port: 3004
+    targetPort: 3004
+---
+# saas-catalog-service (3005)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: saas-catalog-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: saas-catalog-service
+  template:
+    metadata:
+      labels:
+        app: saas-catalog-service
+    spec:
+      containers:
+      - name: saas-catalog-service
+        image: saas/saas-catalog-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3005
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: CATALOG_SERVICE_PORT
+          value: "3005"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3005
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: saas-catalog-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: saas-catalog-service
+  ports:
+  - port: 3005
+    targetPort: 3005
+---
+# subscription-service (3006)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: subscription-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: subscription-service
+  template:
+    metadata:
+      labels:
+        app: subscription-service
+    spec:
+      containers:
+      - name: subscription-service
+        image: saas/subscription-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3006
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: SUBSCRIPTION_SERVICE_PORT
+          value: "3006"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3006
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: subscription-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: subscription-service
+  ports:
+  - port: 3006
+    targetPort: 3006
+---
+# billing-service (3007)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: billing-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: billing-service
+  template:
+    metadata:
+      labels:
+        app: billing-service
+    spec:
+      containers:
+      - name: billing-service
+        image: saas/billing-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3007
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: BILLING_SERVICE_PORT
+          value: "3007"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3007
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: billing-service
+  ports:
+  - port: 3007
+    targetPort: 3007
+---
+# crm-service (3008)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crm-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crm-service
+  template:
+    metadata:
+      labels:
+        app: crm-service
+    spec:
+      containers:
+      - name: crm-service
+        image: saas/crm-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3008
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: CRM_SERVICE_PORT
+          value: "3008"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3008
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crm-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: crm-service
+  ports:
+  - port: 3008
+    targetPort: 3008
+---
+# ai-service (3009)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-service
+  template:
+    metadata:
+      labels:
+        app: ai-service
+    spec:
+      containers:
+      - name: ai-service
+        image: saas/ai-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3009
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: AI_SERVICE_PORT
+          value: "3009"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3009
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: ai-service
+  ports:
+  - port: 3009
+    targetPort: 3009
+---
+# notification-service (3010)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+      - name: notification-service
+        image: saas/notification-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3010
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: NOTIFICATION_SERVICE_PORT
+          value: "3010"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3010
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: notification-service
+  ports:
+  - port: 3010
+    targetPort: 3010
+---
+# file-service (3011)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: file-service
+  template:
+    metadata:
+      labels:
+        app: file-service
+    spec:
+      containers:
+      - name: file-service
+        image: saas/file-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3011
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: FILE_SERVICE_PORT
+          value: "3011"
+        - name: MINIO_ENDPOINT
+          value: "minio-svc"
+        - name: MINIO_PORT
+          value: "9000"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3011
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: file-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: file-service
+  ports:
+  - port: 3011
+    targetPort: 3011
+---
+# audit-service (3012)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audit-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: audit-service
+  template:
+    metadata:
+      labels:
+        app: audit-service
+    spec:
+      containers:
+      - name: audit-service
+        image: saas/audit-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3012
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: AUDIT_SERVICE_PORT
+          value: "3012"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3012
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: audit-service
+  ports:
+  - port: 3012
+    targetPort: 3012
+---
+# compliance-service (3013)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compliance-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: compliance-service
+  template:
+    metadata:
+      labels:
+        app: compliance-service
+    spec:
+      containers:
+      - name: compliance-service
+        image: saas/compliance-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3013
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: COMPLIANCE_SERVICE_PORT
+          value: "3013"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3013
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: compliance-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: compliance-service
+  ports:
+  - port: 3013
+    targetPort: 3013
+---
+# security-monitor-service (3014)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: security-monitor-service
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: security-monitor-service
+  template:
+    metadata:
+      labels:
+        app: security-monitor-service
+    spec:
+      containers:
+      - name: security-monitor-service
+        image: saas/security-monitor-service:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3014
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: SECURITY_MONITOR_PORT
+          value: "3014"
+        - name: NODE_ENV
+          value: "production"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3014
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: security-monitor-service
+  namespace: saas-platform
+spec:
+  selector:
+    app: security-monitor-service
+  ports:
+  - port: 3014
+    targetPort: 3014
+---
+# api-gateway (3000)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: saas/api-gateway:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - secretRef:
+            name: saas-secrets
+        env:
+        - name: API_GATEWAY_PORT
+          value: "3000"
+        - name: NODE_ENV
+          value: "production"
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:3001"
+        - name: USER_SERVICE_URL
+          value: "http://user-service:3002"
+        - name: TENANT_SERVICE_URL
+          value: "http://tenant-service:3003"
+        - name: MENU_SERVICE_URL
+          value: "http://menu-service:3004"
+        - name: CATALOG_SERVICE_URL
+          value: "http://saas-catalog-service:3005"
+        - name: SUBSCRIPTION_SERVICE_URL
+          value: "http://subscription-service:3006"
+        - name: BILLING_SERVICE_URL
+          value: "http://billing-service:3007"
+        - name: CRM_SERVICE_URL
+          value: "http://crm-service:3008"
+        - name: AI_SERVICE_URL
+          value: "http://ai-service:3009"
+        - name: NOTIFICATION_SERVICE_URL
+          value: "http://notification-service:3010"
+        - name: FILE_SERVICE_URL
+          value: "http://file-service:3011"
+        - name: AUDIT_SERVICE_URL
+          value: "http://audit-service:3012"
+        - name: COMPLIANCE_SERVICE_URL
+          value: "http://compliance-service:3013"
+        - name: SECURITY_MONITOR_URL
+          value: "http://security-monitor-service:3014"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: saas-platform
+spec:
+  selector:
+    app: api-gateway
+  ports:
+  - port: 3000
+    targetPort: 3000
+  type: NodePort

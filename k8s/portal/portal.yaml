@@ -1,0 +1,69 @@
+# 공공기관 SaaS 플랫폼 — 포털 (Next.js 15) k8s 매니페스트
+# Design Ref: DESIGN-MTU-DEP2 | CSAP: D-11
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal
+  namespace: saas-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portal
+  template:
+    metadata:
+      labels:
+        app: portal
+    spec:
+      containers:
+      - name: portal
+        image: saas/portal:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 4000
+        env:
+        - name: PORT
+          value: "4000"
+        - name: HOSTNAME
+          value: "0.0.0.0"
+        - name: NODE_ENV
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: saas-secrets
+              key: DATABASE_URL
+        - name: NEXTAUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: saas-secrets
+              key: JWT_SECRET
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:3001"
+        - name: API_GATEWAY_URL
+          value: "http://api-gateway:3000"
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 4000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          failureThreshold: 5
+        resources:
+          limits:
+            memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portal-svc
+  namespace: saas-platform
+spec:
+  selector:
+    app: portal
+  type: NodePort
+  ports:
+  - port: 4000
+    targetPort: 4000
+    nodePort: 30400
