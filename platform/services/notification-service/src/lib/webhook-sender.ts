@@ -88,6 +88,7 @@ export async function sendWebhook(
         },
         body: JSON.stringify(payload),
         signal: controller.signal,
+        redirect: 'manual', // SSRF 방지: 리다이렉트 추적 차단 (CSAP D-12-04)
       });
 
       clearTimeout(timeoutId);

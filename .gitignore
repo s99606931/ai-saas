@@ -9,6 +9,7 @@
 !.env.example
 secrets.*
 !secrets.example.*
+k8s/**/secrets.yaml
 *credential*
 *.pem
 *.key

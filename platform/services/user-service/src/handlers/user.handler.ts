@@ -237,11 +237,25 @@ export async function updateUserHandler(
     return;
   }
 
+  const jwtUserId = request.headers['x-user-id'] as string | undefined;
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
 
+  // RBAC 접근 통제: 본인 또는 관리자만 수정 가능 (CSAP D-08-05)
+  const isSuperAdmin = jwtRole === 'SUPER_ADMIN';
+  const isTenantAdmin = jwtRole === 'TENANT_ADMIN';
+  const isSelf = jwtUserId === request.params.id;
+
+  if (!isSuperAdmin && !isTenantAdmin && !isSelf) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '본인 프로필만 수정할 수 있습니다. 관리자에게 문의하세요.' },
+    });
+    return;
+  }
+
   // 테넌트 격리 확인 (CSAP D-08-05)
-  if (jwtRole !== 'SUPER_ADMIN' && jwtTenantId) {
+  if (!isSuperAdmin && jwtTenantId) {
     const target = await prisma.user.findUnique({
       where: { id: request.params.id },
       select: { tenantId: true },

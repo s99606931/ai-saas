@@ -182,8 +182,17 @@ export async function getUserNotificationsHandler(
   const callerRole = request.headers['x-user-role'] as string | undefined;
   const isAdmin = callerRole === 'SUPER_ADMIN' || callerRole === 'TENANT_ADMIN';
 
+  // 인증되지 않은 요청 차단 (CSAP D-08: 접근 통제)
+  if (!callerId) {
+    await reply.status(401).send({
+      success: false,
+      error: { code: 'UNAUTHORIZED', message: '인증이 필요합니다' },
+    });
+    return;
+  }
+
   // 관리자가 아닌 경우 본인 알림만 조회 허용 (CSAP D-08-05)
-  if (!isAdmin && callerId && callerId !== request.params.userId) {
+  if (!isAdmin && callerId !== request.params.userId) {
     await reply.status(403).send({
       success: false,
       error: { code: 'FORBIDDEN', message: '본인의 알림만 조회할 수 있습니다' },
@@ -253,19 +262,37 @@ export async function markReadHandler(
   await reply.send({ success: true, data: notification });
 }
 
+// 발송 이력 조회 쿼리 파라미터 검증 스키마 (CSAP D-12: 입력 검증)
+const historyQuerySchema = z.object({
+  channel: z.enum(['email', 'in-app', 'sms', 'webhook']).optional(),
+  status: z.enum(['sent', 'failed', 'read', 'pending']).optional(),
+  page: z.string().regex(/^\d+$/).optional(),
+  pageSize: z.string().regex(/^\d+$/).optional(),
+});
+
 /**
  * 발송 이력 조회
  * Plan SC: FR-P11.5
+ * CSAP D-12: channel, status 쿼리 파라미터 Zod enum 검증
  */
 export async function listHistoryHandler(
   request: FastifyRequest<{ Querystring: { channel?: string; status?: string; page?: string; pageSize?: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
-  const page = parseInt(request.query.page ?? '1', 10);
-  const pageSize = Math.min(parseInt(request.query.pageSize ?? '20', 10), 100);
+  const queryResult = historyQuerySchema.safeParse(request.query);
+  if (!queryResult.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: queryResult.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+
+  const page = parseInt(queryResult.data.page ?? '1', 10);
+  const pageSize = Math.min(parseInt(queryResult.data.pageSize ?? '20', 10), 100);
   const where: Record<string, unknown> = {};
-  if (request.query.channel) where['channel'] = request.query.channel;
-  if (request.query.status) where['status'] = request.query.status;
+  if (queryResult.data.channel) where['channel'] = queryResult.data.channel;
+  if (queryResult.data.status) where['status'] = queryResult.data.status;
 
   const [notifications, total] = await Promise.all([
     prisma.notification.findMany({

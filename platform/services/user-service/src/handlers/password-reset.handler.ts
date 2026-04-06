@@ -188,11 +188,18 @@ export async function confirmPasswordResetHandler(
   resetTokenStore.delete(hashedToken);
 
   // 감사 로그 (CSAP D-06)
+  // 비밀번호 재설정은 토큰 기반으로 비인증 상태에서 수행됨
+  // actor: 재설정 대상 사용자 본인 (토큰 소유자)
+  // tenantId: 사용자 소속 테넌트 조회
+  const resetUser = await prisma.user.findUnique({
+    where: { id: entry.userId },
+    select: { tenantId: true },
+  });
   await logUserEvent(
     'PASSWORD_RESET_COMPLETED',
     entry.userId,
     entry.userId,
-    'system',
+    resetUser?.tenantId ?? 'unknown',
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
   );
