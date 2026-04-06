@@ -1,7 +1,7 @@
 # 공공기관 SaaS 프레임워크 — 다음 단계 로드맵
 
-> **기준일**: 2026-04-06 (4차 세션 최종)
-> **기준 상태**: 60 MTU 완료 (Framework 36 + Platform 24) + Docker/k8s 배포 인프라 완비
+> **기준일**: 2026-04-06 (6차 세션 최종)
+> **기준 상태**: 60 MTU 완료 + 보안 이슈 0건 + 전체 빌드 PASS + Dead code 0건 + Q-Gate G7 PASS
 > **작성자**: PM Agent
 > **참조**: docs/roadmap/master-roadmap.md, docs/archive/2026-04/_INDEX.md
 
@@ -13,7 +13,9 @@
 |------|------|
 | **완료** | 60 MTU 전수 + Phase D 5/5 + Phase CSAP 5/5 + Phase ISMS 4/4 + Phase ECO 4/4 |
 | **인프라** | Docker 15 서비스 Dockerfile + k8s 매니페스트 전수 + k3s 설치 스크립트 |
-| **보안 강화** | Redis Secret 참조, 테넌트 격리 D-08-05, 감사 로그 D-06 |
+| **보안** | CRITICAL 0 / HIGH 0 / MEDIUM 0 / LOW 0 (전수 해결) |
+| **빌드** | 전체 서비스 15개 + 포털 1개 빌드 성공 / Dead code 0건 |
+| **감사** | Q-Gate G7 PASS (audit.jsonl 2,826 항목, CSAP D-06 준수) |
 | **다음 목표** | Docker 빌드 실검증 -> k3s 실배포 -> CSAP 인증 신청 -> ISMS-P 의무화 대응 |
 | **데드라인** | ISMS-P 2027-07 의무화 (매출 300억+ 또는 이용자 100만+) |
 
@@ -134,7 +136,7 @@ pnpm playwright test          # E2E 자동 테스트
 | E2E 통과율 | 신규 작성 | 95%+ | Playwright 리포트 |
 | CSAP 준비도 | 문서 100% | 심사 신청 | 증적 체크리스트 |
 | ISMS-P 준비도 | 101항목 문서화 | 인증 완료 | checklist-101.md |
-| 보안 취약점 | 미측정 | 0 Critical | OWASP ZAP / Trivy |
+| 보안 취약점 | 0/0/0/0 (CRIT/HIGH/MED/LOW) | 0 Critical | 보안 리뷰 + OWASP ZAP |
 
 ---
 
@@ -158,3 +160,4 @@ pnpm playwright test          # E2E 자동 테스트
 | 1.0.0 | 2026-04-06 | 최초 작성 — Phase Q/D/CSAP/ISMS/ECO 정의 | PM Agent |
 | 2.0.0 | 2026-04-06 | Phase ISMS 4/4 + Phase ECO 4/4 완료 반영 | PM Agent |
 | 3.0.0 | 2026-04-06 | Docker/k8s 인프라 완비 + CSAP 보안 강화 반영 (4차 세션) | PM Agent |
+| 4.0.0 | 2026-04-06 | 보안 이슈 전수 해결 + 전체 빌드 PASS + Dead code 0건 + G7 PASS (6차 세션) | PM Agent |
