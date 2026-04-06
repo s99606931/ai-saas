@@ -31,6 +31,7 @@ export function dataGradeMiddleware(allowedGrades: DataGrade[] = ['O']) {
           message: `${dataGrade} 등급 데이터는 이 서비스로 전송할 수 없습니다 (N2SF N-05). 허용 등급: ${allowedGrades.join(', ')}`,
         },
       });
+      return;
     }
   };
 }

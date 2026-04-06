@@ -48,6 +48,7 @@ export async function tenantIsolationMiddleware(
         message: '다른 테넌트의 데이터에 접근할 수 없습니다 (N2SF N-03)',
       },
     });
+    return;
   }
 }
 

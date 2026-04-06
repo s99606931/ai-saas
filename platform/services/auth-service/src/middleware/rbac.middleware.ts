@@ -37,6 +37,7 @@ export function requirePermission(permission: string) {
           message: `권한이 부족합니다: ${permission}`,
         },
       });
+      return;
     }
   };
 }
@@ -65,6 +66,7 @@ export function requireAnyPermission(permissions: string[]) {
           message: `다음 중 하나의 권한이 필요합니다: ${permissions.join(', ')}`,
         },
       });
+      return;
     }
   };
 }
