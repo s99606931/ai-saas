@@ -92,11 +92,15 @@ export async function listUsersHandler(
 
 /**
  * 사용자 상세 조회
+ * CSAP D-08-05: 테넌트 격리 — SUPER_ADMIN 제외 타 테넌트 사용자 조회 금지
  */
 export async function getUserHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+
   const user = await prisma.user.findUnique({
     where: { id: request.params.id },
     select: {
@@ -118,6 +122,15 @@ export async function getUserHandler(
     await reply.status(404).send({
       success: false,
       error: { code: 'USER_NOT_FOUND', message: '사용자를 찾을 수 없습니다' },
+    });
+    return;
+  }
+
+  // 테넌트 격리: SUPER_ADMIN 제외 타 테넌트 사용자 조회 차단 (CSAP D-08-05)
+  if (jwtRole !== 'SUPER_ADMIN' && jwtTenantId && user.tenantId !== jwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
     });
     return;
   }
@@ -209,6 +222,7 @@ export async function createUserHandler(
 
 /**
  * 사용자 수정
+ * CSAP D-08-05: 테넌트 격리, D-06: 변경 감사 로그
  */
 export async function updateUserHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
@@ -223,11 +237,41 @@ export async function updateUserHandler(
     return;
   }
 
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+
+  // 테넌트 격리 확인 (CSAP D-08-05)
+  if (jwtRole !== 'SUPER_ADMIN' && jwtTenantId) {
+    const target = await prisma.user.findUnique({
+      where: { id: request.params.id },
+      select: { tenantId: true },
+    });
+    if (!target || target.tenantId !== jwtTenantId) {
+      await reply.status(403).send({
+        success: false,
+        error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
+      });
+      return;
+    }
+  }
+
   const user = await prisma.user.update({
     where: { id: request.params.id },
     data: parseResult.data,
-    select: { id: true, email: true, name: true, role: true, mfaEnabled: true, updatedAt: true },
+    select: { id: true, email: true, name: true, role: true, mfaEnabled: true, updatedAt: true, tenantId: true },
   });
+
+  // 감사 로그 기록 (CSAP D-06)
+  const updateActor = (request.headers['x-user-id'] as string) || 'system';
+  await logUserEvent(
+    'USER_UPDATED',
+    updateActor,
+    user.id,
+    user.tenantId,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { fields: Object.keys(parseResult.data) },
+  );
 
   await reply.send({ success: true, data: user });
 }
