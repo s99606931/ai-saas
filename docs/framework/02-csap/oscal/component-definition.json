@@ -1,0 +1,603 @@
+{
+  "component-definition": {
+    "uuid": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    "metadata": {
+      "title": "공공기관 SaaS 프레임워크 CSAP 컴포넌트 정의",
+      "version": "1.0.0",
+      "oscal-version": "1.1.3",
+      "published": "2026-04-06T00:00:00+09:00",
+      "last-modified": "2026-04-06T00:00:00+09:00",
+      "roles": [
+        {
+          "id": "security-officer",
+          "title": "정보보호최고책임자(CISO)"
+        },
+        {
+          "id": "developer",
+          "title": "개발팀"
+        },
+        {
+          "id": "auditor",
+          "title": "감리관/심사관"
+        }
+      ],
+      "parties": [
+        {
+          "uuid": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+          "type": "organization",
+          "name": "공공기관 SaaS 서비스 제공자"
+        }
+      ]
+    },
+    "components": [
+      {
+        "uuid": "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
+        "type": "software",
+        "title": "공공기관 SaaS 프레임워크",
+        "description": "CSAP 표준등급 79항목 준수 공공기관 SaaS 플랫폼 프레임워크. k3s 기반 컨테이너 오케스트레이션, Gitea CI/CD, AI LLM 연동 포함.",
+        "control-implementations": [
+          {
+            "uuid": "d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80",
+            "source": "urn:csap:standard-grade:2024",
+            "description": "CSAP 표준등급 13분야 79항목 통제 구현",
+            "implemented-requirements": [
+              {
+                "uuid": "e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8091",
+                "control-id": "CSAP-D01-01",
+                "description": "정보보호 정책 수립: 정보보호 정책서 존재 여부 확인, 경영진 승인 서명 확인, 최신 법령 반영 여부 검토",
+                "props": [{"name": "implementation-status", "value": "template"}],
+                "remarks": "템플릿 제공. docs/framework/02-csap/guides/d01-d04-guide.md 정책서 템플릿 참조. 조직명/서명 커스터마이징 필요."
+              },
+              {
+                "uuid": "e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8092",
+                "control-id": "CSAP-D01-02",
+                "description": "정보보호 정책 공표: 임직원 공표 절차 존재 여부 확인, 공표 이력 및 수신 확인서 점검",
+                "props": [{"name": "implementation-status", "value": "template"}],
+                "remarks": "템플릿 제공. 공표 절차 템플릿 포함. 실제 공표 이력 기록 필요."
+              },
+              {
+                "uuid": "e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8093",
+                "control-id": "CSAP-D01-03",
+                "description": "정보보호 정책 검토: 연 1회 이상 정기 검토 절차 존재 여부, 최근 검토 이력 및 변경 사항 확인",
+                "props": [{"name": "implementation-status", "value": "template"}],
+                "remarks": "템플릿 제공. 연간 검토 체크리스트 포함. 검토 회의록 작성 필요."
+              },
+              {
+                "uuid": "e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8094",
+                "control-id": "CSAP-D01-04",
+                "description": "관련 법령 준수: 개인정보보호법, 정보통신망법 등 관련 법령 목록 관리 여부, 법령 변경 시 정책 반영 절차",
+                "props": [{"name": "implementation-status", "value": "template"}],
+                "remarks": "docs/framework/01-reference/law-index.md 법령 인덱스 참조."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809201",
+                "control-id": "CSAP-D02-01",
+                "description": "정보보호 조직 구성: 정보보호 전담 조직 구성 및 운영 여부 확인",
+                "props": [{"name": "implementation-status", "value": "template"}],
+                "remarks": "조직도 템플릿 제공. 실제 조직도 반영 필요."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809202",
+                "control-id": "CSAP-D02-02",
+                "description": "정보보호 책임 할당: CISO 임명 및 정보보호 책임 명확화",
+                "props": [{"name": "implementation-status", "value": "organizational"}],
+                "remarks": "조직 차원 문서 필요. CISO 임명장 등."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809203",
+                "control-id": "CSAP-D02-03",
+                "description": "외부 전문가 활용: 보안 컨설팅 등 외부 전문가 활용 절차",
+                "props": [{"name": "implementation-status", "value": "organizational"}],
+                "remarks": "조직 차원 문서. 보안 컨설팅 계약 시 적용."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809301",
+                "control-id": "CSAP-D03-01",
+                "description": "보안 서약: 임직원 입사 시 보안 서약서 징구 절차",
+                "props": [{"name": "implementation-status", "value": "template"}],
+                "remarks": "보안 서약서 템플릿 제공."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809302",
+                "control-id": "CSAP-D03-02",
+                "description": "보안 교육: 연 1회 이상 정보보호 교육 실시",
+                "props": [{"name": "implementation-status", "value": "template"}],
+                "remarks": "교육 계획서 및 교육 이수 확인서 템플릿 제공."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809303",
+                "control-id": "CSAP-D03-03",
+                "description": "퇴직자 관리: 퇴직 시 계정 회수 및 자산 반납 절차",
+                "props": [{"name": "implementation-status", "value": "template"}],
+                "remarks": "퇴직자 체크리스트 템플릿 제공."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809304",
+                "control-id": "CSAP-D03-04",
+                "description": "외부 인력 관리: 외주 인력 보안 관리 절차",
+                "props": [{"name": "implementation-status", "value": "template"}],
+                "remarks": "외부 인력 보안 관리 규정 템플릿 제공."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809401",
+                "control-id": "CSAP-D04-01",
+                "description": "자산 식별: 정보자산 목록 수립 및 관리",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "자산 식별 가이드 제공. docs/framework/02-csap/standard-grade/implementation-guide/D04-asset-mgmt.md"
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809402",
+                "control-id": "CSAP-D04-02",
+                "description": "자산 분류: 정보자산 등급 분류 (기밀/대외비/일반)",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "N2SF 데이터 등급 분류 체계와 연동. C/S/O 등급."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809403",
+                "control-id": "CSAP-D04-03",
+                "description": "자산 취급: 등급별 취급 절차 수립 및 준수",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "N2SF 등급별 취급 절차 가이드 참조."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809404",
+                "control-id": "CSAP-D04-04",
+                "description": "자산 반납: 퇴직/이동 시 자산 반납 절차",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "퇴직자 관리 체크리스트 연동."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809405",
+                "control-id": "CSAP-D04-05",
+                "description": "매체 관리: 이동 매체 사용 통제 및 관리",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "이동 매체 반출입 절차 가이드."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809501",
+                "control-id": "CSAP-D05-01",
+                "description": "공급망 보안 정책: 외주 업체 보안 관리 정책 수립",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "공급망 보안 가이드 제공. D05-supply-chain.md"
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809502",
+                "control-id": "CSAP-D05-02",
+                "description": "공급업체 평가: 보안 평가 및 계약 관리",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "공급업체 보안 평가 체크리스트 가이드."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809503",
+                "control-id": "CSAP-D05-03",
+                "description": "공급업체 모니터링: 보안 준수 모니터링",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "정기 보안 점검 절차 가이드."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809504",
+                "control-id": "CSAP-D05-04",
+                "description": "소프트웨어 공급망: SBOM 관리 및 오픈소스 라이선스 검사",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "Trivy SBOM 생성 + 라이선스 검사 자동화. scripts/security-audit.sh"
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809601",
+                "control-id": "CSAP-D06-01",
+                "description": "침해사고 대응 절차: 사고 탐지/분석/대응/복구 절차 수립",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/services/security-monitor-service/ 사고 탐지 + docs/framework/02-csap/standard-grade/implementation-guide/D06-incident.md"
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809602",
+                "control-id": "CSAP-D06-02",
+                "description": "침해사고 보고: 사고 발생 시 보고 체계 및 절차",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "알림 서비스 웹훅 연동. platform/services/notification-service/"
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809603",
+                "control-id": "CSAP-D06-03",
+                "description": "감사 로그: 보안 이벤트 전수 기록 및 보존",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/services/audit-service/ append-only SHA-256 체인 로그. 1년 이상 보존."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809604",
+                "control-id": "CSAP-D06-04",
+                "description": "로그 분석: 보안 로그 정기 분석 및 이상 탐지",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/services/security-monitor-service/ 이상 탐지 + 로그인 실패 모니터링."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809605",
+                "control-id": "CSAP-D06-05",
+                "description": "사후 관리: 침해사고 사후 분석 및 재발 방지",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "사후 분석 보고서 양식 가이드 제공."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809701",
+                "control-id": "CSAP-D07-01",
+                "description": "재해 복구 계획: BCP/DRP 수립",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "docs/framework/02-csap/standard-grade/implementation-guide/D07-disaster-recovery.md"
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809702",
+                "control-id": "CSAP-D07-02",
+                "description": "백업 관리: 정기 백업 및 복원 절차",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "docker-compose.yml PostgreSQL + Redis 볼륨 백업 설정. MinIO 오브젝트 스토리지."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809703",
+                "control-id": "CSAP-D07-03",
+                "description": "복원 테스트: 정기 복원 테스트 실시",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "반기 복원 테스트 절차서 가이드."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809704",
+                "control-id": "CSAP-D07-04",
+                "description": "업무 연속성: 서비스 가용성 보장 체계",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "SLA 정의 + 가용성 99.9% 목표 가이드."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809801",
+                "control-id": "CSAP-D08-01",
+                "description": "사용자 계정 관리: 사용자 등록/변경/삭제 절차 수립",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/services/user-service/ CRUD + 소프트 삭제 구현."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809802",
+                "control-id": "CSAP-D08-02",
+                "description": "사용자 인증: 안전한 인증 절차 (비밀번호 정책, MFA)",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/services/auth-service/ JWT + bcrypt(12) + 비밀번호 정책."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809803",
+                "control-id": "CSAP-D08-03",
+                "description": "권한 관리: 역할 기반 접근 통제 (RBAC) 구현",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/packages/auth-sdk/ RBAC 미들웨어. SUPER_ADMIN/ADMIN/MANAGER/USER/VIEWER."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809804",
+                "control-id": "CSAP-D08-04",
+                "description": "접근 통제: API 엔드포인트별 권한 검사",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/services/api-gateway/ 요청별 인증/인가 미들웨어."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809805",
+                "control-id": "CSAP-D08-05",
+                "description": "세션 관리: 세션 타임아웃 및 동시 접속 제한",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "JWT 접근 토큰 15분, 갱신 토큰 7일, 동시 세션 3개 제한."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809806",
+                "control-id": "CSAP-D08-06",
+                "description": "로그인 실패 관리: 연속 실패 시 계정 잠금",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/services/security-monitor-service/ 로그인 실패 5회 시 30분 잠금."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809807",
+                "control-id": "CSAP-D08-07",
+                "description": "비밀번호 관리: 비밀번호 복잡도 및 변경 주기 정책",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "최소 8자, 대소문자+숫자+특수문자, 90일 변경 주기. user-service 비밀번호 재설정."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809808",
+                "control-id": "CSAP-D08-08",
+                "description": "관리자 접근 통제: 관리자 계정 별도 관리 및 접근 제한",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "Admin Portal 별도 배포. SUPER_ADMIN 전용 기능 분리."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809809",
+                "control-id": "CSAP-D08-09",
+                "description": "원격 접근 통제: 원격 접속 시 보안 강화",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "TLS 1.3 필수. VPN 접속 가이드 제공."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809810",
+                "control-id": "CSAP-D08-10",
+                "description": "모바일 접근 통제: 모바일 기기 접근 보안",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "반응형 웹 + 모바일 BottomTabBar. 동일 인증 체계 적용."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809811",
+                "control-id": "CSAP-D08-11",
+                "description": "테넌트 격리: 다중 테넌트 간 데이터 격리",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/services/tenant-service/ 테넌트별 데이터 격리. RLS 적용."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809812",
+                "control-id": "CSAP-D08-12",
+                "description": "접근 권한 검토: 주기적 권한 검토 및 정비",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "분기별 권한 검토 절차 가이드 제공."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809901",
+                "control-id": "CSAP-D09-01",
+                "description": "암호 정책: 암호화 알고리즘 및 키 관리 정책 수립",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "AES-256 (저장), TLS 1.3 (전송), bcrypt-12 (비밀번호). platform/packages/types/"
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809902",
+                "control-id": "CSAP-D09-02",
+                "description": "전송 암호화: 네트워크 전송 데이터 암호화",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "TLS 1.3 필수. HTTP 직접 통신 금지. Traefik 리버스 프록시."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809903",
+                "control-id": "CSAP-D09-03",
+                "description": "저장 암호화: 민감 데이터 저장 시 암호화",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "AES-256-GCM 암호화. PostgreSQL 연결 sslmode=require."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f809904",
+                "control-id": "CSAP-D09-04",
+                "description": "키 관리: 암호키 생성/보관/교체/폐기 절차",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "환경 변수 기반 키 관리 + 90일 교체 주기 가이드."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80a001",
+                "control-id": "CSAP-D10-01",
+                "description": "네트워크 보안 정책: 네트워크 보안 정책 수립",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "k3s NetworkPolicy + docker-compose 네트워크 분리."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80a002",
+                "control-id": "CSAP-D10-02",
+                "description": "네트워크 분리: 보안 영역별 네트워크 분리",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "N2SF C/S/O 등급별 네트워크 격리. docker-compose 네트워크 분리."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80a003",
+                "control-id": "CSAP-D10-03",
+                "description": "방화벽: 네트워크 접근 통제 (방화벽 정책)",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "k3s NetworkPolicy + Traefik 인그레스 규칙."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80a004",
+                "control-id": "CSAP-D10-04",
+                "description": "침입 탐지: 네트워크 침입 탐지/방지 시스템",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/services/security-monitor-service/ IP 차단 + 이상 탐지."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80a005",
+                "control-id": "CSAP-D10-05",
+                "description": "DDoS 대응: DDoS 공격 대응 체계",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "Rate Limiting 설정 + DDoS 대응 가이드."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80a006",
+                "control-id": "CSAP-D10-06",
+                "description": "무선 네트워크: 무선 네트워크 보안 관리",
+                "props": [{"name": "implementation-status", "value": "not-applicable"}],
+                "remarks": "SaaS 서비스로 무선 네트워크 직접 관리 대상 아님."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80a007",
+                "control-id": "CSAP-D10-07",
+                "description": "DNS 보안: DNS 보안 관리",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "k3s CoreDNS 보안 설정 가이드."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80a008",
+                "control-id": "CSAP-D10-08",
+                "description": "데이터 유출 방지: DLP 체계 구축",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "N2SF 데이터 등급 분류 + AI API 전송 차단 (C/S등급). platform/services/ai-service/"
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80b001",
+                "control-id": "CSAP-D11-01",
+                "description": "가상화 보안 정책: 가상화 환경 보안 정책 수립",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "k3s 컨테이너 보안 정책. docs/framework/07-infra/ 참조."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80b002",
+                "control-id": "CSAP-D11-02",
+                "description": "가상 머신 격리: 가상화 자원 격리 및 접근 통제",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "Docker securityContext + k3s 네임스페이스 격리."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80b003",
+                "control-id": "CSAP-D11-03",
+                "description": "이미지 관리: 컨테이너 이미지 보안 관리",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "Trivy 이미지 스캔 + Cosign 서명 검증. .gitea/workflows/security.yml"
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80b004",
+                "control-id": "CSAP-D11-04",
+                "description": "가상 네트워크: 가상 네트워크 보안 관리",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "k3s CNI (Flannel) + NetworkPolicy."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80b005",
+                "control-id": "CSAP-D11-05",
+                "description": "가상 스토리지: 가상 스토리지 보안 관리",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "MinIO 오브젝트 스토리지 + PostgreSQL 볼륨 격리."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80b006",
+                "control-id": "CSAP-D11-06",
+                "description": "하이퍼바이저 보안: 하이퍼바이저 접근 통제",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "k3s 노드 접근 통제 가이드. SSH 키 기반 인증."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80b007",
+                "control-id": "CSAP-D11-07",
+                "description": "자원 관리: 가상화 자원 모니터링 및 관리",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "docker-compose 리소스 제한 + scripts/healthcheck.sh 헬스체크."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80b008",
+                "control-id": "CSAP-D11-08",
+                "description": "가상화 패치: 가상화 소프트웨어 패치 관리",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "k3s + Docker 패치 관리 가이드. CI/CD 자동 업데이트."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80c001",
+                "control-id": "CSAP-D12-01",
+                "description": "개발 보안 정책: 시큐어 코딩 정책 수립",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "CLAUDE.md + .claude/rules/csap-compliance.md 시큐어코딩 규칙."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80c002",
+                "control-id": "CSAP-D12-02",
+                "description": "입력값 검증: 모든 입력값 검증 및 필터링",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "Zod 스키마 검증. 모든 API 엔드포인트에 적용."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80c003",
+                "control-id": "CSAP-D12-03",
+                "description": "SQL 주입 방지: 매개변수화 쿼리 필수",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "Prisma ORM 매개변수화 쿼리 자동 적용."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80c004",
+                "control-id": "CSAP-D12-04",
+                "description": "XSS 방지: 출력값 인코딩 및 새니타이제이션",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "React 자동 XSS 방지 + DOMPurify 새니타이제이션."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80c005",
+                "control-id": "CSAP-D12-05",
+                "description": "에러 처리: 안전한 에러 메시지 처리",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "에러 응답에 스택 추적 미포함. 에러 ID만 반환. csap-compliance.md 규칙."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80c006",
+                "control-id": "CSAP-D12-06",
+                "description": "파일 업로드 보안: 파일 업로드 제한 및 검증",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/services/file-service/ 파일 유형/크기 제한 + 바이러스 스캔."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80c007",
+                "control-id": "CSAP-D12-07",
+                "description": "API 보안: API 인증/인가 및 속도 제한",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/services/api-gateway/ JWT 인증 + Rate Limiting + OpenAPI 명세."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80c008",
+                "control-id": "CSAP-D12-08",
+                "description": "취약점 점검: 정기적 보안 취약점 점검",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "Trivy + npm audit + OWASP ZAP. scripts/security-audit.sh"
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80c009",
+                "control-id": "CSAP-D12-09",
+                "description": "보안 테스트: 개발 단계 보안 테스트",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": ".gitea/workflows/security.yml CI/CD 보안 자동 테스트."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80c010",
+                "control-id": "CSAP-D12-10",
+                "description": "형상 관리: 소스 코드 및 설정 형상 관리",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "Gitea 저장소 + Conventional Commits + CHANGELOG.md."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80d001",
+                "control-id": "CSAP-D13-01",
+                "description": "공공기관 보안 관제: 24시간 보안 관제 체계",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/services/security-monitor-service/ 실시간 모니터링."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80d002",
+                "control-id": "CSAP-D13-02",
+                "description": "공공기관 데이터 보호: 공공 데이터 등급 분류 및 보호",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "N2SF C/S/O 등급 분류. docs/framework/03-n2sf/"
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80d003",
+                "control-id": "CSAP-D13-03",
+                "description": "공공기관 서비스 연속성: 공공 서비스 연속성 보장",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "SLA 99.9% 가이드. k3s 고가용성 설정."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80d004",
+                "control-id": "CSAP-D13-04",
+                "description": "공공기관 사고 통보: 보안 사고 발생 시 관계 기관 통보",
+                "props": [{"name": "implementation-status", "value": "guide"}],
+                "remarks": "KISA, 행안부 통보 절차 가이드."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80d005",
+                "control-id": "CSAP-D13-05",
+                "description": "공공기관 컴플라이언스: 공공기관 규제 준수 체계",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "platform/services/compliance-service/ 준수 현황 대시보드."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80d006",
+                "control-id": "CSAP-D13-06",
+                "description": "공공기관 접근 제어: 공공기관 전용 접근 통제",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "테넌트별 IP 화이트리스트 + 공공기관 전용 VPN."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80d007",
+                "control-id": "CSAP-D13-07",
+                "description": "공공기관 감사 추적: 공공기관 감사 추적 체계",
+                "props": [{"name": "implementation-status", "value": "implemented"}],
+                "remarks": "audit.jsonl append-only + SHA-256 체인. 1년 이상 보존."
+              },
+              {
+                "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80d008",
+                "control-id": "CSAP-D13-08",
+                "description": "공공기관 인력 보안: 공공기관 보안 인력 관리",
+                "props": [{"name": "implementation-status", "value": "template"}],
+                "remarks": "공공기관 보안 인력 관리 규정 템플릿."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
