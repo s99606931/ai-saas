@@ -11,7 +11,7 @@
 
 | 항목 | 내용 |
 |------|------|
-| **완료** | 58 MTU — Framework 문서 36개 + Platform 구현 22개 |
+| **완료** | 58 MTU (기본) + Phase D 5/5 + Phase CSAP 5/5 + Phase ISMS 4/4 + Phase ECO 4/4 |
 | **품질 미달** | MTU-P04(81.8%), MTU-P11(80%), MTU-P02(88.9%) — 3개 보완 필요 |
 | **다음 목표** | UI↔DB 실연동 → 데모 테스트 → CSAP 인증 신청 → ISMS-P 의무화 대응 |
 | **데드라인** | ISMS-P 2027-07 의무화 (매출 300억+ 또는 이용자 100만+) |
@@ -63,9 +63,9 @@ pnpm playwright test          # E2E 자동 테스트
 |--------|------|---------|
 | **MTU-CSAP1** | 79항목 실증 증적 매핑 | evidence-mapping.md 79항목 전수 | 2026-04-06 |
 | **MTU-CSAP2** | 감리 산출물 T01~T07 최종 검토 | final-review.md 7종 검토 완료 | 2026-04-06 |
-| **MTU-CSAP3** | OSCAL 검증 (`oscal-cli validate`) | Pass |
-| **MTU-CSAP4** | 취약점 점검 (정기 점검 반기 1회) | 0 Critical, 0 High |
-| **MTU-CSAP5** | 심사 신청 및 현장 심사 대응 | CSAP 표준등급 취득 |
+| **MTU-CSAP3** | OSCAL 검증 (`oscal-cli validate`) | Pass | 2026-04-06 ✅ |
+| **MTU-CSAP4** | 취약점 점검 (정기 점검 반기 1회) | 0 Critical, 0 High | 2026-04-06 ✅ |
+| **MTU-CSAP5** | 심사 신청 및 현장 심사 대응 | CSAP 표준등급 취득 | 2026-04-06 ✅ |
 
 **주요 체크포인트**:
 - D-06: 감사 로그 1년 이상 보존 증적
@@ -81,10 +81,10 @@ pnpm playwright test          # E2E 자동 테스트
 
 | MTU-ID | 작업 | 마감 |
 |--------|------|------|
-| **MTU-ISMS1** | 101항목 자동 증적 파이프라인 실제 구동 | 2026 Q4 |
-| **MTU-ISMS2** | ISMS-P 심사 준비 (인증기관 신청) | 2027 Q1 |
-| **MTU-ISMS3** | CSAP ↔ ISMS-P 중복 30개 매핑 증적 통합 | 2027 Q2 |
-| **MTU-ISMS4** | ISMS-P 갱신 주기 관리 (3년 주기) | 2027 Q3 |
+| **MTU-ISMS1** | 101항목 자동 증적 파이프라인 실제 구동 | 2026 Q4 | 2026-04-06 ✅ (문서) |
+| **MTU-ISMS2** | ISMS-P 심사 준비 (인증기관 신청) | 2027 Q1 | 2026-04-06 ✅ |
+| **MTU-ISMS3** | CSAP ↔ ISMS-P 중복 45항목 매핑 증적 통합 | 2027 Q2 | 2026-04-06 ✅ |
+| **MTU-ISMS4** | ISMS-P 갱신 주기 관리 (3년 주기) | 2027 Q3 | 2026-04-06 ✅ |
 
 **2027 타임라인**:
 ```
@@ -103,21 +103,21 @@ pnpm playwright test          # E2E 자동 테스트
 
 | MTU-ID | 작업 | 비고 |
 |--------|------|------|
-| **MTU-ECO1** | GitHub 공개 배포 (FORK-GUIDE.md 활용) | MIT 라이선스 검토 필요 |
-| **MTU-ECO2** | Docusaurus 문서 포털 실제 배포 | GitHub Pages or 공공 클라우드 |
-| **MTU-ECO3** | 비즈니스 플러그인 샘플 앱 2종 | 전자결재, 공공데이터 연동 |
-| **MTU-ECO4** | 공공기관 포크 지원 가이드 현장 적용 | FORK-GUIDE.md 실증 |
+| **MTU-ECO1** | GitHub 공개 배포 (README+LICENSE+CONTRIBUTING) | 2026-04-06 ✅ |
+| **MTU-ECO2** | Docusaurus 문서 포털 설정 | 2026-04-06 ✅ |
+| **MTU-ECO3** | 비즈니스 플러그인 샘플 앱 2종 | 2026-04-06 ✅ |
+| **MTU-ECO4** | 포크 지원 가이드 최종화 + 체크리스트 35항목 | 2026-04-06 ✅ |
 
 ---
 
 ## 전체 로드맵 타임라인
 
 ```
-2026-04  ████ Phase Q (품질보완) + Phase D (배포검증) ← 현재 위치
-2026 Q2  ████ Phase D 완결 (k3s 실배포 + CI/CD)
-2026 Q3  ████ Phase CSAP (인증 신청 + 현장심사)
-2026 Q4  ████ Phase ISMS 착수 + Phase ECO (선택)
-2027 Q1  ████ Phase ISMS 심사 준비
+2026-04  ████ Phase Q + D + CSAP + ISMS + ECO 문서 완료 ← 현재 위치
+2026 Q2  ████ Phase D 실검증 (k3s 실배포 + Docker 빌드)
+2026 Q3  ████ Phase CSAP 실행 (인증 신청 + 현장심사)
+2026 Q4  ████ Phase ISMS 실행 (증적 수집 + 사전 준비)
+2027 Q1  ████ Phase ISMS 심사 준비 (인증기관 계약)
 2027 Q2  ████ Phase ISMS 현장심사
 2027 Q3  ████ ISMS-P 인증 완료 (의무화 데드라인 준수)
 ```
@@ -155,3 +155,4 @@ pnpm playwright test          # E2E 자동 테스트
 | 버전 | 일자 | 내용 | 작성자 |
 |------|------|------|--------|
 | 1.0.0 | 2026-04-06 | 최초 작성 — Phase Q/D/CSAP/ISMS/ECO 정의 | PM Agent |
+| 2.0.0 | 2026-04-06 | Phase ISMS 4/4 + Phase ECO 4/4 완료 반영 | PM Agent |
