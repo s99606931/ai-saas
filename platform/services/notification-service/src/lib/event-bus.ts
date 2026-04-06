@@ -66,6 +66,20 @@ class NotificationEventBus {
   }
 
   /**
+   * 이벤트 구독 해제
+   * handlerCount를 정확히 감소시켜 카운터 정합성 유지
+   */
+  off<T extends EventType>(
+    event: T,
+    handler: (payload: NotificationEventMap[T]) => Promise<void> | void,
+  ): void {
+    this.emitter.off(event, handler as (...args: unknown[]) => void);
+    if (this.handlerCount > 0) {
+      this.handlerCount--;
+    }
+  }
+
+  /**
    * 등록된 핸들러 수 반환 (모니터링용)
    */
   getHandlerCount(): number {

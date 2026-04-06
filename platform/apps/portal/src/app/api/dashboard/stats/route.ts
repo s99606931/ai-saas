@@ -5,6 +5,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// DB 의존 API — 빌드 시 정적 생성 방지
+export const dynamic = 'force-dynamic'
+
 export interface DashboardStats {
   tenants: number
   users: number

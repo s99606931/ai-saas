@@ -115,9 +115,9 @@ export async function requestPasswordResetHandler(
     );
 
     // 실제 환경에서는 알림 서비스를 통해 이메일 발송
-    // 개발 환경에서는 로그로 토큰 출력
+    // 개발 환경: 토큰 앞 8자리만 표시 (보안 — 원문 노출 금지)
     if (process.env['NODE_ENV'] !== 'production') {
-      console.log(`[DEV] 비밀번호 재설정 토큰: ${rawToken} (사용자: ${email})`);
+      console.log(`[DEV] 비밀번호 재설정 토큰: ${rawToken.substring(0, 8)}... (사용자: ${email})`);
     }
   }
 
