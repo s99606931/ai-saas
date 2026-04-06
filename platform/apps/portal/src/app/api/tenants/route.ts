@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAuthContext, isSuperAdmin } from '@/lib/auth-guard'
 
 // DB 의존 API — 빌드 시 정적 생성 방지
 export const dynamic = 'force-dynamic'
@@ -23,9 +24,19 @@ export interface TenantListResponse {
 }
 
 // Plan SC: FR-UP.4 — 테넌트 목록 페이지네이션 조회
+// CSAP D-08-01: 인증 필수, D-08-05: 슈퍼 관리자 전용
 export async function GET(
   request: NextRequest
 ): Promise<NextResponse<TenantListResponse | { error: string }>> {
+  // CSAP D-08: 인증 + RBAC 검사 (테넌트 목록은 슈퍼 관리자 전용)
+  const auth = await getAuthContext()
+  if (!auth) {
+    return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 })
+  }
+  if (!isSuperAdmin(auth)) {
+    return NextResponse.json({ error: '테넌트 목록 조회 권한이 없습니다' }, { status: 403 })
+  }
+
   try {
     const { searchParams } = request.nextUrl
 

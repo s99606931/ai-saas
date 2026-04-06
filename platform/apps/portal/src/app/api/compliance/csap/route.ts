@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAuthContext } from '@/lib/auth-guard'
 
 // DB 의존 API — 빌드 시 정적 생성 방지
 export const dynamic = 'force-dynamic'
@@ -41,7 +42,14 @@ const CSAP_DOMAIN_BASE: Omit<CsapDomain, 'passCount' | 'rate'>[] = [
 ]
 
 // Plan SC: FR-UP.6 — CSAP 준수 현황 조회
+// CSAP D-08-01: 인증 필수
 export async function GET(): Promise<NextResponse<CsapComplianceResponse | { error: string }>> {
+  // CSAP D-08: 인증 검사
+  const auth = await getAuthContext()
+  if (!auth) {
+    return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 })
+  }
+
   try {
     // 활성 테넌트 수로 준수율 기반 계산 (실 감사 데이터 미입력 시 데모값)
     const [activeTenantCount, auditLogCount] = await Promise.all([
