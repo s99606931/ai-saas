@@ -1,0 +1,19 @@
+{
+  "name": "@public-saas/public-data-integration",
+  "version": "1.0.0",
+  "description": "공공데이터 연동 플러그인 샘플",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "~5.5.0"
+  }
+}
