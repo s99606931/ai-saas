@@ -4,6 +4,9 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+  // pnpm 모노레포에서 standalone 빌드 시 루트에서 파일 트레이싱
+  outputFileTracingRoot: '/app',
   experimental: {
     typedRoutes: true,
   },

@@ -24,8 +24,9 @@ FROM node:22-alpine AS runner
 RUN addgroup --system --gid 1001 saas && adduser --system --uid 1001 saas
 WORKDIR /app
 
-COPY --from=builder --chown=saas:saas /app/platform/services/api-gateway/dist ./dist
 COPY --from=builder --chown=saas:saas /app/node_modules ./node_modules
+COPY --from=builder --chown=saas:saas /app/platform/packages ./platform/packages
+COPY --from=builder --chown=saas:saas /app/platform/services/api-gateway ./platform/services/api-gateway
 
 USER saas
 EXPOSE 3000
@@ -33,4 +34,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "platform/services/api-gateway/dist/index.js"]

@@ -10,6 +10,11 @@ import { logTenantEvent } from '../lib/audit.js';
 
 const prisma = new PrismaClient();
 
+// BigInt → string 변환 (JSON 직렬화)
+function serializeTenant<T extends { maxStorage: bigint }>(t: T) {
+  return { ...t, maxStorage: t.maxStorage.toString() };
+}
+
 const createTenantSchema = z.object({
   name: z.string().min(1, '테넌트명은 필수입니다').max(200),
   slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, 'slug는 소문자, 숫자, 하이픈만 허용'),
@@ -63,7 +68,7 @@ export async function listTenantsHandler(
 
   await reply.send({
     success: true,
-    data: tenants,
+    data: tenants.map(serializeTenant),
     pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
   });
 }
@@ -90,7 +95,7 @@ export async function getTenantHandler(
     return;
   }
 
-  await reply.send({ success: true, data: tenant });
+  await reply.send({ success: true, data: serializeTenant(tenant) });
 }
 
 /**
@@ -164,14 +169,13 @@ export async function updateTenantHandler(
   }
 
   const { maxStorage, ...rest } = parseResult.data;
-  const updateData = {
-    ...rest,
-    ...(maxStorage !== undefined ? { maxStorage: BigInt(maxStorage) } : {}),
-  };
 
   const tenant = await prisma.tenant.update({
     where: { id: request.params.id },
-    data: updateData,
+    data: {
+      ...rest,
+      ...(maxStorage !== undefined ? { maxStorage: BigInt(maxStorage) } : {}),
+    } as Parameters<typeof prisma.tenant.update>[0]['data'],
   });
 
   await reply.send({

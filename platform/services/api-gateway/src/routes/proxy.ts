@@ -7,7 +7,7 @@ import httpProxy from '@fastify/http-proxy';
 import { SERVICE_REGISTRY, getServiceEntry } from '../registry/service-registry.js';
 import { dataGradeMiddleware } from '../middleware/data-grade.middleware.js';
 
-const AUTH_SERVICE_URL = `http://localhost:${process.env['AUTH_SERVICE_PORT'] ?? '3001'}`;
+const AUTH_SERVICE_URL = process.env['AUTH_SVC_URL'] ?? 'http://auth-service:3001';
 
 interface JwtUser {
   sub?: string;

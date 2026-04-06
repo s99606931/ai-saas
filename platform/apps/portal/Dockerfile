@@ -24,9 +24,11 @@ COPY --from=deps /app/platform/apps/portal/node_modules ./platform/apps/portal/n
 COPY tsconfig.base.json ./
 COPY platform/packages/ ./platform/packages/
 COPY platform/apps/portal/ ./platform/apps/portal/
-COPY prisma/ ./prisma/ 2>/dev/null || true
+COPY prisma/ ./prisma/
 
 WORKDIR /app/platform/apps/portal
+
+RUN pnpm exec prisma generate --schema=/app/prisma/schema.prisma
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
@@ -42,8 +44,7 @@ RUN addgroup --system --gid 1001 saas && \
     adduser --system --uid 1001 saas
 
 COPY --from=builder --chown=saas:saas /app/platform/apps/portal/.next/standalone ./
-COPY --from=builder --chown=saas:saas /app/platform/apps/portal/.next/static ./.next/static
-COPY --from=builder --chown=saas:saas /app/platform/apps/portal/public ./public 2>/dev/null || true
+COPY --from=builder --chown=saas:saas /app/platform/apps/portal/.next/static ./platform/apps/portal/.next/static
 
 USER saas
 
@@ -56,4 +57,4 @@ ENV NEXT_TELEMETRY_DISABLED=1
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:4000/ || exit 1
 
-CMD ["node", "server.js"]
+CMD ["node", "platform/apps/portal/server.js"]

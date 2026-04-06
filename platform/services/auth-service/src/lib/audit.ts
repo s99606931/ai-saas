@@ -3,7 +3,7 @@
 // Plan SC: FR-P01.12
 // CSAP: D-06-01 침해사고 관리
 
-import { createAuditLogger, type AuditLogOptions } from '@public-saas/audit-sdk';
+import { createAuditLogger } from '@public-saas/audit-sdk';
 import type { AuditEntry } from '@public-saas/types';
 
 // 감사 로거 인스턴스 (서비스 수준)

@@ -19,64 +19,65 @@ interface ServiceEntry {
 /**
  * 플랫폼 서비스 레지스트리 (정적)
  * Design Ref: DESIGN-MTU-P04 라우팅 설계
+ * k8s 환경: Kubernetes DNS 서비스명 사용 (AUTH_SERVICE_PORT 등은 k8s가 자동 주입하므로 충돌 방지)
  */
 export const SERVICE_REGISTRY: Record<string, ServiceEntry> = {
   auth: {
-    url: `http://localhost:${process.env['AUTH_SERVICE_PORT'] ?? '3001'}`,
+    url: process.env['AUTH_SVC_URL'] ?? 'http://auth-service:3001',
     requireAuth: false, // 인증 서비스는 인증 불필요
     rateLimit: { max: 10, timeWindow: '1 minute' }, // 로그인 브루트포스 방지
   },
   users: {
-    url: `http://localhost:${process.env['USER_SERVICE_PORT'] ?? '3002'}`,
+    url: process.env['USER_SVC_URL'] ?? 'http://user-service:3002',
     requireAuth: true,
   },
   tenants: {
-    url: `http://localhost:${process.env['TENANT_SERVICE_PORT'] ?? '3003'}`,
+    url: process.env['TENANT_SVC_URL'] ?? 'http://tenant-service:3003',
     requireAuth: true,
   },
   menus: {
-    url: `http://localhost:${process.env['MENU_SERVICE_PORT'] ?? '3004'}`,
+    url: process.env['MENU_SVC_URL'] ?? 'http://menu-service:3004',
     requireAuth: true,
   },
   services: {
-    url: `http://localhost:${process.env['CATALOG_SERVICE_PORT'] ?? '3005'}`,
+    url: process.env['CATALOG_SVC_URL'] ?? 'http://saas-catalog-service:3005',
     requireAuth: true,
   },
   subscriptions: {
-    url: `http://localhost:${process.env['SUBSCRIPTION_SERVICE_PORT'] ?? '3006'}`,
+    url: process.env['SUBSCRIPTION_SVC_URL'] ?? 'http://subscription-service:3006',
     requireAuth: true,
   },
   billing: {
-    url: `http://localhost:${process.env['BILLING_SERVICE_PORT'] ?? '3007'}`,
+    url: process.env['BILLING_SVC_URL'] ?? 'http://billing-service:3007',
     requireAuth: true,
   },
   crm: {
-    url: `http://localhost:${process.env['CRM_SERVICE_PORT'] ?? '3008'}`,
+    url: process.env['CRM_SVC_URL'] ?? 'http://crm-service:3008',
     requireAuth: true,
   },
   ai: {
-    url: `http://localhost:${process.env['AI_SERVICE_PORT'] ?? '3009'}`,
+    url: process.env['AI_SVC_URL'] ?? 'http://ai-service:3009',
     requireAuth: true,
   },
   notifications: {
-    url: `http://localhost:${process.env['NOTIFICATION_SERVICE_PORT'] ?? '3010'}`,
+    url: process.env['NOTIFICATION_SVC_URL'] ?? 'http://notification-service:3010',
     requireAuth: true,
   },
   files: {
-    url: `http://localhost:${process.env['FILE_SERVICE_PORT'] ?? '3011'}`,
+    url: process.env['FILE_SVC_URL'] ?? 'http://file-service:3011',
     requireAuth: true,
   },
   audit: {
-    url: `http://localhost:${process.env['AUDIT_SERVICE_PORT'] ?? '3012'}`,
+    url: process.env['AUDIT_SVC_URL'] ?? 'http://audit-service:3012',
     requireAuth: true,
     requiredPermissions: ['audit:read'],
   },
   compliance: {
-    url: `http://localhost:${process.env['COMPLIANCE_SERVICE_PORT'] ?? '3013'}`,
+    url: process.env['COMPLIANCE_SVC_URL'] ?? 'http://compliance-service:3013',
     requireAuth: true,
   },
   security: {
-    url: `http://localhost:${process.env['SECURITY_SERVICE_PORT'] ?? '3014'}`,
+    url: process.env['SECURITY_SVC_URL'] ?? 'http://security-monitor-service:3014',
     requireAuth: true,
     requiredPermissions: ['security:read'],
   },

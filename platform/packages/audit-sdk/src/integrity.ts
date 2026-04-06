@@ -25,9 +25,11 @@ export async function computeHash(entry: AuditEntry): Promise<string> {
     entry.previousHash,
   ].join('|');
 
-  // Node.js crypto 모듈 사용
-  const { createHash } = await import('node:crypto');
-  return createHash('sha256').update(data).digest('hex');
+  // Web Crypto API (Node.js 20+ 및 브라우저 공통 지원)
+  const encoder = new TextEncoder();
+  const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', encoder.encode(data));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**

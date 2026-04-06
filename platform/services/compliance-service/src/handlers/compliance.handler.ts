@@ -8,14 +8,6 @@ import { logComplianceEvent } from '../lib/audit.js';
 
 // --- CSAP 79항목 정적 체크리스트 ---
 
-interface CheckItem {
-  id: string;
-  domain: string;
-  control: string;
-  description: string;
-  status: 'pass' | 'partial' | 'fail' | 'na';
-  evidence?: string;
-}
 
 const CSAP_DOMAINS = [
   { id: 'D-01', name: '정보보호 정책', items: 5 },

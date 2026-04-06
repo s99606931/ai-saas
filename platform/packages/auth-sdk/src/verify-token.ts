@@ -33,8 +33,8 @@ export interface VerifyTokenOptions {
  * ```
  */
 export async function verifyToken(
-  token: string,
-  options: VerifyTokenOptions,
+  _token: string,
+  _options: VerifyTokenOptions,
 ): Promise<TokenPayload> {
   // NOTE: 실제 구현은 MTU-P01 (인증 서비스)에서 jsonwebtoken 또는 jose 라이브러리로 구현
   // 현재는 인터페이스 스켈레톤

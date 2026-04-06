@@ -23,6 +23,7 @@ COPY tsconfig.base.json ./
 COPY platform/packages/ ./platform/packages/
 COPY platform/services/auth-service/ ./platform/services/auth-service/
 COPY prisma/ ./prisma/
+RUN pnpm exec prisma generate
 
 RUN pnpm --filter @public-saas/auth-service... build
 
@@ -35,9 +36,9 @@ RUN addgroup --system --gid 1001 saas && \
 
 WORKDIR /app
 
-COPY --from=builder --chown=saas:saas /app/platform/services/auth-service/dist ./dist
 COPY --from=builder --chown=saas:saas /app/node_modules ./node_modules
-COPY --from=builder --chown=saas:saas /app/platform/packages/*/dist ./packages/
+COPY --from=builder --chown=saas:saas /app/platform/packages ./platform/packages
+COPY --from=builder --chown=saas:saas /app/platform/services/auth-service ./platform/services/auth-service
 
 USER saas
 
@@ -47,4 +48,4 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "platform/services/auth-service/dist/index.js"]

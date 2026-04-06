@@ -3,19 +3,19 @@
 // Plan SC: FR-P01.1, FR-P01.2
 // CSAP: D-08-01 인증 관리
 
-import { SignJWT, jwtVerify, importPKCS8, importSPKI } from 'jose';
+import { SignJWT, jwtVerify, importPKCS8, importSPKI, type KeyLike } from 'jose';
 import type { TokenPayload } from '@public-saas/types';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
 
 const ALGORITHM = AUTH_CONSTANTS.JWT_ALGORITHM;
 
-let cachedPrivateKey: CryptoKey | null = null;
-let cachedPublicKey: CryptoKey | null = null;
+let cachedPrivateKey: KeyLike | null = null;
+let cachedPublicKey: KeyLike | null = null;
 
 /**
  * RSA 비밀 키 로드 (캐시)
  */
-async function getPrivateKey(): Promise<CryptoKey> {
+async function getPrivateKey(): Promise<KeyLike> {
   if (!cachedPrivateKey) {
     const keyData = process.env['JWT_PRIVATE_KEY'];
     if (!keyData) {
@@ -29,7 +29,7 @@ async function getPrivateKey(): Promise<CryptoKey> {
 /**
  * RSA 공개 키 로드 (캐시)
  */
-async function getPublicKey(): Promise<CryptoKey> {
+async function getPublicKey(): Promise<KeyLike> {
   if (!cachedPublicKey) {
     const keyData = process.env['JWT_PUBLIC_KEY'];
     if (!keyData) {

@@ -70,7 +70,7 @@ export async function getFilteredMenuHandler(
   });
 
   // roles Json 필드에서 역할 필터링
-  const filtered = items.filter((item) => {
+  const filtered = items.filter((item: (typeof items)[number]) => {
     if (!item.roles) return true; // roles 미설정 시 전체 허용
     const allowedRoles = item.roles as string[];
     return allowedRoles.includes(role);

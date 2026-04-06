@@ -53,9 +53,9 @@ export async function appendAuditLog(entry: {
   await prisma.auditLog.create({
     data: {
       ...entry,
-      metadata: entry.metadata ?? undefined,
+      metadata: entry.metadata as Record<string, unknown> ?? null,
       hash,
       previousHash,
-    },
+    } as Parameters<typeof prisma.auditLog.create>[0]['data'],
   });
 }

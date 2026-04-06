@@ -27,5 +27,14 @@ export async function logComplianceEvent(
   action: string,
   metadata?: Record<string, unknown>,
 ): Promise<void> {
-  await auditLogger.log({ action, metadata });
+  await auditLogger.log({
+    actor: 'system:compliance-service',
+    action,
+    target: 'compliance',
+    targetType: 'compliance',
+    tenantId: 'system',
+    ip: '127.0.0.1',
+    userAgent: 'compliance-service/1.0',
+    metadata,
+  });
 }

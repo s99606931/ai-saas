@@ -50,6 +50,7 @@ export class AuditLogger {
 
     const fullEntry: AuditEntry = {
       ...entry,
+      tenantId: entry.tenantId ?? this.defaultTenantId,
       id,
       timestamp,
       previousHash: this.lastHash,

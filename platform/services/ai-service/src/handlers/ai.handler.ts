@@ -61,7 +61,7 @@ export async function createModelHandler(
     return;
   }
 
-  const model = await prisma.aiModel.create({ data: parseResult.data });
+  const model = await prisma.aiModel.create({ data: parseResult.data as Parameters<typeof prisma.aiModel.create>[0]['data'] });
 
   await logAiEvent(
     'AI_MODEL_REGISTERED',
@@ -102,7 +102,7 @@ export async function updateModelHandler(
 
   const model = await prisma.aiModel.update({
     where: { id: request.params.id },
-    data: parseResult.data,
+    data: parseResult.data as Parameters<typeof prisma.aiModel.update>[0]['data'],
   });
 
   await reply.send({ success: true, data: model });

@@ -168,7 +168,7 @@ export async function listFilesHandler(
 
   await reply.send({
     success: true,
-    data: files.map((f) => ({ ...f, size: f.size.toString() })),
+    data: files.map((f: (typeof files)[number]) => ({ ...f, size: f.size.toString() })),
     pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
   });
 }

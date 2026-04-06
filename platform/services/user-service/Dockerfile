@@ -22,6 +22,9 @@ RUN pnpm install --frozen-lockfile --filter @public-saas/user-service...
 COPY platform/packages/ ./platform/packages/
 COPY platform/services/user-service/ ./platform/services/user-service/
 
+COPY prisma/ ./prisma/
+RUN pnpm exec prisma generate
+
 RUN pnpm --filter @public-saas/user-service... build
 
 # 프로덕션 이미지
@@ -33,8 +36,9 @@ RUN addgroup --system --gid 1001 saas && \
 
 WORKDIR /app
 
-COPY --from=builder --chown=saas:saas /app/platform/services/user-service/dist ./dist
 COPY --from=builder --chown=saas:saas /app/node_modules ./node_modules
+COPY --from=builder --chown=saas:saas /app/platform/packages ./platform/packages
+COPY --from=builder --chown=saas:saas /app/platform/services/user-service ./platform/services/user-service
 
 USER saas
 
@@ -44,4 +48,4 @@ EXPOSE 3002
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3002/health || exit 1
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "platform/services/user-service/dist/index.js"]

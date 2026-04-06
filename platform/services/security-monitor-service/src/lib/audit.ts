@@ -27,5 +27,14 @@ export async function logSecurityEvent(
   action: string,
   metadata?: Record<string, unknown>,
 ): Promise<void> {
-  await auditLogger.log({ action, metadata });
+  await auditLogger.log({
+    actor: 'system:security-monitor',
+    action,
+    target: 'security',
+    targetType: 'security',
+    tenantId: 'system',
+    ip: '127.0.0.1',
+    userAgent: 'security-monitor-service/1.0',
+    metadata,
+  });
 }

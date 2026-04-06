@@ -5,7 +5,7 @@
 
 import { DataGrid } from '../common/DataGrid';
 
-interface TenantRow {
+interface TenantRow extends Record<string, unknown> {
   id: string;
   name: string;
   slug: string;

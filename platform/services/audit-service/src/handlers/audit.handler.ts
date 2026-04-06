@@ -154,7 +154,7 @@ export async function exportAuditLogsHandler(
 
   if (query.format === 'csv') {
     const header = 'id,tenantId,actorId,action,target,targetType,ip,userAgent,hash,createdAt';
-    const rows = logs.map((log) =>
+    const rows = logs.map((log: (typeof logs)[number]) =>
       [
         log.id,
         log.tenantId ?? '',
@@ -174,7 +174,7 @@ export async function exportAuditLogsHandler(
       .header('Content-Disposition', 'attachment; filename=audit-logs.csv')
       .send(csv);
   } else {
-    const jsonLines = logs.map((log) => JSON.stringify(log)).join('\n');
+    const jsonLines = logs.map((log: (typeof logs)[number]) => JSON.stringify(log)).join('\n');
     reply
       .header('Content-Type', 'application/x-ndjson; charset=utf-8')
       .header('Content-Disposition', 'attachment; filename=audit-logs.jsonl')
