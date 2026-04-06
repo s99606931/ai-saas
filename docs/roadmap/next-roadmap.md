@@ -1,7 +1,7 @@
 # 공공기관 SaaS 프레임워크 — 다음 단계 로드맵
 
-> **기준일**: 2026-04-06
-> **기준 상태**: 58 MTU 완료 (Framework 36 + Platform 22)
+> **기준일**: 2026-04-06 (4차 세션 최종)
+> **기준 상태**: 60 MTU 완료 (Framework 36 + Platform 24) + Docker/k8s 배포 인프라 완비
 > **작성자**: PM Agent
 > **참조**: docs/roadmap/master-roadmap.md, docs/archive/2026-04/_INDEX.md
 
@@ -11,9 +11,10 @@
 
 | 항목 | 내용 |
 |------|------|
-| **완료** | 58 MTU (기본) + Phase D 5/5 + Phase CSAP 5/5 + Phase ISMS 4/4 + Phase ECO 4/4 |
-| **품질 미달** | MTU-P04(81.8%), MTU-P11(80%), MTU-P02(88.9%) — 3개 보완 필요 |
-| **다음 목표** | UI↔DB 실연동 → 데모 테스트 → CSAP 인증 신청 → ISMS-P 의무화 대응 |
+| **완료** | 60 MTU 전수 + Phase D 5/5 + Phase CSAP 5/5 + Phase ISMS 4/4 + Phase ECO 4/4 |
+| **인프라** | Docker 15 서비스 Dockerfile + k8s 매니페스트 전수 + k3s 설치 스크립트 |
+| **보안 강화** | Redis Secret 참조, 테넌트 격리 D-08-05, 감사 로그 D-06 |
+| **다음 목표** | Docker 빌드 실검증 -> k3s 실배포 -> CSAP 인증 신청 -> ISMS-P 의무화 대응 |
 | **데드라인** | ISMS-P 2027-07 의무화 (매출 300억+ 또는 이용자 100만+) |
 
 ---
@@ -113,8 +114,8 @@ pnpm playwright test          # E2E 자동 테스트
 ## 전체 로드맵 타임라인
 
 ```
-2026-04  ████ Phase Q + D + CSAP + ISMS + ECO 문서 완료 ← 현재 위치
-2026 Q2  ████ Phase D 실검증 (k3s 실배포 + Docker 빌드)
+2026-04  ████ 전체 MTU 60/60 + Docker/k8s 인프라 완비 ← 현재 위치
+2026 Q2  ████ Docker 빌드 실검증 + k3s 실배포 + E2E 테스트 실행
 2026 Q3  ████ Phase CSAP 실행 (인증 신청 + 현장심사)
 2026 Q4  ████ Phase ISMS 실행 (증적 수집 + 사전 준비)
 2027 Q1  ████ Phase ISMS 심사 준비 (인증기관 계약)
@@ -156,3 +157,4 @@ pnpm playwright test          # E2E 자동 테스트
 |------|------|------|--------|
 | 1.0.0 | 2026-04-06 | 최초 작성 — Phase Q/D/CSAP/ISMS/ECO 정의 | PM Agent |
 | 2.0.0 | 2026-04-06 | Phase ISMS 4/4 + Phase ECO 4/4 완료 반영 | PM Agent |
+| 3.0.0 | 2026-04-06 | Docker/k8s 인프라 완비 + CSAP 보안 강화 반영 (4차 세션) | PM Agent |
