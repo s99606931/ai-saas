@@ -172,11 +172,25 @@ export async function sendFromTemplateHandler(
 /**
  * 사용자 알림 조회
  * Plan SC: FR-P11.3
+ * CSAP D-08-05: 본인 알림만 조회 가능 (TENANT_ADMIN, SUPER_ADMIN 예외)
  */
 export async function getUserNotificationsHandler(
   request: FastifyRequest<{ Params: { userId: string }; Querystring: { page?: string; pageSize?: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  const callerId = request.headers['x-user-id'] as string | undefined;
+  const callerRole = request.headers['x-user-role'] as string | undefined;
+  const isAdmin = callerRole === 'SUPER_ADMIN' || callerRole === 'TENANT_ADMIN';
+
+  // 관리자가 아닌 경우 본인 알림만 조회 허용 (CSAP D-08-05)
+  if (!isAdmin && callerId && callerId !== request.params.userId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '본인의 알림만 조회할 수 있습니다' },
+    });
+    return;
+  }
+
   const page = parseInt(request.query.page ?? '1', 10);
   const pageSize = Math.min(parseInt(request.query.pageSize ?? '20', 10), 100);
 
@@ -200,11 +214,37 @@ export async function getUserNotificationsHandler(
 /**
  * 알림 읽음 처리
  * Plan SC: FR-P11.3
+ * CSAP D-08-05: 본인 알림만 읽음 처리 가능
  */
 export async function markReadHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  const target = await prisma.notification.findUnique({
+    where: { id: request.params.id },
+    select: { id: true, userId: true },
+  });
+
+  if (!target) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'NOTIFICATION_NOT_FOUND', message: '알림을 찾을 수 없습니다' },
+    });
+    return;
+  }
+
+  const callerId = request.headers['x-user-id'] as string | undefined;
+  const callerRole = request.headers['x-user-role'] as string | undefined;
+  const isAdmin = callerRole === 'SUPER_ADMIN' || callerRole === 'TENANT_ADMIN';
+
+  if (!isAdmin && callerId && callerId !== target.userId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '본인의 알림만 읽음 처리할 수 있습니다' },
+    });
+    return;
+  }
+
   const notification = await prisma.notification.update({
     where: { id: request.params.id },
     data: { status: 'read' },

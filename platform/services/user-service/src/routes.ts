@@ -12,6 +12,9 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
   // 서비스 수준 내부 인증 (CSAP D-08: 심층 방어)
   // API 게이트웨이가 인증 후 x-internal-service-key 헤더를 주입
   const internalKey = process.env['INTERNAL_SERVICE_KEY'];
+  if (!internalKey && process.env['NODE_ENV'] === 'production') {
+    throw new Error('[SECURITY] INTERNAL_SERVICE_KEY 환경변수가 설정되지 않았습니다. 서비스를 시작할 수 없습니다.');
+  }
   if (internalKey) {
     app.addHook('onRequest', async (request, reply) => {
       const provided = request.headers['x-internal-service-key'];

@@ -186,6 +186,10 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
           'content-type': request.headers['content-type'] ?? 'application/json',
           'authorization': request.headers.authorization ?? '',
           'x-tenant-id': (request.headers['x-tenant-id'] as string) ?? '',
+          'x-user-id': (request.headers['x-user-id'] as string) ?? '',
+          'x-user-tenant-id': (request.headers['x-user-tenant-id'] as string) ?? '',
+          'x-user-role': (request.headers['x-user-role'] as string) ?? '',
+          'x-internal-service-key': (request.headers['x-internal-service-key'] as string) ?? '',
           'x-forwarded-for': request.ip,
         },
         body: request.method !== 'GET' && request.method !== 'HEAD'
