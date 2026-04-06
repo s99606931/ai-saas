@@ -20,6 +20,7 @@ const changePasswordSchema = z.object({
 /**
  * 비밀번호 변경 핸들러
  * CSAP D-08-07: 현재 비밀번호 확인 + 정책 검증
+ * CSAP D-08-05: 테넌트 격리 — 본인 또는 관리자만 변경 가능
  */
 export async function changePasswordHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
@@ -39,13 +40,38 @@ export async function changePasswordHandler(
   // 현재 비밀번호 확인
   const user = await prisma.user.findUnique({
     where: { id: request.params.id },
-    select: { id: true, passwordHash: true },
+    select: { id: true, passwordHash: true, tenantId: true },
   });
 
   if (!user) {
     await reply.status(404).send({
       success: false,
       error: { code: 'USER_NOT_FOUND', message: '사용자를 찾을 수 없습니다' },
+    });
+    return;
+  }
+
+  // CSAP D-08-05: 테넌트 격리 + 본인 확인
+  const jwtUserId = request.headers['x-user-id'] as string | undefined;
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+  const isSelf = jwtUserId === request.params.id;
+  const isSuperAdmin = jwtRole === 'SUPER_ADMIN';
+
+  // 본인이 아니고 슈퍼관리자도 아닌 경우 차단
+  if (!isSelf && !isSuperAdmin) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '본인의 비밀번호만 변경할 수 있습니다' },
+    });
+    return;
+  }
+
+  // SUPER_ADMIN 제외 타 테넌트 사용자 비밀번호 변경 금지
+  if (!isSuperAdmin && jwtTenantId && user.tenantId !== jwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
     });
     return;
   }
@@ -76,16 +102,19 @@ export async function changePasswordHandler(
   });
 
   // 감사 로그 기록 (FR-P02.10, CSAP D-06)
+  const actor = jwtUserId ?? request.params.id;
   await logUserEvent(
     'USER_PASSWORD_CHANGED',
+    actor,
     request.params.id,
-    request.params.id,
-    'system', // tenantId — resolved from user context when auth middleware applied
+    user.tenantId,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
   );
 
-  // TODO: 기존 세션 무효화 (auth-service Redis 연동 필요)
+  // NOTE: 비밀번호 변경 후 기존 세션 무효화는 auth-service Redis 연동 필요
+  // 현재 아키텍처에서는 API 게이트웨이가 토큰 만료 시 자연 무효화 처리
+  // Phase P4에서 auth-service 간 이벤트 기반 세션 무효화 구현 예정
 
   await reply.send({ success: true, message: '비밀번호가 변경되었습니다' });
 }
