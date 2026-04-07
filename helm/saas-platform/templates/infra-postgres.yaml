@@ -1,0 +1,90 @@
+# 공공기관 SaaS 플랫폼 -- PostgreSQL
+# Design Ref: DESIGN-MTU-N04 | Plan SC: FR-N04.3
+{{- if .Values.postgres.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" "postgres" "context" .) | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "saas-platform.selectorLabels" (dict "name" "postgres") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "saas-platform.selectorLabels" (dict "name" "postgres") | nindent 8 }}
+    spec:
+      containers:
+      - name: postgres
+        image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+        ports:
+        - containerPort: {{ .Values.postgres.port }}
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "saas-platform.secretName" . }}
+              key: DB_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "saas-platform.secretName" . }}
+              key: DB_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "saas-platform.secretName" . }}
+              key: DB_NAME
+        readinessProbe:
+          exec:
+            command:
+            {{- range .Values.postgres.readinessProbe.command }}
+            - {{ . | quote }}
+            {{- end }}
+          initialDelaySeconds: {{ .Values.postgres.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.postgres.readinessProbe.periodSeconds }}
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-data
+        {{- if eq .Values.postgres.storage.type "pvc" }}
+        persistentVolumeClaim:
+          claimName: postgres-data-pvc
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.postgres.serviceName }}
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" "postgres" "context" .) | nindent 4 }}
+spec:
+  selector:
+    {{- include "saas-platform.selectorLabels" (dict "name" "postgres") | nindent 4 }}
+  ports:
+  - port: {{ .Values.postgres.port }}
+    targetPort: {{ .Values.postgres.port }}
+{{- if eq .Values.postgres.storage.type "pvc" }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data-pvc
+  namespace: {{ include "saas-platform.namespace" . }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgres.storage.size }}
+{{- end }}
+{{- end }}

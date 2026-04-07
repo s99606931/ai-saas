@@ -92,3 +92,102 @@ jobs:
             **/coverage/
             **/test-results/
           retention-days: 7
+
+  # E2E 통합 테스트 (Design Ref: DESIGN-MTU-N05 | Plan SC: FR-N05.1)
+  # CSAP D-12: 시스템 개발 보안 -- 통합시험 자동화
+  e2e:
+    name: E2E Integration Tests
+    runs-on: ubuntu-latest
+    needs: ci
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: saas
+          POSTGRES_PASSWORD: saas_test_2026
+          POSTGRES_DB: saas_platform_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U saas"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Run E2E tests
+        run: pnpm --filter @public-saas/e2e-tests test
+        env:
+          DATABASE_URL: postgresql://saas:saas_test_2026@localhost:5432/saas_platform_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret
+          NODE_ENV: test
+
+      - name: Upload E2E results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: platform/tests/e2e/test-results/
+          retention-days: 7
+
+  # Helm Chart 유효성 검증 (Design Ref: DESIGN-MTU-N05 | Plan SC: FR-N05.3)
+  helm-lint:
+    name: Helm Chart Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.0
+
+      - name: Helm lint
+        run: helm lint helm/saas-platform/
+
+      - name: Helm template (dry-run)
+        run: |
+          helm template saas-test helm/saas-platform/ > /dev/null
+          echo "Default values: OK"
+          helm template saas-dev helm/saas-platform/ -f helm/saas-platform/values-dev.yaml > /dev/null
+          echo "Dev values: OK"
+          helm template saas-stg helm/saas-platform/ -f helm/saas-platform/values-stg.yaml > /dev/null
+          echo "Stg values: OK"
+          helm template saas-prod helm/saas-platform/ -f helm/saas-platform/values-prod.yaml > /dev/null
+          echo "Prod values: OK"

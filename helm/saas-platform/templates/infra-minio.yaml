@@ -1,0 +1,99 @@
+# 공공기관 SaaS 플랫폼 -- MinIO (S3 호환 오브젝트 스토리지)
+# Design Ref: DESIGN-MTU-N04 | Plan SC: FR-N04.3
+# CSAP D-09: 파일 암호화 저장
+{{- if .Values.minio.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" "minio" "context" .) | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "saas-platform.selectorLabels" (dict "name" "minio") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "saas-platform.selectorLabels" (dict "name" "minio") | nindent 8 }}
+    spec:
+      containers:
+      - name: minio
+        image: "{{ .Values.minio.image.repository }}:{{ .Values.minio.image.tag }}"
+        command:
+        - minio
+        - server
+        - /data
+        - --console-address
+        - ":{{ .Values.minio.ports.console }}"
+        ports:
+        - containerPort: {{ .Values.minio.ports.api }}
+          name: api
+        - containerPort: {{ .Values.minio.ports.console }}
+          name: console
+        env:
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "saas-platform.secretName" . }}
+              key: MINIO_USER
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "saas-platform.secretName" . }}
+              key: MINIO_PASSWORD
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.minio.readinessProbe.path }}
+            port: {{ .Values.minio.ports.api }}
+          initialDelaySeconds: {{ .Values.minio.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.minio.readinessProbe.periodSeconds }}
+        volumeMounts:
+        - name: minio-data
+          mountPath: /data
+        resources:
+          {{- toYaml .Values.minio.resources | nindent 10 }}
+      volumes:
+      - name: minio-data
+        {{- if eq .Values.minio.storage.type "pvc" }}
+        persistentVolumeClaim:
+          claimName: minio-data-pvc
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.minio.serviceName }}
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" "minio" "context" .) | nindent 4 }}
+spec:
+  selector:
+    {{- include "saas-platform.selectorLabels" (dict "name" "minio") | nindent 4 }}
+  ports:
+  - port: {{ .Values.minio.ports.api }}
+    targetPort: {{ .Values.minio.ports.api }}
+    name: api
+  - port: {{ .Values.minio.ports.console }}
+    targetPort: {{ .Values.minio.ports.console }}
+    name: console
+{{- if eq .Values.minio.storage.type "pvc" }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-data-pvc
+  namespace: {{ include "saas-platform.namespace" . }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.minio.storage.size }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,83 @@
+# 공공기관 SaaS 플랫폼 -- API 게이트웨이
+# Design Ref: DESIGN-MTU-N04 | Plan SC: FR-N04.2
+# 별도 템플릿: 서비스 디스커버리 URL 환경변수 주입 필요
+{{- $gw := index .Values.services "api-gateway" -}}
+{{- if $gw }}
+{{- if $gw.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" "api-gateway" "context" .) | nindent 4 }}
+spec:
+  replicas: {{ $gw.replicas | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "saas-platform.selectorLabels" (dict "name" "api-gateway") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "saas-platform.selectorLabels" (dict "name" "api-gateway") | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.serviceDefaults.terminationGracePeriodSeconds }}
+      securityContext:
+        {{- include "saas-platform.podSecurityContext" . | nindent 8 }}
+      containers:
+      - name: api-gateway
+        image: "{{ $gw.image.repository }}:{{ $gw.image.tag }}"
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: {{ $gw.port }}
+        securityContext:
+          {{- include "saas-platform.containerSecurityContext" . | nindent 10 }}
+        envFrom:
+        - secretRef:
+            name: {{ include "saas-platform.secretName" . }}
+        env:
+        - name: API_GATEWAY_PORT
+          value: {{ $gw.port | quote }}
+        - name: NODE_ENV
+          value: {{ .Values.global.nodeEnv | quote }}
+        # 서비스 디스커버리 URL
+        {{- range $name, $svc := .Values.services }}
+        {{- if and $svc.enabled (ne $name "api-gateway") }}
+        - name: {{ $name | upper | replace "-" "_" }}_URL
+          value: "http://{{ $name }}:{{ $svc.port }}"
+        {{- end }}
+        {{- end }}
+        readinessProbe:
+          httpGet:
+            path: {{ $gw.readinessProbe.path }}
+            port: {{ $gw.port }}
+          initialDelaySeconds: {{ .Values.serviceDefaults.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.serviceDefaults.readinessProbe.periodSeconds }}
+          failureThreshold: {{ .Values.serviceDefaults.readinessProbe.failureThreshold }}
+        livenessProbe:
+          httpGet:
+            path: {{ $gw.livenessProbe.path }}
+            port: {{ $gw.port }}
+          initialDelaySeconds: {{ .Values.serviceDefaults.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.serviceDefaults.livenessProbe.periodSeconds }}
+          failureThreshold: {{ .Values.serviceDefaults.livenessProbe.failureThreshold }}
+        resources:
+          {{- toYaml .Values.serviceDefaults.resources | nindent 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" "api-gateway" "context" .) | nindent 4 }}
+spec:
+  selector:
+    {{- include "saas-platform.selectorLabels" (dict "name" "api-gateway") | nindent 4 }}
+  ports:
+  - port: {{ $gw.port }}
+    targetPort: {{ $gw.port }}
+  type: {{ $gw.serviceType | default "ClusterIP" }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,111 @@
+# 공공기관 SaaS 플랫폼 -- DB 백업 CronJob
+# Design Ref: DESIGN-MTU-N04 | Plan SC: FR-N04.9
+# CSAP D-07: 재해복구 -- 일일 자동 백업 + SHA-256 무결성 검증
+{{- if .Values.backup.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-backup
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" "db-backup" "context" .) | nindent 4 }}
+    csap: D-07
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  concurrencyPolicy: {{ .Values.backup.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.backup.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.backup.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: db-backup
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            {{- include "saas-platform.podSecurityContext" . | nindent 12 }}
+          containers:
+          - name: pg-backup
+            image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+            imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
+              BACKUP_FILE="/backups/saas_backup_${TIMESTAMP}.sql.gz"
+
+              echo "[$(date)] 백업 시작: ${BACKUP_FILE}"
+
+              pg_dump \
+                -h "$PGHOST" \
+                -p "$PGPORT" \
+                -U "$PGUSER" \
+                -d "$PGDATABASE" \
+                --format=custom \
+                --compress=9 \
+                --no-owner \
+                --no-privileges \
+                | gzip > "$BACKUP_FILE"
+
+              sha256sum "$BACKUP_FILE" > "${BACKUP_FILE}.sha256"
+
+              find /backups -name "saas_backup_*.sql.gz" -mtime +{{ .Values.backup.retentionDays }} -exec rm -f {} \;
+              find /backups -name "saas_backup_*.sql.gz.sha256" -mtime +{{ .Values.backup.retentionDays }} -exec rm -f {} \;
+
+              BACKUP_SIZE=$(du -sh "$BACKUP_FILE" | cut -f1)
+              echo "[$(date)] 백업 완료: ${BACKUP_FILE} (${BACKUP_SIZE})"
+            env:
+            - name: PGHOST
+              value: {{ .Values.postgres.serviceName | quote }}
+            - name: PGPORT
+              value: {{ .Values.postgres.port | quote }}
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "saas-platform.secretName" . }}
+                  key: DB_NAME
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "saas-platform.secretName" . }}
+                  key: DB_USER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "saas-platform.secretName" . }}
+                  key: DB_PASSWORD
+            securityContext:
+              readOnlyRootFilesystem: false
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+            resources:
+              {{- toYaml .Values.backup.resources | nindent 14 }}
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: db-backup-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-backup-pvc
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" "db-backup" "context" .) | nindent 4 }}
+    csap: D-07
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.backup.storage.size }}
+{{- end }}

@@ -1,0 +1,23 @@
+# 공공기관 SaaS 플랫폼 -- PodDisruptionBudget
+# Design Ref: DESIGN-MTU-N04 | Plan SC: FR-N04.8
+# CSAP D-07: 재해복구 -- 최소 가용 Pod 수 보장
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled $svc.pdb }}
+{{- if $svc.pdb.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $name }}-pdb
+  namespace: {{ include "saas-platform.namespace" $ }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" $name "context" $) | nindent 4 }}
+    csap: D-07
+spec:
+  minAvailable: {{ $svc.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "saas-platform.selectorLabels" (dict "name" $name) | nindent 6 }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -28,7 +28,7 @@ jobs:
           - user-service
           - tenant-service
           - menu-service
-          - saas-catalog-service
+          - catalog-service
           - subscription-service
           - billing-service
           - crm-service
@@ -37,6 +37,7 @@ jobs:
           - file-service
           - audit-service
           - compliance-service
+          - security-service
           - security-monitor-service
 
     steps:
@@ -126,10 +127,53 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # Helm 배포 (Design Ref: DESIGN-MTU-N05 | Plan SC: FR-N05.4)
+  helm-deploy:
+    name: Helm Deploy
+    runs-on: ubuntu-latest
+    needs: [build-and-push, build-portal]
+    if: success()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.0
+
+      - name: Configure kubectl
+        uses: azure/k8s-set-context@v4
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+
+      - name: Determine values file
+        id: values
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "file=helm/saas-platform/values-prod.yaml" >> $GITHUB_OUTPUT
+            echo "release=saas-prod" >> $GITHUB_OUTPUT
+          else
+            echo "file=helm/saas-platform/values-stg.yaml" >> $GITHUB_OUTPUT
+            echo "release=saas-stg" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Helm upgrade
+        run: |
+          helm upgrade --install ${{ steps.values.outputs.release }} \
+            ./helm/saas-platform/ \
+            -f ${{ steps.values.outputs.file }} \
+            --namespace saas-platform \
+            --create-namespace \
+            --set global.imageRegistry=${{ env.REGISTRY }} \
+            --wait \
+            --timeout 10m
+
   deploy-notification:
     name: Deployment Notification
     runs-on: ubuntu-latest
-    needs: [build-and-push, build-portal]
+    needs: [build-and-push, build-portal, helm-deploy]
     if: success()
 
     steps:

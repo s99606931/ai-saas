@@ -1,0 +1,38 @@
+================================================================
+ 공공기관 SaaS 프레임워크 배포 완료
+================================================================
+
+ Chart: {{ .Chart.Name }} v{{ .Chart.Version }}
+ App:   v{{ .Chart.AppVersion }}
+ NS:    {{ include "saas-platform.namespace" . }}
+
+================================================================
+ 서비스 접속 정보
+================================================================
+
+1. API 게이트웨이:
+   {{- $gwPort := (index .Values.services "api-gateway").port }}
+   kubectl port-forward svc/api-gateway {{ $gwPort }}:{{ $gwPort }} -n {{ include "saas-platform.namespace" . }}
+   http://localhost:{{ $gwPort }}
+
+{{- if .Values.portal.enabled }}
+2. 포털 (Next.js):
+   http://<노드IP>:{{ .Values.portal.nodePort }}
+{{- end }}
+
+================================================================
+ CSAP 보안 현황
+================================================================
+
+ - 네트워크 격리 (D-10): {{ if .Values.networkPolicy.enabled }}활성화{{ else }}비활성화{{ end }}
+ - 모니터링 (D-06/D-07): {{ if .Values.monitoring.enabled }}활성화{{ else }}비활성화{{ end }}
+ - DB 백업 (D-07):        {{ if .Values.backup.enabled }}활성화 ({{ .Values.backup.schedule }}){{ else }}비활성화{{ end }}
+
+================================================================
+ 서비스 상태 확인
+================================================================
+
+ kubectl get pods -n {{ include "saas-platform.namespace" . }}
+ kubectl get svc -n {{ include "saas-platform.namespace" . }}
+
+================================================================

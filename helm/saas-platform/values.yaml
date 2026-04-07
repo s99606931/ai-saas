@@ -1,0 +1,396 @@
+# 공공기관 SaaS 프레임워크 -- Helm Values (기본값)
+# Design Ref: DESIGN-MTU-N04
+# Plan SC: FR-N04.11
+#
+# 사용법:
+#   helm install saas-platform ./helm/saas-platform
+#   helm install saas-platform ./helm/saas-platform -f helm/saas-platform/values-prod.yaml
+
+# -- 네임스페이스
+namespace: saas-platform
+
+# -- 전역 설정
+global:
+  imageRegistry: ""
+  imagePullPolicy: IfNotPresent
+  nodeEnv: production
+  logLevel: info
+  timezone: Asia/Seoul
+
+# -- CSAP/N2SF 설정
+csap:
+  grade: standard          # standard | simple
+  n2sfDataGrade: "O"       # O | C | S
+  auditRetentionDays: 365
+  sessionMaxConcurrent: 3
+  jwtAccessExpiry: "15m"
+  jwtRefreshExpiry: "7d"
+
+# -- Secret 설정 (CSAP D-09)
+secrets:
+  create: false
+  existingSecretName: saas-secrets
+
+# -- NetworkPolicy (CSAP D-10)
+networkPolicy:
+  enabled: true
+
+# -- Pod 보안 (CSAP D-11)
+securityContext:
+  pod:
+    runAsNonRoot: true
+    runAsUser: 1001
+    fsGroup: 1001
+  container:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    dropCapabilities:
+      - ALL
+
+# -- 서비스 기본 설정
+serviceDefaults:
+  terminationGracePeriodSeconds: 30
+  readinessProbe:
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 3
+  livenessProbe:
+    initialDelaySeconds: 15
+    periodSeconds: 30
+    failureThreshold: 3
+  resources:
+    limits:
+      memory: 256Mi
+      cpu: 500m
+    requests:
+      memory: 128Mi
+      cpu: 100m
+
+# -- 마이크로서비스 (16개)
+services:
+  api-gateway:
+    enabled: true
+    port: 3000
+    replicas: 1
+    image:
+      repository: saas/api-gateway
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    serviceType: NodePort
+    env:
+      API_GATEWAY_PORT: "3000"
+
+  auth-service:
+    enabled: true
+    port: 3001
+    replicas: 1
+    image:
+      repository: saas/auth-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      AUTH_SERVICE_PORT: "3001"
+
+  user-service:
+    enabled: true
+    port: 3002
+    replicas: 1
+    image:
+      repository: saas/user-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      USER_SERVICE_PORT: "3002"
+
+  tenant-service:
+    enabled: true
+    port: 3003
+    replicas: 1
+    image:
+      repository: saas/tenant-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      TENANT_SERVICE_PORT: "3003"
+
+  menu-service:
+    enabled: true
+    port: 3004
+    replicas: 1
+    image:
+      repository: saas/menu-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      MENU_SERVICE_PORT: "3004"
+
+  catalog-service:
+    enabled: true
+    port: 3005
+    replicas: 1
+    image:
+      repository: saas/catalog-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      CATALOG_SERVICE_PORT: "3005"
+
+  subscription-service:
+    enabled: true
+    port: 3006
+    replicas: 1
+    image:
+      repository: saas/subscription-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      SUBSCRIPTION_SERVICE_PORT: "3006"
+
+  billing-service:
+    enabled: true
+    port: 3007
+    replicas: 1
+    image:
+      repository: saas/billing-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      BILLING_SERVICE_PORT: "3007"
+
+  crm-service:
+    enabled: true
+    port: 3008
+    replicas: 1
+    image:
+      repository: saas/crm-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      CRM_SERVICE_PORT: "3008"
+
+  ai-service:
+    enabled: true
+    port: 3009
+    replicas: 1
+    image:
+      repository: saas/ai-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      AI_SERVICE_PORT: "3009"
+
+  notification-service:
+    enabled: true
+    port: 3010
+    replicas: 1
+    image:
+      repository: saas/notification-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      NOTIFICATION_SERVICE_PORT: "3010"
+
+  file-service:
+    enabled: true
+    port: 3011
+    replicas: 1
+    image:
+      repository: saas/file-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      FILE_SERVICE_PORT: "3011"
+      MINIO_ENDPOINT: minio-svc
+      MINIO_PORT: "9000"
+
+  audit-service:
+    enabled: true
+    port: 3012
+    replicas: 3
+    image:
+      repository: saas/audit-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    pdb:
+      enabled: true
+      minAvailable: 2
+    env:
+      AUDIT_SERVICE_PORT: "3012"
+
+  compliance-service:
+    enabled: true
+    port: 3013
+    replicas: 1
+    image:
+      repository: saas/compliance-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      COMPLIANCE_SERVICE_PORT: "3013"
+
+  security-monitor-service:
+    enabled: true
+    port: 3014
+    replicas: 1
+    image:
+      repository: saas/security-monitor-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      SECURITY_MONITOR_PORT: "3014"
+
+  security-service:
+    enabled: true
+    port: 3015
+    replicas: 1
+    image:
+      repository: saas/security-service
+      tag: dev
+    readinessProbe:
+      path: /ready
+    livenessProbe:
+      path: /health
+    env:
+      SECURITY_SERVICE_PORT: "3015"
+
+# -- 포털 (Next.js 15)
+portal:
+  enabled: true
+  replicas: 1
+  port: 4000
+  nodePort: 30400
+  image:
+    repository: saas/portal
+    tag: dev
+  readinessProbe:
+    path: /api/health
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    failureThreshold: 5
+  resources:
+    limits:
+      memory: 512Mi
+
+# -- 인프라: PostgreSQL
+postgres:
+  enabled: true
+  image:
+    repository: postgres
+    tag: 16-alpine
+  port: 5432
+  serviceName: postgres-svc
+  readinessProbe:
+    command: ["pg_isready", "-U", "saas"]
+    initialDelaySeconds: 5
+    periodSeconds: 5
+  storage:
+    type: emptyDir       # emptyDir | pvc
+    size: 10Gi
+
+# -- 인프라: Redis
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: 7-alpine
+  port: 6379
+  serviceName: redis-svc
+  readinessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# -- 인프라: MinIO
+minio:
+  enabled: true
+  image:
+    repository: minio/minio
+    tag: RELEASE.2024-06-13T22-53-53Z
+  ports:
+    api: 9000
+    console: 9001
+  serviceName: minio-svc
+  readinessProbe:
+    path: /minio/health/ready
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  resources:
+    limits:
+      memory: 512Mi
+  storage:
+    type: emptyDir
+    size: 20Gi
+
+# -- DB 백업 (CSAP D-07)
+backup:
+  enabled: true
+  schedule: "0 17 * * *"     # 매일 새벽 2시 KST (UTC 17:00)
+  retentionDays: 90
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  storage:
+    size: 10Gi
+  resources:
+    limits:
+      memory: 512Mi
+      cpu: 500m
+    requests:
+      memory: 128Mi
+      cpu: 100m
+
+# -- 모니터링 (Prometheus AlertRules)
+monitoring:
+  enabled: true
+  alerts:
+    cpuWarningThreshold: 80
+    cpuCriticalThreshold: 95
+    memoryWarningThreshold: 90
+    memoryCriticalThreshold: 95
+    errorRateThreshold: 5
+    latencyWarningSeconds: 2
+    latencyCriticalSeconds: 5

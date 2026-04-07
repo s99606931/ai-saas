@@ -1,0 +1,80 @@
+# 공공기관 SaaS 플랫폼 -- 포털 (Next.js 15)
+# Design Ref: DESIGN-MTU-N04 | Plan SC: FR-N04.4
+{{- if .Values.portal.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" "portal" "context" .) | nindent 4 }}
+spec:
+  replicas: {{ .Values.portal.replicas | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "saas-platform.selectorLabels" (dict "name" "portal") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "saas-platform.selectorLabels" (dict "name" "portal") | nindent 8 }}
+    spec:
+      containers:
+      - name: portal
+        image: "{{ .Values.portal.image.repository }}:{{ .Values.portal.image.tag }}"
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: {{ .Values.portal.port }}
+        env:
+        - name: PORT
+          value: {{ .Values.portal.port | quote }}
+        - name: HOSTNAME
+          value: "0.0.0.0"
+        - name: NODE_ENV
+          value: {{ .Values.global.nodeEnv | quote }}
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "saas-platform.secretName" . }}
+              key: DATABASE_URL
+        - name: NEXTAUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "saas-platform.secretName" . }}
+              key: JWT_SECRET
+        {{- $authSvc := index .Values.services "auth-service" }}
+        {{- if $authSvc.enabled }}
+        - name: AUTH_SERVICE_URL
+          value: "http://auth-service:{{ $authSvc.port }}"
+        {{- end }}
+        {{- $gwSvc := index .Values.services "api-gateway" }}
+        {{- if $gwSvc.enabled }}
+        - name: API_GATEWAY_URL
+          value: "http://api-gateway:{{ $gwSvc.port }}"
+        {{- end }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.portal.readinessProbe.path }}
+            port: {{ .Values.portal.port }}
+          initialDelaySeconds: {{ .Values.portal.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.portal.readinessProbe.periodSeconds }}
+          failureThreshold: {{ .Values.portal.readinessProbe.failureThreshold }}
+        resources:
+          {{- toYaml .Values.portal.resources | nindent 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portal-svc
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" "portal" "context" .) | nindent 4 }}
+spec:
+  selector:
+    {{- include "saas-platform.selectorLabels" (dict "name" "portal") | nindent 4 }}
+  type: NodePort
+  ports:
+  - port: {{ .Values.portal.port }}
+    targetPort: {{ .Values.portal.port }}
+    nodePort: {{ .Values.portal.nodePort }}
+{{- end }}

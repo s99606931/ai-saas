@@ -1,0 +1,44 @@
+# 공공기관 SaaS 플랫폼 -- ConfigMap
+# Design Ref: DESIGN-MTU-N04 | Plan SC: FR-N04.5
+# CSAP D-08: 시크릿 분리 원칙 준수 -- 비민감 설정만 포함
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: saas-config
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.labels" . | nindent 4 }}
+data:
+  NODE_ENV: {{ .Values.global.nodeEnv | quote }}
+  LOG_LEVEL: {{ .Values.global.logLevel | quote }}
+  TZ: {{ .Values.global.timezone | quote }}
+
+  # 서비스 디스커버리 (k8s 내부 DNS)
+  {{- range $name, $svc := .Values.services }}
+  {{- if $svc.enabled }}
+  {{ $name | upper | replace "-" "_" }}_URL: "http://{{ $name }}:{{ $svc.port }}"
+  {{- end }}
+  {{- end }}
+
+  # 인프라 엔드포인트 (비민감)
+  {{- if .Values.postgres.enabled }}
+  POSTGRES_HOST: {{ .Values.postgres.serviceName | quote }}
+  POSTGRES_PORT: {{ .Values.postgres.port | quote }}
+  {{- end }}
+  {{- if .Values.redis.enabled }}
+  REDIS_HOST: {{ .Values.redis.serviceName | quote }}
+  REDIS_PORT: {{ .Values.redis.port | quote }}
+  {{- end }}
+  {{- if .Values.minio.enabled }}
+  MINIO_ENDPOINT: {{ .Values.minio.serviceName | quote }}
+  MINIO_PORT: {{ .Values.minio.ports.api | quote }}
+  {{- end }}
+
+  # CSAP/N2SF 설정
+  CSAP_GRADE: {{ .Values.csap.grade | quote }}
+  N2SF_DATA_GRADE: {{ .Values.csap.n2sfDataGrade | quote }}
+  AUDIT_RETENTION_DAYS: {{ .Values.csap.auditRetentionDays | quote }}
+  SESSION_MAX_CONCURRENT: {{ .Values.csap.sessionMaxConcurrent | quote }}
+  JWT_ACCESS_EXPIRY: {{ .Values.csap.jwtAccessExpiry | quote }}
+  JWT_REFRESH_EXPIRY: {{ .Values.csap.jwtRefreshExpiry | quote }}

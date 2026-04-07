@@ -1,0 +1,151 @@
+# 공공기관 SaaS 플랫폼 -- Prometheus 알림 규칙
+# Design Ref: DESIGN-MTU-N04 | Plan SC: FR-N04.10
+# CSAP D-07: 가용성 모니터링 | D-06: 침해사고 관리
+{{- if .Values.monitoring.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: saas-platform-alerts
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.labels" . | nindent 4 }}
+    role: alert-rules
+spec:
+  groups:
+    - name: saas-infra-alerts
+      rules:
+        - alert: HighCpuUsage
+          expr: |
+            (
+              sum(rate(container_cpu_usage_seconds_total{namespace="{{ include "saas-platform.namespace" . }}"}[5m])) by (pod)
+              /
+              sum(container_spec_cpu_quota{namespace="{{ include "saas-platform.namespace" . }}"} / container_spec_cpu_period{namespace="{{ include "saas-platform.namespace" . }}"}) by (pod)
+            ) * 100 > {{ .Values.monitoring.alerts.cpuWarningThreshold }}
+          for: 5m
+          labels:
+            severity: warning
+            csap: D-07
+          annotations:
+            summary: "CPU 사용률 {{ .Values.monitoring.alerts.cpuWarningThreshold }}% 초과 ({{`{{ $labels.pod }}`}})"
+
+        - alert: CriticalCpuUsage
+          expr: |
+            (
+              sum(rate(container_cpu_usage_seconds_total{namespace="{{ include "saas-platform.namespace" . }}"}[5m])) by (pod)
+              /
+              sum(container_spec_cpu_quota{namespace="{{ include "saas-platform.namespace" . }}"} / container_spec_cpu_period{namespace="{{ include "saas-platform.namespace" . }}"}) by (pod)
+            ) * 100 > {{ .Values.monitoring.alerts.cpuCriticalThreshold }}
+          for: 3m
+          labels:
+            severity: critical
+            csap: D-07
+          annotations:
+            summary: "CPU 사용률 위험 수준 ({{`{{ $labels.pod }}`}})"
+
+        - alert: HighMemoryUsage
+          expr: |
+            (
+              container_memory_working_set_bytes{namespace="{{ include "saas-platform.namespace" . }}"}
+              /
+              container_spec_memory_limit_bytes{namespace="{{ include "saas-platform.namespace" . }}"}
+            ) * 100 > {{ .Values.monitoring.alerts.memoryWarningThreshold }}
+          for: 5m
+          labels:
+            severity: warning
+            csap: D-07
+          annotations:
+            summary: "메모리 사용률 {{ .Values.monitoring.alerts.memoryWarningThreshold }}% 초과 ({{`{{ $labels.pod }}`}})"
+
+    - name: saas-http-alerts
+      rules:
+        - alert: High5xxRate
+          expr: |
+            (
+              sum(rate(http_requests_total{namespace="{{ include "saas-platform.namespace" . }}", status=~"5.."}[5m])) by (service)
+              /
+              sum(rate(http_requests_total{namespace="{{ include "saas-platform.namespace" . }}"}[5m])) by (service)
+            ) * 100 > {{ .Values.monitoring.alerts.errorRateThreshold }}
+          for: 3m
+          labels:
+            severity: critical
+            csap: D-07
+          annotations:
+            summary: "5xx 에러율 {{ .Values.monitoring.alerts.errorRateThreshold }}% 초과 ({{`{{ $labels.service }}`}})"
+
+        - alert: HighResponseLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{namespace="{{ include "saas-platform.namespace" . }}"}[5m])) by (le, service)
+            ) > {{ .Values.monitoring.alerts.latencyWarningSeconds }}
+          for: 5m
+          labels:
+            severity: warning
+            csap: D-07
+          annotations:
+            summary: "응답 시간 P95 > {{ .Values.monitoring.alerts.latencyWarningSeconds }}초 ({{`{{ $labels.service }}`}})"
+
+    - name: saas-availability-alerts
+      rules:
+        - alert: PodCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="{{ include "saas-platform.namespace" . }}"}[15m]) * 60 * 15 > 3
+          for: 5m
+          labels:
+            severity: critical
+            csap: D-07
+          annotations:
+            summary: "파드 CrashLoop 감지 ({{`{{ $labels.pod }}`}})"
+
+        - alert: PodNotReady
+          expr: |
+            kube_pod_status_ready{namespace="{{ include "saas-platform.namespace" . }}", condition="true"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            csap: D-07
+          annotations:
+            summary: "파드 NotReady 상태 ({{`{{ $labels.pod }}`}})"
+
+    - name: saas-security-alerts
+      rules:
+        - alert: HighLoginFailureRate
+          expr: |
+            sum(rate(auth_login_failures_total{namespace="{{ include "saas-platform.namespace" . }}"}[5m])) > 10
+          for: 3m
+          labels:
+            severity: warning
+            csap: D-08
+          annotations:
+            summary: "로그인 실패율 급증 -- 브루트포스 공격 의심"
+
+        - alert: HighRateLimitHits
+          expr: |
+            sum(rate(http_requests_total{namespace="{{ include "saas-platform.namespace" . }}", status="429"}[5m])) > 50
+          for: 5m
+          labels:
+            severity: warning
+            csap: D-08
+          annotations:
+            summary: "Rate Limit 초과 빈번 발생 -- DDoS 의심"
+
+    - name: saas-infra-component-alerts
+      rules:
+        - alert: PostgresDown
+          expr: pg_up{namespace="{{ include "saas-platform.namespace" . }}"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            csap: D-07
+          annotations:
+            summary: "PostgreSQL 다운"
+
+        - alert: RedisDown
+          expr: redis_up{namespace="{{ include "saas-platform.namespace" . }}"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            csap: D-07
+          annotations:
+            summary: "Redis 다운"
+{{- end }}

@@ -1,0 +1,59 @@
+# 공공기관 SaaS 플랫폼 -- Redis
+# Design Ref: DESIGN-MTU-N04 | Plan SC: FR-N04.3
+{{- if .Values.redis.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" "redis" "context" .) | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "saas-platform.selectorLabels" (dict "name" "redis") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "saas-platform.selectorLabels" (dict "name" "redis") | nindent 8 }}
+    spec:
+      containers:
+      - name: redis
+        image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}"
+        command:
+        - sh
+        - -c
+        - redis-server --requirepass $(REDIS_PASSWORD)
+        ports:
+        - containerPort: {{ .Values.redis.port }}
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "saas-platform.secretName" . }}
+              key: REDIS_PASSWORD
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - redis-cli -a $REDIS_PASSWORD ping
+          initialDelaySeconds: {{ .Values.redis.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.redis.readinessProbe.periodSeconds }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.redis.serviceName }}
+  namespace: {{ include "saas-platform.namespace" . }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" "redis" "context" .) | nindent 4 }}
+spec:
+  selector:
+    {{- include "saas-platform.selectorLabels" (dict "name" "redis") | nindent 4 }}
+  ports:
+  - port: {{ .Values.redis.port }}
+    targetPort: {{ .Values.redis.port }}
+{{- end }}

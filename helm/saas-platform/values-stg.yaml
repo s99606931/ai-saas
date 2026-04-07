@@ -1,0 +1,41 @@
+# 공공기관 SaaS 프레임워크 -- 스테이징 환경 values
+# Design Ref: DESIGN-MTU-N04 | Plan SC: FR-N04.11
+# 사용법: helm install saas-stg ./helm/saas-platform -f helm/saas-platform/values-stg.yaml
+
+global:
+  nodeEnv: staging
+  logLevel: info
+
+# 스테이징: 외부 Secret 참조
+secrets:
+  create: false
+  existingSecretName: saas-secrets
+
+# 스테이징: 중간 리소스
+serviceDefaults:
+  resources:
+    limits:
+      memory: 256Mi
+      cpu: 500m
+    requests:
+      memory: 128Mi
+      cpu: 100m
+
+services:
+  api-gateway:
+    replicas: 2
+  auth-service:
+    replicas: 2
+  audit-service:
+    replicas: 2
+    pdb:
+      enabled: true
+      minAvailable: 1
+
+# 스테이징: DB 백업 활성화
+backup:
+  enabled: true
+
+# 스테이징: 모니터링 활성화
+monitoring:
+  enabled: true

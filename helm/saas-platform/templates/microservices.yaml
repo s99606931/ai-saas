@@ -1,0 +1,83 @@
+# 공공기관 SaaS 플랫폼 -- 마이크로서비스 Deployment + Service
+# Design Ref: DESIGN-MTU-N04 | Plan SC: FR-N04.2
+# CSAP D-11: 컨테이너 보안 (non-root, readOnlyRootFilesystem, drop ALL)
+# CSAP D-07: terminationGracePeriodSeconds (graceful shutdown)
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+{{- if ne $name "api-gateway" }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ include "saas-platform.namespace" $ }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" $name "context" $) | nindent 4 }}
+spec:
+  replicas: {{ $svc.replicas | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "saas-platform.selectorLabels" (dict "name" $name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "saas-platform.selectorLabels" (dict "name" $name) | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: {{ $.Values.serviceDefaults.terminationGracePeriodSeconds }}
+      securityContext:
+        {{- include "saas-platform.podSecurityContext" $ | nindent 8 }}
+      containers:
+      - name: {{ $name }}
+        image: "{{ $svc.image.repository }}:{{ $svc.image.tag }}"
+        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: {{ $svc.port }}
+        securityContext:
+          {{- include "saas-platform.containerSecurityContext" $ | nindent 10 }}
+        envFrom:
+        - secretRef:
+            name: {{ include "saas-platform.secretName" $ }}
+        env:
+        - name: NODE_ENV
+          value: {{ $.Values.global.nodeEnv | quote }}
+        {{- range $envKey, $envVal := $svc.env }}
+        - name: {{ $envKey }}
+          value: {{ $envVal | quote }}
+        {{- end }}
+        readinessProbe:
+          httpGet:
+            path: {{ $svc.readinessProbe.path }}
+            port: {{ $svc.port }}
+          initialDelaySeconds: {{ $svc.readinessProbe.initialDelaySeconds | default $.Values.serviceDefaults.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ $svc.readinessProbe.periodSeconds | default $.Values.serviceDefaults.readinessProbe.periodSeconds }}
+          failureThreshold: {{ $svc.readinessProbe.failureThreshold | default $.Values.serviceDefaults.readinessProbe.failureThreshold }}
+        livenessProbe:
+          httpGet:
+            path: {{ $svc.livenessProbe.path }}
+            port: {{ $svc.port }}
+          initialDelaySeconds: {{ $svc.livenessProbe.initialDelaySeconds | default $.Values.serviceDefaults.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ $svc.livenessProbe.periodSeconds | default $.Values.serviceDefaults.livenessProbe.periodSeconds }}
+          failureThreshold: {{ $svc.livenessProbe.failureThreshold | default $.Values.serviceDefaults.livenessProbe.failureThreshold }}
+        resources:
+          {{- if $svc.resources }}
+          {{- toYaml $svc.resources | nindent 10 }}
+          {{- else }}
+          {{- toYaml $.Values.serviceDefaults.resources | nindent 10 }}
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ include "saas-platform.namespace" $ }}
+  labels:
+    {{- include "saas-platform.serviceLabels" (dict "name" $name "context" $) | nindent 4 }}
+spec:
+  selector:
+    {{- include "saas-platform.selectorLabels" (dict "name" $name) | nindent 4 }}
+  ports:
+  - port: {{ $svc.port }}
+    targetPort: {{ $svc.port }}
+{{- end }}
+{{- end }}
+{{- end }}
