@@ -166,6 +166,9 @@ importers:
       typescript:
         specifier: ~5.5.0
         version: 5.5.4
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
 
   platform/plugins/public-data-integration:
     dependencies:
@@ -182,6 +185,9 @@ importers:
       typescript:
         specifier: ~5.5.0
         version: 5.5.4
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
 
   platform/services/ai-service:
     dependencies:
@@ -362,6 +368,40 @@ importers:
         version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
 
   platform/services/billing-service:
+    dependencies:
+      '@prisma/client':
+        specifier: ^6.0.0
+        version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
+      '@public-saas/audit-sdk':
+        specifier: workspace:*
+        version: link:../../packages/audit-sdk
+      '@public-saas/auth-sdk':
+        specifier: workspace:*
+        version: link:../../packages/auth-sdk
+      '@public-saas/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      fastify:
+        specifier: ^5.0.0
+        version: 5.8.4
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      tsx:
+        specifier: ^4.19.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
+
+  platform/services/catalog-service:
     dependencies:
       '@prisma/client':
         specifier: ^6.0.0
@@ -600,6 +640,40 @@ importers:
         version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
 
   platform/services/security-monitor-service:
+    dependencies:
+      '@prisma/client':
+        specifier: ^6.0.0
+        version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
+      '@public-saas/audit-sdk':
+        specifier: workspace:*
+        version: link:../../packages/audit-sdk
+      '@public-saas/auth-sdk':
+        specifier: workspace:*
+        version: link:../../packages/auth-sdk
+      '@public-saas/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      fastify:
+        specifier: ^5.0.0
+        version: 5.8.4
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      tsx:
+        specifier: ^4.19.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
+
+  platform/services/security-service:
     dependencies:
       '@prisma/client':
         specifier: ^6.0.0
