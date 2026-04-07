@@ -6,6 +6,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { logSecurityEvent } from '../lib/audit.js';
+import { auditClient } from '../lib/audit-client.js';
 
 // --- IP 차단 목록 (In-memory + 영속 저장 대비) ---
 
@@ -33,12 +34,22 @@ interface SecurityAlert {
 const alerts: SecurityAlert[] = [];
 let alertIdCounter = 1;
 
-// --- Zod 스키마 ---
+// --- Zod 스키마 (CSAP D-12: 모든 입력 검증) ---
 
 const ipBlockSchema = z.object({
   ip: z.string().min(1).max(45),
   reason: z.string().min(1).max(255),
   expiresAt: z.string().optional(),
+});
+
+const loginFailuresQuerySchema = z.object({
+  threshold: z.coerce.number().int().min(1).max(100).default(5),
+  window: z.coerce.number().int().min(1).max(1440).default(5),
+});
+
+const alertsQuerySchema = z.object({
+  severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+  acknowledged: z.enum(['true', 'false']).optional(),
 });
 
 /**
@@ -49,20 +60,28 @@ export async function loginFailuresHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const query = request.query as Record<string, string>;
-  const threshold = parseInt(query['threshold'] ?? '5', 10);
-  const windowMinutes = parseInt(query['window'] ?? '5', 10);
+  // CSAP D-12: safeParse로 쿼리 파라미터 검증
+  const parseResult = loginFailuresQuerySchema.safeParse(request.query);
+  if (!parseResult.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parseResult.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const threshold = parseResult.data.threshold;
+  const windowMinutes = parseResult.data.window;
 
-  // 감사 로그 서비스에서 로그인 실패 이벤트 조회
-  const auditUrl = process.env['AUDIT_SERVICE_URL'] ?? 'http://localhost:3012';
+  // 감사 로그 서비스에서 로그인 실패 이벤트 조회 (추상화된 클라이언트 사용)
   const fromDate = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
 
   try {
-    const response = await fetch(
-      `${auditUrl}/audit/logs?action=LOGIN_FAILED&fromDate=${fromDate}&limit=100`,
-    );
-    const data = (await response.json()) as { items?: Array<{ ip?: string; actorId?: string; createdAt?: string }> };
-    const items = data.items ?? [];
+    const result = await auditClient.queryLogs({
+      action: 'LOGIN_FAILED',
+      fromDate,
+      limit: 100,
+    });
+    const items = result.items;
 
     // IP별 실패 횟수 집계
     const ipCounts = new Map<string, number>();
@@ -90,7 +109,7 @@ export async function loginFailuresHandler(
       await logSecurityEvent('LOGIN_FAILURE_ALERT', { ip: s.ip, count: s.failureCount });
     }
 
-    reply.send({
+    await reply.send({
       threshold,
       windowMinutes,
       totalFailures: items.length,
@@ -98,7 +117,7 @@ export async function loginFailuresHandler(
       lastChecked: new Date().toISOString(),
     });
   } catch {
-    reply.send({
+    await reply.send({
       threshold,
       windowMinutes,
       totalFailures: 0,
@@ -149,7 +168,7 @@ export async function anomaliesHandler(
     },
   ];
 
-  reply.send({
+  await reply.send({
     rules: anomalyRules,
     totalDetections: anomalyRules.reduce((sum, r) => sum + r.detections, 0),
     lastChecked: new Date().toISOString(),
@@ -165,7 +184,7 @@ export async function getBlocklistHandler(
   reply: FastifyReply,
 ): Promise<void> {
   const list = Array.from(ipBlocklist.values());
-  reply.send({ items: list, total: list.length });
+  await reply.send({ items: list, total: list.length });
 }
 
 /**
@@ -179,7 +198,7 @@ export async function addBlocklistHandler(
   const parsed = ipBlockSchema.safeParse(request.body);
 
   if (!parsed.success) {
-    reply.status(400).send({ error: '입력 검증 실패', details: parsed.error.issues });
+    await reply.status(400).send({ error: '입력 검증 실패', details: parsed.error.issues });
     return;
   }
 
@@ -194,7 +213,7 @@ export async function addBlocklistHandler(
 
   await logSecurityEvent('IP_BLOCKED', { ip: parsed.data.ip, reason: parsed.data.reason });
 
-  reply.status(201).send({ status: 'blocked', entry });
+  await reply.status(201).send({ status: 'blocked', entry });
 }
 
 /**
@@ -208,14 +227,14 @@ export async function removeBlocklistHandler(
   const { ip } = request.params as { ip: string };
 
   if (!ipBlocklist.has(ip)) {
-    reply.status(404).send({ error: `IP ${ip}이(가) 차단 목록에 없습니다` });
+    await reply.status(404).send({ error: `IP ${ip}이(가) 차단 목록에 없습니다` });
     return;
   }
 
   ipBlocklist.delete(ip);
   await logSecurityEvent('IP_UNBLOCKED', { ip });
 
-  reply.send({ status: 'unblocked', ip });
+  await reply.send({ status: 'unblocked', ip });
 }
 
 /**
@@ -226,9 +245,17 @@ export async function alertsHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const query = request.query as Record<string, string>;
-  const severity = query['severity'];
-  const acknowledged = query['acknowledged'];
+  // CSAP D-12: safeParse로 쿼리 파라미터 검증
+  const parseResult = alertsQuerySchema.safeParse(request.query);
+  if (!parseResult.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parseResult.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const severity = parseResult.data.severity;
+  const acknowledged = parseResult.data.acknowledged;
 
   let filtered = [...alerts];
 
@@ -242,7 +269,7 @@ export async function alertsHandler(
   // 최신순 정렬
   filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  reply.send({
+  await reply.send({
     items: filtered.slice(0, 50),
     total: filtered.length,
   });

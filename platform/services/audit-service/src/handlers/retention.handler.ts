@@ -4,9 +4,7 @@
 // CSAP: D-06 — 최소 1년 보존
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 const RETENTION_DAYS = 365;
 
@@ -33,7 +31,7 @@ export async function retentionStatsHandler(
     where: { createdAt: { lt: retentionCutoff } },
   });
 
-  reply.send({
+  await reply.send({
     retentionDays: RETENTION_DAYS,
     totalLogs,
     oldestLog: oldestLog?.createdAt?.toISOString() ?? null,
@@ -56,7 +54,7 @@ export async function retentionCleanupHandler(
     where: { createdAt: { lt: retentionCutoff } },
   });
 
-  reply.send({
+  await reply.send({
     message: '보존 기간 만료 로그 확인 완료',
     expiredCount,
     retentionCutoff: retentionCutoff.toISOString(),

@@ -27,9 +27,10 @@ const authPlugin: FastifyPluginCallback = (app, _opts, done) => {
   app.decorateRequest('user', undefined);
 
   app.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
-    // 공개 경로 제외
+    // 공개 경로 제�� (CSAP D-08-01: 정확한 경로 매칭으로 인증 우회 방지)
+    const urlPath = request.url.split('?')[0] ?? request.url;
     const publicPaths = ['/health', '/ready', '/auth/login', '/auth/refresh'];
-    if (publicPaths.some((p) => request.url.startsWith(p))) {
+    if (publicPaths.some((p) => urlPath === p)) {
       return;
     }
 
@@ -62,6 +63,7 @@ const authPlugin: FastifyPluginCallback = (app, _opts, done) => {
         success: false,
         error: { code: 'AUTH_TOKEN_INVALID', message: '유효하지 않거나 만료된 토큰입니다' },
       });
+      return;
     }
   });
 

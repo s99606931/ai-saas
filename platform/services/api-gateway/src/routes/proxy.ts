@@ -107,6 +107,7 @@ function makePermissionPreHandler(requiredPermissions: string[]) {
         success: false,
         error: { code: 'FORBIDDEN', message: '이 리소스에 접근할 권한이 없습니다' },
       });
+      return;
     }
   };
 }

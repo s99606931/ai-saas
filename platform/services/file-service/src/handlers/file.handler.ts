@@ -4,11 +4,9 @@
 // CSAP: D-08 접근 제어, D-09 AES-256 암호화, D-12 MIME 검증
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { logFileEvent } from '../lib/audit.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 // CSAP D-12: 허용 MIME 타입 (악성 파일 업로드 방지)
 const ALLOWED_MIME_TYPES = [
@@ -125,8 +123,11 @@ export async function downloadFileHandler(
     return;
   }
 
-  // CSAP D-08: 테넌트 접근 제어
-  if (request.query.tenantId && file.tenantId !== request.query.tenantId) {
+  // CSAP D-08: 테넌트 접근 제어 (JWT 클레임 기반 — 클라이언트 제공 값이 아닌 게이트웨이 주입 헤더 사용)
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+
+  if (jwtRole !== 'SUPER_ADMIN' && jwtTenantId && file.tenantId !== jwtTenantId) {
     await reply.status(403).send({
       success: false,
       error: { code: 'ACCESS_DENIED', message: '파일에 대한 접근 권한이 없습니다' },
@@ -156,14 +157,29 @@ export async function listFilesHandler(
   const page = parseInt(request.query.page ?? '1', 10);
   const pageSize = Math.min(parseInt(request.query.pageSize ?? '20', 10), 100);
 
+  // CSAP D-08-05: 테넌트 격리 — JWT 클레임 기반 (SUPER_ADMIN은 쿼리 파라미터로 지정 가능)
+  const listJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const listJwtRole = request.headers['x-user-role'] as string | undefined;
+  const effectiveTenantId = listJwtRole === 'SUPER_ADMIN'
+    ? (request.query.tenantId ?? listJwtTenantId)
+    : listJwtTenantId;
+
+  if (!effectiveTenantId) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'TENANT_REQUIRED', message: '테넌트 ID가 필요합니다' },
+    });
+    return;
+  }
+
   const [files, total] = await Promise.all([
     prisma.file.findMany({
-      where: { tenantId: request.query.tenantId },
+      where: { tenantId: effectiveTenantId },
       skip: (page - 1) * pageSize,
       take: pageSize,
       orderBy: { createdAt: 'desc' },
     }),
-    prisma.file.count({ where: { tenantId: request.query.tenantId } }),
+    prisma.file.count({ where: { tenantId: effectiveTenantId } }),
   ]);
 
   await reply.send({
@@ -190,12 +206,24 @@ export async function deleteFileHandler(
     return;
   }
 
+  // CSAP D-08-05: 테넌트 격리 — SUPER_ADMIN 제외 타 테넌트 파일 삭제 금지
+  const deleteJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const deleteJwtRole = request.headers['x-user-role'] as string | undefined;
+  if (deleteJwtRole !== 'SUPER_ADMIN' && deleteJwtTenantId && file.tenantId !== deleteJwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'ACCESS_DENIED', message: '파일에 대한 접근 권한이 없습니다' },
+    });
+    return;
+  }
+
   await prisma.file.delete({ where: { id: request.params.id } });
 
   // 감사 로그 (FR-P12.5, CSAP D-06)
+  const deleteActor = (request.headers['x-user-id'] as string) || 'system';
   await logFileEvent(
     'FILE_DELETED',
-    'system',
+    deleteActor,
     file.id,
     file.tenantId,
     request.ip,
@@ -222,6 +250,17 @@ export async function getFileMetaHandler(
     await reply.status(404).send({
       success: false,
       error: { code: 'FILE_NOT_FOUND', message: '파일을 찾을 수 없습니다' },
+    });
+    return;
+  }
+
+  // CSAP D-08-05: 테넌트 격리 — SUPER_ADMIN 제외 타 테넌트 파일 메타 조회 금지
+  const metaJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const metaJwtRole = request.headers['x-user-role'] as string | undefined;
+  if (metaJwtRole !== 'SUPER_ADMIN' && metaJwtTenantId && file.tenantId !== metaJwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'ACCESS_DENIED', message: '파일에 대한 접근 권한이 없습니다' },
     });
     return;
   }

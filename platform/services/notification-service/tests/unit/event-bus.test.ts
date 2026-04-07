@@ -43,7 +43,7 @@ class TestEventBus {
       try {
         await (listener as (p: NotificationEventMap[T]) => Promise<void>)(payload);
       } catch (error) {
-        console.error(`[event-bus] 이벤트 핸들러 오류 (${event}):`, error);
+        process.stderr.write(`[event-bus] 이벤트 핸들러 오류 (${event}): ${String(error)}\n`);
       }
     });
     await Promise.allSettled(results);

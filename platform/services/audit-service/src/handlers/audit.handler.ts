@@ -4,12 +4,10 @@
 // CSAP: D-06 — 감사 로그 기록/조회/검증/내보내기/보존
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { appendAuditLog } from '../lib/append-only.js';
 import { verifyAuditLogIntegrity } from '../lib/integrity.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 // --- Zod 스키마 ---
 
@@ -50,6 +48,10 @@ const exportSchema = z.object({
   format: z.enum(['csv', 'json']).default('json'),
 });
 
+const statsQuerySchema = z.object({
+  tenantId: z.string().optional(),
+});
+
 // --- 핸들러 ---
 
 /**
@@ -60,9 +62,17 @@ export async function createAuditLogHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const body = createAuditLogSchema.parse(request.body);
-  await appendAuditLog(body);
-  reply.status(201).send({ success: true, message: '감사 로그 기록 완료' });
+  // CSAP D-12: safeParse로 입력 검증 (에러 시 스택 트레이스 미노출)
+  const parsed = createAuditLogSchema.safeParse(request.body);
+  if (!parsed.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parsed.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  await appendAuditLog(parsed.data);
+  await reply.status(201).send({ success: true, message: '감사 로그 기록 완료' });
 }
 
 /**
@@ -73,7 +83,16 @@ export async function listAuditLogsHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const query = queryAuditLogSchema.parse(request.query);
+  // CSAP D-12: safeParse로 입력 검증
+  const parseResult = queryAuditLogSchema.safeParse(request.query);
+  if (!parseResult.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parseResult.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const query = parseResult.data;
 
   const where: Record<string, unknown> = {};
   if (query.tenantId) where['tenantId'] = query.tenantId;
@@ -98,7 +117,7 @@ export async function listAuditLogsHandler(
   const items = hasNext ? logs.slice(0, query.limit) : logs;
   const nextCursor = hasNext ? items[items.length - 1]?.id : undefined;
 
-  reply.send({
+  await reply.send({
     items,
     pagination: {
       limit: query.limit,
@@ -116,13 +135,22 @@ export async function verifyIntegrityHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const body = verifySchema.parse(request.body);
+  // CSAP D-12: safeParse로 입력 검증
+  const parsed = verifySchema.safeParse(request.body);
+  if (!parsed.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parsed.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const body = parsed.data;
   const result = await verifyAuditLogIntegrity(
     body.tenantId,
     body.fromDate ? new Date(body.fromDate) : undefined,
     body.toDate ? new Date(body.toDate) : undefined,
   );
-  reply.send(result);
+  await reply.send(result);
 }
 
 /**
@@ -133,7 +161,16 @@ export async function exportAuditLogsHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const query = exportSchema.parse(request.query);
+  // CSAP D-12: safeParse로 입력 검증
+  const parseResult = exportSchema.safeParse(request.query);
+  if (!parseResult.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parseResult.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const query = parseResult.data;
 
   const where: Record<string, unknown> = {};
   if (query.tenantId) where['tenantId'] = query.tenantId;
@@ -169,13 +206,13 @@ export async function exportAuditLogsHandler(
       ].join(','),
     );
     const csv = [header, ...rows].join('\n');
-    reply
+    await reply
       .header('Content-Type', 'text/csv; charset=utf-8')
       .header('Content-Disposition', 'attachment; filename=audit-logs.csv')
       .send(csv);
   } else {
     const jsonLines = logs.map((log: (typeof logs)[number]) => JSON.stringify(log)).join('\n');
-    reply
+    await reply
       .header('Content-Type', 'application/x-ndjson; charset=utf-8')
       .header('Content-Disposition', 'attachment; filename=audit-logs.jsonl')
       .send(jsonLines);
@@ -190,7 +227,16 @@ export async function auditStatsHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const tenantId = (request.query as Record<string, string>)['tenantId'];
+  // CSAP D-12: safeParse로 쿼리 파라미터 검증
+  const parseResult = statsQuerySchema.safeParse(request.query);
+  if (!parseResult.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parseResult.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const tenantId = parseResult.data.tenantId;
 
   const where: Record<string, unknown> = {};
   if (tenantId) where['tenantId'] = tenantId;
@@ -220,7 +266,7 @@ export async function auditStatsHandler(
     },
   });
 
-  reply.send({
+  await reply.send({
     totalCount,
     retentionDays,
     retentionCutoff: retentionCutoff.toISOString(),

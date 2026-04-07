@@ -17,6 +17,7 @@ export type MfaSetupRequest = z.infer<typeof mfaSetupSchema>;
 
 /**
  * MFA 검증/활성화 요청 스키마
+ * CSAP D-08-08: 시크릿은 서버 측 Redis에서 관리 (클라이언트 변조 방지)
  */
 export const mfaVerifySchema = z.object({
   /** TOTP 6자리 코드 */
@@ -24,8 +25,6 @@ export const mfaVerifySchema = z.object({
     .string()
     .length(6, 'MFA 코드는 6자리여야 합니다')
     .regex(/^\d+$/, 'MFA 코드는 숫자만 허용됩니다'),
-  /** 등록 시 발급받은 임시 시크릿 */
-  secret: z.string().min(1, '시크릿을 제공하세요'),
 });
 
 export type MfaVerifyRequest = z.infer<typeof mfaVerifySchema>;

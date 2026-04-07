@@ -71,3 +71,84 @@ export class AuditLogger {
 export function createAuditLogger(options: AuditLogOptions): AuditLogger {
   return new AuditLogger(options);
 }
+
+/**
+ * 표준 HTTP transport 생성 팩토리
+ *
+ * 14개 서비스에서 반복되는 감사 로그 전송 패턴을 공통화합니다.
+ * - stdout NDJSON 출력 (로그 수집기 연동)
+ * - audit-service HTTP POST (가용 시)
+ *
+ * CSAP D-06: 감사 로그 이중 기록 (stdout + HTTP)
+ *
+ * @param serviceName - 서비스 이름 (로그 프리픽스)
+ * @returns transport 함수
+ */
+export function createStandardTransport(serviceName: string): (entry: AuditEntry) => Promise<void> {
+  return async (entry: AuditEntry): Promise<void> => {
+    // stdout NDJSON 출력 (로그 수집기 연동)
+    process.stdout.write(JSON.stringify({ level: 'audit', service: serviceName, ...entry }) + '\n');
+
+    // audit-service HTTP 전송 (가용 시)
+    const auditServiceUrl = process.env['AUDIT_SERVICE_URL'];
+    if (auditServiceUrl) {
+      try {
+        await fetch(`${auditServiceUrl}/audit/logs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(entry),
+        });
+      } catch {
+        // 감사 서비스 불가 시 stdout 로그만 유지 (이미 기록됨)
+      }
+    }
+  };
+}
+
+/**
+ * 표준 감사 이벤트 로거 팩토리
+ *
+ * 14개 서비스의 공통 감사 로그 함수 패턴을 단일 팩토리로 제공합니다.
+ *
+ * @param serviceName - 서비스 이름
+ * @param targetType - 대상 유형 (예: 'user', 'tenant', 'subscription')
+ * @returns 감사 이벤트 로깅 함수
+ */
+export function createServiceAuditLogger(
+  serviceName: string,
+  targetType: string,
+): (
+  action: string,
+  actor: string,
+  target: string,
+  tenantId: string,
+  ip: string,
+  userAgent: string,
+  metadata?: Record<string, unknown>,
+) => Promise<void> {
+  const logger = createAuditLogger({
+    serviceName,
+    transport: createStandardTransport(serviceName),
+  });
+
+  return async (
+    action: string,
+    actor: string,
+    target: string,
+    tenantId: string,
+    ip: string,
+    userAgent: string,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> => {
+    await logger.log({
+      actor,
+      action,
+      target,
+      targetType,
+      tenantId,
+      ip,
+      userAgent,
+      metadata,
+    });
+  };
+}

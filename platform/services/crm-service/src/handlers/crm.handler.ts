@@ -4,11 +4,9 @@
 // CSAP: D-08 접근 통제, D-06 감사 로그
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { logCrmEvent } from '../lib/audit.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 const createCustomerSchema = z.object({
   name: z.string().min(1, '고객사명은 필수입니다').max(200),
@@ -106,10 +104,13 @@ export async function createCustomerHandler(
 
   const customer = await prisma.customer.create({ data: parseResult.data });
 
+  const customerActor = (request.headers['x-user-id'] as string) || 'system';
+  const customerTenantId = (request.headers['x-user-tenant-id'] as string) || parseResult.data.tenantId || 'platform';
   await logCrmEvent(
     'CUSTOMER_CREATED',
-    'system',
+    customerActor,
     customer.id,
+    customerTenantId,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
     { name: customer.name },
@@ -146,6 +147,19 @@ export async function updateCustomerHandler(
     where: { id: request.params.id },
     data: parseResult.data,
   });
+
+  // 감사 로그 (CSAP D-06: 변경 작업 전수 기록)
+  const updateActor = (request.headers['x-user-id'] as string) || 'system';
+  const updateTenantId = (request.headers['x-user-tenant-id'] as string) || 'platform';
+  await logCrmEvent(
+    'CUSTOMER_UPDATED',
+    updateActor,
+    customer.id,
+    updateTenantId,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { fields: Object.keys(parseResult.data) },
+  );
 
   await reply.send({ success: true, data: customer });
 }
@@ -186,6 +200,19 @@ export async function createContactHandler(
   const contact = await prisma.contact.create({
     data: { ...parseResult.data, customerId: request.params.id },
   });
+
+  // 감사 로그 (CSAP D-06: 변경 작업 전수 기록)
+  const contactActor = (request.headers['x-user-id'] as string) || 'system';
+  const contactTenantId = (request.headers['x-user-tenant-id'] as string) || 'platform';
+  await logCrmEvent(
+    'CONTACT_CREATED',
+    contactActor,
+    contact.id,
+    contactTenantId,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { customerId: request.params.id, name: contact.name },
+  );
 
   await reply.status(201).send({ success: true, data: contact });
 }
@@ -246,10 +273,13 @@ export async function createContractHandler(
   });
 
   // 감사 로그 (FR-P09.5, CSAP D-06)
+  const contractActor = (request.headers['x-user-id'] as string) || 'system';
+  const contractTenantId = (request.headers['x-user-tenant-id'] as string) || 'platform';
   await logCrmEvent(
     'CONTRACT_CREATED',
-    'system',
+    contractActor,
     contract.id,
+    contractTenantId,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
     { title: contract.title, customerId: contract.customerId },
@@ -285,6 +315,19 @@ export async function updateContractHandler(
     where: { id: request.params.id },
     data: parseResult.data,
   });
+
+  // 감사 로그 (CSAP D-06: 변경 작업 전수 기록)
+  const contractUpdateActor = (request.headers['x-user-id'] as string) || 'system';
+  const contractUpdateTenantId = (request.headers['x-user-tenant-id'] as string) || 'platform';
+  await logCrmEvent(
+    'CONTRACT_UPDATED',
+    contractUpdateActor,
+    contract.id,
+    contractUpdateTenantId,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { fields: Object.keys(parseResult.data) },
+  );
 
   await reply.send({ success: true, data: contract });
 }

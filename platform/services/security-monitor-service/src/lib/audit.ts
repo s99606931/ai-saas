@@ -2,25 +2,11 @@
 // Design Ref: DESIGN-MTU-P15
 // CSAP: D-06
 
-import { createAuditLogger } from '@public-saas/audit-sdk';
-import type { AuditEntry } from '@public-saas/types';
+import { createAuditLogger, createStandardTransport } from '@public-saas/audit-sdk';
 
 const auditLogger = createAuditLogger({
   serviceName: 'security-monitor-service',
-  transport: async (entry: AuditEntry) => {
-    // Design Ref: DESIGN-MTU-P13 — HTTP POST 감사 로그 전송
-    const auditUrl = process.env['AUDIT_SERVICE_URL'] ?? 'http://localhost:3012';
-    try {
-      await fetch(`${auditUrl}/audit/logs`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(entry),
-      });
-    } catch {
-      console.error('감사 로그 전송 실패 — fallback 로컬 로깅');
-      console.log(JSON.stringify({ level: 'audit', ...entry }));
-    }
-  },
+  transport: createStandardTransport('security-monitor-service'),
 });
 
 export async function logSecurityEvent(

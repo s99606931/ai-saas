@@ -94,6 +94,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('API 게이트웨이 기동 실패:', err);
+  process.stderr.write(`API 게이트웨이 기동 실패: ${String(err)}\n`);
   process.exit(1);
 });

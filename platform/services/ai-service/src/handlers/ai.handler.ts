@@ -4,14 +4,12 @@
 // CSAP: N2SF N-05 — C/S등급 AI API 전송 절대 금지
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { validateDataGrade, DataGradeViolationError } from '../lib/grade-check.js';
 import { maskPII } from '../lib/pii-masking.js';
 import { logAiEvent } from '../lib/audit.js';
+import { prisma } from '../lib/prisma.js';
 import type { DataGrade } from '@public-saas/types';
-
-const prisma = new PrismaClient();
 
 const createModelSchema = z.object({
   name: z.string().min(1, '모델명은 필수입니다').max(100),
@@ -63,9 +61,10 @@ export async function createModelHandler(
 
   const model = await prisma.aiModel.create({ data: parseResult.data as Parameters<typeof prisma.aiModel.create>[0]['data'] });
 
+  const modelActor = (request.headers['x-user-id'] as string) || 'system';
   await logAiEvent(
     'AI_MODEL_REGISTERED',
-    'system',
+    modelActor,
     model.id,
     'platform',
     request.ip,
@@ -128,6 +127,9 @@ export async function chatHandler(
 
   const { modelId, tenantId, message, grade } = parseResult.data;
 
+  // actor 추출: JWT 클레임 기반 (CSAP D-06: 행위자 추적)
+  const chatActor = (request.headers['x-user-id'] as string) || 'system';
+
   // N2SF N-05: C/S등급 데이터 전송 절대 금지
   try {
     validateDataGrade(grade as DataGrade);
@@ -136,7 +138,7 @@ export async function chatHandler(
       // 감사 로그: 등급 위반 시도 기록
       await logAiEvent(
         'AI_GRADE_VIOLATION',
-        'system',
+        chatActor,
         modelId,
         tenantId,
         request.ip,
@@ -184,7 +186,7 @@ export async function chatHandler(
   // 감사 로그 (FR-P10.6, CSAP D-06)
   await logAiEvent(
     'AI_CHAT_COMPLETED',
-    'system',
+    chatActor,
     modelId,
     tenantId,
     request.ip,

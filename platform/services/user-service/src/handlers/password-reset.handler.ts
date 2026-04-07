@@ -4,14 +4,12 @@
 // CSAP: D-08-07 비밀번호 재설정 정책
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { randomBytes, createHash } from 'node:crypto';
 import { z } from 'zod';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
 import { logUserEvent } from '../lib/audit.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 /** 재설정 토큰 만료 시간: 30분 */
 const TOKEN_EXPIRY_MS = 30 * 60 * 1000;
@@ -117,7 +115,7 @@ export async function requestPasswordResetHandler(
     // 실제 환경에서는 알림 서비스를 통해 이메일 발송
     // 개발 환경: 토큰 앞 8자리만 표시 (보안 — 원문 노출 금지)
     if (process.env['NODE_ENV'] !== 'production') {
-      console.log(`[DEV] 비밀번호 재설정 토큰: ${rawToken.substring(0, 8)}... (사용자: ${email})`);
+      process.stdout.write(`[DEV] 비밀번호 재설정 토큰: ${rawToken.substring(0, 8)}... (사용자: ${email})\n`);
     }
   }
 
@@ -203,6 +201,22 @@ export async function confirmPasswordResetHandler(
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
   );
+
+  // CSAP D-08-03: 비밀번호 재설정 후 기존 세션 전체 무효화
+  const authServiceUrl = process.env['AUTH_SERVICE_URL'] ?? 'http://localhost:3001';
+  try {
+    await fetch(`${authServiceUrl}/auth/sessions/invalidate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: entry.userId,
+        tenantId: resetUser?.tenantId ?? 'unknown',
+        reason: 'PASSWORD_CHANGED',
+      }),
+    });
+  } catch {
+    // 세션 무효화 실패 시에도 비밀번호 재설정은 성공 (가용성 우선)
+  }
 
   await reply.send({
     success: true,

@@ -42,7 +42,7 @@ export class DataPortalClient {
     this.baseUrl = DATA_PORTAL_BASE_URL;
 
     if (!this.apiKey) {
-      console.warn('DATA_PORTAL_API_KEY 환경 변수가 설정되지 않았습니다. 샘플 데이터를 반환합니다.');
+      process.stderr.write('DATA_PORTAL_API_KEY 환경 변수가 설정되지 않았습니다. 샘플 데이터를 반환합니다.\n');
     }
   }
 
@@ -62,13 +62,15 @@ export class DataPortalClient {
     }
 
     const url = new URL(`${this.baseUrl}/datasets`);
-    url.searchParams.set('serviceKey', this.apiKey);
     if (params.keyword) url.searchParams.set('keyword', params.keyword);
     if (params.category) url.searchParams.set('category', params.category);
     url.searchParams.set('page', String(params.page));
     url.searchParams.set('perPage', String(params.limit));
 
-    const response = await fetch(url.toString());
+    // CSAP D-09: API 키를 URL 쿼리 파라미터 대신 헤더로 전달 (서버 로그 노출 방지)
+    const response = await fetch(url.toString(), {
+      headers: { 'Authorization': `Bearer ${this.apiKey}` },
+    });
     if (!response.ok) {
       throw new Error(`공공데이터포털 API 오류: ${response.status}`);
     }
@@ -99,8 +101,11 @@ export class DataPortalClient {
       };
     }
 
-    const url = `${this.baseUrl}/datasets/${id}?serviceKey=${this.apiKey}`;
-    const response = await fetch(url);
+    // CSAP D-09: API 키를 헤더로 전달
+    const url = `${this.baseUrl}/datasets/${id}`;
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${this.apiKey}` },
+    });
     if (!response.ok) return null;
     return response.json();
   }
@@ -121,8 +126,11 @@ export class DataPortalClient {
       };
     }
 
-    const url = `${this.baseUrl}/datasets/${id}/data?serviceKey=${this.apiKey}`;
-    const response = await fetch(url);
+    // CSAP D-09: API 키를 헤더로 전달
+    const url = `${this.baseUrl}/datasets/${id}/data`;
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${this.apiKey}` },
+    });
     if (!response.ok) {
       throw new Error(`데이터 조회 실패: ${response.status}`);
     }

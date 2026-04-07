@@ -2,15 +2,11 @@
 // Design Ref: DESIGN-MTU-P06
 // CSAP: D-06-01
 
-import { createAuditLogger } from '@public-saas/audit-sdk';
-import type { AuditEntry } from '@public-saas/types';
+import { createAuditLogger, createStandardTransport } from '@public-saas/audit-sdk';
 
 const auditLogger = createAuditLogger({
   serviceName: 'catalog-service',
-  transport: async (entry: AuditEntry) => {
-    // TODO: MTU-P13 구현 후 HTTP 전송으로 교체
-    console.log(JSON.stringify({ level: 'audit', ...entry }));
-  },
+  transport: createStandardTransport('catalog-service'),
 });
 
 export async function logCatalogEvent(

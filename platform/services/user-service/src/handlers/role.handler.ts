@@ -4,11 +4,9 @@
 // CSAP: D-08-05 접근 권한
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { logUserEvent } from '../lib/audit.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 const changeRoleSchema = z.object({
   role: z.enum(['TENANT_ADMIN', 'USER', 'VIEWER', 'AUDITOR']),

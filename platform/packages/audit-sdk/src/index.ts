@@ -3,5 +3,11 @@
 // Plan SC: FR-P00.4
 // CSAP: D-06 침해사고 관리
 
-export { AuditLogger, createAuditLogger, type AuditLogOptions } from './audit-logger.js';
+export {
+  AuditLogger,
+  createAuditLogger,
+  createStandardTransport,
+  createServiceAuditLogger,
+  type AuditLogOptions,
+} from './audit-logger.js';
 export { computeHash, verifyChainIntegrity } from './integrity.js';

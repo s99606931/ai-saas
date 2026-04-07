@@ -4,13 +4,11 @@
 // CSAP: D-08-05 접근 통제, D-12 입력 검증
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
 import { logUserEvent } from '../lib/audit.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 // Zod 검증 스키마 (CSAP D-12: 모든 입력 검증)
 const createUserSchema = z.object({

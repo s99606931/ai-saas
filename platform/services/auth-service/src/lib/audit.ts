@@ -3,20 +3,12 @@
 // Plan SC: FR-P01.12
 // CSAP: D-06-01 침해사고 관리
 
-import { createAuditLogger } from '@public-saas/audit-sdk';
-import type { AuditEntry } from '@public-saas/types';
+import { createAuditLogger, createStandardTransport } from '@public-saas/audit-sdk';
 
 // 감사 로거 인스턴스 (서비스 수준)
 const auditLogger = createAuditLogger({
   serviceName: 'auth-service',
-  transport: async (entry: AuditEntry) => {
-    // TODO: MTU-P13 (감사 로그 서비스) 구현 후 HTTP 전송으로 교체
-    // 현재는 stdout 출력 (개발 환경)
-    console.log(JSON.stringify({
-      level: 'audit',
-      ...entry,
-    }));
-  },
+  transport: createStandardTransport('auth-service'),
 });
 
 /**

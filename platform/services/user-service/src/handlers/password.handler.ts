@@ -4,13 +4,11 @@
 // CSAP: D-08-07 비밀번호 정책
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { z } from 'zod';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
 import { logUserEvent } from '../lib/audit.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, '현재 비밀번호를 입력하세요'),
@@ -112,9 +110,23 @@ export async function changePasswordHandler(
     request.headers['user-agent'] ?? 'unknown',
   );
 
-  // NOTE: 비밀번호 변경 후 기존 세션 무효화는 auth-service Redis 연동 필요
-  // 현재 아키텍처에서는 API 게이트웨이가 토큰 만료 시 자연 무효화 처리
-  // Phase P4에서 auth-service 간 이벤트 기반 세션 무효화 구현 예정
+  // CSAP D-08-03: 비밀번호 변경 후 기존 세션 전체 무효화
+  // auth-service 내부 API 호출 (fire-and-forget, 실패해도 비밀번호 변경은 성공 처리)
+  const authServiceUrl = process.env['AUTH_SERVICE_URL'] ?? 'http://localhost:3001';
+  try {
+    await fetch(`${authServiceUrl}/auth/sessions/invalidate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: request.params.id,
+        tenantId: user.tenantId,
+        reason: 'PASSWORD_CHANGED',
+      }),
+    });
+  } catch {
+    // 세션 무효화 실패 시에도 비밀번호 변경은 성공 (가용성 우선)
+    // 토큰 자연 만료로 최종 정합성 보장
+  }
 
   await reply.send({ success: true, message: '비밀번호가 변경되었습니다' });
 }

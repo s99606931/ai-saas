@@ -3,11 +3,9 @@
 // Plan SC: FR-P06.1~FR-P06.5
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { logCatalogEvent } from '../lib/audit.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 const createServiceSchema = z.object({
   name: z.string().min(1, '서비스명은 필수입니다').max(200),
@@ -100,9 +98,10 @@ export async function createServiceHandler(
   try {
     const service = await prisma.service.create({ data: parseResult.data });
 
+    const createActor = (request.headers['x-user-id'] as string) || 'system';
     await logCatalogEvent(
       'SERVICE_CREATED',
-      'system',
+      createActor,
       service.id,
       request.ip,
       request.headers['user-agent'] ?? 'unknown',
@@ -183,9 +182,10 @@ export async function updateVersionHandler(
     data: { version: parseResult.data.version },
   });
 
+  const versionActor = (request.headers['x-user-id'] as string) || 'system';
   await logCatalogEvent(
     'SERVICE_VERSION_UPDATED',
-    'system',
+    versionActor,
     service.id,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',

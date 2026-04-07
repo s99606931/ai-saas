@@ -24,6 +24,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('사용자 서비스 기동 실패:', err);
+  process.stderr.write(`사용자 서비스 기동 실패: ${String(err)}\n`);
   process.exit(1);
 });

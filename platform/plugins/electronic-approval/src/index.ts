@@ -12,7 +12,7 @@ app.get('/health', (c) => c.json({ status: 'ok', service: manifest.id, version: 
 // API 라우트 등록
 app.route('/api/v1', draftHandler);
 
-console.log(`${manifest.name} 플러그인 기동: port ${manifest.port}`);
+process.stdout.write(`${manifest.name} 플러그인 기동: port ${manifest.port}\n`);
 
 export default app;
 export { manifest };

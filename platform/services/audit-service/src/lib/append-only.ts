@@ -3,10 +3,8 @@
 // Plan SC: FR-P13.1
 // CSAP: D-06 — 감사 로그 수정/삭제 불가
 
-import { PrismaClient } from '@prisma/client';
 import { createHash } from 'node:crypto';
-
-const prisma = new PrismaClient();
+import { prisma } from './prisma.js';
 
 /**
  * 감사 로그 엔트리 추가 (append-only)

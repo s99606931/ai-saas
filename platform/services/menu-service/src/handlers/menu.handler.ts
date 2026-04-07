@@ -4,11 +4,9 @@
 // CSAP: D-08-05 역할 기반 접근 통제
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { logMenuEvent } from '../lib/audit.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 const createMenuSchema = z.object({
   tenantId: z.string().min(1),
@@ -101,9 +99,10 @@ export async function createMenuHandler(
     data: { ...rest, roles: roles ?? undefined },
   });
 
+  const menuActor = (request.headers['x-user-id'] as string) || 'system';
   await logMenuEvent(
     'MENU_CREATED',
-    'system',
+    menuActor,
     menuItem.id,
     parseResult.data.tenantId,
     request.ip,
@@ -132,10 +131,36 @@ export async function updateMenuHandler(
   }
 
   const { roles, ...rest } = parseResult.data;
+
+  // 테넌트 격리: 대상 메뉴의 tenantId 확인 (CSAP D-08-05)
+  const existingMenu = await prisma.menuItem.findUnique({
+    where: { id: request.params.id },
+    select: { tenantId: true },
+  });
+  if (!existingMenu) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'MENU_NOT_FOUND', message: '메뉴 항목을 찾을 수 없습니다' },
+    });
+    return;
+  }
+
   const menuItem = await prisma.menuItem.update({
     where: { id: request.params.id },
     data: { ...rest, ...(roles !== undefined ? { roles } : {}) },
   });
+
+  // 감사 로그 (CSAP D-06: 변경 작업 전수 기록)
+  const updateMenuActor = (request.headers['x-user-id'] as string) || 'system';
+  await logMenuEvent(
+    'MENU_UPDATED',
+    updateMenuActor,
+    menuItem.id,
+    existingMenu.tenantId ?? 'platform',
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { fields: Object.keys(parseResult.data) },
+  );
 
   await reply.send({ success: true, data: menuItem });
 }

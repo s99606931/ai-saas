@@ -4,11 +4,9 @@
 // CSAP: D-06 감사 로그
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { logBillingEvent } from '../lib/audit.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 /**
  * 인보이스 목록 조회
@@ -112,9 +110,10 @@ export async function generateInvoiceHandler(
   });
 
   // 감사 로그 (FR-P08.5, CSAP D-06)
+  const invoiceActor = (request.headers['x-user-id'] as string) || 'system';
   await logBillingEvent(
     'INVOICE_GENERATED',
-    'system',
+    invoiceActor,
     invoice.id,
     subscription.tenantId,
     request.ip,
@@ -163,11 +162,13 @@ export async function payInvoiceHandler(
   });
 
   // 감사 로그 (FR-P08.5, CSAP D-06)
+  const paymentActor = (request.headers['x-user-id'] as string) || 'system';
+  const paymentTenantId = (request.headers['x-user-tenant-id'] as string) || 'system';
   await logBillingEvent(
     'PAYMENT_COMPLETED',
-    'system',
+    paymentActor,
     payment.id,
-    'system',
+    paymentTenantId,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
     { invoiceId: request.params.id, amount: parseResult.data.amount, method: parseResult.data.method },

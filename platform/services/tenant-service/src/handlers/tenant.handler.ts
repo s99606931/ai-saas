@@ -4,11 +4,9 @@
 // CSAP: N2SF N-03 격리
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { logTenantEvent } from '../lib/audit.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 // BigInt → string 변환 (JSON 직렬화)
 function serializeTenant<T extends { maxStorage: bigint }>(t: T) {
@@ -124,9 +122,10 @@ export async function createTenantHandler(
     });
 
     // 감사 로그 기록 (FR-P03.8, CSAP D-06)
+    const createActor = (request.headers['x-user-id'] as string) || 'system';
     await logTenantEvent(
       'TENANT_CREATED',
-      'system',
+      createActor,
       tenant.id,
       tenant.id,
       request.ip,
@@ -178,6 +177,18 @@ export async function updateTenantHandler(
     } as Parameters<typeof prisma.tenant.update>[0]['data'],
   });
 
+  // 감사 로그 기록 (CSAP D-06: 테넌트 설정 변경 추적)
+  const updateActor = (request.headers['x-user-id'] as string) || 'system';
+  await logTenantEvent(
+    'TENANT_UPDATED',
+    updateActor,
+    request.params.id,
+    request.params.id,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { fields: Object.keys(parseResult.data) },
+  );
+
   await reply.send({
     success: true,
     data: { ...tenant, maxStorage: tenant.maxStorage.toString() },
@@ -207,9 +218,10 @@ export async function updateTenantStatusHandler(
   });
 
   // 감사 로그 기록 (FR-P03.8, CSAP D-06)
+  const statusActor = (request.headers['x-user-id'] as string) || 'system';
   await logTenantEvent(
     'TENANT_STATUS_CHANGED',
-    'system',
+    statusActor,
     request.params.id,
     request.params.id,
     request.ip,

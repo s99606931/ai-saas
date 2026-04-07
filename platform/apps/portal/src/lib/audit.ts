@@ -27,7 +27,10 @@ export async function sendAuditLog(entry: {
     });
   } catch {
     // 감사 로그 전송 실패 시 로컬 폴백 (서비스 가용성 우선)
-    console.error('감사 로그 전송 실패');
+    // 감사 로그 전송 실패 시 서버 사이드에서만 로깅 (클라이언트 노출 방지)
+    if (typeof window === 'undefined') {
+      process.stderr.write('감사 로그 전송 실패\n');
+    }
   }
 }
 

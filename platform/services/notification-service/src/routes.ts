@@ -33,6 +33,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
           success: false,
           error: { code: 'UNAUTHORIZED', message: '내부 서비스 인증 실패' },
         });
+        return;
       }
     });
   }

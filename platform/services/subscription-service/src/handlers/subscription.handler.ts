@@ -4,11 +4,9 @@
 // CSAP: D-08 접근 통제, D-06 감사 로그
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { logSubscriptionEvent } from '../lib/audit.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 const createPlanSchema = z.object({
   name: z.string().min(1, '플랜명은 필수입니다').max(100),
@@ -142,9 +140,10 @@ export async function subscribeHandler(
   });
 
   // 감사 로그 (FR-P07.5, CSAP D-06)
+  const subscribeActor = (request.headers['x-user-id'] as string) || 'system';
   await logSubscriptionEvent(
     'SUBSCRIPTION_CREATED',
-    'system',
+    subscribeActor,
     subscription.id,
     tenantId,
     request.ip,
@@ -195,9 +194,10 @@ export async function upgradeHandler(
     data: { planId: parseResult.data.newPlanId },
   });
 
+  const upgradeActor = (request.headers['x-user-id'] as string) || 'system';
   await logSubscriptionEvent(
     'SUBSCRIPTION_UPGRADED',
-    'system',
+    upgradeActor,
     subscription.id,
     subscription.tenantId,
     request.ip,
@@ -231,9 +231,10 @@ export async function downgradeHandler(
     data: { planId: parseResult.data.newPlanId },
   });
 
+  const downgradeActor = (request.headers['x-user-id'] as string) || 'system';
   await logSubscriptionEvent(
     'SUBSCRIPTION_DOWNGRADED',
-    'system',
+    downgradeActor,
     subscription.id,
     subscription.tenantId,
     request.ip,
@@ -257,9 +258,10 @@ export async function cancelHandler(
     data: { status: 'CANCELED', canceledAt: new Date() },
   });
 
+  const cancelActor = (request.headers['x-user-id'] as string) || 'system';
   await logSubscriptionEvent(
     'SUBSCRIPTION_CANCELED',
-    'system',
+    cancelActor,
     subscription.id,
     subscription.tenantId,
     request.ip,

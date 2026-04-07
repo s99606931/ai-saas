@@ -4,21 +4,33 @@
 // CSAP: D-06 감사, D-10 네트워크 보안
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { logSecurityEvent } from '../lib/audit.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 // --- IP 차단 목록 (In-memory + 영속 대비) ---
 const ipBlocklist = new Map<string, { reason: string; blockedAt: string; expiresAt?: string }>();
 
-// --- Zod 스키마 ---
+// --- Zod 스키마 (CSAP D-12: 모든 입력 검증) ---
 
 const ipBlockSchema = z.object({
   ip: z.string().min(1, 'IP 주소는 필수입니다'),
   reason: z.string().min(1, '차단 사유는 필수입니다'),
   durationMinutes: z.number().int().positive().optional(),
+});
+
+const loginFailuresQuerySchema = z.object({
+  minutes: z.coerce.number().int().min(1).max(1440).default(5),
+  threshold: z.coerce.number().int().min(1).max(100).default(5),
+});
+
+const anomaliesQuerySchema = z.object({
+  hours: z.coerce.number().int().min(1).max(168).default(1),
+});
+
+const alertsQuerySchema = z.object({
+  severity: z.enum(['critical', 'high', 'medium', 'low']).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 // --- 핸들러 ---
@@ -33,9 +45,16 @@ export async function loginFailuresHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const query = request.query as { minutes?: string; threshold?: string };
-  const minutes = parseInt(query.minutes ?? '5', 10);
-  const threshold = parseInt(query.threshold ?? '5', 10);
+  // CSAP D-12: safeParse로 쿼리 파라미터 검증
+  const parseResult = loginFailuresQuerySchema.safeParse(request.query);
+  if (!parseResult.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parseResult.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const { minutes, threshold } = parseResult.data;
 
   const since = new Date();
   since.setMinutes(since.getMinutes() - minutes);
@@ -60,7 +79,7 @@ export async function loginFailuresHandler(
     severity: f._count.id >= 10 ? 'critical' : f._count.id >= 7 ? 'high' : 'medium',
   }));
 
-  reply.send({
+  await reply.send({
     alerts,
     totalAlerts: alerts.length,
     period: { minutes, threshold },
@@ -78,13 +97,21 @@ export async function anomaliesHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const query = request.query as { hours?: string };
-  const hours = parseInt(query.hours ?? '1', 10);
+  // CSAP D-12: safeParse로 쿼리 파라미터 검증
+  const parseResult = anomaliesQuerySchema.safeParse(request.query);
+  if (!parseResult.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parseResult.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const { hours } = parseResult.data;
 
   const since = new Date();
   since.setHours(since.getHours() - hours);
 
-  // 동일 사용자 다중 IP 접근 탐지
+  // 동일 사용자 다중 IP 접근 탐지 (CSAP D-08: 세션 탈취 의심 탐지)
   const multiIpAccess = await prisma.auditLog.groupBy({
     by: ['actorId'],
     where: {
@@ -93,6 +120,9 @@ export async function anomaliesHandler(
       actorId: { not: null },
     },
     _count: { id: true },
+    having: {
+      id: { _count: { gte: 3 } },
+    },
   });
 
   // 단시간 대량 요청 탐지 (IP 기준)
@@ -109,15 +139,25 @@ export async function anomaliesHandler(
   });
 
   const anomalies = [
+    // 동일 사용자 다중 IP 접근 (세션 탈취 의심)
+    ...multiIpAccess.map((m) => ({
+      type: 'MULTI_IP_LOGIN' as const,
+      actorId: m.actorId,
+      ip: null as string | null,
+      count: m._count.id,
+      severity: m._count.id >= 5 ? 'critical' as const : 'high' as const,
+    })),
+    // 단시간 대량 요청 (DDoS/크롤러 의심)
     ...highVolume.map((h) => ({
-      type: 'HIGH_VOLUME_REQUEST',
+      type: 'HIGH_VOLUME_REQUEST' as const,
+      actorId: null as string | null,
       ip: h.ip,
       count: h._count.id,
-      severity: h._count.id >= 500 ? 'critical' : 'high',
+      severity: h._count.id >= 500 ? 'critical' as const : 'high' as const,
     })),
   ];
 
-  reply.send({
+  await reply.send({
     anomalies,
     totalAnomalies: anomalies.length,
     period: { hours },
@@ -138,7 +178,7 @@ export async function getIpBlocklistHandler(
     .filter(([, v]) => !v.expiresAt || v.expiresAt > now)
     .map(([ip, v]) => ({ ip, ...v }));
 
-  reply.send({ entries, total: entries.length });
+  await reply.send({ entries, total: entries.length });
 }
 
 /**
@@ -149,7 +189,16 @@ export async function addIpBlocklistHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const body = ipBlockSchema.parse(request.body);
+  // CSAP D-12: safeParse로 입력 검증
+  const parsed = ipBlockSchema.safeParse(request.body);
+  if (!parsed.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parsed.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const body = parsed.data;
   const blockedAt = new Date().toISOString();
   const expiresAt = body.durationMinutes
     ? new Date(Date.now() + body.durationMinutes * 60 * 1000).toISOString()
@@ -159,7 +208,7 @@ export async function addIpBlocklistHandler(
 
   await logSecurityEvent('IP_BLOCKED', { ip: body.ip, reason: body.reason });
 
-  reply.status(201).send({
+  await reply.status(201).send({
     success: true,
     ip: body.ip,
     blockedAt,
@@ -178,14 +227,14 @@ export async function removeIpBlocklistHandler(
   const { ip } = request.params as { ip: string };
 
   if (!ipBlocklist.has(ip)) {
-    reply.status(404).send({ error: '차단 목록에 없는 IP입니다' });
+    await reply.status(404).send({ error: '차단 목록에 없는 IP입니다' });
     return;
   }
 
   ipBlocklist.delete(ip);
   await logSecurityEvent('IP_UNBLOCKED', { ip });
 
-  reply.send({ success: true, ip, message: 'IP 차단 해제 완료' });
+  await reply.send({ success: true, ip, message: 'IP 차단 해제 완료' });
 }
 
 /**
@@ -196,8 +245,16 @@ export async function securityAlertsHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const query = request.query as { severity?: string; limit?: string };
-  const limit = parseInt(query.limit ?? '20', 10);
+  // CSAP D-12: safeParse로 쿼리 파라미터 검증
+  const parseResult = alertsQuerySchema.safeParse(request.query);
+  if (!parseResult.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parseResult.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const limit = parseResult.data.limit;
 
   const where: Record<string, unknown> = {
     action: {
@@ -225,7 +282,7 @@ export async function securityAlertsHandler(
     },
   });
 
-  reply.send({
+  await reply.send({
     alerts: alerts.map((a) => ({
       ...a,
       severity: a.action === 'AI_GRADE_VIOLATION' || a.action === 'SESSION_HIJACK_ATTEMPT'

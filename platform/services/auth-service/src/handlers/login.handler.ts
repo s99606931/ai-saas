@@ -4,15 +4,14 @@
 // CSAP: D-08-01 인증, D-08-06 계정 잠금
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { loginSchema } from '../schemas/login.schema.js';
 import { verifyPassword } from '../lib/password.js';
 import { signAccessToken, signRefreshToken } from '../lib/jwt.js';
 import { createSession } from '../lib/session.js';
 import { logAuthEvent } from '../lib/audit.js';
+import { prisma } from '../lib/prisma.js';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
-
-const prisma = new PrismaClient();
+import { getUserPermissions } from '../lib/permissions.js';
 
 /**
  * 로그인 핸들러
@@ -172,15 +171,4 @@ export async function loginHandler(
   });
 }
 
-/**
- * 역할별 권한 조회
- * Design Ref: DESIGN-MTU-P01 Section 5 RBAC
- */
-async function getUserPermissions(role: string): Promise<string[]> {
-  const rolePermissions = await prisma.rolePermission.findMany({
-    where: { role: role as 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'USER' | 'VIEWER' | 'AUDITOR' },
-    include: { permission: true },
-  });
-
-  return rolePermissions.map((rp) => rp.permission.name);
-}
+// getUserPermissions는 ../lib/permissions.ts에서 import (중복 코드 제거)

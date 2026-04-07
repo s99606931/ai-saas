@@ -7,6 +7,7 @@ import { logoutHandler } from './handlers/logout.handler.js';
 import { refreshHandler } from './handlers/refresh.handler.js';
 import { verifyHandler } from './handlers/verify.handler.js';
 import { mfaSetupHandler, mfaVerifyHandler, mfaDisableHandler } from './handlers/mfa.handler.js';
+import { invalidateAllSessionsHandler } from './handlers/session-invalidate.handler.js';
 
 export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
   // POST /auth/login — 로그인
@@ -36,4 +37,9 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
   // DELETE /auth/mfa — MFA 비활성화
   // Plan SC: FR-P01.10
   app.delete('/auth/mfa', mfaDisableHandler);
+
+  // POST /auth/sessions/invalidate — 사용자 전체 세션 무효화 (내부 서비스 전용)
+  // Plan SC: FR-P01.4 보완 — 비밀번호 변경/계정 잠금 시 호출
+  // CSAP D-08-03: 보안 이벤트 시 즉시 세션 무효화
+  app.post('/auth/sessions/invalidate', invalidateAllSessionsHandler);
 }

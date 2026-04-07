@@ -3,10 +3,8 @@
 // Plan SC: FR-P13.2, FR-P13.4
 // CSAP: D-06 — 감사 로그 무결성
 
-import { PrismaClient } from '@prisma/client';
 import { createHash } from 'node:crypto';
-
-const prisma = new PrismaClient();
+import { prisma } from './prisma.js';
 
 interface IntegrityResult {
   valid: boolean;

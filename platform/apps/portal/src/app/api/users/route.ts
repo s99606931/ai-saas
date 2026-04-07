@@ -79,7 +79,7 @@ export async function GET(
 
     return NextResponse.json({ users: userList, total })
   } catch (error) {
-    console.error('[API] /api/users 오류:', error)
+    process.stderr.write(`[API] /api/users 오류: ${String(error)}\n`)
     return NextResponse.json(
       { error: '사용자 목록 조회 중 오류가 발생했습니다.' },
       { status: 500 }

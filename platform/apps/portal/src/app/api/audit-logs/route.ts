@@ -61,7 +61,8 @@ export async function GET(): Promise<NextResponse<AuditLogListResponse | { error
 
     return NextResponse.json({ logs: logList, total })
   } catch (error) {
-    console.error('[API] /api/audit-logs 오류:', error)
+    // CSAP D-12: 내부 오류 로깅 (클라이언트에 미노출)
+    process.stderr.write(`[API] /api/audit-logs 오류: ${String(error)}\n`)
     return NextResponse.json(
       { error: '감사 로그 조회 중 오류가 발생했습니다.' },
       { status: 500 }

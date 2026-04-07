@@ -4,14 +4,13 @@
 // CSAP: D-08-02 세션 관리 — Refresh Token Rotation
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { refreshSchema } from '../schemas/login.schema.js';
 import { verifyToken, signAccessToken, signRefreshToken } from '../lib/jwt.js';
 import { isTokenBlacklisted, blacklistToken, createSession } from '../lib/session.js';
 import { logAuthEvent } from '../lib/audit.js';
+import { prisma } from '../lib/prisma.js';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
-
-const prisma = new PrismaClient();
+import { getUserPermissions } from '../lib/permissions.js';
 
 /**
  * 토큰 갱신 핸들러
@@ -111,10 +110,4 @@ export async function refreshHandler(
   }
 }
 
-async function getUserPermissions(role: string): Promise<string[]> {
-  const rolePermissions = await prisma.rolePermission.findMany({
-    where: { role: role as 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'USER' | 'VIEWER' | 'AUDITOR' },
-    include: { permission: true },
-  });
-  return rolePermissions.map((rp) => rp.permission.name);
-}
+// getUserPermissions는 ../lib/permissions.ts에서 import (중복 코드 제거)

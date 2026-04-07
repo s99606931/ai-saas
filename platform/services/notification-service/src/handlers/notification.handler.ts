@@ -4,13 +4,11 @@
 // CSAP: D-06 감사 로그, D-12 입력 검증
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { logNotificationEvent } from '../lib/audit.js';
 import { sendWebhook } from '../lib/webhook-sender.js';
 import { getTemplateByName, renderTemplate } from './template.handler.js';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 const sendNotificationSchema = z.object({
   tenantId: z.string().nullable().optional(),
@@ -77,10 +75,12 @@ export async function sendNotificationHandler(
 
   // 감사 로그 (FR-P11.5, CSAP D-06)
   const sendActor = (request.headers['x-user-id'] as string) || 'system';
+  const sendTenantId = (request.headers['x-user-tenant-id'] as string) || notificationData.tenantId || 'platform';
   await logNotificationEvent(
     'NOTIFICATION_SENT',
     sendActor,
     notification.id,
+    sendTenantId,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
     {
@@ -157,10 +157,12 @@ export async function sendFromTemplateHandler(
   });
 
   const templateActor = (request.headers['x-user-id'] as string) || 'system';
+  const templateTenantId = (request.headers['x-user-tenant-id'] as string) || tenantId || 'platform';
   await logNotificationEvent(
     'NOTIFICATION_SENT_FROM_TEMPLATE',
     templateActor,
     notification.id,
+    templateTenantId,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
     { templateName, channel: template.channel, userId },
@@ -246,7 +248,16 @@ export async function markReadHandler(
   const callerRole = request.headers['x-user-role'] as string | undefined;
   const isAdmin = callerRole === 'SUPER_ADMIN' || callerRole === 'TENANT_ADMIN';
 
-  if (!isAdmin && callerId && callerId !== target.userId) {
+  // CSAP D-08: 인증되지 않은 요청 차단
+  if (!callerId) {
+    await reply.status(401).send({
+      success: false,
+      error: { code: 'UNAUTHORIZED', message: '인증이 필요합니다' },
+    });
+    return;
+  }
+
+  if (!isAdmin && callerId !== target.userId) {
     await reply.status(403).send({
       success: false,
       error: { code: 'FORBIDDEN', message: '본인의 알림만 읽음 처리할 수 있습니다' },

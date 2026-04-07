@@ -80,6 +80,10 @@ export async function removeSession(
  * 토큰 블랙리스트 등록
  * CSAP D-08-03: 로그아웃 시 토큰 무효화
  *
+ * TTL은 갱신 토큰 만료시간(7일)으로 설정하여
+ * 블랙리스트된 리프레시 토큰이 TTL 만료로 재사용되는 것을 방지합니다.
+ * (접근 토큰은 15분이지만, 동일 블랙리스트에 혼용되므로 안전한 쪽으로 통일)
+ *
  * @param token - 블랙리스트에 등록할 토큰
  */
 export async function blacklistToken(token: string): Promise<void> {
@@ -87,7 +91,7 @@ export async function blacklistToken(token: string): Promise<void> {
     BLACKLIST_KEY(token),
     '1',
     'EX',
-    AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRES_SECONDS,
+    AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRES_SECONDS,
   );
 }
 

@@ -2,20 +2,25 @@
 // Design Ref: DESIGN-MTU-P15
 // CSAP: D-06
 
-import { createAuditLogger } from '@public-saas/audit-sdk';
-import type { AuditEntry } from '@public-saas/types';
+import { createAuditLogger, createStandardTransport } from '@public-saas/audit-sdk';
 
 const auditLogger = createAuditLogger({
   serviceName: 'security-service',
-  transport: async (entry: AuditEntry) => {
-    // TODO: MTU-P13 HTTP 전송으로 교체
-    console.log(JSON.stringify({ level: 'audit', ...entry }));
-  },
+  transport: createStandardTransport('security-service'),
 });
 
 export async function logSecurityEvent(
   action: string,
   metadata?: Record<string, unknown>,
 ): Promise<void> {
-  await auditLogger.log({ action, metadata });
+  await auditLogger.log({
+    actor: 'system:security-service',
+    action,
+    target: 'security',
+    targetType: 'security',
+    tenantId: 'system',
+    ip: '127.0.0.1',
+    userAgent: 'security-service/1.0',
+    metadata,
+  });
 }

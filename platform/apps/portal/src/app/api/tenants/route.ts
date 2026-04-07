@@ -76,7 +76,7 @@ export async function GET(
 
     return NextResponse.json({ tenants: tenantList, total })
   } catch (error) {
-    console.error('[API] /api/tenants 오류:', error)
+    process.stderr.write(`[API] /api/tenants 오류: ${String(error)}\n`)
     return NextResponse.json(
       { error: '테넌트 목록 조회 중 오류가 발생했습니다.' },
       { status: 500 }

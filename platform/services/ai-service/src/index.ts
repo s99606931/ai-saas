@@ -23,6 +23,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('AI 서비스 관리 서비스 기동 실패:', err);
+  process.stderr.write(`AI 서비스 관리 서비스 기동 실패: ${String(err)}\n`);
   process.exit(1);
 });

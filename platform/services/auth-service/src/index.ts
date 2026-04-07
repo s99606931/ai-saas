@@ -33,9 +33,37 @@ async function main(): Promise<void> {
 
   // 헬스체크
   app.get('/health', async () => ({ status: 'ok', service: 'auth-service' }));
-  app.get('/ready', async () => {
-    // TODO: DB, Redis 연결 상태 확인
-    return { status: 'ready', service: 'auth-service' };
+  app.get('/ready', async (_request, reply) => {
+    // CSAP D-07: k8s readinessProbe용 — DB 및 Redis 연결 상태 확인
+    const checks: Record<string, string> = {};
+    let allReady = true;
+
+    // Redis 연결 확인
+    try {
+      const { redis } = await import('./lib/session.js');
+      const pong = await redis.ping();
+      checks['redis'] = pong === 'PONG' ? 'ok' : 'error';
+    } catch {
+      checks['redis'] = 'error';
+      allReady = false;
+    }
+
+    // DB(Prisma) 연결 확인
+    try {
+      const { prisma } = await import('./lib/prisma.js');
+      await prisma.$queryRaw`SELECT 1`;
+      checks['database'] = 'ok';
+    } catch {
+      checks['database'] = 'error';
+      allReady = false;
+    }
+
+    const status = allReady ? 'ready' : 'not_ready';
+    await reply.status(allReady ? 200 : 503).send({
+      status,
+      service: 'auth-service',
+      checks,
+    });
   });
 
   // 인증 라우트 등록
@@ -47,6 +75,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('인�� 서비스 기동 실패:', err);
+  process.stderr.write(`인증 서비스 기동 실패: ${String(err)}\n`);
   process.exit(1);
 });
