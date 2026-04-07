@@ -1,0 +1,159 @@
+# 공공기관 SaaS 플랫폼 -- k8s NetworkPolicy
+# CSAP D-10: 네트워크 보안 -- 서비스 간 통신 격리
+# Design Ref: DESIGN-MTU-DEP2
+#
+# 원칙: 기본 차단 (deny-all) + 필요한 통신만 허용 (allow-list)
+---
+# 1. 기본 정책: 네임스페이스 내 모든 Ingress 차단
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: saas-platform
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+# 2. API 게이트웨이: 외부 트래픽 수신 허용 (유일한 외부 진입점)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-gateway-ingress
+  namespace: saas-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: api-gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 3000
+          protocol: TCP
+---
+# 3. 마이크로서비스: API 게이트웨이에서만 수신 허용
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-api-gateway
+  namespace: saas-platform
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - auth-service
+          - user-service
+          - tenant-service
+          - menu-service
+          - catalog-service
+          - subscription-service
+          - billing-service
+          - crm-service
+          - ai-service
+          - notification-service
+          - file-service
+          - audit-service
+          - compliance-service
+          - security-monitor-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+---
+# 4. 감사 서비스: 모든 마이크로서비스에서 수신 허용 (감사 로그 전송)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-audit-from-services
+  namespace: saas-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: audit-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: Exists
+      ports:
+        - port: 3012
+          protocol: TCP
+---
+# 5. PostgreSQL: 마이크로서비스에서만 접속 허용
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-postgres-from-services
+  namespace: saas-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: Exists
+      ports:
+        - port: 5432
+          protocol: TCP
+---
+# 6. Redis: API 게이트웨이 + 인증 서비스 + 알림 서비스 + 보안 모니터에서만 접속 허용
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-redis-from-services
+  namespace: saas-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - api-gateway
+                  - auth-service
+                  - notification-service
+                  - security-monitor-service
+      ports:
+        - port: 6379
+          protocol: TCP
+---
+# 7. MinIO: 파일 서비스에서만 접속 허용
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-minio-from-file-service
+  namespace: saas-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: minio
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: file-service
+      ports:
+        - port: 9000
+          protocol: TCP

@@ -1,5 +1,8 @@
 # 공공기관 SaaS 플랫폼 — 마이크로서비스 15종 k8s 매니페스트
 # Design Ref: DESIGN-MTU-DEP2 | CSAP: D-11
+# CSAP D-10: NetworkPolicy 적용 (k8s/config/network-policy.yaml)
+# 보안 강화: securityContext (non-root, readOnlyRootFilesystem), livenessProbe 추가
+# CSAP D-07: terminationGracePeriodSeconds 30초 (graceful shutdown 연동)
 ---
 # auth-service (3001)
 apiVersion: apps/v1
@@ -17,12 +20,22 @@ spec:
       labels:
         app: auth-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: auth-service
         image: saas/auth-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3001
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -33,14 +46,25 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3001
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
@@ -70,12 +94,22 @@ spec:
       labels:
         app: user-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: user-service
         image: saas/user-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3002
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -86,14 +120,25 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3002
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3002
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
@@ -123,12 +168,22 @@ spec:
       labels:
         app: tenant-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: tenant-service
         image: saas/tenant-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3003
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -139,14 +194,25 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3003
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3003
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
@@ -176,12 +242,22 @@ spec:
       labels:
         app: menu-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: menu-service
         image: saas/menu-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3004
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -192,14 +268,25 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3004
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3004
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
@@ -213,28 +300,38 @@ spec:
   - port: 3004
     targetPort: 3004
 ---
-# saas-catalog-service (3005)
+# catalog-service (3005) — saas-catalog-service(placeholder) 대체
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: saas-catalog-service
+  name: catalog-service
   namespace: saas-platform
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: saas-catalog-service
+      app: catalog-service
   template:
     metadata:
       labels:
-        app: saas-catalog-service
+        app: catalog-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
-      - name: saas-catalog-service
-        image: saas/saas-catalog-service:dev
+      - name: catalog-service
+        image: saas/catalog-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3005
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -245,23 +342,34 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3005
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3005
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: saas-catalog-service
+  name: catalog-service
   namespace: saas-platform
 spec:
   selector:
-    app: saas-catalog-service
+    app: catalog-service
   ports:
   - port: 3005
     targetPort: 3005
@@ -282,12 +390,22 @@ spec:
       labels:
         app: subscription-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: subscription-service
         image: saas/subscription-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3006
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -298,14 +416,25 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3006
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3006
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
@@ -335,12 +464,22 @@ spec:
       labels:
         app: billing-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: billing-service
         image: saas/billing-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3007
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -351,14 +490,25 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3007
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3007
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
@@ -388,12 +538,22 @@ spec:
       labels:
         app: crm-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: crm-service
         image: saas/crm-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3008
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -404,14 +564,25 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3008
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3008
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
@@ -441,12 +612,22 @@ spec:
       labels:
         app: ai-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: ai-service
         image: saas/ai-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3009
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -457,14 +638,25 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3009
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3009
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
@@ -494,12 +686,22 @@ spec:
       labels:
         app: notification-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: notification-service
         image: saas/notification-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3010
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -510,14 +712,25 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3010
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3010
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
@@ -547,12 +760,22 @@ spec:
       labels:
         app: file-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: file-service
         image: saas/file-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3011
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -567,14 +790,25 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3011
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3011
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
@@ -604,12 +838,22 @@ spec:
       labels:
         app: audit-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: audit-service
         image: saas/audit-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3012
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -620,14 +864,25 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3012
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3012
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
@@ -669,12 +924,22 @@ spec:
       labels:
         app: compliance-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: compliance-service
         image: saas/compliance-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3013
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -685,14 +950,25 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3013
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3013
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
@@ -722,12 +998,22 @@ spec:
       labels:
         app: security-monitor-service
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: security-monitor-service
         image: saas/security-monitor-service:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3014
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -738,14 +1024,25 @@ spec:
           value: "production"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3014
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3014
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
@@ -775,12 +1072,22 @@ spec:
       labels:
         app: api-gateway
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - name: api-gateway
         image: saas/api-gateway:dev
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - secretRef:
             name: saas-secrets
@@ -798,7 +1105,7 @@ spec:
         - name: MENU_SERVICE_URL
           value: "http://menu-service:3004"
         - name: CATALOG_SERVICE_URL
-          value: "http://saas-catalog-service:3005"
+          value: "http://catalog-service:3005"
         - name: SUBSCRIPTION_SERVICE_URL
           value: "http://subscription-service:3006"
         - name: BILLING_SERVICE_URL
@@ -819,14 +1126,25 @@ spec:
           value: "http://security-monitor-service:3014"
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 3000
           initialDelaySeconds: 10
           periodSeconds: 10
           failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          failureThreshold: 3
         resources:
           limits:
             memory: 256Mi
+            cpu: 500m
+          requests:
+            memory: 128Mi
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service

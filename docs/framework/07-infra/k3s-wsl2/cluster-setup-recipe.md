@@ -182,7 +182,7 @@ for img in \
   saas/user-service:dev \
   saas/tenant-service:dev \
   saas/menu-service:dev \
-  saas/saas-catalog-service:dev \
+  saas/catalog-service:dev \
   saas/subscription-service:dev \
   saas/billing-service:dev \
   saas/crm-service:dev \
@@ -491,7 +491,7 @@ CMD ["node", "platform/apps/portal/server.js"]
 # 전체 서비스 헬스 확인
 for svc_port in \
   "auth-service:3001" "user-service:3002" "tenant-service:3003" \
-  "menu-service:3004" "saas-catalog-service:3005" "subscription-service:3006" \
+  "menu-service:3004" "catalog-service:3005" "subscription-service:3006" \
   "billing-service:3007" "crm-service:3008" "ai-service:3009" \
   "notification-service:3010" "file-service:3011" "audit-service:3012" \
   "compliance-service:3013" "security-monitor-service:3014"; do

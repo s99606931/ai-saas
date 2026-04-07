@@ -19,7 +19,7 @@ data:
   USER_SERVICE_URL: "http://user-service:3002"
   TENANT_SERVICE_URL: "http://tenant-service:3003"
   MENU_SERVICE_URL: "http://menu-service:3004"
-  CATALOG_SERVICE_URL: "http://saas-catalog-service:3005"
+  CATALOG_SERVICE_URL: "http://catalog-service:3005"
   SUBSCRIPTION_SERVICE_URL: "http://subscription-service:3006"
   BILLING_SERVICE_URL: "http://billing-service:3007"
   CRM_SERVICE_URL: "http://crm-service:3008"

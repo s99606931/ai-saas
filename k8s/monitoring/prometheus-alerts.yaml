@@ -1,0 +1,249 @@
+# 공공기관 SaaS 플랫폼 — Prometheus 알림 규칙
+# Design Ref: DESIGN-MTU-A7 N2SF 모니터링
+# CSAP: D-07 가용성, D-06 침해사고 관리
+# 적용: kubectl apply -f k8s/monitoring/prometheus-alerts.yaml
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: saas-platform-alerts
+  namespace: saas-platform
+  labels:
+    app: saas-platform
+    role: alert-rules
+spec:
+  groups:
+    # ──────────────────────────────────────────
+    # 1. 인프라 리소스 알림 (CSAP D-07)
+    # ──────────────────────────────────────────
+    - name: saas-infra-alerts
+      rules:
+        - alert: HighCpuUsage
+          expr: |
+            (
+              sum(rate(container_cpu_usage_seconds_total{namespace="saas-platform"}[5m])) by (pod)
+              /
+              sum(container_spec_cpu_quota{namespace="saas-platform"} / container_spec_cpu_period{namespace="saas-platform"}) by (pod)
+            ) * 100 > 80
+          for: 5m
+          labels:
+            severity: warning
+            csap: D-07
+          annotations:
+            summary: "CPU 사용률 80% 초과 ({{ $labels.pod }})"
+            description: "파드 {{ $labels.pod }}의 CPU 사용률이 {{ $value | printf \"%.1f\" }}%입니다. 5분 이상 지속됩니다."
+            runbook: "docs/framework/07-infra/runbook/high-cpu.md"
+
+        - alert: CriticalCpuUsage
+          expr: |
+            (
+              sum(rate(container_cpu_usage_seconds_total{namespace="saas-platform"}[5m])) by (pod)
+              /
+              sum(container_spec_cpu_quota{namespace="saas-platform"} / container_spec_cpu_period{namespace="saas-platform"}) by (pod)
+            ) * 100 > 95
+          for: 3m
+          labels:
+            severity: critical
+            csap: D-07
+          annotations:
+            summary: "CPU 사용률 위험 수준 ({{ $labels.pod }})"
+            description: "파드 {{ $labels.pod }}의 CPU 사용률이 {{ $value | printf \"%.1f\" }}%입니다. 즉시 확인 필요합니다."
+
+        - alert: HighMemoryUsage
+          expr: |
+            (
+              container_memory_working_set_bytes{namespace="saas-platform"}
+              /
+              container_spec_memory_limit_bytes{namespace="saas-platform"}
+            ) * 100 > 90
+          for: 5m
+          labels:
+            severity: warning
+            csap: D-07
+          annotations:
+            summary: "메모리 사용률 90% 초과 ({{ $labels.pod }})"
+            description: "파드 {{ $labels.pod }}의 메모리 사용률이 {{ $value | printf \"%.1f\" }}%입니다. OOM Kill 위험이 있습니다."
+
+        - alert: CriticalMemoryUsage
+          expr: |
+            (
+              container_memory_working_set_bytes{namespace="saas-platform"}
+              /
+              container_spec_memory_limit_bytes{namespace="saas-platform"}
+            ) * 100 > 95
+          for: 2m
+          labels:
+            severity: critical
+            csap: D-07
+          annotations:
+            summary: "메모리 사용률 위험 수준 ({{ $labels.pod }})"
+            description: "파드 {{ $labels.pod }}의 메모리 사용률이 {{ $value | printf \"%.1f\" }}%입니다. OOM Kill 임박."
+
+    # ──────────────────────────────────────────
+    # 2. HTTP 서비스 알림 (CSAP D-07, D-12)
+    # ──────────────────────────────────────────
+    - name: saas-http-alerts
+      rules:
+        - alert: High5xxRate
+          expr: |
+            (
+              sum(rate(http_requests_total{namespace="saas-platform", status=~"5.."}[5m])) by (service)
+              /
+              sum(rate(http_requests_total{namespace="saas-platform"}[5m])) by (service)
+            ) * 100 > 5
+          for: 3m
+          labels:
+            severity: critical
+            csap: D-07
+          annotations:
+            summary: "5xx 에러율 5% 초과 ({{ $labels.service }})"
+            description: "{{ $labels.service }}의 5xx 에러율이 {{ $value | printf \"%.1f\" }}%입니다. 서비스 장애 가능성이 있습니다."
+
+        - alert: HighResponseLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{namespace="saas-platform"}[5m])) by (le, service)
+            ) > 2
+          for: 5m
+          labels:
+            severity: warning
+            csap: D-07
+          annotations:
+            summary: "응답 시간 P95 > 2초 ({{ $labels.service }})"
+            description: "{{ $labels.service }}의 P95 응답 시간이 {{ $value | printf \"%.2f\" }}초입니다. 성능 저하 의심."
+
+        - alert: CriticalResponseLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{namespace="saas-platform"}[5m])) by (le, service)
+            ) > 5
+          for: 3m
+          labels:
+            severity: critical
+            csap: D-07
+          annotations:
+            summary: "응답 시간 P95 > 5초 ({{ $labels.service }})"
+            description: "{{ $labels.service }}의 P95 응답 시간이 {{ $value | printf \"%.2f\" }}초입니다. 즉시 확인 필요."
+
+    # ──────────────────────────────────────────
+    # 3. 파드 가용성 알림 (CSAP D-07)
+    # ──────────────────────────────────────────
+    - name: saas-availability-alerts
+      rules:
+        - alert: PodCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="saas-platform"}[15m]) * 60 * 15 > 3
+          for: 5m
+          labels:
+            severity: critical
+            csap: D-07
+          annotations:
+            summary: "파드 CrashLoop 감지 ({{ $labels.pod }})"
+            description: "파드 {{ $labels.pod }}가 15분 내 3회 이상 재시작되었습니다."
+
+        - alert: PodNotReady
+          expr: |
+            kube_pod_status_ready{namespace="saas-platform", condition="true"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            csap: D-07
+          annotations:
+            summary: "파드 NotReady 상태 ({{ $labels.pod }})"
+            description: "파드 {{ $labels.pod }}가 5분 이상 Ready 상태가 아닙니다."
+
+        - alert: DeploymentReplicasMismatch
+          expr: |
+            kube_deployment_spec_replicas{namespace="saas-platform"}
+              != kube_deployment_status_ready_replicas{namespace="saas-platform"}
+          for: 10m
+          labels:
+            severity: warning
+            csap: D-07
+          annotations:
+            summary: "Deployment 레플리카 불일치 ({{ $labels.deployment }})"
+            description: "{{ $labels.deployment }}의 원하는 레플리카 수와 실제 Ready 레플리카 수가 10분 이상 불일치합니다."
+
+    # ──────────────────────────────────────────
+    # 4. 보안 알림 (CSAP D-06, D-08)
+    # ──────────────────────────────────────────
+    - name: saas-security-alerts
+      rules:
+        - alert: HighLoginFailureRate
+          expr: |
+            sum(rate(auth_login_failures_total{namespace="saas-platform"}[5m])) > 10
+          for: 3m
+          labels:
+            severity: warning
+            csap: D-08
+          annotations:
+            summary: "로그인 실패율 급증"
+            description: "분당 10건 이상의 로그인 실패가 감지되었습니다. 브루트포스 공격 의심."
+
+        - alert: HighRateLimitHits
+          expr: |
+            sum(rate(http_requests_total{namespace="saas-platform", status="429"}[5m])) > 50
+          for: 5m
+          labels:
+            severity: warning
+            csap: D-08
+          annotations:
+            summary: "Rate Limit 초과 빈번 발생"
+            description: "분당 50건 이상의 429 응답이 발생하고 있습니다. DDoS 또는 오남용 의심."
+
+    # ──────────────────────────────────────────
+    # 5. 인프라 구성요소 알림 (PostgreSQL, Redis)
+    # ──────────────────────────────────────────
+    - name: saas-infra-component-alerts
+      rules:
+        - alert: PostgresDown
+          expr: |
+            pg_up{namespace="saas-platform"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            csap: D-07
+          annotations:
+            summary: "PostgreSQL 다운"
+            description: "PostgreSQL 인스턴스가 1분 이상 응답하지 않습니다. 즉시 확인 필요."
+
+        - alert: RedisDown
+          expr: |
+            redis_up{namespace="saas-platform"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            csap: D-07
+          annotations:
+            summary: "Redis 다운"
+            description: "Redis 인스턴스가 1분 이상 응답하지 않습니다. 세션/캐시 서비스 중단."
+
+        - alert: PostgresConnectionPoolExhausted
+          expr: |
+            (
+              pg_stat_activity_count{namespace="saas-platform"}
+              /
+              pg_settings_max_connections{namespace="saas-platform"}
+            ) * 100 > 85
+          for: 5m
+          labels:
+            severity: warning
+            csap: D-07
+          annotations:
+            summary: "PostgreSQL 연결 풀 85% 초과"
+            description: "PostgreSQL 연결 사용률이 {{ $value | printf \"%.1f\" }}%입니다. 최대 연결 수 도달 위험."
+
+        - alert: DiskUsageHigh
+          expr: |
+            (
+              node_filesystem_avail_bytes{namespace="saas-platform", mountpoint="/"}
+              /
+              node_filesystem_size_bytes{namespace="saas-platform", mountpoint="/"}
+            ) * 100 < 15
+          for: 10m
+          labels:
+            severity: warning
+            csap: D-07
+          annotations:
+            summary: "디스크 여유 공간 15% 미만"
+            description: "노드의 디스크 여유 공간이 {{ $value | printf \"%.1f\" }}%입니다."

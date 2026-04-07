@@ -14,7 +14,7 @@ declare -a SERVICES=(
   "user-service:3002"
   "tenant-service:3003"
   "menu-service:3004"
-  "saas-catalog-service:3005"
+  "catalog-service:3005"
   "subscription-service:3006"
   "billing-service:3007"
   "crm-service:3008"

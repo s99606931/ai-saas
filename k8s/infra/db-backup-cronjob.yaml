@@ -1,0 +1,119 @@
+# 공공기관 SaaS 플랫폼 — PostgreSQL 자동 백업 CronJob
+# Design Ref: DESIGN-MTU-I1 k3s 인프라
+# CSAP: D-07 재해복구 — 일일 자동 백업
+# 적용: kubectl apply -f k8s/infra/db-backup-cronjob.yaml
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-backup
+  namespace: saas-platform
+  labels:
+    app: db-backup
+    csap: D-07
+spec:
+  # 매일 새벽 2시 (KST) 실행 — UTC 기준 17:00
+  schedule: "0 17 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: db-backup
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            fsGroup: 1001
+          containers:
+          - name: pg-backup
+            image: postgres:16-alpine
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
+              BACKUP_FILE="/backups/saas_backup_${TIMESTAMP}.sql.gz"
+
+              echo "[$(date)] 백업 시작: ${BACKUP_FILE}"
+
+              # pg_dump + gzip 압축
+              pg_dump \
+                -h "$PGHOST" \
+                -p "$PGPORT" \
+                -U "$PGUSER" \
+                -d "$PGDATABASE" \
+                --format=custom \
+                --compress=9 \
+                --no-owner \
+                --no-privileges \
+                | gzip > "$BACKUP_FILE"
+
+              # SHA-256 무결성 해시
+              sha256sum "$BACKUP_FILE" > "${BACKUP_FILE}.sha256"
+
+              # 90일 초과 백업 삭제
+              find /backups -name "saas_backup_*.sql.gz" -mtime +90 -exec rm -f {} \;
+              find /backups -name "saas_backup_*.sql.gz.sha256" -mtime +90 -exec rm -f {} \;
+
+              BACKUP_SIZE=$(du -sh "$BACKUP_FILE" | cut -f1)
+              echo "[$(date)] 백업 완료: ${BACKUP_FILE} (${BACKUP_SIZE})"
+            env:
+            - name: PGHOST
+              value: postgres
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              value: saas_db
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: saas-secrets
+                  key: POSTGRES_USER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: saas-secrets
+                  key: POSTGRES_PASSWORD
+            securityContext:
+              readOnlyRootFilesystem: false
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups
+            resources:
+              limits:
+                memory: 512Mi
+                cpu: 500m
+              requests:
+                memory: 128Mi
+                cpu: 100m
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: db-backup-pvc
+---
+# 백업 저장용 PVC (CSAP D-07: 별도 볼륨에 백업 보관)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-backup-pvc
+  namespace: saas-platform
+  labels:
+    app: db-backup
+    csap: D-07
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

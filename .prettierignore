@@ -1,0 +1,10 @@
+node_modules
+dist
+.next
+coverage
+test-results
+playwright-report
+pnpm-lock.yaml
+docs-portal/build
+*.min.js
+*.min.css

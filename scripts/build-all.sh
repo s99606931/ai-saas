@@ -23,7 +23,7 @@ SERVICES=(
   "user-service"
   "tenant-service"
   "menu-service"
-  "saas-catalog-service"
+  "catalog-service"
   "subscription-service"
   "billing-service"
   "crm-service"
@@ -32,6 +32,7 @@ SERVICES=(
   "file-service"
   "audit-service"
   "compliance-service"
+  "security-service"
   "security-monitor-service"
 )
 

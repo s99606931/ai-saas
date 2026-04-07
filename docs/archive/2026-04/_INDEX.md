@@ -260,6 +260,8 @@
 
 ---
 
+> CSAP 보안 테스트 추가 (2026-04-07): 11개 서비스 CSAP D-06/D-08/D-09/D-12/N2SF N-05 보안 테스트 114개 추가, 전체 478개 테스트 통과 | PM Agent
+> pdca-status 동기화 (2026-04-07): 46/46 features archived 상태 동기화, 코드-설계 Gap Analysis 완료 (전서비스 100% 일치) | PM Agent
 > IDX-GAP-1/IDX-GAP-2 수정 (2026-04-05): MTU-C5, MTU-C7 요약 섹션 추가 | Implementer Agent
 > MTU-U1 추가 (2026-04-05): 공공 SaaS UI/UX 디자인 시스템 PDCA 완료 | PM Agent
 > 아카이브 정리 (2026-04-05): MTU-U1 아카이브 이동, 중복 파일 삭제, MTU-C6 원본 보존, docs/*/mtus/ 완전 정리 | PM Team Lead

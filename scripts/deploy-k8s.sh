@@ -79,6 +79,12 @@ deploy_all() {
   log_info "3단계: ConfigMap 적용"
   kubectl apply -f "${K8S_DIR}/config/configmap.yaml"
 
+  # 3-1. NetworkPolicy (CSAP D-10: 네트워크 격리)
+  if [ -f "${K8S_DIR}/config/network-policy.yaml" ]; then
+    log_info "3-1단계: NetworkPolicy 적용 (CSAP D-10)"
+    kubectl apply -f "${K8S_DIR}/config/network-policy.yaml"
+  fi
+
   # 4. 인프라
   log_info "4단계: 인프라 배포 (PostgreSQL, Redis, MinIO)"
   kubectl apply -f "${K8S_DIR}/infra/"
