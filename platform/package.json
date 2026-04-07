@@ -24,7 +24,7 @@
     "docker:down": "docker compose down",
     "docker:reset": "docker compose down -v && docker compose up -d",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "audit:dead-code": "echo 'TODO: ts-prune + depcheck 설정 후 활성화'"
+    "audit:dead-code": "node scripts/audit-dead-code.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
