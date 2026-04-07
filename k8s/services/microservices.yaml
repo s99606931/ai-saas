@@ -595,7 +595,7 @@ metadata:
   name: audit-service
   namespace: saas-platform
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: audit-service
@@ -640,6 +640,18 @@ spec:
   ports:
   - port: 3012
     targetPort: 3012
+---
+# audit-service PodDisruptionBudget — 3개 중 최소 2개 유지 (CSAP D-07)
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: audit-service-pdb
+  namespace: saas-platform
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: audit-service
 ---
 # compliance-service (3013)
 apiVersion: apps/v1
