@@ -57,7 +57,7 @@ export async function GET(): Promise<NextResponse<DashboardStats | { error: stri
     })
   } catch (error) {
     // CSAP D-12: 에러 메시지에 내부 정보 미노출
-    console.error('[API] /api/dashboard/stats 오류:', error)
+    process.stderr.write(`[API] /api/dashboard/stats 오류: ${String(error)}\n`)
     return NextResponse.json(
       { error: '통계 조회 중 오류가 발생했습니다.' },
       { status: 500 }

@@ -41,16 +41,16 @@
 | **MTU-E3** 프레임워크 버전 관리/업그레이드 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-E3-framework-upgrade/` |
 | **MTU-P00** 공통 기반 설정 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P00-common-foundation/` |
 | **MTU-P01** 인증 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P01-auth-service/` |
-| **MTU-P02** 사용자 관리 서비스 | 2026-04-05 | 88.9% | `docs/archive/2026-04/MTU-P02-user-service/` |
+| **MTU-P02** 사용자 관리 서비스 | 2026-04-07 | 90% | `docs/archive/2026-04/MTU-P02-user-service/` |
 | **MTU-P03** 테넌트 관리 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P03-tenant-service/` |
-| **MTU-P04** API 게이트웨이 | 2026-04-05 | 81.8% | `docs/archive/2026-04/MTU-P04-api-gateway/` |
+| **MTU-P04** API 게이트웨이 | 2026-04-07 | 100% | `docs/archive/2026-04/MTU-P04-api-gateway/` |
 | **MTU-P05** 메뉴 관리 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P05-menu-service/` |
 | **MTU-P06** SaaS 카탈로그 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P06-saas-catalog/` |
 | **MTU-P07** 구독 관리 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P07-subscription-service/` |
 | **MTU-P08** 빌링 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P08-billing-service/` |
 | **MTU-P09** CRM 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P09-crm-service/` |
 | **MTU-P10** AI 서비스 관리 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P10-ai-service/` |
-| **MTU-P11** 알림 서비스 | 2026-04-05 | 80% | `docs/archive/2026-04/MTU-P11-notification-service/` |
+| **MTU-P11** 알림 서비스 | 2026-04-07 | 100% | `docs/archive/2026-04/MTU-P11-notification-service/` |
 | **MTU-P12** 파일 관리 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P12-file-service/` |
 | **MTU-P13** 감사 로그 서비스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P13-audit-service/` |
 | **MTU-P14** 준수 현황 대시보드 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P14-compliance-dashboard/` |

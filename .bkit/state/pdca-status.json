@@ -1,6 +1,6 @@
 {
   "version": "3.0",
-  "lastUpdated": "2026-04-06T14:21:16.300Z",
+  "lastUpdated": "2026-04-07T07:04:00.931Z",
   "activeFeatures": [
     "public-saas-framework",
     "scripts",
@@ -42,7 +42,8 @@
     "schemas",
     "handlers",
     "public-data-integration",
-    "tmp"
+    "tmp",
+    "saas-catalog-service"
   ],
   "primaryFeature": "public-saas-framework",
   "features": {
@@ -117,9 +118,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T13:34:09.212Z",
-        "lastUpdated": "2026-04-06T11:36:41.704Z"
+        "lastUpdated": "2026-04-07T06:55:04.639Z"
       },
-      "lastFile": "/data/ai-saas/platform/packages/audit-sdk/src/audit-logger.ts"
+      "lastFile": "/data/ai-saas/platform/packages/audit-sdk/tests/integrity.test.ts"
     },
     "ui": {
       "phase": "do",
@@ -163,16 +164,16 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:38:58.114Z",
-        "lastUpdated": "2026-04-06T14:20:57.528Z",
+        "lastUpdated": "2026-04-07T06:58:25.631Z",
         "archivedAt": "2026-04-05T15:15:00.000Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/auth-service/src/middleware/rbac.middleware.ts"
+      "lastFile": "/data/ai-saas/platform/services/auth-service/tests/unit/mfa.test.ts"
     },
     "user-service": {
-      "phase": "do",
-      "phaseNumber": 3,
-      "matchRate": "88.9%",
-      "iterationCount": 1,
+      "phase": "archived",
+      "phaseNumber": 5,
+      "matchRate": "90%",
+      "iterationCount": 2,
       "requirements": [
         "FR-P02.1~FR-P02.10"
       ],
@@ -184,10 +185,20 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:41:58.767Z",
-        "lastUpdated": "2026-04-06T14:20:37.764Z",
-        "archivedAt": "2026-04-05T15:15:00.000Z"
+        "lastUpdated": "2026-04-07T09:00:00.000Z",
+        "archivedAt": "2026-04-07T09:00:00.000Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/user-service/src/handlers/password.handler.ts"
+      "lastFile": "/data/ai-saas/platform/services/user-service/src/handlers/password-reset.handler.ts",
+      "qualityEnhancement": {
+        "previousMatchRate": "88.9%",
+        "enhancedMatchRate": "90%",
+        "enhancedAt": "2026-04-07T09:00:00.000Z",
+        "improvements": [
+          "FR-P02.4 소프트삭제 완성",
+          "FR-P02.7 비밀번호 재설정 구현",
+          "FR-P02.10 감사 로그 강화"
+        ]
+      }
     },
     "tenant-service": {
       "phase": "do",
@@ -205,16 +216,16 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:43:00.403Z",
-        "lastUpdated": "2026-04-06T14:21:07.129Z",
+        "lastUpdated": "2026-04-06T15:01:17.794Z",
         "archivedAt": "2026-04-05T15:15:00.000Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/tenant-service/src/lib/isolation.ts"
+      "lastFile": "/data/ai-saas/platform/services/tenant-service/src/lib/audit.ts"
     },
     "api-gateway": {
-      "phase": "do",
-      "phaseNumber": 3,
-      "matchRate": "81.8%",
-      "iterationCount": 1,
+      "phase": "archived",
+      "phaseNumber": 5,
+      "matchRate": "100%",
+      "iterationCount": 2,
       "requirements": [
         "FR-P04.1~FR-P04.11"
       ],
@@ -226,10 +237,22 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:43:52.165Z",
-        "lastUpdated": "2026-04-06T14:21:16.299Z",
-        "archivedAt": "2026-04-05T15:15:00.000Z"
+        "lastUpdated": "2026-04-07T09:00:00.000Z",
+        "archivedAt": "2026-04-07T09:00:00.000Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/api-gateway/src/middleware/data-grade.middleware.ts"
+      "lastFile": "/data/ai-saas/platform/services/api-gateway/src/plugins/audit-logger.ts",
+      "qualityEnhancement": {
+        "previousMatchRate": "81.8%",
+        "enhancedMatchRate": "100%",
+        "enhancedAt": "2026-04-07T09:00:00.000Z",
+        "improvements": [
+          "FR-P04.2 authPreHandler 구현",
+          "FR-P04.3 RBAC 검사 구현",
+          "FR-P04.7 audit-logger 플러그인",
+          "FR-P04.10 OpenAPI/Swagger",
+          "FR-P04.11 동적 프록시"
+        ]
+      }
     },
     "ai-service": {
       "phase": "do",
@@ -240,9 +263,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T13:47:08.863Z",
-        "lastUpdated": "2026-04-06T12:15:16.511Z"
+        "lastUpdated": "2026-04-07T07:00:51.573Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/ai-service/src/handlers/ai.handler.ts"
+      "lastFile": "/data/ai-saas/platform/services/ai-service/src/lib/pii-masking.ts"
     },
     "audit-service": {
       "phase": "do",
@@ -253,9 +276,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T13:47:23.809Z",
-        "lastUpdated": "2026-04-06T12:15:40.153Z"
+        "lastUpdated": "2026-04-07T06:59:24.780Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/audit-service/src/lib/append-only.ts"
+      "lastFile": "/data/ai-saas/platform/services/audit-service/tests/unit/append-only.test.ts"
     },
     "menu-service": {
       "phase": "do",
@@ -266,9 +289,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T14:36:21.565Z",
-        "lastUpdated": "2026-04-05T14:36:50.671Z"
+        "lastUpdated": "2026-04-06T16:04:07.550Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/menu-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/menu-service/src/handlers/menu.handler.ts"
     },
     "catalog-service": {
       "phase": "do",
@@ -279,9 +302,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T14:36:59.353Z",
-        "lastUpdated": "2026-04-05T14:37:23.701Z"
+        "lastUpdated": "2026-04-06T15:01:55.464Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/catalog-service/src/routes.ts"
+      "lastFile": "/data/ai-saas/platform/services/catalog-service/src/lib/audit.ts"
     },
     "subscription-service": {
       "phase": "do",
@@ -292,9 +315,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T14:37:30.366Z",
-        "lastUpdated": "2026-04-05T14:38:08.088Z"
+        "lastUpdated": "2026-04-06T15:01:10.351Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/subscription-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/subscription-service/src/lib/audit.ts"
     },
     "billing-service": {
       "phase": "do",
@@ -305,9 +328,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T14:38:14.606Z",
-        "lastUpdated": "2026-04-05T14:38:50.340Z"
+        "lastUpdated": "2026-04-06T15:01:03.592Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/billing-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/billing-service/src/lib/audit.ts"
     },
     "crm-service": {
       "phase": "do",
@@ -318,22 +341,40 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T14:39:00.296Z",
-        "lastUpdated": "2026-04-05T14:39:33.499Z"
+        "lastUpdated": "2026-04-06T15:17:35.561Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/crm-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/crm-service/src/handlers/crm.handler.ts"
     },
     "notification-service": {
-      "phase": "do",
-      "phaseNumber": 3,
-      "matchRate": null,
-      "iterationCount": 0,
-      "requirements": [],
-      "documents": {},
+      "phase": "archived",
+      "phaseNumber": 5,
+      "matchRate": "100%",
+      "iterationCount": 2,
+      "requirements": [
+        "FR-P11.1~FR-P11.5"
+      ],
+      "documents": {
+        "plan": "docs/archive/2026-04/MTU-P11-notification-service/MTU-P11-notification-service.plan.md",
+        "design": "docs/archive/2026-04/MTU-P11-notification-service/MTU-P11-notification-service.design.md",
+        "analysis": "docs/archive/2026-04/MTU-P11-notification-service/MTU-P11-notification-service.analysis.md",
+        "report": "docs/archive/2026-04/MTU-P11-notification-service/MTU-P11-notification-service.report.md"
+      },
       "timestamps": {
         "started": "2026-04-05T14:40:24.293Z",
-        "lastUpdated": "2026-04-06T14:11:49.639Z"
+        "lastUpdated": "2026-04-07T09:00:00.000Z",
+        "archivedAt": "2026-04-07T09:00:00.000Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/notification-service/src/lib/event-bus.ts"
+      "lastFile": "/data/ai-saas/platform/services/notification-service/src/lib/event-bus.ts",
+      "qualityEnhancement": {
+        "previousMatchRate": "80%",
+        "enhancedMatchRate": "100%",
+        "enhancedAt": "2026-04-07T09:00:00.000Z",
+        "improvements": [
+          "FR-P11.1 템플릿 CRUD 완전 구현",
+          "FR-P11.3 인앱 알림 RBAC",
+          "FR-P11.4 이벤트 버스 구현"
+        ]
+      }
     },
     "file-service": {
       "phase": "do",
@@ -344,9 +385,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T14:40:57.046Z",
-        "lastUpdated": "2026-04-05T14:41:36.991Z"
+        "lastUpdated": "2026-04-06T15:01:48.068Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/file-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/file-service/src/lib/audit.ts"
     },
     "compliance-service": {
       "phase": "do",
@@ -357,9 +398,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T14:51:28.065Z",
-        "lastUpdated": "2026-04-06T11:43:22.645Z"
+        "lastUpdated": "2026-04-07T07:03:20.951Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/compliance-service/src/lib/audit.ts"
+      "lastFile": "/data/ai-saas/platform/services/compliance-service/src/handlers/compliance.handler.ts"
     },
     "security-service": {
       "phase": "do",
@@ -370,9 +411,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T14:51:48.809Z",
-        "lastUpdated": "2026-04-05T14:52:20.161Z"
+        "lastUpdated": "2026-04-06T15:58:45.174Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/security-service/src/routes.ts"
+      "lastFile": "/data/ai-saas/platform/services/security-service/src/handlers/security.handler.ts"
     },
     "portal": {
       "phase": "do",
@@ -383,9 +424,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T14:53:26.213Z",
-        "lastUpdated": "2026-04-06T14:19:51.936Z"
+        "lastUpdated": "2026-04-07T07:04:00.930Z"
       },
-      "lastFile": "/data/ai-saas/platform/apps/portal/src/app/api/users/route.ts"
+      "lastFile": "/data/ai-saas/platform/apps/portal/src/app/api/compliance/csap/route.ts"
     },
     "security-monitor-service": {
       "phase": "do",
@@ -396,9 +437,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T14:54:00.942Z",
-        "lastUpdated": "2026-04-06T11:43:29.635Z"
+        "lastUpdated": "2026-04-06T15:59:15.735Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/security-monitor-service/src/lib/audit.ts"
+      "lastFile": "/data/ai-saas/platform/services/security-monitor-service/src/handlers/security.handler.ts"
     },
     "business-sdk": {
       "phase": "do",
@@ -610,9 +651,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-06T11:44:28.803Z",
-        "lastUpdated": "2026-04-06T11:45:44.648Z"
+        "lastUpdated": "2026-04-06T16:05:35.410Z"
       },
-      "lastFile": "/data/ai-saas/platform/plugins/electronic-approval/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/plugins/electronic-approval/src/env.d.ts"
     },
     "schemas": {
       "phase": "do",
@@ -636,7 +677,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-06T11:45:39.400Z",
-        "lastUpdated": "2026-04-06T11:47:21.673Z"
+        "lastUpdated": "2026-04-06T15:09:45.138Z"
       },
       "lastFile": "/data/ai-saas/platform/plugins/public-data-integration/src/handlers/dataset.handler.ts"
     },
@@ -649,9 +690,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-06T11:46:04.029Z",
-        "lastUpdated": "2026-04-06T11:47:29.979Z"
+        "lastUpdated": "2026-04-06T16:05:37.133Z"
       },
-      "lastFile": "/data/ai-saas/platform/plugins/public-data-integration/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/plugins/public-data-integration/src/env.d.ts"
     },
     "tmp": {
       "phase": "do",
@@ -665,6 +706,19 @@
         "lastUpdated": "2026-04-06T13:49:12.550Z"
       },
       "lastFile": "/tmp/test-services.sh"
+    },
+    "saas-catalog-service": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-06T14:34:45.140Z",
+        "lastUpdated": "2026-04-06T14:34:45.140Z"
+      },
+      "lastFile": "/data/ai-saas/platform/services/saas-catalog-service/src/index.ts"
     }
   },
   "pipeline": {
@@ -675,7 +729,7 @@
   "session": {
     "startedAt": "2026-04-05T05:33:14.156Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-04-06T14:21:16.300Z"
+    "lastActivity": "2026-04-07T07:04:00.931Z"
   },
   "history": [
     {
@@ -2775,6 +2829,1434 @@
     {
       "timestamp": "2026-04-06T14:21:16.300Z",
       "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:23:13.321Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:23:15.859Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:23:17.213Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:23:19.310Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:23:21.357Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:23:41.751Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:23:44.667Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:23:49.338Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:23:53.789Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:23:55.940Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:23:58.045Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:00.828Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:10.245Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:12.819Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:15.695Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:16.279Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:17.345Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:25.011Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:27.831Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:29.728Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:31.859Z",
+      "feature": "billing-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:33.653Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:35.517Z",
+      "feature": "file-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:37.493Z",
+      "feature": "catalog-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:39.450Z",
+      "feature": "menu-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:24:41.200Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:25:21.808Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:25:29.981Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:25:37.715Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:25:48.000Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:28:16.842Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:29:03.713Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:29:09.977Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:29:42.401Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:29:56.007Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:29:58.372Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:30:00.819Z",
+      "feature": "billing-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:30:15.610Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:30:18.182Z",
+      "feature": "catalog-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:30:20.424Z",
+      "feature": "menu-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:30:22.912Z",
+      "feature": "file-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:30:23.206Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:30:25.334Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:33:15.040Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:33:23.396Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:33:31.210Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:33:38.540Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:33:48.360Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:34:08.856Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:34:15.046Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:34:23.979Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:34:45.141Z",
+      "feature": "saas-catalog-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:35:24.527Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:35:28.404Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:35:32.983Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:35:37.967Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:35:42.394Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:35:47.688Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:35:54.086Z",
+      "feature": "billing-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:35:57.749Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:36:02.802Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:36:10.118Z",
+      "feature": "file-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:36:17.614Z",
+      "feature": "menu-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:36:24.575Z",
+      "feature": "catalog-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:36:28.013Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:36:39.294Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:36:44.301Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:36:49.019Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:36:54.611Z",
+      "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:37:01.638Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:37:26.271Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:37:31.126Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:37:35.428Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:37:41.292Z",
+      "feature": "billing-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:37:46.002Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:37:51.155Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:37:53.325Z",
+      "feature": "file-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:37:57.859Z",
+      "feature": "menu-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:38:02.004Z",
+      "feature": "catalog-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:38:06.256Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:38:13.164Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:38:18.611Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:38:27.988Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:38:46.935Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:38:54.109Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:38:57.121Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:39:01.039Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:39:07.456Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:39:14.434Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:39:25.783Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:39:50.173Z",
+      "feature": "electronic-approval",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:39:54.772Z",
+      "feature": "public-data-integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:40:00.619Z",
+      "feature": "public-data-integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:40:12.832Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:42:26.712Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:42:32.485Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:42:39.122Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:42:50.962Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:42:57.564Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:51:04.419Z",
+      "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:51:19.523Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:51:25.063Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:51:28.719Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:51:32.242Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:51:40.349Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:51:57.998Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:52:09.280Z",
+      "feature": "file-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:52:17.982Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:52:24.216Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:52:35.810Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:52:46.097Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:52:52.067Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:52:55.521Z",
+      "feature": "file-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:53:05.384Z",
+      "feature": "file-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:53:15.128Z",
+      "feature": "file-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:53:18.766Z",
+      "feature": "file-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:53:25.533Z",
+      "feature": "file-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:53:38.178Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:53:42.913Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:53:48.254Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:53:52.614Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:53:55.809Z",
+      "feature": "billing-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:54:06.123Z",
+      "feature": "billing-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:54:12.967Z",
+      "feature": "menu-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:54:24.414Z",
+      "feature": "catalog-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:54:26.368Z",
+      "feature": "catalog-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:54:33.295Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:54:39.273Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:54:44.368Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:55:22.026Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:55:24.744Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:56:03.697Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:56:09.537Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:56:21.009Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:56:26.087Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:56:35.692Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:56:41.134Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:56:47.728Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:56:56.993Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:57:02.790Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:57:07.789Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:57:11.888Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:57:16.872Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:57:22.496Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:57:26.672Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:57:27.948Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:57:41.363Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:57:56.171Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:57:57.882Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:58:02.458Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:58:06.900Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:58:13.717Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:58:17.960Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:58:22.055Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:58:48.001Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:58:55.132Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:58:56.494Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T14:59:00.734Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:00:48.619Z",
+      "feature": "audit-sdk",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:00:54.313Z",
+      "feature": "audit-sdk",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:01:03.594Z",
+      "feature": "billing-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:01:10.352Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:01:17.795Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:01:30.438Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:01:43.681Z",
+      "feature": "menu-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:01:48.069Z",
+      "feature": "file-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:01:55.465Z",
+      "feature": "catalog-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:01:57.992Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:02:03.957Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:02:18.131Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:02:24.810Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:02:28.178Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:02:42.723Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:06:14.625Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:06:29.667Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:06:42.019Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:06:50.514Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:06:56.868Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:07:01.420Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:07:07.801Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:07:27.287Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:07:28.763Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:07:52.269Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:07:59.346Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:08:07.095Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:09:06.627Z",
+      "feature": "handlers",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:09:45.139Z",
+      "feature": "handlers",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:09:54.775Z",
+      "feature": "public-data-integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:09:56.928Z",
+      "feature": "public-data-integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:10:02.348Z",
+      "feature": "public-data-integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:10:15.831Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:16:12.555Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:16:19.621Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:16:28.412Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:16:34.580Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:16:41.615Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:16:46.637Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:16:55.844Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:17:05.600Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:17:13.154Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:17:16.485Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:17:22.713Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:17:35.562Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:17:42.157Z",
+      "feature": "menu-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:57:45.890Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:57:48.149Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:57:52.722Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:57:57.060Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:58:02.053Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:58:13.919Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:58:18.578Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:58:23.436Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:58:28.221Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:58:45.175Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:59:05.188Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:59:11.081Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:59:15.737Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:59:25.242Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T15:59:33.493Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T16:00:09.022Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T16:02:40.167Z",
+      "feature": "audit-sdk",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T16:04:07.551Z",
+      "feature": "menu-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T16:05:35.412Z",
+      "feature": "electronic-approval",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-06T16:05:37.134Z",
+      "feature": "public-data-integration",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T06:54:47.958Z",
+      "feature": "audit-sdk",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T06:55:04.640Z",
+      "feature": "audit-sdk",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T06:57:40.181Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T06:58:01.594Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T06:58:14.474Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T06:58:25.631Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T06:59:07.786Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T06:59:24.781Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T07:00:08.911Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T07:00:26.860Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T07:00:51.574Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T07:03:11.516Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T07:03:20.952Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T07:04:00.931Z",
+      "feature": "portal",
       "phase": "do",
       "action": "updated"
     }
