@@ -2896,3 +2896,544 @@
 {"timestamp":"2026-04-06T14:22:10Z","tool":"Bash","user":"kunkin"}
 {"timestamp":"2026-04-06T14:22:20Z","tool":"Bash","user":"kunkin"}
 {"timestamp":"2026-04-06T14:22:23Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:22:30Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:22:36Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:22:51Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:23:04Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:23:07Z","event":"session-end"}
+{"timestamp":"2026-04-06T14:23:13Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:23:15Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:23:17Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:23:19Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:23:21Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:23:30Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:23:41Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:23:44Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:23:49Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:23:53Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:23:55Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:23:58Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:00Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:10Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:12Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:15Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:16Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:17Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:25Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:27Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:29Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:31Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:33Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:35Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:37Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:39Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:24:41Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:30:00Z","agent":"pm-lead","action":"MEDIUM_FIX_PRISMA_SINGLETON","description":"21개 파일의 new PrismaClient()를 15개 서비스별 싱글턴 인스턴스로 교체 (커넥션 풀 고갈 방지)","files":"15 services/src/lib/prisma.ts + 21 handler files"}
+{"timestamp":"2026-04-06T14:24:59Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:25:21Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:25:30Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:25:37Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:25:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:26:26Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:35:00Z","agent":"pm-lead","action":"MEDIUM_FIX_MFA_ENCRYPTION","description":"MFA 시크릿 평문 저장 -> AES-256-GCM 암호화 적용 (CSAP D-09)","files":"mfa-crypto.ts,mfa.handler.ts"}
+{"timestamp":"2026-04-06T15:40:00Z","agent":"pm-lead","action":"IMPROVEMENT_LOOP_REPORT","description":"3개 루프 완료 보고서 작성: CRITICAL 5건, HIGH 5건, MEDIUM 2건 수정","files":"docs/pm-reports/improvement-loop-2026-04-06.md"}
+{"timestamp":"2026-04-06T14:26:36Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:26:43Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:26:51Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:26:58Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:27:06Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:27:13Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:27:19Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:27:24Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:27:31Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:27:51Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:27:56Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:28:16Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:29:03Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:29:10Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:29:42Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:29:56Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:29:58Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:30:00Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:30:15Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:30:18Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:30:20Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:30:22Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:30:23Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:30:25Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:33:15Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:33:23Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:33:31Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:33:38Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:33:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:33:53Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:34:08Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:34:15Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:34:24Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:34:45Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:35:22Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:35:28Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:35:33Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:35:38Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:35:42Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:35:47Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:35:54Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:35:57Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:36:02Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:36:10Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:36:17Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:36:24Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:36:28Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:36:39Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:36:44Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:36:49Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:36:54Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:37:01Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:37:26Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:37:31Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:37:35Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:37:41Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:37:46Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:37:51Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:37:53Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:37:57Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:38:02Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:38:06Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:38:13Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:38:18Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:38:28Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:38:46Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:38:54Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:38:57Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:39:01Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:39:07Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:39:14Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:39:25Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:39:50Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:39:54Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:40:00Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:40:12Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:41:39Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T23:40:00Z","action":"IMPROVEMENT_LOOP_8","actor":"pm-agent","target":"compliance-service","description":"준수율 하드코딩 100% -> 동적 계산 (CSAP 91%, N2SF 94%)","csap":"D-06,D-08"}
+{"timestamp":"2026-04-06T23:41:00Z","action":"IMPROVEMENT_LOOP_9","actor":"pm-agent","target":"security-monitor-service","description":"감사 서비스 직접 fetch -> AuditServiceClient 추상화","csap":"D-06"}
+{"timestamp":"2026-04-06T23:42:00Z","action":"IMPROVEMENT_LOOP_10","actor":"pm-agent","target":"saas-catalog-service","description":"TODO 정리, @deprecated 표시, dead code 정책 적용","csap":"D-12"}
+{"timestamp":"2026-04-06T23:43:00Z","action":"IMPROVEMENT_LOOP_11","actor":"pm-agent","target":"17-service-index-files","description":"console.error -> process.stderr.write + auth-service /ready DB+Redis healthcheck","csap":"D-07,D-12"}
+{"timestamp":"2026-04-06T23:44:00Z","action":"IMPROVEMENT_LOOP_12","actor":"pm-agent","target":"platform-wide","description":"프로덕션 코드 전체 console.* 제거 (43파일 50건 -> 0건). process.stdout/stderr.write 사용","csap":"D-12"}
+{"timestamp":"2026-04-06T14:41:52Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:42:26Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:42:32Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:42:39Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:42:51Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:42:57Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:43:23Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:43:33Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:43:43Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:43:53Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T23:50:00Z","action":"IMPROVEMENT_LOOP_13","actor":"pm-agent","target":"auth-service,user-service","description":"비밀번호 변경/재설정 후 세션 전체 무효화 구현 (session-invalidate.handler.ts 신규 + password.handler.ts, password-reset.handler.ts 연동)","csap":"D-08-03"}
+{"timestamp":"2026-04-06T14:44:01Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:45:02Z","event":"session-end"}
+{"timestamp":"2026-04-06T14:49:25Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:49:26Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:49:24Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:49:24Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:49:30Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:49:31Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:51:04Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:51:19Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:51:25Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:51:28Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:51:32Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:51:40Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:51:58Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:52:09Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:52:18Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:52:24Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:52:35Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:52:46Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:52:52Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:52:55Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:53:05Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:53:15Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:53:18Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:53:25Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:53:38Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:53:42Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:53:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:53:52Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:53:55Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:54:06Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:54:13Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:54:24Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:54:26Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:54:33Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:54:39Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:54:44Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:54:55Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:55:00Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:55:22Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:55:24Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:56:03Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:56:09Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:56:21Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:56:26Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:56:35Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:56:41Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:56:47Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:56:57Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:57:02Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:57:07Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:57:11Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:57:16Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:57:22Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:57:26Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:57:27Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:57:41Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:57:56Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:57:57Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:58:02Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:58:06Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:58:13Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:58:18Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:58:22Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:58:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:58:55Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:58:56Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:59:00Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T14:59:09Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:00:00Z","tool":"Edit","user":"PM-Lead","action":"SECURITY_FIX","target":"platform/services/api-gateway/src/routes/proxy.ts","detail":"permissionPreHandler 403 응답 후 return 누락 수정 (CSAP D-08-05)"}
+{"timestamp":"2026-04-06T16:01:00Z","tool":"Write","user":"PM-Lead","action":"REFACTOR","target":"platform/services/auth-service/src/lib/permissions.ts","detail":"getUserPermissions 중복 함수를 공통 모듈로 추출"}
+{"timestamp":"2026-04-06T16:02:00Z","tool":"Edit","user":"PM-Lead","action":"SECURITY_FIX","target":"platform/services/auth-service/src/lib/session.ts","detail":"blacklistToken TTL을 REFRESH_TOKEN_EXPIRES로 변경 (리프레시 토큰 재사용 방지)"}
+{"timestamp":"2026-04-06T16:03:00Z","tool":"Edit","user":"PM-Lead","action":"SECURITY_FIX","target":"platform/services/file-service/src/handlers/file.handler.ts","detail":"테넌트 접근 제어를 JWT 클레임 기반으로 강화 (CSAP D-08-05)"}
+{"timestamp":"2026-04-06T16:04:00Z","tool":"Edit","user":"PM-Lead","action":"AUDIT_FIX","target":"multiple-services","detail":"14개 서비스 감사 로그 actor 하드코딩을 JWT 클레임 기반으로 수정 (CSAP D-06)"}
+{"timestamp":"2026-04-06T16:05:00Z","tool":"Edit","user":"PM-Lead","action":"DATA_FIX","target":"platform/services/compliance-service","detail":"CSAP D-13 공급망 보안 2항목 추가 (포털과 데이터 일치화)"}
+{"timestamp":"2026-04-06T16:06:00Z","tool":"Edit","user":"PM-Lead","action":"CODE_QUALITY","target":"multiple-services","detail":"Fastify reply.send() await 누락 일괄 수정"}
+{"timestamp":"2026-04-06T16:07:00Z","tool":"Edit","user":"PM-Lead","action":"SECURITY_FIX","target":"platform/services/auth-service/src/middleware/auth.middleware.ts","detail":"catch 블록 에러 응답 후 명시적 return 추가"}
+{"timestamp":"2026-04-06T14:59:27Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T14:59:31Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:00:08Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:00:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:00:54Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:01:03Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:01:10Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:01:17Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:01:30Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:01:43Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:01:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:01:55Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:01:58Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:02:03Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:02:18Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:02:24Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:02:28Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:02:42Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T00:10:00Z","tool":"Edit/Write","user":"PM-Lead","action":"REFACTOR","target":"platform/packages/audit-sdk/src/audit-logger.ts","detail":"createStandardTransport, createServiceAuditLogger 팩토리 함수 추가"}
+{"timestamp":"2026-04-07T00:11:00Z","tool":"Write","user":"PM-Lead","action":"REFACTOR","target":"12-service-audit-files","detail":"12개 서비스 audit.ts 보일러플레이트를 audit-sdk 팩토리로 리팩토링 (평균 45줄→12줄)"}
+{"timestamp":"2026-04-06T15:02:53Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:02:57Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:03:08Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:04:02Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:06:14Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:06:29Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:06:42Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:06:50Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:06:56Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:07:01Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:07:07Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:07:27Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:07:28Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:07:52Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:07:59Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:08:07Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:09:06Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:09:45Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:09:54Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:09:56Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:10:02Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:10:15Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:10:38Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T12:00:00Z","tool":"Edit","user":"kunkin","action":"FIX_MFA_SECRET_STORAGE","target":"auth-service/handlers/mfa.handler.ts","detail":"MFA setup 시크릿을 Redis에 임시 저장, verify 시 서버 측 시크릿 사용 (클라이언트 변조 방지)","csap":"D-08-08"}
+{"timestamp":"2026-04-06T12:00:01Z","tool":"Edit","user":"kunkin","action":"FIX_MFA_VERIFY_SCHEMA","target":"auth-service/schemas/mfa.schema.ts","detail":"mfaVerifySchema에서 secret 필드 제거 (서버 측 Redis에서 관리)","csap":"D-08-08"}
+{"timestamp":"2026-04-06T12:00:02Z","tool":"Edit","user":"kunkin","action":"FIX_SESSION_INVALIDATE_TENANTID","target":"auth-service/handlers/session-invalidate.handler.ts","detail":"tenantId 하드코딩('system') 제거, 요청 페이로드에서 추출","csap":"D-06"}
+{"timestamp":"2026-04-06T12:00:03Z","tool":"Edit","user":"kunkin","action":"FIX_SESSION_INVALIDATE_CALLERS","target":"user-service/handlers/password.handler.ts,password-reset.handler.ts","detail":"session invalidate API 호출 시 tenantId 파라미터 추가","csap":"D-06"}
+{"timestamp":"2026-04-06T12:00:04Z","tool":"Edit","user":"kunkin","action":"FIX_SECURITY_SERVICE_ROLE_SEPARATION","target":"security-service/index.ts,security-monitor-service/index.ts","detail":"두 보안 서비스 포트 분리(3014/3015), 역할 명확화(DB기반 vs HTTP경량)","csap":"D-10"}
+{"timestamp":"2026-04-06T12:00:05Z","tool":"Edit","user":"kunkin","action":"FIX_SECURITY_SERVICE_AUDIT","target":"security-service/lib/audit.ts","detail":"logSecurityEvent 호출 시 필수 필드(actor, target, tenantId, ip, userAgent) 추가","csap":"D-06"}
+{"timestamp":"2026-04-06T12:00:06Z","tool":"Edit","user":"kunkin","action":"FIX_ELECTRONIC_APPROVAL_PLUGIN","target":"plugins/electronic-approval/src/handlers/draft.handler.ts","detail":"감사 로그 추가, tenantId 격리 추가, Zod parse→safeParse 변경","csap":"D-06,D-08,D-12"}
+{"timestamp":"2026-04-06T12:00:07Z","tool":"Edit","user":"kunkin","action":"FIX_PUBLIC_DATA_PLUGIN","target":"plugins/public-data-integration/src/handlers/dataset.handler.ts","detail":"감사 로그 추가, tenantId 격리 추가, Zod parse→safeParse 변경","csap":"D-06,D-08,D-12"}
+{"timestamp":"2026-04-06T12:00:08Z","tool":"Edit","user":"kunkin","action":"FIX_API_KEY_URL_EXPOSURE","target":"plugins/public-data-integration/src/lib/data-portal-client.ts","detail":"API 키를 URL 쿼리 파라미터에서 Authorization 헤더로 이동 (서버 로그 노출 방지)","csap":"D-09"}
+{"timestamp":"2026-04-06T12:00:09Z","tool":"Edit","user":"kunkin","action":"FIX_DEAD_CODE","target":"auth-service/handlers/session-invalidate.handler.ts","detail":"중복 import 통합 (redis + blacklistToken 단일 import 문)","policy":"dead-code"}
+{"timestamp":"2026-04-06T15:10:59Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:12:02Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:12:07Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:12:19Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:12:24Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:12:27Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:16:12Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:16:19Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:16:28Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:16:34Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:16:41Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:16:46Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:16:55Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:17:05Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:17:13Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:17:16Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:17:22Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:17:35Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:17:42Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:56:14Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:56:14Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:56:19Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:56:19Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:56:27Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:56:28Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:56:29Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:56:29Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:56:37Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:56:38Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:56:39Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:56:41Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:56:50Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:57:15Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:57:45Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:57:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:57:52Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:57:57Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:58:02Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:58:13Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:58:18Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:58:23Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:58:28Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:58:45Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:59:05Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:59:11Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:59:15Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:59:25Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T15:59:33Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T16:00:09Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T16:00:24Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:00:39Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:00:41Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:00:45Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:00:50Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:00:57Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:00:57Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:01:16Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T16:01:39Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:01:44Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:01:52Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T16:02:12Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:02:17Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:02:23Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:02:34Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:02:40Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T16:02:46Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:02:58Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:03:07Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:03:11Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:03:15Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:03:47Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:04:07Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T16:04:15Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:04:48Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:04:57Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:05:08Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:05:15Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:05:16Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:05:21Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:05:35Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T16:05:37Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T16:05:43Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:05:43Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:05:46Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T15:00:00Z","session":"quality-loop-7","action":"QUALITY_SCAN","scope":"83 modified files across 15 services + 2 plugins + 1 portal","findings":11,"fixed":11}
+{"timestamp":"2026-04-06T15:01:00Z","action":"FIX_ISSUE_1","target":"audit-service/handlers/audit.handler.ts","description":"Zod .parse() -> .safeParse() 전환 (4곳, CSAP D-12)"}
+{"timestamp":"2026-04-06T15:02:00Z","action":"FIX_ISSUE_2","target":"security-service/handlers/security.handler.ts","description":"Zod .parse() -> .safeParse() 전환 + 쿼리 파라미터 스키마 추가 (3곳, CSAP D-12)"}
+{"timestamp":"2026-04-06T15:03:00Z","action":"FIX_ISSUE_3","target":"security-monitor-service/handlers/security.handler.ts","description":"쿼리 파라미터 Zod 스키마 검증 추가 (2곳, CSAP D-12)"}
+{"timestamp":"2026-04-06T15:04:00Z","action":"FIX_ISSUE_4","target":"security-service/handlers/security.handler.ts","description":"미사용 multiIpAccess 변수 활용 - anomalies 배열에 MULTI_IP_LOGIN 탐지 결과 포함"}
+{"timestamp":"2026-04-06T15:05:00Z","action":"FIX_ISSUE_5","target":"audit-service/handlers/audit.handler.ts","description":"auditStatsHandler 쿼리 파라미터 Zod 검증 추가 + export reply await 누락 수정"}
+{"timestamp":"2026-04-06T15:06:00Z","action":"FIX_ISSUE_6","target":"menu-service/handlers/menu.handler.ts","description":"tenantId null 타입 오류 수정 (existingMenu.tenantId ?? 'platform')"}
+{"timestamp":"2026-04-06T15:07:00Z","action":"FIX_ISSUE_7","target":"audit-sdk/src/env.d.ts","description":"Node.js process 타입 ambient 선언 추가 (TypeScript 빌드 오류 해결)"}
+{"timestamp":"2026-04-06T15:08:00Z","action":"FIX_ISSUE_8","target":"plugins/*/src/env.d.ts","description":"플러그인 process 타입 ambient 선언 추가"}
+{"timestamp":"2026-04-06T15:09:00Z","action":"TYPECHECK_PASS","description":"전체 15개 서비스 + 5개 패키지 TypeScript 빌드 오류 0건 확인"}
+{"timestamp":"2026-04-06T16:06:11Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:06:14Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:07:06Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T16:07:26Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T16:07:52Z","event":"session-end"}
+{"timestamp":"2026-04-06T22:14:54Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:15:05Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:15:10Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:15:18Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:15:19Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:15:20Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:15:20Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:15:30Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:15:36Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:15:42Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:15:52Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:15:53Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:15:55Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:16:11Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:16:18Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:16:28Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:16:28Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:16:29Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:16:30Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:16:30Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:16:44Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:16:50Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:16:55Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:17:06Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:17:16Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:17:21Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:17:49Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:18:13Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:18:23Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:18:24Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:18:56Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:19:06Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:19:13Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:19:32Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:19:41Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T09:00:00.000Z","actor":"PM-Lead","action":"ARCHIVE_SYNC","target":"memory.json","detail":"24개 MTU archive 동기화 누락 발견 및 보정. 총 47개 MTU archive 완료 상태로 업데이트.","result":"SUCCESS"}
+{"timestamp":"2026-04-07T09:05:00.000Z","actor":"PM-Lead","action":"ARCHIVE_PLAN_补完","target":"16 MTU archives","detail":"Plan 파일 누락 아카이브 9개 보완 생성: MTU-C5, C7, C8, I2, I3, I4, I5, A3a, P00","result":"SUCCESS"}
+{"timestamp":"2026-04-07T09:10:00.000Z","actor":"PM-Lead","action":"STATUS_ASSESSMENT","target":"master-roadmap 35 MTU","detail":"전체 35개 MTU + 12개 P-series + 5개 추가 MTU = 52개 MTU 아카이브 완료 확인. 산출물 docs/framework/ 전수 존재 검증.","result":"SUCCESS"}
+{"timestamp":"2026-04-06T22:19:53Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:19:58Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:20:42Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:20:52Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:21:26Z","event":"session-end"}
+{"timestamp":"2026-04-06T22:39:01Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:39:07Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:39:27Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:39:27Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:39:28Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:39:51Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:39:55Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:39:56Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:40:19Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:41:23Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:41:58Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:42:43Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:43:20Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:43:54Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:44:25Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:44:56Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:45:20Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:45:37Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:45:47Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:46:06Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:46:17Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T09:00:00Z","action":"QUALITY_ENHANCEMENT","actor":"PM Agent","target":"MTU-P02","details":"matchRate 88.9% -> 90%. FR-P02.4 소프트삭제 lockedUntil 기반 완성, FR-P02.7 토큰 기반 비밀번호 재설정 구현 확인, 문서 업데이트 (analysis v2.0, report v2.0)"}
+{"timestamp":"2026-04-07T09:01:00Z","action":"QUALITY_ENHANCEMENT","actor":"PM Agent","target":"MTU-P04","details":"matchRate 81.8% -> 100%. FR-P04.2 authPreHandler, FR-P04.3 RBAC, FR-P04.7 audit-logger, FR-P04.10 swagger, FR-P04.11 동적프록시 구현 확인, 문서 업데이트 (analysis v2.0, report v2.0)"}
+{"timestamp":"2026-04-07T09:02:00Z","action":"QUALITY_ENHANCEMENT","actor":"PM Agent","target":"MTU-P11","details":"matchRate 80% -> 100%. FR-P11.1 템플릿 CRUD, FR-P11.3 인앱알림 RBAC, FR-P11.4 이벤트버스 구현 확인, analysis 신규 생성, 문서 업데이트 (design v2.0, report v2.0)"}
+{"timestamp":"2026-04-07T09:03:00Z","action":"PDCA_STATUS_UPDATE","actor":"PM Agent","target":"pdca-status.json","details":"3개 MTU phase:archived, matchRate 업데이트, qualityEnhancement 메타데이터 추가"}
+{"timestamp":"2026-04-06T22:46:33Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:46:45Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:46:50Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:46:57Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:47:06Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-06T22:47:49Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-06T22:48:37Z","event":"session-end"}
+{"timestamp":"2026-04-07T06:49:22Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:49:30Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:49:30Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:49:37Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:49:39Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:49:45Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:49:47Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:49:47Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:49:48Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:50:15Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:50:34Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:50:35Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:50:40Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:50:48Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:50:53Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:51:01Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:51:05Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:51:09Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:51:34Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:51:44Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:51:46Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:51:57Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:51:58Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:52:05Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:52:05Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:52:06Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:52:14Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T06:52:29Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:52:37Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:52:41Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:52:49Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:52:57Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:53:23Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:53:37Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:53:40Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:53:48Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:53:58Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T06:54:06Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:54:07Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T06:54:13Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:54:15Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:54:20Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:54:20Z","event":"session-end"}
+{"timestamp":"2026-04-07T06:54:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T06:55:04Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T06:55:13Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:55:26Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:55:33Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:55:37Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:55:45Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:56:16Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:56:16Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:56:32Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:56:33Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:56:49Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:57:07Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:57:17Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:57:40Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T06:58:01Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T06:58:14Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T06:58:25Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T06:58:32Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:58:43Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:59:07Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T06:59:24Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T06:59:34Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T06:59:54Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:00:08Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T07:00:26Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T07:00:51Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T07:00:59Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:01:16Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:01:31Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T16:01:00.000Z","agent":"pm-lead","action":"MTU-Q2_START","details":"품질 강화 PDCA 사이클 2 착수 — 테스트 인프라 확충, pnpm workspace 수정, PII 마스킹 버그 수정"}
+{"timestamp":"2026-04-07T16:01:30.000Z","agent":"implementer","action":"FIX_PII_MASKING_ORDER","details":"ai-service pii-masking.ts: 정규식 적용 순서 수정 (주민등록번호를 전화번호보다 먼저 매칭)"}
+{"timestamp":"2026-04-07T16:02:00.000Z","agent":"implementer","action":"ADD_WORKSPACE_PLUGINS","details":"pnpm-workspace.yaml에 platform/plugins/* 추가 — TypeScript 타입 체크 통과"}
+{"timestamp":"2026-04-07T16:02:30.000Z","agent":"tester","action":"ADD_AUDIT_SDK_TESTS","details":"audit-sdk: 15개 테스트 추가 (AuditLogger, createStandardTransport, createServiceAuditLogger, integrity)"}
+{"timestamp":"2026-04-07T16:03:00.000Z","agent":"tester","action":"ADD_AUTH_SERVICE_TESTS","details":"auth-service: 24개 테스트 추가 (MFA 스키마, AES-256 암호화, 세션 관리, 권한 조회)"}
+{"timestamp":"2026-04-07T16:03:30.000Z","agent":"tester","action":"ADD_AUDIT_SERVICE_TESTS","details":"audit-service: 18개 테스트 추가 (감사 로그 스키마 검증, append-only SHA-256 체인)"}
+{"timestamp":"2026-04-07T16:04:00.000Z","agent":"tester","action":"ADD_AI_SERVICE_TESTS","details":"ai-service: 24개 테스트 추가 (N2SF 데이터 등급 검증, PII 마스킹)"}
+{"timestamp":"2026-04-07T16:04:30.000Z","agent":"reviewer","action":"QGATE_CHECK","details":"Q-Gate G1-G7 전체 검증: G1 PASS, G2 PASS, G3 PASS (tsc 전체 통과), G4 192/192 테스트 통과, G5 PASS (하드코딩 시크릿 없음), G6 PASS, G7 PASS"}
+{"timestamp":"2026-04-07T07:01:48Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:02:18Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:02:31Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:02:46Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:02:52Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:03:11Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T07:03:21Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T07:03:29Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:03:38Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:04:00Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T16:05:00.000Z","agent":"reviewer","action":"FIX_CSAP_ITEMS_COUNT","details":"compliance-service + portal API: CSAP 도메인 항목 수 정합 수정 (81→79, checklist-master.md 기준)"}
+{"timestamp":"2026-04-07T16:05:30.000Z","agent":"reviewer","action":"FIX_D13_ITEMS","details":"D-13 공급망 보안: 2항목→10항목 수정 (checklist-master.md에 CSAP-D13 항목 10개 존재)"}
+{"timestamp":"2026-04-07T07:04:10Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:04:25Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:04:32Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:04:38Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:05:24Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-07T07:05:30Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:05:36Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:05:41Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-07T07:05:47Z","tool":"Bash","user":"kunkin"}

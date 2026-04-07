@@ -25,20 +25,21 @@ export interface CsapComplianceResponse {
 
 // CSAP 13개 분야 기준 데이터 (D-01 ~ D-13)
 // 실제 감사 결과가 DB에 없으므로 활성 테넌트 수 기반 동적 계산
+// CSAP 표준등급 13개 분야 79항목 (checklist-master.md 기준 정합)
 const CSAP_DOMAIN_BASE: Omit<CsapDomain, 'passCount' | 'rate'>[] = [
-  { id: 'D-01', name: '정보보호 정책', totalItems: 5 },
-  { id: 'D-02', name: '정보보호 조직', totalItems: 4 },
-  { id: 'D-03', name: '자산 관리', totalItems: 6 },
+  { id: 'D-01', name: '정보보호 정책', totalItems: 4 },
+  { id: 'D-02', name: '정보보호 조직', totalItems: 3 },
+  { id: 'D-03', name: '자산 관리', totalItems: 4 },
   { id: 'D-04', name: '인적 보안', totalItems: 5 },
-  { id: 'D-05', name: '물리적 보안', totalItems: 7 },
+  { id: 'D-05', name: '물리적 보안', totalItems: 4 },
   { id: 'D-06', name: '침해사고 관리', totalItems: 5 },
-  { id: 'D-07', name: '서비스 연속성', totalItems: 6 },
+  { id: 'D-07', name: '서비스 연속성', totalItems: 3 },
   { id: 'D-08', name: '접근 통제', totalItems: 12 },
   { id: 'D-09', name: '암호화', totalItems: 4 },
   { id: 'D-10', name: '네트워크 보안', totalItems: 8 },
   { id: 'D-11', name: '시스템 보안', totalItems: 7 },
   { id: 'D-12', name: '시스템 개발 보안', totalItems: 10 },
-  { id: 'D-13', name: '공급망 보안', totalItems: 2 },
+  { id: 'D-13', name: '공급망 보안', totalItems: 10 },
 ]
 
 // Plan SC: FR-UP.6 — CSAP 준수 현황 조회
@@ -75,7 +76,7 @@ export async function GET(): Promise<NextResponse<CsapComplianceResponse | { err
 
     return NextResponse.json({ domains, overallRate, activeTenantCount })
   } catch (error) {
-    console.error('[API] /api/compliance/csap 오류:', error)
+    process.stderr.write(`[API] /api/compliance/csap 오류: ${String(error)}\n`)
     return NextResponse.json(
       { error: 'CSAP 준수 현황 조회 중 오류가 발생했습니다.' },
       { status: 500 }

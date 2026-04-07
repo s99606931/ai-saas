@@ -4,4 +4,5 @@ packages:
   - "platform/apps/*"
   - "platform/services/*"
   - "platform/packages/*"
+  - "platform/plugins/*"
   - "business-template/*"
