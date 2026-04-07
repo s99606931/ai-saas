@@ -4,11 +4,12 @@
 
 import { describe, it, expect } from 'vitest';
 
+// 포트 매핑: docker-compose.yml 기준 (CSAP D-11 배포 일관성)
 const SERVICES = [
-  { name: 'auth-service', port: 3000 },
-  { name: 'user-service', port: 3001 },
-  { name: 'tenant-service', port: 3002 },
-  { name: 'api-gateway', port: 3003 },
+  { name: 'api-gateway', port: 3000 },
+  { name: 'auth-service', port: 3001 },
+  { name: 'user-service', port: 3002 },
+  { name: 'tenant-service', port: 3003 },
   { name: 'menu-service', port: 3004 },
   { name: 'catalog-service', port: 3005 },
   { name: 'subscription-service', port: 3006 },
@@ -19,7 +20,7 @@ const SERVICES = [
   { name: 'file-service', port: 3011 },
   { name: 'audit-service', port: 3012 },
   { name: 'compliance-service', port: 3013 },
-  { name: 'security-service', port: 3014 },
+  { name: 'security-monitor-service', port: 3014 },
 ];
 
 describe('서비스 헬스 체크', () => {
