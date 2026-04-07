@@ -25,7 +25,8 @@ export class ApprovalEngine {
   private documentStatus: DocumentStatus;
 
   constructor(approvers: Approver[], documentStatus: DocumentStatus) {
-    this.approvers = [...approvers].sort((a, b) => a.order - b.order);
+    // 방어적 깊은 복사: 외부 배열 변경이 엔진 내부 상태에 영향을 주지 않도록 함
+    this.approvers = approvers.map(a => ({ ...a })).sort((a, b) => a.order - b.order);
     this.documentStatus = documentStatus;
   }
 

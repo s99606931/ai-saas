@@ -6,6 +6,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import httpProxy from '@fastify/http-proxy';
 import { SERVICE_REGISTRY, getServiceEntry } from '../registry/service-registry.js';
 import { dataGradeMiddleware } from '../middleware/data-grade.middleware.js';
+import { circuitBreaker, CircuitOpenError } from '../lib/circuit-breaker.js';
 
 const AUTH_SERVICE_URL = process.env['AUTH_SVC_URL'] ?? 'http://auth-service:3001';
 
@@ -202,22 +203,26 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
       : `${pluginEntry.url}/${targetPath}`;
 
     try {
-      const proxyResponse = await fetch(targetUrl, {
-        method: request.method,
-        headers: {
-          'content-type': request.headers['content-type'] ?? 'application/json',
-          'authorization': request.headers.authorization ?? '',
-          'x-tenant-id': (request.headers['x-tenant-id'] as string) ?? '',
-          'x-user-id': (request.headers['x-user-id'] as string) ?? '',
-          'x-user-tenant-id': (request.headers['x-user-tenant-id'] as string) ?? '',
-          'x-user-role': (request.headers['x-user-role'] as string) ?? '',
-          'x-internal-service-key': (request.headers['x-internal-service-key'] as string) ?? '',
-          'x-forwarded-for': request.ip,
-        },
-        body: request.method !== 'GET' && request.method !== 'HEAD'
-          ? JSON.stringify(request.body)
-          : undefined,
-      });
+      // Circuit Breaker로 장애 전파 방지 (CSAP D-07)
+      const proxyResponse = await circuitBreaker.execute(params.pluginId, () =>
+        fetch(targetUrl, {
+          method: request.method,
+          headers: {
+            'content-type': request.headers['content-type'] ?? 'application/json',
+            'authorization': request.headers.authorization ?? '',
+            'x-tenant-id': (request.headers['x-tenant-id'] as string) ?? '',
+            'x-user-id': (request.headers['x-user-id'] as string) ?? '',
+            'x-user-tenant-id': (request.headers['x-user-tenant-id'] as string) ?? '',
+            'x-user-role': (request.headers['x-user-role'] as string) ?? '',
+            'x-internal-service-key': (request.headers['x-internal-service-key'] as string) ?? '',
+            'x-forwarded-for': request.ip,
+            'x-request-id': (request.headers['x-request-id'] as string) ?? '',
+          },
+          body: request.method !== 'GET' && request.method !== 'HEAD'
+            ? JSON.stringify(request.body)
+            : undefined,
+        }),
+      );
 
       const responseBody = await proxyResponse.text();
       await reply
@@ -229,6 +234,20 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
         ))
         .send(responseBody);
     } catch (error) {
+      // Circuit Breaker OPEN — 서비스 일시 차단
+      if (error instanceof CircuitOpenError) {
+        app.log.warn({ serviceId: params.pluginId }, `Circuit breaker OPEN: ${params.pluginId}`);
+        await reply.status(503).send({
+          success: false,
+          error: {
+            code: 'SERVICE_UNAVAILABLE',
+            message: error.message,
+            retryAfterMs: error.retryAfterMs,
+          },
+        });
+        return;
+      }
+
       app.log.error({ err: error }, `동적 프록시 실패: ${targetUrl}`);
       await reply.status(502).send({
         success: false,

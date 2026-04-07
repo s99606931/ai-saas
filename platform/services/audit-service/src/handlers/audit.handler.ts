@@ -9,6 +9,9 @@ import { appendAuditLog } from '../lib/append-only.js';
 import { verifyAuditLogIntegrity } from '../lib/integrity.js';
 import { prisma } from '../lib/prisma.js';
 
+// 내보내기 최대 조회 건수 (CSAP D-06: 대량 로그 내보내기 시 메모리 보호)
+const EXPORT_MAX_RECORDS = 10000;
+
 // --- Zod 스키마 ---
 
 const createAuditLogSchema = z.object({
@@ -186,7 +189,7 @@ export async function exportAuditLogsHandler(
   const logs = await prisma.auditLog.findMany({
     where,
     orderBy: { createdAt: 'asc' },
-    take: 10000,
+    take: EXPORT_MAX_RECORDS,
   });
 
   if (query.format === 'csv') {

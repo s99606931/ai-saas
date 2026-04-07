@@ -4,7 +4,7 @@
 // CSAP: D-08-07 비밀번호 정책
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
 import { logUserEvent } from '../lib/audit.js';

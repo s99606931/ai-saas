@@ -23,6 +23,39 @@ const ALLOWED_MIME_TYPES = [
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
+// CSAP D-12: 실행 파일 확장자 차단 (악성 파일 업로드 방지)
+const BLOCKED_EXTENSIONS = [
+  '.exe', '.bat', '.cmd', '.sh', '.ps1', '.vbs', '.js',
+  '.msi', '.com', '.scr', '.pif', '.hta', '.cpl', '.msp',
+  '.jar', '.wsf', '.wsh', '.reg',
+];
+
+/**
+ * 파일명 새니타이징 (Path Traversal 방지)
+ * CSAP D-12: 경로 탐색 공격 방어
+ * - 슬래시/백슬래시 제거
+ * - null 바이트 제거
+ * - 이중 점(..) 제거
+ * - 선행/후행 공백 및 점 제거
+ */
+function sanitizeFilename(filename: string): string {
+  return filename
+    .replace(/[/\\]/g, '_')          // 경로 구분자 → 언더스코어
+    .replace(/\0/g, '')              // null 바이트 제거
+    .replace(/\.\./g, '_')           // 상위 디렉토리 탐색 방지
+    .replace(/^[\s.]+|[\s.]+$/g, '') // 선행/후행 공백·점 제거
+    .slice(0, 255);                  // 최대 길이 제한
+}
+
+/**
+ * 실행 파일 확장자 검사
+ * CSAP D-12: 서버 실행 가능한 확장자 업로드 차단
+ */
+function hasBlockedExtension(filename: string): boolean {
+  const lower = filename.toLowerCase();
+  return BLOCKED_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
 const uploadSchema = z.object({
   tenantId: z.string().min(1),
   name: z.string().min(1).max(255),
@@ -50,7 +83,26 @@ export async function uploadFileHandler(
     return;
   }
 
-  const { tenantId, name, mimeType, size, uploadedBy } = parseResult.data;
+  const { tenantId, mimeType, size, uploadedBy } = parseResult.data;
+
+  // CSAP D-12: 파일명 새니타이징 (Path Traversal 방지)
+  const name = sanitizeFilename(parseResult.data.name);
+  if (name.length === 0) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'INVALID_FILENAME', message: '유효하지 않은 파일명입니다' },
+    });
+    return;
+  }
+
+  // CSAP D-12: 실행 파일 확장자 차단
+  if (hasBlockedExtension(name)) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'BLOCKED_EXTENSION', message: '실행 파일 형식은 업로드할 수 없습니다' },
+    });
+    return;
+  }
 
   // CSAP D-12: MIME 타입 검증
   if (!ALLOWED_MIME_TYPES.includes(mimeType)) {

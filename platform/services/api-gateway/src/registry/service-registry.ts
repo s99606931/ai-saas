@@ -40,7 +40,7 @@ export const SERVICE_REGISTRY: Record<string, ServiceEntry> = {
     requireAuth: true,
   },
   services: {
-    url: process.env['CATALOG_SVC_URL'] ?? 'http://saas-catalog-service:3005',
+    url: process.env['CATALOG_SVC_URL'] ?? 'http://catalog-service:3005',
     requireAuth: true,
   },
   subscriptions: {

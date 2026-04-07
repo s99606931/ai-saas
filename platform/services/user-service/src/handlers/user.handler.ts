@@ -5,7 +5,7 @@
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
 import { logUserEvent } from '../lib/audit.js';
 import { prisma } from '../lib/prisma.js';

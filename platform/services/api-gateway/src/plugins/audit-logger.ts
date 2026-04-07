@@ -25,6 +25,7 @@ interface AuditLogEntry {
   target: string;
   targetType: string;
   ip: string;
+  requestId: string;
   metadata: {
     method: string;
     statusCode: number;
@@ -70,6 +71,7 @@ async function auditLoggerPlugin(app: FastifyInstance): Promise<void> {
       target: `${request.method} ${url}`,
       targetType: 'api-request',
       ip: request.ip,
+      requestId: request.id,
       metadata: {
         method: request.method,
         statusCode: reply.statusCode,

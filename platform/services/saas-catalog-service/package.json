@@ -2,7 +2,8 @@
   "name": "@public-saas/saas-catalog-service",
   "version": "0.1.0",
   "private": true,
-  "description": "공공기관 SaaS 플랫폼 — SaaS 서비스 카탈로그 서비스 (MTU-P06)",
+  "deprecated": "이 패키지는 더 이상 사용되지 않습니다. @public-saas/catalog-service를 사용하세요.",
+  "description": "[DEPRECATED] 초기 스캐폴딩 잔재. catalog-service가 실제 구현체 (MTU-P06)",
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {
@@ -11,6 +12,7 @@
     "start": "node dist/index.js",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint src/ --max-warnings 0",
     "clean": "rm -rf dist"
   },
   "dependencies": {

@@ -11,6 +11,9 @@ import { logAiEvent } from '../lib/audit.js';
 import { prisma } from '../lib/prisma.js';
 import type { DataGrade } from '@public-saas/types';
 
+// 토큰당 비용 계수 (원/토큰, 운영 환경에서 환경 변수로 오버라이드 가능)
+const TOKEN_COST_PER_UNIT = 0.0001;
+
 const createModelSchema = z.object({
   name: z.string().min(1, '모델명은 필수입니다').max(100),
   provider: z.string().min(1),
@@ -178,7 +181,7 @@ export async function chatHandler(
       modelId,
       tenantId,
       tokens: tokensUsed,
-      cost: tokensUsed * 0.0001,
+      cost: tokensUsed * TOKEN_COST_PER_UNIT,
       grade,
     },
   });

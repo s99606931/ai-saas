@@ -521,9 +521,147 @@ async function main() {
   console.log(`  - 감사 로그 ${logCount}건 생성 완료 (SHA-256 체인)`)
 
   // ----------------------------------------------------------
-  // 8. AI 모델 등록 (N2SF N-05)
+  // 8. RBAC 권한 시드 (CSAP D-08-05)
   // ----------------------------------------------------------
-  console.log('[SEED] 8/8 AI 모델 등록...')
+  console.log('[SEED] 8/10 RBAC 권한 생성...')
+
+  const permissions = [
+    { id: 'perm-tenant-read', name: 'tenant:read', description: '테넌트 조회' },
+    { id: 'perm-tenant-write', name: 'tenant:write', description: '테넌트 생성/수정' },
+    { id: 'perm-user-read', name: 'user:read', description: '사용자 조회' },
+    { id: 'perm-user-write', name: 'user:write', description: '사용자 생성/수정/삭제' },
+    { id: 'perm-audit-read', name: 'audit:read', description: '감사 로그 조회' },
+    { id: 'perm-security-read', name: 'security:read', description: '보안 모니터링 조회' },
+    { id: 'perm-admin-all', name: 'admin:all', description: '전체 관리 권한' },
+    { id: 'perm-service-read', name: 'service:read', description: '서비스 카탈로그 조회' },
+    { id: 'perm-service-write', name: 'service:write', description: '서비스 카탈로그 관리' },
+    { id: 'perm-subscription-read', name: 'subscription:read', description: '구독 조회' },
+    { id: 'perm-subscription-write', name: 'subscription:write', description: '구독 관리' },
+    { id: 'perm-billing-read', name: 'billing:read', description: '빌링 조회' },
+    { id: 'perm-billing-write', name: 'billing:write', description: '빌링 관리' },
+    { id: 'perm-ai-read', name: 'ai:read', description: 'AI 모델 조회' },
+    { id: 'perm-ai-write', name: 'ai:write', description: 'AI 모델 관리' },
+    { id: 'perm-compliance-read', name: 'compliance:read', description: 'CSAP/N2SF 준수 현황 조회' },
+    { id: 'perm-file-read', name: 'file:read', description: '파일 조회/다운로드' },
+    { id: 'perm-file-write', name: 'file:write', description: '파일 업로드/삭제' },
+    { id: 'perm-notification-read', name: 'notification:read', description: '알림 조회' },
+    { id: 'perm-notification-write', name: 'notification:write', description: '알림 전송/관리' },
+  ]
+
+  for (const p of permissions) {
+    await prisma.permission.upsert({
+      where: { id: p.id },
+      update: {},
+      create: p,
+    })
+  }
+
+  // 역할-권한 매핑 (CSAP D-08-05: 최소 권한 원칙)
+  const rolePermissions: Array<{ role: UserRole; permName: string }> = [
+    // SUPER_ADMIN: 전체 권한
+    { role: UserRole.SUPER_ADMIN, permName: 'admin:all' },
+    // TENANT_ADMIN: 자기 테넌트 관리
+    { role: UserRole.TENANT_ADMIN, permName: 'tenant:read' },
+    { role: UserRole.TENANT_ADMIN, permName: 'user:read' },
+    { role: UserRole.TENANT_ADMIN, permName: 'user:write' },
+    { role: UserRole.TENANT_ADMIN, permName: 'audit:read' },
+    { role: UserRole.TENANT_ADMIN, permName: 'service:read' },
+    { role: UserRole.TENANT_ADMIN, permName: 'subscription:read' },
+    { role: UserRole.TENANT_ADMIN, permName: 'billing:read' },
+    { role: UserRole.TENANT_ADMIN, permName: 'ai:read' },
+    { role: UserRole.TENANT_ADMIN, permName: 'compliance:read' },
+    { role: UserRole.TENANT_ADMIN, permName: 'file:read' },
+    { role: UserRole.TENANT_ADMIN, permName: 'file:write' },
+    { role: UserRole.TENANT_ADMIN, permName: 'notification:read' },
+    { role: UserRole.TENANT_ADMIN, permName: 'notification:write' },
+    // AUDITOR: 감사/보안 읽기 전용
+    { role: UserRole.AUDITOR, permName: 'audit:read' },
+    { role: UserRole.AUDITOR, permName: 'security:read' },
+    { role: UserRole.AUDITOR, permName: 'compliance:read' },
+    { role: UserRole.AUDITOR, permName: 'user:read' },
+    { role: UserRole.AUDITOR, permName: 'tenant:read' },
+    // USER: 기본 읽기
+    { role: UserRole.USER, permName: 'service:read' },
+    { role: UserRole.USER, permName: 'file:read' },
+    { role: UserRole.USER, permName: 'file:write' },
+    { role: UserRole.USER, permName: 'notification:read' },
+    { role: UserRole.USER, permName: 'ai:read' },
+    // VIEWER: 최소 읽기
+    { role: UserRole.VIEWER, permName: 'service:read' },
+    { role: UserRole.VIEWER, permName: 'notification:read' },
+  ]
+
+  let rpIndex = 0
+  for (const rp of rolePermissions) {
+    const perm = permissions.find(p => p.name === rp.permName)
+    if (perm) {
+      await prisma.rolePermission.upsert({
+        where: { id: `rp-seed-${String(rpIndex).padStart(3, '0')}` },
+        update: {},
+        create: {
+          id: `rp-seed-${String(rpIndex).padStart(3, '0')}`,
+          role: rp.role,
+          permissionId: perm.id,
+        },
+      })
+      rpIndex++
+    }
+  }
+
+  console.log(`  - 권한 ${permissions.length}개, 역할-권한 매핑 ${rpIndex}건 생성 완료`)
+
+  // ----------------------------------------------------------
+  // 9. 플랜-서비스 매핑
+  // ----------------------------------------------------------
+  console.log('[SEED] 9/10 플랜-서비스 매핑...')
+
+  // 기본형: 문서관리 + 공공데이터
+  // 표준형: 기본 + AI정책 + 보안감사
+  // 기업형: 전체
+  const planServiceMappings: Array<{ planSlug: string; serviceSlug: string }> = [
+    { planSlug: 'basic', serviceSlug: 'edms' },
+    { planSlug: 'basic', serviceSlug: 'data-portal' },
+    { planSlug: 'standard', serviceSlug: 'edms' },
+    { planSlug: 'standard', serviceSlug: 'data-portal' },
+    { planSlug: 'standard', serviceSlug: 'ai-policy' },
+    { planSlug: 'standard', serviceSlug: 'security-audit' },
+    { planSlug: 'enterprise', serviceSlug: 'edms' },
+    { planSlug: 'enterprise', serviceSlug: 'data-portal' },
+    { planSlug: 'enterprise', serviceSlug: 'ai-policy' },
+    { planSlug: 'enterprise', serviceSlug: 'security-audit' },
+    { planSlug: 'enterprise', serviceSlug: 'erp-hub' },
+  ]
+
+  const plans = { basic: planBasic, standard: planStandard, enterprise: planEnterprise }
+  const serviceMap: Record<string, string> = {}
+  for (const svc of services) {
+    serviceMap[svc.slug] = svc.id
+  }
+
+  let psIndex = 0
+  for (const mapping of planServiceMappings) {
+    const planObj = plans[mapping.planSlug as keyof typeof plans]
+    const serviceId = serviceMap[mapping.serviceSlug]
+    if (planObj && serviceId) {
+      await prisma.planService.upsert({
+        where: { id: `ps-seed-${String(psIndex).padStart(3, '0')}` },
+        update: {},
+        create: {
+          id: `ps-seed-${String(psIndex).padStart(3, '0')}`,
+          planId: planObj.id,
+          serviceId: serviceId,
+        },
+      })
+      psIndex++
+    }
+  }
+
+  console.log(`  - 플랜-서비스 매핑 ${psIndex}건 생성 완료`)
+
+  // ----------------------------------------------------------
+  // 10. AI 모델 등록 (N2SF N-05)
+  // ----------------------------------------------------------
+  console.log('[SEED] 10/10 AI 모델 등록...')
 
   await prisma.aiModel.upsert({
     where: { id: 'ai-model-claude-sonnet' },

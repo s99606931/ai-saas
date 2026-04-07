@@ -4,7 +4,7 @@
 // CSAP: D-08-07 비밀번호 재설정 정책
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { randomBytes, createHash } from 'node:crypto';
 import { z } from 'zod';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';

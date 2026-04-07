@@ -5,4 +5,5 @@ packages:
   - "platform/services/*"
   - "platform/packages/*"
   - "platform/plugins/*"
+  - "platform/tests/e2e"
   - "business-template/*"

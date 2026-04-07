@@ -72,6 +72,15 @@ async function main(): Promise<void> {
   // 서버 시작
   await app.listen({ port: PORT, host: HOST });
   app.log.info(`인증 서비스 기동 완료: http://${HOST}:${PORT}`);
+
+  // Graceful Shutdown (CSAP D-07: k8s terminationGracePeriod 연동)
+  const shutdown = async (signal: string): Promise<void> => {
+    app.log.info(`${signal} 수신, graceful shutdown 시작`);
+    await app.close();
+    process.exit(0);
+  };
+  process.on('SIGTERM', () => void shutdown('SIGTERM'));
+  process.on('SIGINT', () => void shutdown('SIGINT'));
 }
 
 main().catch((err) => {

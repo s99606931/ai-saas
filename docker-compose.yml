@@ -103,7 +103,7 @@ services:
       USER_SERVICE_URL: http://user-service:3002
       TENANT_SERVICE_URL: http://tenant-service:3003
       MENU_SERVICE_URL: http://menu-service:3004
-      CATALOG_SERVICE_URL: http://saas-catalog-service:3005
+      CATALOG_SERVICE_URL: http://catalog-service:3005
       SUBSCRIPTION_SERVICE_URL: http://subscription-service:3006
       BILLING_SERVICE_URL: http://billing-service:3007
       CRM_SERVICE_URL: http://crm-service:3008
@@ -185,12 +185,12 @@ services:
       postgres:
         condition: service_healthy
 
-  saas-catalog-service:
+  catalog-service:
     <<: *service-common
     build:
       context: .
-      dockerfile: platform/services/saas-catalog-service/Dockerfile
-    container_name: saas-catalog-service
+      dockerfile: platform/services/catalog-service/Dockerfile
+    container_name: saas-catalog
     ports:
       - "3005:3005"
     environment:
@@ -335,6 +335,21 @@ services:
       postgres:
         condition: service_healthy
 
+  security-service:
+    <<: *service-common
+    build:
+      context: .
+      dockerfile: platform/services/security-service/Dockerfile
+    container_name: saas-security-service
+    ports:
+      - "3014:3014"
+    environment:
+      <<: *service-env
+      SECURITY_SERVICE_PORT: "3014"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   security-monitor-service:
     <<: *service-common
     build:
@@ -342,10 +357,10 @@ services:
       dockerfile: platform/services/security-monitor-service/Dockerfile
     container_name: saas-security-monitor
     ports:
-      - "3014:3014"
+      - "3015:3015"
     environment:
       <<: *service-env
-      SECURITY_MONITOR_PORT: "3014"
+      SECURITY_MONITOR_SERVICE_PORT: "3015"
     depends_on:
       postgres:
         condition: service_healthy

@@ -3,7 +3,7 @@
 // Plan SC: FR-P01.9
 // CSAP: D-08-07 비밀번호 정책
 
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
 
 /**

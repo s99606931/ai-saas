@@ -10,6 +10,7 @@ import { registerProxyRoutes } from './routes/proxy.js';
 import { SERVICE_REGISTRY } from './registry/service-registry.js';
 import { checkServicesHealth } from './plugins/health-check.js';
 import auditLoggerPlugin from './plugins/audit-logger.js';
+import correlationIdPlugin from './plugins/correlation-id.js';
 import swaggerPlugin from './plugins/swagger.js';
 
 const PORT = parseInt(process.env['API_GATEWAY_PORT'] ?? '3000', 10);
@@ -31,8 +32,12 @@ async function main(): Promise<void> {
     origin: process.env['CORS_ORIGIN']?.split(',') ?? ['http://localhost:3100', 'http://localhost:3200'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Authorization', 'Content-Type', 'X-Tenant-Id'],
+    allowedHeaders: ['Authorization', 'Content-Type', 'X-Tenant-Id', 'X-Request-ID'],
+    exposedHeaders: ['X-Request-ID'],
   });
+
+  // Correlation ID — 분산 추적 (Plan SC: FR-P04.9 보완, CSAP D-06)
+  await app.register(correlationIdPlugin);
 
   // OpenAPI 문서 (Plan SC: FR-P04.10, CSAP D-12)
   await app.register(swaggerPlugin);
@@ -91,6 +96,15 @@ async function main(): Promise<void> {
   await app.listen({ port: PORT, host: HOST });
   app.log.info(`API 게이트웨이 기동: http://${HOST}:${PORT}`);
   app.log.info(`등록된 서비스: ${Object.keys(SERVICE_REGISTRY).join(', ')}`);
+
+  // Graceful Shutdown (CSAP D-07: k8s terminationGracePeriod 연동)
+  const shutdown = async (signal: string): Promise<void> => {
+    app.log.info(`${signal} 수신, graceful shutdown 시작`);
+    await app.close();
+    process.exit(0);
+  };
+  process.on('SIGTERM', () => void shutdown('SIGTERM'));
+  process.on('SIGINT', () => void shutdown('SIGINT'));
 }
 
 main().catch((err) => {
