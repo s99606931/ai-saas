@@ -96,7 +96,10 @@ export async function createServiceHandler(
   }
 
   try {
-    const service = await prisma.service.create({ data: parseResult.data });
+    const { config, ...rest } = parseResult.data;
+    const service = await prisma.service.create({
+      data: { ...rest, ...(config !== undefined ? { config: config as object } : {}) },
+    });
 
     const createActor = (request.headers['x-user-id'] as string) || 'system';
     await logCatalogEvent(
@@ -139,9 +142,10 @@ export async function updateServiceHandler(
     return;
   }
 
+  const { config: updateConfig, ...updateRest } = parseResult.data;
   const service = await prisma.service.update({
     where: { id: request.params.id },
-    data: parseResult.data,
+    data: { ...updateRest, ...(updateConfig !== undefined ? { config: updateConfig as object } : {}) },
   });
 
   await reply.send({ success: true, data: service });
