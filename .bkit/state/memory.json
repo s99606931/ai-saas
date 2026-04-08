@@ -1,19 +1,12 @@
 {
-  "sessionCount": 55,
+  "sessionCount": 60,
   "lastSession": {
-    "startedAt": "2026-04-08T08:46:09.245Z",
+    "startedAt": "2026-04-08T13:44:42.668Z",
     "platform": "claude",
-    "level": "Enterprise",
-    "model": "opus-4-6",
-    "sessionId": "6f",
-    "achievements": [
-      "MTU-N19: 성능 최적화 가이드 5종 PDCA 완료 (100%)",
-      "MTU-N20: 보안 최종 점검 가이드 5종 PDCA 완료 (100%)",
-      "총 55개 MTU 완료 (53 기존 + 2 신규)"
-    ]
+    "level": "Enterprise"
   },
-  "currentFeature": "release-preparation",
-  "currentPhase": "production-ready",
+  "currentFeature": "release-v1.1.0",
+  "currentPhase": "archived",
   "qualityEnhancement": {
     "date": "2026-04-07",
     "mtusEnhanced": [
@@ -408,6 +401,86 @@
       "startedAt": "2026-04-05T13:00:00.000Z",
       "archivedAt": "2026-04-05T14:00:00.000Z",
       "description": "준수 현황 대시보드"
+    },
+    "MTU-N21": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-08T19:20:00.000Z",
+      "archivedAt": "2026-04-08T20:00:00.000Z",
+      "description": "WSL DevOps 환경 완전 구축 (k3s+Gitea+Harbor+Flux+Prometheus)"
+    },
+    "MTU-N22": {
+      "phase": "archived",
+      "matchRate": 92.3,
+      "iterationCount": 0,
+      "startedAt": "2026-04-08T19:35:00.000Z",
+      "archivedAt": "2026-04-08T20:00:00.000Z",
+      "description": "DevOps 파이프라인 통합 테스트 (28개 테스트, 24 PASS)"
+    },
+    "MTU-N23": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-08T19:40:00.000Z",
+      "archivedAt": "2026-04-08T20:00:00.000Z",
+      "description": "WSL DevOps 완전 가이드 문서 (3개 문서)"
+    },
+    "MTU-N24": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-08T20:00:00.000Z",
+      "archivedAt": "2026-04-08T20:15:00.000Z",
+      "description": "Flux GitOps 연동 심화 (Gitea+Flux+k3s 자동 배포)"
+    },
+    "MTU-N25": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-08T20:05:00.000Z",
+      "archivedAt": "2026-04-08T20:15:00.000Z",
+      "description": "모니터링 대시보드 실전 구성 (Grafana 3종 + 알림 5개)"
+    },
+    "MTU-N26": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-08T20:10:00.000Z",
+      "archivedAt": "2026-04-08T20:15:00.000Z",
+      "description": "테스트 스크립트 개선 (N22 미통과 수정 + Phase 5 추가)"
+    },
+    "MTU-N27": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-08T22:38:00.000Z",
+      "archivedAt": "2026-04-08T23:00:00.000Z",
+      "description": "Cosign 이미지 서명 실전 적용 (v3.0.6 + Harbor + Kyverno 정책)"
+    },
+    "MTU-N28": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-08T22:42:00.000Z",
+      "archivedAt": "2026-04-08T23:00:00.000Z",
+      "description": "NetworkPolicy 네임스페이스 격리 강화 (12개 정책, 3개 네임스페이스)"
+    },
+    "MTU-N29": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-08T22:45:00.000Z",
+      "archivedAt": "2026-04-08T23:00:00.000Z",
+      "description": "E2E 시나리오 테스트 28건 ALL PASS"
+    },
+    "MTU-N30": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-08T22:50:00.000Z",
+      "archivedAt": "2026-04-08T23:00:00.000Z",
+      "description": "stg->main 릴리스 준비 (CHANGELOG + 체크리스트)"
     }
   },
   "platformSync": {

@@ -1,0 +1,21 @@
+# NetworkPolicy: monitoring 네임스페이스 내부 통신 허용
+# Design Ref: MTU-N28 Design
+# Plan SC: FR-N28.4
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-intra-namespace
+  namespace: monitoring
+  labels:
+    policy-type: baseline
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}
+  egress:
+    - to:
+        - podSelector: {}

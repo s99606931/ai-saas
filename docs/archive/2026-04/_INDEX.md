@@ -65,6 +65,34 @@
 | **MTU-P21** 통합 테스트 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P21-integration-test/` |
 | **MTU-N19** 성능 최적화 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N19/` |
 | **MTU-N20** 보안 최종 점검 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N20/` |
+| **MTU-N21** WSL DevOps 환경 완전 구축 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N21-wsl-devops-setup/` |
+| **MTU-N22** DevOps 파이프라인 통합 테스트 | 2026-04-08 | 92.3% | `docs/archive/2026-04/MTU-N22-devops-integration-test/` |
+| **MTU-N23** WSL DevOps 완전 가이드 문서 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N23-wsl-devops-guide/` |
+| **MTU-N24** Flux GitOps 연동 심화 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N24-flux-gitops-integration/` |
+| **MTU-N25** 모니터링 대시보드 실전 구성 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N25-monitoring-dashboard-setup/` |
+| **MTU-N26** 테스트 스크립트 개선 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N26-test-script-fix/` |
+| **MTU-N27** Cosign 이미지 서명 실전 적용 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N27-cosign-signing/` |
+| **MTU-N28** NetworkPolicy 네임스페이스 격리 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N28-networkpolicy/` |
+| **MTU-N29** E2E 시나리오 테스트 (28건) | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N29-e2e-test/` |
+| **MTU-N30** stg->main 릴리스 준비 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N30-release-prep/` |
+| **MTU-N01** E2E 테스트 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N01-e2e-tests/` |
+| **MTU-N02** 배포 체크리스트 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N02-deploy-checklist/` |
+| **MTU-N04** Helm 차트 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N04-helm-chart/` |
+| **MTU-N05** Gitea E2E | 2026-04-08 | - | `docs/archive/2026-04/MTU-N05-gitea-e2e/` |
+| **MTU-N07** 벤치마크 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N07-benchmark/` |
+| **MTU-N08** 보안 강화 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N08-security-hardening/` |
+| **MTU-N09** API 문서화 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N09-api-documentation/` |
+| **MTU-N10** Gitea Act Runner | 2026-04-08 | - | `docs/archive/2026-04/MTU-N10-gitea-act-runner/` |
+| **MTU-N11** Harbor 레지스트리 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N11-harbor-registry/` |
+| **MTU-N12** 배포 파이프라인 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N12-deploy-pipeline/` |
+| **MTU-N13** WSL2 전체 설정 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N13-wsl2-all-setup/` |
+| **MTU-N14** E2E CI/CD 테스트 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N14-e2e-cicd-test/` |
+| **MTU-N15** CI/CD 설정 가이드 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N15-cicd-setup-guide/` |
+| **MTU-N16** 모니터링 대시보드 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N16-monitoring-dashboard/` |
+| **MTU-N17** 플러그인 강화 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N17-plugin-enhancement/` |
+| **MTU-N18** 머지 준비 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N18-merge-preparation/` |
+| **MTU-N24(obs)** 관찰가능성 스택 (대체됨) | 2026-04-08 | - | `docs/archive/2026-04/MTU-N24-observability-stack/` |
+| **features-legacy** 구 feature 명칭 plan/design (csap/dep/eco/isms/q 계열) | 2026-04-08 | - | `docs/archive/2026-04/features-legacy/` |
 
 ## av-skill 요약
 
@@ -93,7 +121,7 @@
 
 - **설명**: ECC 하네스 5개 에이전트 + Q-Gate G1~G7 검증 절차
 - **최종 매치율**: 100% (7/7 수용 기준 통과)
-- **산출물**: `docs/framework/09-cc-harness/harness-verification-guide.md`
+- **산출물**: `docs/framework/10-cc-harness/harness-verification-guide.md`
 - **문서**: Plan + Design + Report
 
 ## MTU-F1 Getting Started 레이어 요약
@@ -160,7 +188,7 @@
 - **설명**: CSAP 79항목 x N2SF 6영역 전수 매핑 + C/S/O 데이터 등급 분류 체계
 - **PDCA 사이클**: Plan (기존) -> Do -> Check (100%) -> Report -> Archive
 - **최종 매치율**: 100% (2/2 시험 시나리오 통과)
-- **산출물**: `docs/framework/03-n2sf/` (csap-n2sf-mapping.md, data-grade-classification.md)
+- **산출물**: `docs/framework/04-n2sf/` (csap-n2sf-mapping.md, data-grade-classification.md)
 - **포함 항목**: 79항목 전수 매핑, C/S/O 3등급 체계, AI API 판단 흐름도, TypeScript DataGrade 패턴
 - **주요 성과**: CSAP-N2SF 이중 규제 동시 충족 증거, maskPII 함수, classifyData 헬퍼
 - **후속 영향**: MTU-C5, MTU-A1, MTU-A2 연계
@@ -181,7 +209,7 @@
 - **설명**: WSL2에서 CSAP-D11 보안 설정이 적용된 k3s 클러스터 10분 이내 구성 레시피
 - **PDCA 사이클**: Plan -> Design -> Do -> Check (100%) -> Report -> Archive
 - **최종 매치율**: 100% (5/5 합격 기준 통과, 27/27 검증 항목 충족)
-- **산출물**: `docs/framework/07-infra/` (cluster-setup-recipe.md, install-k3s.sh, container-security-baseline.md)
+- **산출물**: `docs/framework/08-infra/` (cluster-setup-recipe.md, install-k3s.sh, container-security-baseline.md)
 - **주요 성과**: kube-router CNI + PSS restricted + deny-all NetworkPolicy 표준 조합, CSAP-D11 7항목 x CIS Benchmark 매핑
 - **후속 영향**: MTU-I2, I3, I4, C7 착수 가능
 - **문서**: Plan + Design + Analysis + Report
@@ -191,7 +219,7 @@
 - **설명**: N2SF 6개 보안 영역(N01~N06) 전수 통제 구현 가이드 — 격리·접근·암호화·데이터·운영 보안 구현 패턴
 - **PDCA 사이클**: Plan (기존) -> Do -> Check (100%) -> Report -> Archive
 - **최종 매치율**: 100%
-- **산출물**: `docs/framework/03-n2sf/domains/` (N01~N06 6개 파일)
+- **산출물**: `docs/framework/04-n2sf/domains/` (N01~N06 6개 파일)
 - **포함 항목**: N01(네트워크 격리) + N02(ID 및 접근) + N03(격리 아키텍처) + N04(암호화) + N05(데이터) + N06(운영) 전수
 - **주요 성과**: N2SF 6개 영역 구현 코드 패턴, CSAP 역참조 테이블, 증적 자료 체크리스트
 - **후속 영향**: MTU-A1(AI 연동), MTU-A2(보안 게이트웨이) 연계
@@ -203,7 +231,7 @@
 - **설명**: Kyverno + OPA(Open Policy Agent) 기반 Policy as Code 구현 가이드 — k3s 환경 자동화 정책 적용
 - **PDCA 사이클**: Plan (기존) -> Do -> Check (100%) -> Report -> Archive
 - **최종 매치율**: 100%
-- **산출물**: `docs/framework/07-infra/policy-as-code/` (Kyverno 정책 + OPA Rego 정책 파일)
+- **산출물**: `docs/framework/08-infra/policy-as-code/` (Kyverno 정책 + OPA Rego 정책 파일)
 - **포함 항목**: PSS restricted 정책, 이미지 서명 검증, NetworkPolicy 자동 적용, RBAC 감사 정책
 - **주요 성과**: CSAP-D08/D11/D12 통제항목 코드 자동화, CI/CD 파이프라인 정책 게이트 연동
 - **후속 영향**: MTU-I2(Gitea CI/CD) 정책 게이트 연계, MTU-C3 준수 자동화

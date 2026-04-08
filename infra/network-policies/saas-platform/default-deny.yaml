@@ -1,0 +1,18 @@
+# NetworkPolicy: saas-platform 기본 차단
+# Design Ref: MTU-N28 Design -- 계층별 적용
+# Plan SC: FR-N28.1
+# CSAP: D-10-04 (네트워크 접근 통제)
+# N2SF: N-01 (네트워크 격리)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: saas-platform
+  labels:
+    policy-type: baseline
+    csap-control: D-10-04
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

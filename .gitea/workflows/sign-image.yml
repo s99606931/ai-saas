@@ -1,0 +1,88 @@
+# Gitea Actions: Cosign 이미지 서명 자동화
+# Design Ref: MTU-N27 Design -- CI/CD 자동화
+# Plan SC: FR-N27.5
+# CSAP: D-12-01 (개발 보안 자동화)
+#
+# 트리거: Harbor 이미지 빌드 완료 후 자동 서명
+# 전제: cosign 바이너리 + 서명 키가 Runner에 존재
+
+name: Sign Container Image
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+  # 수동 실행 지원
+  workflow_dispatch:
+    inputs:
+      image_ref:
+        description: "서명할 이미지 참조 (예: localhost:8080/public-saas/test-app:latest)"
+        required: true
+        type: string
+
+env:
+  HARBOR_REGISTRY: localhost:8080
+  HARBOR_PROJECT: public-saas
+  COSIGN_KEY_PATH: /opt/cosign/cosign.key
+  SIGNING_CONFIG_PATH: /opt/cosign/signing-config.json
+
+jobs:
+  sign-image:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Cosign
+        run: |
+          # Cosign v3.x 설치
+          curl -sSfL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 \
+            -o /usr/local/bin/cosign
+          chmod +x /usr/local/bin/cosign
+          cosign version
+
+      - name: Login to Harbor
+        run: |
+          echo "${{ secrets.HARBOR_PASSWORD }}" | \
+            cosign login ${{ env.HARBOR_REGISTRY }} \
+              -u ${{ secrets.HARBOR_USERNAME }} \
+              --password-stdin
+
+      - name: Determine Image Reference
+        id: image-ref
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "ref=${{ github.event.inputs.image_ref }}" >> $GITHUB_OUTPUT
+          else
+            # CI 워크플로우에서 빌드된 이미지 참조
+            IMAGE="${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ github.repository }}:${{ github.sha }}"
+            echo "ref=${IMAGE}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Sign Image with Cosign
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          echo "=== Signing Image: ${{ steps.image-ref.outputs.ref }} ==="
+          cosign sign \
+            --key ${{ env.COSIGN_KEY_PATH }} \
+            --signing-config ${{ env.SIGNING_CONFIG_PATH }} \
+            --allow-insecure-registry \
+            ${{ steps.image-ref.outputs.ref }}
+
+      - name: Verify Signature
+        run: |
+          echo "=== Verifying Signature ==="
+          cosign verify \
+            --key infra/cosign/cosign.pub \
+            --insecure-ignore-tlog \
+            --allow-insecure-registry \
+            ${{ steps.image-ref.outputs.ref }}
+
+      - name: Audit Log
+        if: always()
+        run: |
+          echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"action\":\"IMAGE_SIGN\",\"image\":\"${{ steps.image-ref.outputs.ref }}\",\"status\":\"${{ job.status }}\",\"actor\":\"gitea-actions\"}" >> .claude/audit.jsonl

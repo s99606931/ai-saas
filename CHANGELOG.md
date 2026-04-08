@@ -6,6 +6,33 @@
 ## [Unreleased]
 
 ### Added (신규)
+- Cosign 이미지 서명 실전 적용 (MTU-N27, CSAP D-05-03/D-09-01/D-12-08)
+  - Cosign v3.0.6 설치 + ECDSA 키 쌍 생성
+  - Harbor public-saas/test-app 이미지 서명 + 검증 성공
+  - signing-config.json (v3.x tlog 비활성 방식)
+  - Kyverno ClusterPolicy verify-image-signature 생성 (Audit 모드)
+  - Gitea Actions 서명 자동화 워크플로우 (.gitea/workflows/sign-image.yml)
+  - 실전 가이드 문서 (docs/07-infra/cosign-signing-guide.md)
+- NetworkPolicy 네임스페이스 격리 강화 (MTU-N28, CSAP D-10-04/N2SF N-01)
+  - saas-platform: default-deny + DNS + intra-ns + monitoring-scrape (4개)
+  - monitoring: default-deny + DNS + intra-ns + prometheus-scrape + grafana (5개)
+  - gitops-demo: default-deny + DNS + intra-ns (3개)
+  - 총 12개 NetworkPolicy 신규 적용 (기존 3개 + 신규 12개 = 15개)
+  - 적용 후 36 pods Running 유지 + Grafana/Prometheus 정상 확인
+  - 가이드 문서 (docs/07-infra/networkpolicy-guide.md)
+- E2E 시나리오 테스트 28건 (MTU-N29, CSAP D-12)
+  - S1: 인증 시나리오 (API Gateway 헬스 + 서비스 헬스) 5건
+  - S2: 서비스 간 통신 (12개 서비스 상호 접근) 12건
+  - S3: 인프라 서비스 (PostgreSQL/Redis/Prometheus/Grafana/Harbor) 5건
+  - S4: NetworkPolicy 격리 검증 3건
+  - S5: 공급망 보안 검증 (Cosign 서명/검증/정책) 3건
+  - 테스트 스크립트: scripts/test-e2e-scenarios.sh
+- stg->main 릴리스 준비 (MTU-N30)
+  - CHANGELOG.md v1.1.0 릴리스 노트
+  - 릴리스 체크리스트 문서
+  - 시크릿 파일 미포함 검증
+
+### 이전 Unreleased (v1.1.0 릴리스 대상)
 - 성능 최적화 가이드 5종 (MTU-N19, CSAP D-07/D-11)
   - DB 인덱스 분석 + 최적화 권고 (Prisma 스키마 전수 분석)
   - k8s 리소스 requests/limits 권장값 (17 서비스 + 3 포털 + 인프라)

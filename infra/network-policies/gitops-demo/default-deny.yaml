@@ -1,0 +1,16 @@
+# NetworkPolicy: gitops-demo 기본 차단
+# Design Ref: MTU-N28 Design
+# Plan SC: FR-N28.1
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: gitops-demo
+  labels:
+    policy-type: baseline
+    csap-control: D-10-04
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

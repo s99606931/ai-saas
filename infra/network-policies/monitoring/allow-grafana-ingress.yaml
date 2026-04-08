@@ -1,0 +1,39 @@
+# NetworkPolicy: Grafana 외부 접근 + Prometheus 쿼리
+# Design Ref: MTU-N28 Design
+# Plan SC: FR-N28.4
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-grafana-ingress
+  namespace: monitoring
+  labels:
+    policy-type: monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # 외부에서 Grafana 대시보드 접근 (NodePort 30302)
+    - ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # Grafana → Prometheus 데이터 소스
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 9090
+    # Grafana → Alertmanager
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alertmanager
+      ports:
+        - protocol: TCP
+          port: 9093

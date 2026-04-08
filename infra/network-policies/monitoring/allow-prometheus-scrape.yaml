@@ -1,0 +1,45 @@
+# NetworkPolicy: Prometheus가 모든 네임스페이스 스크래핑 가능
+# Design Ref: MTU-N28 Design
+# Plan SC: FR-N28.2
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: monitoring
+  labels:
+    policy-type: monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  policyTypes:
+    - Egress
+    - Ingress
+  egress:
+    # Prometheus → 모든 네임스페이스 메트릭 포트 접근
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 9090
+        - protocol: TCP
+          port: 9093
+        - protocol: TCP
+          port: 9100
+        - protocol: TCP
+          port: 8443
+        - protocol: TCP
+          port: 10250
+  ingress:
+    # Grafana → Prometheus 쿼리
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
+      ports:
+        - protocol: TCP
+          port: 9090
