@@ -1,0 +1,315 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "annotations": { "list": [] },
+  "description": "SLO 기반 모니터링 대시보드 (API P95 < 200ms, 가용성 99.9%) — CSAP D-07",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "운영 대시보드",
+      "url": "/d/saas-platform-ops",
+      "type": "link"
+    },
+    {
+      "title": "보안 대시보드",
+      "url": "/d/saas-platform-security",
+      "type": "link"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "SLO 현황 요약",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "id": 2,
+      "title": "API P95 응답시간 (현재)",
+      "description": "Design Ref: DESIGN-SLO-1 | Plan SC: FR-N16.1 | 목표: < 200ms",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"saas-platform\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P95 (ms)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 150 },
+              { "color": "red", "value": 200 }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 3,
+      "title": "서비스 가용성 (30일)",
+      "description": "Design Ref: DESIGN-SLO-2 | Plan SC: FR-N16.2 | 목표: >= 99.9%",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 1 },
+      "targets": [
+        {
+          "expr": "(1 - (sum(rate(http_requests_total{namespace=\"saas-platform\", status=~\"5..\"}[30d])) / sum(rate(http_requests_total{namespace=\"saas-platform\"}[30d])))) * 100",
+          "legendFormat": "가용성 (%)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 99.5 },
+              { "color": "green", "value": 99.9 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none"
+      }
+    },
+    {
+      "id": 4,
+      "title": "에러 버짓 잔여량",
+      "description": "Design Ref: DESIGN-SLO-2 | 30일 에러 버짓 소진율",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "clamp_min(1 - (sum(increase(http_requests_total{namespace=\"saas-platform\", status=~\"5..\"}[30d])) / (sum(increase(http_requests_total{namespace=\"saas-platform\"}[30d])) * 0.001)), 0) * 100",
+          "legendFormat": "잔여 버짓 (%)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 25 },
+              { "color": "yellow", "value": 50 },
+              { "color": "green", "value": 75 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "SLO 위반 건수 (24시간)",
+      "description": "P95 > 200ms 이벤트 수",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 },
+      "targets": [
+        {
+          "expr": "count_over_time((histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"saas-platform\"}[5m])) by (le)) > 0.2)[24h:5m])",
+          "legendFormat": "위반 횟수"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 5 },
+              { "color": "red", "value": 20 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 6,
+      "title": "응답시간 상세",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "collapsed": false
+    },
+    {
+      "id": 7,
+      "title": "서비스별 P95 응답시간 추이",
+      "description": "Design Ref: DESIGN-SLO-1 | Plan SC: FR-N16.1",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"saas-platform\"}[5m])) by (le, service)) * 1000",
+          "legendFormat": "{{ service }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 200 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "P50 / P95 / P99 비교",
+      "description": "Design Ref: DESIGN-SLO-1 | 3개 퍼센타일 비교",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{namespace=\"saas-platform\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"saas-platform\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{namespace=\"saas-platform\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 5
+          }
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "가용성 상세",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "collapsed": false
+    },
+    {
+      "id": 10,
+      "title": "일별 가용성 추이 (30일)",
+      "description": "Design Ref: DESIGN-SLO-2 | Plan SC: FR-N16.2",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
+      "targets": [
+        {
+          "expr": "(1 - (sum(rate(http_requests_total{namespace=\"saas-platform\", status=~\"5..\"}[1d])) / sum(rate(http_requests_total{namespace=\"saas-platform\"}[1d])))) * 100",
+          "legendFormat": "일별 가용성 (%)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 3,
+          "min": 99,
+          "max": 100,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 20,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 99.9 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "서비스별 가용성",
+      "description": "Design Ref: DESIGN-SLO-2 | 서비스별 가용성 테이블",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 17 },
+      "targets": [
+        {
+          "expr": "(1 - (sum(rate(http_requests_total{namespace=\"saas-platform\", status=~\"5..\"}[24h])) by (service) / sum(rate(http_requests_total{namespace=\"saas-platform\"}[24h])) by (service))) * 100",
+          "legendFormat": "{{ service }}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 99.5 },
+              { "color": "green", "value": 99.9 }
+            ]
+          },
+          "custom": {
+            "displayMode": "color-background"
+          }
+        }
+      },
+      "options": {
+        "sortBy": [{ "displayName": "Value", "desc": false }]
+      }
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["saas-platform", "slo", "csap", "D-07"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "SLO 대시보드 (API P95 + 가용성 99.9%)",
+  "uid": "saas-platform-slo",
+  "version": 1
+}

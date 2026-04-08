@@ -247,3 +247,109 @@ spec:
           annotations:
             summary: "디스크 여유 공간 15% 미만"
             description: "노드의 디스크 여유 공간이 {{ $value | printf \"%.1f\" }}%입니다."
+
+    # ──────────────────────────────────────────
+    # 6. SLO Burn Rate 알림 (CSAP D-07)
+    # Design Ref: DESIGN-SLO-3
+    # Plan SC: FR-N16.3
+    # ──────────────────────────────────────────
+    - name: saas-slo-burn-rate-alerts
+      rules:
+        # SLO 목표: API P95 < 200ms
+        - alert: SLOLatencyBurnFast
+          expr: |
+            (
+              histogram_quantile(0.95,
+                sum(rate(http_request_duration_seconds_bucket{namespace="saas-platform"}[1h])) by (le)
+              ) > 0.2
+            )
+            and
+            (
+              histogram_quantile(0.95,
+                sum(rate(http_request_duration_seconds_bucket{namespace="saas-platform"}[5m])) by (le)
+              ) > 0.2
+            )
+          for: 2m
+          labels:
+            severity: critical
+            csap: D-07
+            slo: latency-p95
+          annotations:
+            summary: "SLO 응답시간 위반 — Fast Burn (1시간 창)"
+            description: "API P95 응답시간이 200ms SLO 목표를 1시간 이상 초과하고 있습니다. 현재 P95: {{ $value | printf \"%.3f\" }}초. 에러 버짓 급속 소진 중."
+            runbook: "docs/framework/07-infra/runbook/slo-latency.md"
+
+        - alert: SLOLatencyBurnSlow
+          expr: |
+            (
+              histogram_quantile(0.95,
+                sum(rate(http_request_duration_seconds_bucket{namespace="saas-platform"}[6h])) by (le)
+              ) > 0.2
+            )
+            and
+            (
+              histogram_quantile(0.95,
+                sum(rate(http_request_duration_seconds_bucket{namespace="saas-platform"}[30m])) by (le)
+              ) > 0.2
+            )
+          for: 15m
+          labels:
+            severity: warning
+            csap: D-07
+            slo: latency-p95
+          annotations:
+            summary: "SLO 응답시간 위반 — Slow Burn (6시간 창)"
+            description: "API P95 응답시간이 200ms SLO 목표를 6시간 이상 지속 초과. 현재 P95: {{ $value | printf \"%.3f\" }}초."
+
+        # SLO 목표: 가용성 99.9%
+        - alert: SLOAvailabilityBurnFast
+          expr: |
+            (
+              (
+                sum(rate(http_requests_total{namespace="saas-platform", status=~"5.."}[1h]))
+                /
+                sum(rate(http_requests_total{namespace="saas-platform"}[1h]))
+              ) > 0.001 * 14.4
+            )
+            and
+            (
+              (
+                sum(rate(http_requests_total{namespace="saas-platform", status=~"5.."}[5m]))
+                /
+                sum(rate(http_requests_total{namespace="saas-platform"}[5m]))
+              ) > 0.001 * 14.4
+            )
+          for: 2m
+          labels:
+            severity: critical
+            csap: D-07
+            slo: availability-999
+          annotations:
+            summary: "SLO 가용성 위반 — Fast Burn (에러 버짓 1시간 소진 속도)"
+            description: "5xx 에러율이 가용성 99.9% SLO 기준 14.4배 속도로 에러 버짓을 소진 중. 현재 에러율: {{ $value | printf \"%.4f\" }}."
+
+        - alert: SLOAvailabilityBurnSlow
+          expr: |
+            (
+              (
+                sum(rate(http_requests_total{namespace="saas-platform", status=~"5.."}[6h]))
+                /
+                sum(rate(http_requests_total{namespace="saas-platform"}[6h]))
+              ) > 0.001 * 6
+            )
+            and
+            (
+              (
+                sum(rate(http_requests_total{namespace="saas-platform", status=~"5.."}[30m]))
+                /
+                sum(rate(http_requests_total{namespace="saas-platform"}[30m]))
+              ) > 0.001 * 6
+            )
+          for: 15m
+          labels:
+            severity: warning
+            csap: D-07
+            slo: availability-999
+          annotations:
+            summary: "SLO 가용성 위반 — Slow Burn (에러 버짓 6시간 소진 속도)"
+            description: "5xx 에러율이 가용성 99.9% SLO 기준 6배 속도로 에러 버짓을 소진 중. 현재 에러율: {{ $value | printf \"%.4f\" }}."

@@ -1,0 +1,346 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "annotations": { "list": [] },
+  "description": "CSAP D-06 침해사고 관리 보안 모니터링 대시보드",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "운영 대시보드",
+      "url": "/d/saas-platform-ops",
+      "type": "link"
+    },
+    {
+      "title": "SLO 대시보드",
+      "url": "/d/saas-platform-slo",
+      "type": "link"
+    }
+  ],
+  "liveNow": true,
+  "panels": [
+    {
+      "id": 1,
+      "title": "보안 위협 현황",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "id": 2,
+      "title": "로그인 실패 히트맵 (시간대별)",
+      "description": "Design Ref: DESIGN-SEC-1 | Plan SC: FR-N16.4 | CSAP D-06, D-08 | 브루트포스 패턴 시각화",
+      "type": "heatmap",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(increase(auth_login_failures_total{namespace=\"saas-platform\"}[1h])) by (source_ip)",
+          "legendFormat": "{{ source_ip }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "scaleDistribution": { "type": "linear" }
+          }
+        }
+      },
+      "options": {
+        "calculate": true,
+        "calculation": { "xBuckets": { "mode": "size", "value": "1h" } },
+        "color": {
+          "mode": "scheme",
+          "scheme": "Oranges",
+          "steps": 64
+        },
+        "yAxis": { "unit": "short" },
+        "tooltip": { "show": true }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Rate Limit 초과 (429) 추이",
+      "description": "Design Ref: DESIGN-SEC-1 | CSAP D-08 | DDoS/오남용 패턴 감지",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{namespace=\"saas-platform\", status=\"429\"}[5m])) by (source_ip) * 60",
+          "legendFormat": "{{ source_ip }} (건/분)"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{namespace=\"saas-platform\", status=\"429\"}[5m])) * 60",
+          "legendFormat": "전체 합계"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 20 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "이상 접근 패턴 (비업무시간 22:00~06:00)",
+      "description": "Design Ref: DESIGN-SEC-1 | CSAP D-06 | 비정상 시간대 접근 모니터링",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{namespace=\"saas-platform\"}[5m])) by (service) * 60 and on() (hour() >= 22 or hour() < 6)",
+          "legendFormat": "{{ service }} (비업무시간)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 20
+          },
+          "color": { "mode": "palette-classic" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "감사 로그 볼륨 (작업 유형별)",
+      "description": "Design Ref: DESIGN-SEC-1 | CSAP D-06 | 민감 작업 빈도 모니터링",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+      "targets": [
+        {
+          "expr": "sum(rate(audit_events_total{namespace=\"saas-platform\"}[5m])) by (action) * 60",
+          "legendFormat": "{{ action }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "bars",
+            "stacking": { "mode": "normal" }
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "데이터 등급별 API 호출 (N2SF)",
+      "description": "Design Ref: DESIGN-SEC-1 | N2SF N-05 | C/S등급 데이터 접근 시도 모니터링",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 17 },
+      "targets": [
+        {
+          "expr": "sum(increase(api_calls_total{namespace=\"saas-platform\"}[24h])) by (data_grade)",
+          "legendFormat": "{{ data_grade }}등급"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "C등급" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "S등급" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "O등급" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "single" },
+        "pieType": "donut"
+      }
+    },
+    {
+      "id": 7,
+      "title": "보안 알림 이력 (최근 24시간)",
+      "description": "CSAP D-06 | 보안 관련 알림 발생 이력",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 17 },
+      "targets": [
+        {
+          "expr": "ALERTS{namespace=\"saas-platform\", csap=~\"D-06|D-08\"}",
+          "legendFormat": "{{ alertname }}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "displayMode": "color-text"
+          }
+        }
+      },
+      "options": {
+        "sortBy": [{ "displayName": "Time", "desc": true }]
+      }
+    },
+    {
+      "id": 8,
+      "title": "보안 지표 요약",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+      "collapsed": false
+    },
+    {
+      "id": 9,
+      "title": "로그인 실패 (1시간)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 26 },
+      "targets": [
+        {
+          "expr": "sum(increase(auth_login_failures_total{namespace=\"saas-platform\"}[1h]))",
+          "legendFormat": "실패 건수"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 50 },
+              { "color": "red", "value": 200 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "id": 10,
+      "title": "429 응답 (1시간)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 26 },
+      "targets": [
+        {
+          "expr": "sum(increase(http_requests_total{namespace=\"saas-platform\", status=\"429\"}[1h]))",
+          "legendFormat": "429 건수"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 100 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "id": 11,
+      "title": "감사 이벤트 (1시간)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 26 },
+      "targets": [
+        {
+          "expr": "sum(increase(audit_events_total{namespace=\"saas-platform\"}[1h]))",
+          "legendFormat": "감사 이벤트"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "blue", "value": 100 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "id": 12,
+      "title": "활성 보안 알림",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 26 },
+      "targets": [
+        {
+          "expr": "count(ALERTS{namespace=\"saas-platform\", csap=~\"D-06|D-08\", alertstate=\"firing\"})",
+          "legendFormat": "활성 알림"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["saas-platform", "security", "csap", "D-06", "D-08"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "CSAP 보안 모니터링 대시보드 (D-06 침해사고)",
+  "uid": "saas-platform-security",
+  "version": 1
+}

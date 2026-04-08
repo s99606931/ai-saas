@@ -10,7 +10,18 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "title": "SLO 대시보드",
+      "url": "/d/saas-platform-slo",
+      "type": "link"
+    },
+    {
+      "title": "보안 대시보드",
+      "url": "/d/saas-platform-security",
+      "type": "link"
+    }
+  ],
   "liveNow": false,
   "panels": [
     {
@@ -224,11 +235,95 @@
         "defaults": { "unit": "short" }
       }
     }
+    ,
+    {
+      "title": "인프라 스토리지",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+      "collapsed": false
+    },
+    {
+      "title": "PVC 사용률 (PostgreSQL/Redis/MinIO)",
+      "description": "Design Ref: DESIGN-OPS-2 | Plan SC: FR-N16.7 | PV 사용률 모니터링",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
+      "targets": [
+        {
+          "expr": "(kubelet_volume_stats_used_bytes{namespace=\"saas-platform\"} / kubelet_volume_stats_capacity_bytes{namespace=\"saas-platform\"}) * 100",
+          "legendFormat": "{{ persistentvolumeclaim }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "테넌트별 리소스 사용 비교",
+      "description": "Design Ref: DESIGN-OPS-1 | Plan SC: FR-N16.5 | 테넌트별 요청 비율",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{namespace=\"saas-platform\", tenant_id=~\"$tenant\"}[5m])) by (tenant_id) * 60",
+          "legendFormat": "{{ tenant_id }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "legend": { "displayMode": "list", "placement": "right" }
+      }
+    }
   ],
   "schemaVersion": 38,
   "style": "dark",
   "tags": ["saas-platform", "csap", "production"],
-  "templating": { "list": [] },
+  "templating": {
+    "list": [
+      {
+        "name": "tenant",
+        "label": "테넌트",
+        "type": "query",
+        "query": "label_values(http_requests_total{namespace=\"saas-platform\"}, tenant_id)",
+        "datasource": "Prometheus",
+        "refresh": 2,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "sort": 1
+      },
+      {
+        "name": "service",
+        "label": "서비스",
+        "type": "query",
+        "query": "label_values(http_requests_total{namespace=\"saas-platform\"}, service)",
+        "datasource": "Prometheus",
+        "refresh": 2,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "sort": 1
+      }
+    ]
+  },
   "time": { "from": "now-1h", "to": "now" },
   "timepicker": {},
   "timezone": "Asia/Seoul",
