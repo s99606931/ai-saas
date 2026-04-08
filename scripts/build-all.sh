@@ -5,6 +5,7 @@
 # 사용법:
 #   ./scripts/build-all.sh              # 전체 빌드
 #   ./scripts/build-all.sh --parallel   # 병렬 빌드 (4 동시)
+#   ./scripts/build-all.sh --push       # 빌드 후 Harbor push
 #   ./scripts/build-all.sh auth-service # 특정 서비스만
 
 set -euo pipefail
@@ -13,8 +14,34 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 REGISTRY="${DOCKER_REGISTRY:-saas}"
 TAG="${DOCKER_TAG:-dev}"
-PARALLEL="${1:-}"
+PUSH_TO_HARBOR=false
+PARALLEL=""
 MAX_PARALLEL=4
+
+# 옵션 파싱
+for arg in "$@"; do
+  case "$arg" in
+    --push)
+      PUSH_TO_HARBOR=true
+      REGISTRY="${DOCKER_REGISTRY:-localhost:8080/public-saas}"
+      ;;
+    --parallel)
+      PARALLEL="--parallel"
+      ;;
+    --help|-h)
+      echo "사용법: $0 [옵션] [서비스명]"
+      echo "  --parallel   병렬 빌드"
+      echo "  --push       빌드 후 Harbor push"
+      echo "  <서비스명>   특정 서비스만 빌드"
+      exit 0
+      ;;
+    -*)
+      ;;
+    *)
+      PARALLEL="$arg"
+      ;;
+  esac
+done
 
 # 서비스 목록 (포트 순서)
 SERVICES=(
@@ -153,6 +180,39 @@ if [ ${FAILED} -gt 0 ]; then
 fi
 
 log_info "전체 빌드 성공"
+
+# Harbor push (--push 옵션)
+if [ "${PUSH_TO_HARBOR}" = true ]; then
+  echo ""
+  log_info "Harbor 레지스트리에 Push 중..."
+
+  # Harbor 로그인
+  if [ -f "${PROJECT_ROOT}/infra/harbor/.env" ]; then
+    # shellcheck disable=SC1091
+    source "${PROJECT_ROOT}/infra/harbor/.env"
+    echo "${HARBOR_ADMIN_PASSWORD:-Harbor12345}" | docker login "localhost:8080" -u admin --password-stdin 2>/dev/null || {
+      log_error "Harbor 로그인 실패"
+      exit 1
+    }
+  fi
+
+  for svc in "${SERVICES[@]}"; do
+    local_image="${REGISTRY}/${svc}:${TAG}"
+    if docker push "${local_image}" 2>/dev/null; then
+      log_info "Push 성공: ${local_image}"
+    else
+      log_warn "Push 실패: ${local_image}"
+    fi
+  done
+
+  # Portal push
+  portal_image="${REGISTRY}/portal:${TAG}"
+  if docker push "${portal_image}" 2>/dev/null; then
+    log_info "Push 성공: ${portal_image}"
+  else
+    log_warn "Push 실패: ${portal_image}"
+  fi
+fi
 
 # 이미지 목록 출력
 echo ""

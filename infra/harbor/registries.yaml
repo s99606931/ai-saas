@@ -1,0 +1,30 @@
+# k3s 레지스트리 설정 -- Harbor 연동
+# Design Ref: MTU-N11 | Plan SC: FR-N11.4
+# CSAP: D-11 (가상화 보안)
+#
+# 설치 경로: /etc/rancher/k3s/registries.yaml
+# 설치 후 k3s 재시작 필요: sudo systemctl restart k3s
+#
+# [주의] auth 섹션의 비밀번호는 실제 Harbor 비밀번호로 변경하십시오.
+
+mirrors:
+  "localhost:8080":
+    endpoint:
+      - "http://localhost:8080"
+  "harbor.local:8080":
+    endpoint:
+      - "http://harbor.local:8080"
+
+configs:
+  "localhost:8080":
+    auth:
+      username: admin
+      password: CHANGE_ME_harbor_admin_password
+    tls:
+      insecure_skip_verify: true
+  "harbor.local:8080":
+    auth:
+      username: admin
+      password: CHANGE_ME_harbor_admin_password
+    tls:
+      insecure_skip_verify: true

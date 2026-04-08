@@ -18,7 +18,9 @@ env:
 jobs:
   ci:
     name: Build & Test
-    runs-on: ubuntu-latest
+    # self-hosted runner 사용 (WSL2 Act Runner)
+    # Design Ref: MTU-N12 | Plan SC: FR-N12.5
+    runs-on: self-hosted
     timeout-minutes: 15
 
     services:
@@ -97,7 +99,7 @@ jobs:
   # CSAP D-12: 시스템 개발 보안 -- 통합시험 자동화
   e2e:
     name: E2E Integration Tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: ci
     timeout-minutes: 20
 
@@ -166,7 +168,7 @@ jobs:
   # Helm Chart 유효성 검증 (Design Ref: DESIGN-MTU-N05 | Plan SC: FR-N05.3)
   helm-lint:
     name: Helm Chart Lint
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 5
 
     steps:

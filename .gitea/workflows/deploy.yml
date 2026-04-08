@@ -7,17 +7,17 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, stg]
     tags: ["v*"]
 
 env:
-  REGISTRY: ${REGISTRY:-localhost:5000}
+  REGISTRY: ${{ secrets.HARBOR_URL || 'localhost:8080' }}
   IMAGE_PREFIX: public-saas
 
 jobs:
   build-and-push:
     name: Build & Push Docker Images
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 30
 
     strategy:
@@ -58,6 +58,14 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}" >> $GITHUB_OUTPUT
 
+      # Harbor 레지스트리 로그인 (Design Ref: MTU-N12 | Plan SC: FR-N12.2)
+      - name: Login to Harbor registry
+        run: |
+          echo "${{ secrets.HARBOR_PASSWORD }}" | docker login \
+            "${{ env.REGISTRY }}" \
+            -u "${{ secrets.HARBOR_USERNAME }}" \
+            --password-stdin
+
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
@@ -92,20 +100,16 @@ jobs:
           docker stop test-${{ matrix.service }} || true
           docker rm test-${{ matrix.service }} || true
 
-      # 레지스트리 푸시 (Harbor 또는 로컬 레지스트리 설정 시 활성화)
-      # - name: Push to registry
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     context: .
-      #     file: platform/services/${{ matrix.service }}/Dockerfile
-      #     push: true
-      #     tags: |
-      #       ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version }}
-      #       ${{ steps.meta.outputs.image }}:latest
+      # Harbor 레지스트리 푸시 (Design Ref: MTU-N12 | Plan SC: FR-N12.1)
+      - name: Push to Harbor registry
+        run: |
+          docker push "${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version }}"
+          docker push "${{ steps.meta.outputs.image }}:latest"
+          echo "Pushed: ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version }}"
 
   build-portal:
-    name: Build Portal
-    runs-on: ubuntu-latest
+    name: Build & Push Portal
+    runs-on: self-hosted
     timeout-minutes: 15
 
     steps:
@@ -115,6 +119,24 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Harbor 로그인 (Design Ref: MTU-N12)
+      - name: Login to Harbor registry
+        run: |
+          echo "${{ secrets.HARBOR_PASSWORD }}" | docker login \
+            "${{ env.REGISTRY }}" \
+            -u "${{ secrets.HARBOR_USERNAME }}" \
+            --password-stdin
+
+      - name: Extract metadata
+        id: meta
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ github.ref_name }}"
+          else
+            VERSION="sha-$(echo ${{ github.sha }} | cut -c1-7)"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Build portal image
         uses: docker/build-push-action@v5
         with:
@@ -123,14 +145,21 @@ jobs:
           push: false
           load: true
           tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/portal:${{ steps.meta.outputs.version }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/portal:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Portal Harbor push (Design Ref: MTU-N12)
+      - name: Push portal to Harbor
+        run: |
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/portal:${{ steps.meta.outputs.version }}"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/portal:latest"
+
   # Helm 배포 (Design Ref: DESIGN-MTU-N05 | Plan SC: FR-N05.4)
   helm-deploy:
     name: Helm Deploy
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [build-and-push, build-portal]
     if: success()
 
@@ -172,7 +201,7 @@ jobs:
 
   deploy-notification:
     name: Deployment Notification
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [build-and-push, build-portal, helm-deploy]
     if: success()
 

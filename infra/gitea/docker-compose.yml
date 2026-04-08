@@ -1,0 +1,111 @@
+# Gitea + PostgreSQL + Act Runner Docker Compose
+# Design Ref: MTU-N10 | Plan SC: FR-N10.1, FR-N10.3
+# CSAP: D-10 (네트워크 격리), D-09 (시크릿 관리)
+#
+# 사용법:
+#   cd infra/gitea
+#   cp .env.example .env  # 비밀번호 변경 필수
+#   docker compose up -d
+#
+# 포트:
+#   Gitea Web: localhost:3000
+#   Gitea SSH: localhost:2222
+#   PostgreSQL: localhost:5433 (외부 접근용, 운영 시 비활성화 권장)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gitea-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${GITEA_DB_USER:-gitea}
+      POSTGRES_PASSWORD: ${GITEA_DB_PASSWORD:?GITEA_DB_PASSWORD 환경변수 필수}
+      POSTGRES_DB: ${GITEA_DB_NAME:-gitea}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - saas-cicd
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${GITEA_DB_USER:-gitea}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  gitea:
+    image: gitea/gitea:1.22
+    container_name: gitea
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # 데이터베이스 설정
+      GITEA__database__DB_TYPE: postgres
+      GITEA__database__HOST: postgres:5432
+      GITEA__database__NAME: ${GITEA_DB_NAME:-gitea}
+      GITEA__database__USER: ${GITEA_DB_USER:-gitea}
+      GITEA__database__PASSWD: ${GITEA_DB_PASSWORD:?GITEA_DB_PASSWORD 환경변수 필수}
+      # 서버 설정
+      GITEA__server__ROOT_URL: ${GITEA_ROOT_URL:-http://localhost:3000}
+      GITEA__server__HTTP_PORT: "3000"
+      GITEA__server__SSH_PORT: "22"
+      GITEA__server__SSH_LISTEN_PORT: "22"
+      GITEA__server__DOMAIN: localhost
+      GITEA__server__LFS_START_SERVER: "true"
+      # Actions 활성화
+      GITEA__actions__ENABLED: "true"
+      GITEA__actions__DEFAULT_ACTIONS_URL: "https://github.com"
+      # 보안 설정
+      GITEA__service__DISABLE_REGISTRATION: "true"
+      GITEA__service__REQUIRE_SIGNIN_VIEW: "true"
+      # 로그 설정
+      GITEA__log__LEVEL: info
+    volumes:
+      - gitea-data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${GITEA_HTTP_PORT:-3000}:3000"
+      - "${GITEA_SSH_PORT:-2222}:22"
+    networks:
+      - saas-cicd
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/version"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  runner:
+    image: gitea/act_runner:latest
+    container_name: gitea-runner
+    restart: unless-stopped
+    depends_on:
+      gitea:
+        condition: service_healthy
+    environment:
+      GITEA_INSTANCE_URL: "http://gitea:3000"
+      GITEA_RUNNER_REGISTRATION_TOKEN: ${RUNNER_REGISTRATION_TOKEN:?RUNNER_REGISTRATION_TOKEN 환경변수 필수}
+      GITEA_RUNNER_NAME: ${RUNNER_NAME:-wsl2-runner}
+      GITEA_RUNNER_LABELS: ${RUNNER_LABELS:-self-hosted,ubuntu-latest:host}
+    volumes:
+      - runner-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - saas-cicd
+
+volumes:
+  postgres-data:
+    driver: local
+  gitea-data:
+    driver: local
+  runner-data:
+    driver: local
+
+networks:
+  saas-cicd:
+    name: saas-cicd
+    driver: bridge
