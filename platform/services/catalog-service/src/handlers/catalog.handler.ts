@@ -148,18 +148,55 @@ export async function updateServiceHandler(
     data: { ...updateRest, ...(updateConfig !== undefined ? { config: updateConfig as object } : {}) },
   });
 
+  // 감사 로그 (CSAP D-06: 변경 작업 전수 기록, Security Ref: FR-N08.7)
+  const updateActor = (request.headers['x-user-id'] as string) || 'system';
+  await logCatalogEvent(
+    'SERVICE_UPDATED',
+    updateActor,
+    service.id,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { fields: Object.keys(parseResult.data) },
+  );
+
   await reply.send({ success: true, data: service });
 }
 
 /**
  * 서비스 삭제
  * Plan SC: FR-P06.1
+ * CSAP D-06: 삭제 작업 감사 로그 필수
+ * Security Ref: FR-N08.7
  */
 export async function deleteServiceHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  const existing = await prisma.service.findUnique({
+    where: { id: request.params.id },
+    select: { id: true, name: true, slug: true },
+  });
+  if (!existing) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'SERVICE_NOT_FOUND', message: '서비스를 찾을 수 없습니다' },
+    });
+    return;
+  }
+
   await prisma.service.delete({ where: { id: request.params.id } });
+
+  // 감사 로그 (CSAP D-06: 삭제 작업 전수 기록, Security Ref: FR-N08.7)
+  const deleteActor = (request.headers['x-user-id'] as string) || 'system';
+  await logCatalogEvent(
+    'SERVICE_DELETED',
+    deleteActor,
+    existing.id,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { name: existing.name, slug: existing.slug },
+  );
+
   await reply.send({ success: true, message: '서비스가 삭제되었습니다' });
 }
 

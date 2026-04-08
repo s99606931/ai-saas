@@ -36,15 +36,30 @@ const reorderSchema = z.object({
 /**
  * 메뉴 트리 조회 (테넌트별 격리)
  * Plan SC: FR-P05.1, FR-P05.4
+ * CSAP D-08-05: JWT 클레임 기반 테넌트 강제 격리
+ * Security Ref: FR-N08.6
  */
 export async function getMenuTreeHandler(
-  request: FastifyRequest<{ Querystring: { tenantId: string } }>,
+  request: FastifyRequest<{ Querystring: { tenantId?: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
-  const tenantId = request.query.tenantId;
+  // CSAP D-08-05: JWT 클레임 기반 테넌트 격리 (Security Ref: FR-N08.6)
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+  const effectiveTenantId = jwtRole === 'SUPER_ADMIN'
+    ? (request.query.tenantId ?? jwtTenantId)
+    : jwtTenantId;
+
+  if (!effectiveTenantId) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'TENANT_REQUIRED', message: '테넌트 ID가 필요합니다' },
+    });
+    return;
+  }
 
   const items = await prisma.menuItem.findMany({
-    where: { tenantId },
+    where: { tenantId: effectiveTenantId },
     orderBy: { order: 'asc' },
   });
 
@@ -54,16 +69,32 @@ export async function getMenuTreeHandler(
 /**
  * 역할별 메뉴 필터링
  * Plan SC: FR-P05.2
- * CSAP D-08-05: 역할 기반 접근 통제
+ * CSAP D-08-05: 역할 기반 접근 통제 + JWT 기반 테넌트 격리
+ * Security Ref: FR-N08.6
  */
 export async function getFilteredMenuHandler(
-  request: FastifyRequest<{ Querystring: { tenantId: string; role: string } }>,
+  request: FastifyRequest<{ Querystring: { tenantId?: string; role: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
-  const { tenantId, role } = request.query;
+  const { role } = request.query;
+
+  // CSAP D-08-05: JWT 클레임 기반 테넌트 격리 (Security Ref: FR-N08.6)
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+  const effectiveTenantId = jwtRole === 'SUPER_ADMIN'
+    ? (request.query.tenantId ?? jwtTenantId)
+    : jwtTenantId;
+
+  if (!effectiveTenantId) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'TENANT_REQUIRED', message: '테넌트 ID가 필요합니다' },
+    });
+    return;
+  }
 
   const items = await prisma.menuItem.findMany({
-    where: { tenantId, isVisible: true },
+    where: { tenantId: effectiveTenantId, isVisible: true },
     orderBy: { order: 'asc' },
   });
 
@@ -168,11 +199,35 @@ export async function updateMenuHandler(
 /**
  * 메뉴 항목 삭제
  * Plan SC: FR-P05.1
+ * CSAP D-08-05: 테넌트 격리 — 본인 테넌트 메뉴만 삭제 가능
+ * Security Ref: FR-N08.6
  */
 export async function deleteMenuHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-08-05: 테넌트 격리 확인 (Security Ref: FR-N08.6)
+  const deleteMenu = await prisma.menuItem.findUnique({
+    where: { id: request.params.id },
+    select: { tenantId: true },
+  });
+  if (!deleteMenu) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'MENU_NOT_FOUND', message: '메뉴 항목을 찾을 수 없습니다' },
+    });
+    return;
+  }
+  const deleteMenuJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const deleteMenuJwtRole = request.headers['x-user-role'] as string | undefined;
+  if (deleteMenuJwtRole !== 'SUPER_ADMIN' && deleteMenuJwtTenantId && deleteMenu.tenantId !== deleteMenuJwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
+    });
+    return;
+  }
+
   await prisma.menuItem.delete({ where: { id: request.params.id } });
   await reply.send({ success: true, message: '메뉴 항목이 삭제되었습니다' });
 }

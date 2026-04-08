@@ -11,6 +11,8 @@ import { prisma } from '../lib/prisma.js';
 /**
  * 인보이스 목록 조회
  * Plan SC: FR-P08.1
+ * CSAP D-08-05: 테넌트 격리 — SUPER_ADMIN 제외 본인 테넌트 인보이스만 조회
+ * Security Ref: FR-N08.4
  */
 export async function listInvoicesHandler(
   request: FastifyRequest<{ Querystring: { subscriptionId?: string; status?: string; page?: string; pageSize?: string } }>,
@@ -18,9 +20,19 @@ export async function listInvoicesHandler(
 ): Promise<void> {
   const page = parseInt(request.query.page ?? '1', 10);
   const pageSize = Math.min(parseInt(request.query.pageSize ?? '20', 10), 100);
+
+  // CSAP D-08-05: JWT 클레임 기반 테넌트 격리 (Security Ref: FR-N08.4)
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+
   const where: Record<string, unknown> = {};
   if (request.query.subscriptionId) where['subscriptionId'] = request.query.subscriptionId;
   if (request.query.status) where['status'] = request.query.status;
+
+  // SUPER_ADMIN이 아닌 경우 본인 테넌트 구독의 인보이스만 조회
+  if (jwtRole !== 'SUPER_ADMIN' && jwtTenantId) {
+    where['subscription'] = { is: { tenantId: jwtTenantId } };
+  }
 
   const [invoices, total] = await Promise.all([
     prisma.invoice.findMany({
@@ -43,6 +55,8 @@ export async function listInvoicesHandler(
 /**
  * 인보이스 상세 조회
  * Plan SC: FR-P08.1
+ * CSAP D-08-05: 테넌트 격리 — SUPER_ADMIN 제외 타 테넌트 인보이스 조회 차단
+ * Security Ref: FR-N08.4
  */
 export async function getInvoiceHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
@@ -57,6 +71,17 @@ export async function getInvoiceHandler(
     await reply.status(404).send({
       success: false,
       error: { code: 'INVOICE_NOT_FOUND', message: '인보이스를 찾을 수 없습니다' },
+    });
+    return;
+  }
+
+  // CSAP D-08-05: 테넌트 격리 (Security Ref: FR-N08.4)
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+  if (jwtRole !== 'SUPER_ADMIN' && jwtTenantId && invoice.subscription.tenantId !== jwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
     });
     return;
   }
@@ -127,6 +152,8 @@ export async function generateInvoiceHandler(
 /**
  * 결제 처리
  * Plan SC: FR-P08.2
+ * CSAP D-08-05: 테넌트 격리 — 본인 테넌트 인보이스만 결제 가능
+ * Security Ref: FR-N08.4
  */
 export async function payInvoiceHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
@@ -142,6 +169,28 @@ export async function payInvoiceHandler(
     await reply.status(400).send({
       success: false,
       error: { code: 'VALIDATION_ERROR', message: parseResult.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+
+  // CSAP D-08-05: 결제 전 인보이스 소유 테넌트 확인 (Security Ref: FR-N08.4)
+  const invoiceCheck = await prisma.invoice.findUnique({
+    where: { id: request.params.id },
+    include: { subscription: { select: { tenantId: true } } },
+  });
+  if (!invoiceCheck) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'INVOICE_NOT_FOUND', message: '인보이스를 찾을 수 없습니다' },
+    });
+    return;
+  }
+  const payJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const payJwtRole = request.headers['x-user-role'] as string | undefined;
+  if (payJwtRole !== 'SUPER_ADMIN' && payJwtTenantId && invoiceCheck.subscription.tenantId !== payJwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
     });
     return;
   }

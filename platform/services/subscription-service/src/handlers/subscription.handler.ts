@@ -157,11 +157,24 @@ export async function subscribeHandler(
 /**
  * 테넌트 구독 조회
  * Plan SC: FR-P07.2
+ * CSAP D-08-05: 테넌트 격리 — SUPER_ADMIN 제외 본인 테넌트 구독만 조회
+ * Security Ref: FR-N08.5
  */
 export async function getTenantSubscriptionHandler(
   request: FastifyRequest<{ Params: { tenantId: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-08-05: JWT 클레임 기반 테넌트 격리 (Security Ref: FR-N08.5)
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+  if (jwtRole !== 'SUPER_ADMIN' && jwtTenantId && request.params.tenantId !== jwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
+    });
+    return;
+  }
+
   const subscriptions = await prisma.subscription.findMany({
     where: { tenantId: request.params.tenantId },
     include: { plan: true },
@@ -174,6 +187,8 @@ export async function getTenantSubscriptionHandler(
 /**
  * 구독 업그레이드
  * Plan SC: FR-P07.4
+ * CSAP D-08-05: 테넌트 격리
+ * Security Ref: FR-N08.5
  */
 export async function upgradeHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
@@ -185,6 +200,28 @@ export async function upgradeHandler(
     await reply.status(400).send({
       success: false,
       error: { code: 'VALIDATION_ERROR', message: '새 플랜 ID가 필요합니다' },
+    });
+    return;
+  }
+
+  // CSAP D-08-05: 구독 소유 테넌트 확인 (Security Ref: FR-N08.5)
+  const existingSub = await prisma.subscription.findUnique({
+    where: { id: request.params.id },
+    select: { tenantId: true },
+  });
+  if (!existingSub) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'SUBSCRIPTION_NOT_FOUND', message: '구독을 찾을 수 없습니다' },
+    });
+    return;
+  }
+  const upgradeJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const upgradeJwtRole = request.headers['x-user-role'] as string | undefined;
+  if (upgradeJwtRole !== 'SUPER_ADMIN' && upgradeJwtTenantId && existingSub.tenantId !== upgradeJwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
     });
     return;
   }
@@ -211,6 +248,8 @@ export async function upgradeHandler(
 /**
  * 구독 다운그레이드
  * Plan SC: FR-P07.4
+ * CSAP D-08-05: 테넌트 격리
+ * Security Ref: FR-N08.5
  */
 export async function downgradeHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
@@ -222,6 +261,28 @@ export async function downgradeHandler(
     await reply.status(400).send({
       success: false,
       error: { code: 'VALIDATION_ERROR', message: '새 플랜 ID가 필요합니다' },
+    });
+    return;
+  }
+
+  // CSAP D-08-05: 구독 소유 테넌트 확인 (Security Ref: FR-N08.5)
+  const existingDownSub = await prisma.subscription.findUnique({
+    where: { id: request.params.id },
+    select: { tenantId: true },
+  });
+  if (!existingDownSub) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'SUBSCRIPTION_NOT_FOUND', message: '구독을 찾을 수 없습니다' },
+    });
+    return;
+  }
+  const downgradeJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const downgradeJwtRole = request.headers['x-user-role'] as string | undefined;
+  if (downgradeJwtRole !== 'SUPER_ADMIN' && downgradeJwtTenantId && existingDownSub.tenantId !== downgradeJwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
     });
     return;
   }
@@ -248,11 +309,35 @@ export async function downgradeHandler(
 /**
  * 구독 취소
  * Plan SC: FR-P07.2
+ * CSAP D-08-05: 테넌트 격리
+ * Security Ref: FR-N08.5
  */
 export async function cancelHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-08-05: 구독 소유 테넌트 확인 (Security Ref: FR-N08.5)
+  const existingCancelSub = await prisma.subscription.findUnique({
+    where: { id: request.params.id },
+    select: { tenantId: true },
+  });
+  if (!existingCancelSub) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'SUBSCRIPTION_NOT_FOUND', message: '구독을 찾을 수 없습니다' },
+    });
+    return;
+  }
+  const cancelJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const cancelJwtRole = request.headers['x-user-role'] as string | undefined;
+  if (cancelJwtRole !== 'SUPER_ADMIN' && cancelJwtTenantId && existingCancelSub.tenantId !== cancelJwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
+    });
+    return;
+  }
+
   const subscription = await prisma.subscription.update({
     where: { id: request.params.id },
     data: { status: 'CANCELED', canceledAt: new Date() },

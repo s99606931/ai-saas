@@ -34,14 +34,26 @@ const createContractSchema = z.object({
 /**
  * 고객사 목록 조회
  * Plan SC: FR-P09.1
+ * CSAP D-08-05: 테넌트 격리 — SUPER_ADMIN은 전체 조회, 그 외 JWT 테넌트 강제
+ * Security Ref: FR-N08.3
  */
 export async function listCustomersHandler(
-  request: FastifyRequest<{ Querystring: { status?: string; page?: string; pageSize?: string } }>,
+  request: FastifyRequest<{ Querystring: { status?: string; page?: string; pageSize?: string; tenantId?: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
   const page = parseInt(request.query.page ?? '1', 10);
   const pageSize = Math.min(parseInt(request.query.pageSize ?? '20', 10), 100);
-  const where = request.query.status ? { status: request.query.status } : {};
+
+  // CSAP D-08-05: JWT 클레임 기반 테넌트 격리
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+  const effectiveTenantId = jwtRole === 'SUPER_ADMIN'
+    ? (request.query.tenantId ?? jwtTenantId)
+    : jwtTenantId;
+
+  const where: Record<string, unknown> = {};
+  if (request.query.status) where['status'] = request.query.status;
+  if (effectiveTenantId) where['tenantId'] = effectiveTenantId;
 
   const [customers, total] = await Promise.all([
     prisma.customer.findMany({
@@ -64,6 +76,8 @@ export async function listCustomersHandler(
 /**
  * 고객사 상세 조회
  * Plan SC: FR-P09.1
+ * CSAP D-08-05: 테넌트 격리 — SUPER_ADMIN 제외 타 테넌트 고객 조회 차단
+ * Security Ref: FR-N08.3
  */
 export async function getCustomerHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
@@ -78,6 +92,17 @@ export async function getCustomerHandler(
     await reply.status(404).send({
       success: false,
       error: { code: 'CUSTOMER_NOT_FOUND', message: '고객사를 찾을 수 없습니다' },
+    });
+    return;
+  }
+
+  // CSAP D-08-05: 테넌트 격리 (Security Ref: FR-N08.3)
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+  if (jwtRole !== 'SUPER_ADMIN' && jwtTenantId && customer.tenantId && customer.tenantId !== jwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
     });
     return;
   }
@@ -122,6 +147,8 @@ export async function createCustomerHandler(
 /**
  * 고객사 수정
  * Plan SC: FR-P09.1
+ * CSAP D-08-05: 테넌트 격리
+ * Security Ref: FR-N08.3
  */
 export async function updateCustomerHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
@@ -139,6 +166,28 @@ export async function updateCustomerHandler(
     await reply.status(400).send({
       success: false,
       error: { code: 'VALIDATION_ERROR', message: parseResult.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+
+  // CSAP D-08-05: 테넌트 격리 확인 (Security Ref: FR-N08.3)
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+  const existing = await prisma.customer.findUnique({
+    where: { id: request.params.id },
+    select: { tenantId: true },
+  });
+  if (!existing) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'CUSTOMER_NOT_FOUND', message: '고객사를 찾을 수 없습니다' },
+    });
+    return;
+  }
+  if (jwtRole !== 'SUPER_ADMIN' && jwtTenantId && existing.tenantId && existing.tenantId !== jwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
     });
     return;
   }
