@@ -63,6 +63,8 @@
 | **MTU-P19** 포크 가이드 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P19-fork-guide/` |
 | **MTU-P20** 바이브코딩 하네스 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P20-vibecoding-harness/` |
 | **MTU-P21** 통합 테스트 | 2026-04-05 | 100% | `docs/archive/2026-04/MTU-P21-integration-test/` |
+| **MTU-N19** 성능 최적화 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N19/` |
+| **MTU-N20** 보안 최종 점검 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N20/` |
 
 ## av-skill 요약
 
@@ -284,3 +286,5 @@
 > MTU-P19 추가 (2026-04-05): 포크 가이드 PDCA 완료 -- 100%, FORK-GUIDE.md 5단계+체크리스트 | PM Agent
 > MTU-P20 추가 (2026-04-05): 바이브코딩 하네스 PDCA 완료 -- 100%, CLAUDE.md+rules+agents 하네스 | PM Agent
 > MTU-P21 추가 (2026-04-05): 통합 테스트 PDCA 완료 -- 100%, 15개 서비스 헬스체크+CSAP 검증 | PM Agent
+> MTU-N19 추가 (2026-04-08): 성능 최적화 가이드 5종 PDCA 완료 -- 100%, DB 인덱스/k8s 리소스/WSL2/.wslconfig/Docker/연결풀 | PM Lead (Opus)
+> MTU-N20 추가 (2026-04-08): 보안 최종 점검 가이드 5종 PDCA 완료 -- 100%, Trivy/ZAP/pnpm audit/보고서 템플릿/CI 보안 파이프라인 | PM Lead (Opus)

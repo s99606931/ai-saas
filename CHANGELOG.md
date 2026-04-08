@@ -6,6 +6,18 @@
 ## [Unreleased]
 
 ### Added (신규)
+- 성능 최적화 가이드 5종 (MTU-N19, CSAP D-07/D-11)
+  - DB 인덱스 분석 + 최적화 권고 (Prisma 스키마 전수 분석)
+  - k8s 리소스 requests/limits 권장값 (17 서비스 + 3 포털 + 인프라)
+  - WSL2 .wslconfig 권장 설정 (RAM별 3단계)
+  - Docker 이미지 크기 최적화 권고 (멀티스테이지 빌드 분석)
+  - 연결 풀 (DB/Redis) 튜닝 가이드
+- 보안 최종 점검 가이드 5종 (MTU-N20, CSAP D-12)
+  - Trivy 컨테이너 이미지 스캔 절차 + 결과 해석 가이드
+  - OWASP ZAP 동적 분석 (DAST) 실행 절차
+  - 의존성 보안 감사 (pnpm audit) 결과 분석 절차
+  - 보안 점검 결과 보고서 템플릿 (CSAP D-12 감리 증적)
+  - CI/CD 보안 파이프라인 통합 가이드 (Gitea Actions)
 - Grafana 모니터링 대시보드 3종 완성 (MTU-N16, CSAP D-06/D-07)
   - SLO 대시보드: API P95 < 200ms + 가용성 99.9% 시각화 (11패널)
   - 보안 대시보드: CSAP D-06 침해사고 모니터링 (12패널)
