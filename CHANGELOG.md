@@ -6,6 +6,27 @@
 ## [Unreleased]
 
 ### Added (신규)
+- Grafana 모니터링 대시보드 3종 완성 (MTU-N16, CSAP D-06/D-07)
+  - SLO 대시보드: API P95 < 200ms + 가용성 99.9% 시각화 (11패널)
+  - 보안 대시보드: CSAP D-06 침해사고 모니터링 (12패널)
+  - 운영 대시보드 보강: 테넌트 변수 선택기 + PVC 사용률 (2패널 추가)
+- kube-prometheus-stack 배포 매니페스트 (MTU-N16)
+  - Prometheus + Grafana + AlertManager + kube-state-metrics
+  - k3s 최적화 리소스 설정 (Prometheus 256Mi/512Mi)
+  - severity 기반 AlertManager 라우팅 + 한국어 알림 템플릿
+- SLO burn rate 알림 4개 (MTU-N16, CSAP D-07)
+  - Latency Fast/Slow burn (1h/6h 창)
+  - Availability Fast/Slow burn (14.4x/6x burn rate)
+- 플러그인 핸들러 통합 테스트 40개 (MTU-N17)
+  - 전자결재: 9개 엔드포인트 25건 (CSAP D-08/D-12 검증)
+  - 공공데이터: 4개 엔드포인트 15건 (CSAP D-08/D-12 검증)
+- 플러그인 SDK 사용 가이드 (MTU-N17, docs/api/plugin-sdk-guide.md)
+- WSL2 CI/CD 완전 구성 (MTU-N10~N15)
+  - Gitea Actions self-hosted runner 전환
+  - Harbor 레지스트리 구성 + push 활성화
+  - 전체 셋업 스크립트 5개 (Gitea/Harbor/Act-Runner/통합/E2E)
+- OWASP Top 10 테넌트 격리 강화 (MTU-N08, CSAP D-08-05)
+  - billing/catalog/crm/menu/subscription 5개 서비스 핸들러 보안 강화
 - Helm Chart 패키징 (MTU-N04, 20개 서비스 + 인프라)
   - 환경별 values 분리 (dev/stg/prod)
   - PDB, NetworkPolicy, Prometheus AlertRules 템플릿화
