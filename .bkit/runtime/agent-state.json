@@ -7,17 +7,27 @@
   "orchestrationPattern": "leader",
   "ctoAgent": "opus",
   "startedAt": "2026-04-08T05:57:36.930Z",
-  "lastUpdated": "2026-04-08T05:57:36.933Z",
+  "lastUpdated": "2026-04-08T08:47:16.459Z",
   "teammates": [
     {
       "name": "a5080418e3ec1e3a2",
       "role": "pm-lead",
       "model": "sonnet",
-      "status": "spawning",
+      "status": "completed",
       "currentTask": null,
       "taskId": null,
       "startedAt": "2026-04-08T05:57:36.933Z",
-      "lastActivityAt": "2026-04-08T05:57:36.933Z"
+      "lastActivityAt": "2026-04-08T06:15:52.290Z"
+    },
+    {
+      "name": "a65ada5dcad6bd1c0",
+      "role": "pm-lead",
+      "model": "sonnet",
+      "status": "spawning",
+      "currentTask": null,
+      "taskId": null,
+      "startedAt": "2026-04-08T08:47:16.458Z",
+      "lastActivityAt": "2026-04-08T08:47:16.458Z"
     }
   ],
   "progress": {
