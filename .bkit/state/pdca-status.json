@@ -1,6 +1,6 @@
 {
   "version": "3.0",
-  "lastUpdated": "2026-04-07T16:10:43.808Z",
+  "lastUpdated": "2026-04-08T05:51:04.407Z",
   "activeFeatures": [
     "public-saas-framework",
     "scripts",
@@ -74,9 +74,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T10:19:06.640Z",
-        "lastUpdated": "2026-04-07T13:07:54.253Z"
+        "lastUpdated": "2026-04-08T05:51:04.405Z"
       },
-      "lastFile": "/data/ai-saas/scripts/db-restore.sh"
+      "lastFile": "/data/ai-saas/scripts/test-cicd-pipeline.sh"
     },
     ".claude": {
       "phase": "archived",
@@ -320,10 +320,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:36:21.565Z",
-        "lastUpdated": "2026-04-07T12:51:46.094Z",
+        "lastUpdated": "2026-04-07T22:34:51.938Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/menu-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/menu-service/src/handlers/menu.handler.ts"
     },
     "catalog-service": {
       "phase": "do",
@@ -341,10 +341,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:36:59.353Z",
-        "lastUpdated": "2026-04-07T12:51:04.131Z",
+        "lastUpdated": "2026-04-07T22:35:08.713Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/catalog-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/catalog-service/src/handlers/catalog.handler.ts"
     },
     "subscription-service": {
       "phase": "do",
@@ -362,10 +362,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:37:30.366Z",
-        "lastUpdated": "2026-04-07T12:51:16.777Z",
+        "lastUpdated": "2026-04-07T22:34:20.635Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/subscription-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/subscription-service/src/handlers/subscription.handler.ts"
     },
     "billing-service": {
       "phase": "do",
@@ -383,10 +383,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:38:14.606Z",
-        "lastUpdated": "2026-04-07T12:51:24.452Z",
+        "lastUpdated": "2026-04-07T22:33:44.400Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/billing-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/billing-service/src/handlers/billing.handler.ts"
     },
     "crm-service": {
       "phase": "do",
@@ -404,10 +404,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:39:00.296Z",
-        "lastUpdated": "2026-04-07T12:51:31.384Z",
+        "lastUpdated": "2026-04-07T22:33:09.649Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/crm-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/crm-service/src/handlers/crm.handler.ts"
     },
     "notification-service": {
       "phase": "do",
@@ -894,7 +894,7 @@
   "session": {
     "startedAt": "2026-04-05T05:33:14.156Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-04-07T16:10:43.808Z"
+    "lastActivity": "2026-04-08T05:51:04.407Z"
   },
   "history": [
     {
@@ -5304,6 +5304,126 @@
     {
       "timestamp": "2026-04-07T16:10:43.808Z",
       "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:32:47.041Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:32:57.738Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:33:09.650Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:33:21.039Z",
+      "feature": "billing-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:33:29.988Z",
+      "feature": "billing-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:33:44.400Z",
+      "feature": "billing-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:33:53.031Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:34:04.722Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:34:14.719Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:34:20.636Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:34:31.476Z",
+      "feature": "menu-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:34:40.729Z",
+      "feature": "menu-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:34:51.939Z",
+      "feature": "menu-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:35:00.844Z",
+      "feature": "catalog-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-07T22:35:08.714Z",
+      "feature": "catalog-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T05:45:01.393Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T05:46:06.516Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T05:47:31.097Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T05:50:01.707Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T05:51:04.407Z",
+      "feature": "scripts",
       "phase": "do",
       "action": "updated"
     }
