@@ -1,0 +1,53 @@
+# KEDA v2.16 Helm Values
+# Design Ref: MTU-N56 Section 3.1
+# Plan SC: FR-N56.1
+# CSAP: D-12 시스템 개발 보안
+
+# KEDA Operator 리소스 (WSL2 최적화)
+resources:
+  operator:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  metricServer:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  webhooks:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# Prometheus 메트릭 노출
+prometheus:
+  metricServer:
+    enabled: true
+    podMonitor:
+      enabled: true
+      namespace: monitoring
+  operator:
+    enabled: true
+    podMonitor:
+      enabled: true
+      namespace: monitoring
+
+# 로깅
+logging:
+  operator:
+    level: info
+    format: json
+  metricServer:
+    level: 0
+
+# Webhook 설정
+webhooks:
+  enabled: true

@@ -1,0 +1,101 @@
+{
+  "annotations": { "list": [] },
+  "description": "FinOps 비용 최적화 대시보드",
+  "editable": true,
+  "panels": [
+    {
+      "title": "네임스페이스별 CPU 요청 합계",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "expr": "sum by (namespace) (kube_pod_container_resource_requests{resource=\"cpu\"})",
+        "legendFormat": "{{ namespace }}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "title": "네임스페이스별 메모리 요청 합계",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "expr": "sum by (namespace) (kube_pod_container_resource_requests{resource=\"memory\"})",
+        "legendFormat": "{{ namespace }}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "title": "CPU 사용 효율 (실사용/요청)",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"saas\"}[5m])) / sum(kube_pod_container_resource_requests{namespace=\"saas\", resource=\"cpu\"}) * 100",
+        "legendFormat": "CPU 효율 %"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "orange", "value": 20 },
+              { "color": "green", "value": 40 },
+              { "color": "yellow", "value": 80 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "서비스별 CPU 사용률 (요청 대비)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "expr": "100 * sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"saas\"}[5m])) / sum by (pod) (kube_pod_container_resource_requests{namespace=\"saas\", resource=\"cpu\"})",
+        "legendFormat": "{{ pod }}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "title": "서비스별 메모리 사용률 (요청 대비)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "expr": "100 * sum by (pod) (container_memory_working_set_bytes{namespace=\"saas\"}) / sum by (pod) (kube_pod_container_resource_requests{namespace=\"saas\", resource=\"memory\"})",
+        "legendFormat": "{{ pod }}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "title": "오버프로비저닝 서비스 수",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "expr": "count(sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"saas\"}[1h])) / sum by (pod) (kube_pod_container_resource_requests{namespace=\"saas\", resource=\"cpu\"}) < 0.2)",
+        "legendFormat": "오버프로비저닝"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["finops", "cost", "optimization", "resources"],
+  "time": { "from": "now-24h", "to": "now" },
+  "title": "FinOps 비용 최적화 대시보드",
+  "uid": "finops-cost-optimization",
+  "version": 1
+}

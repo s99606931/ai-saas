@@ -1,0 +1,52 @@
+# AuthorizationPolicy: auth-service 접근 제어
+# Design Ref: MTU-N54 Section 3.5
+# Plan SC: FR-N54.10
+# CSAP: D-08 접근 통제
+apiVersion: policy.linkerd.io/v1beta3
+kind: AuthorizationPolicy
+metadata:
+  name: auth-service-policy
+  namespace: saas
+spec:
+  targetRef:
+    group: core
+    kind: Server
+    name: auth-service-server
+  requiredAuthenticationRefs:
+    - name: auth-service-mtls
+      kind: MeshTLSAuthentication
+      group: policy.linkerd.io
+---
+# Server 정의: auth-service
+apiVersion: policy.linkerd.io/v1beta3
+kind: Server
+metadata:
+  name: auth-service-server
+  namespace: saas
+spec:
+  podSelector:
+    matchLabels:
+      app: auth-service
+  port: http
+  proxyProtocol: HTTP/2
+---
+# MeshTLSAuthentication: 메시 내 서비스만 접근 허용
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: auth-service-mtls
+  namespace: saas
+spec:
+  identities:
+    - "*.saas.serviceaccount.identity.linkerd.cluster.local"
+---
+# NetworkAuthentication: 클러스터 내부만 허용
+apiVersion: policy.linkerd.io/v1alpha1
+kind: NetworkAuthentication
+metadata:
+  name: auth-service-network
+  namespace: saas
+spec:
+  networks:
+    - cidr: 10.42.0.0/16           # k3s Pod CIDR
+    - cidr: 10.43.0.0/16           # k3s Service CIDR

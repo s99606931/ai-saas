@@ -1,0 +1,122 @@
+# Velero v1.18 Helm Values
+# Design Ref: MTU-N55 Section 3.4
+# Plan SC: FR-N55.1, FR-N55.2
+# CSAP: D-06 침해사고 관리, D-09 암호화
+
+# Velero 서버 설정
+configuration:
+  backupStorageLocation:
+    - name: default
+      provider: aws                 # MinIO S3 호환
+      bucket: velero-backups
+      default: true
+      config:
+        region: us-east-1
+        s3ForcePathStyle: "true"
+        s3Url: http://minio.minio:9000
+        publicUrl: http://minio.minio:9000
+
+  volumeSnapshotLocation: []        # CSI 스냅샷 미사용 (Restic 사용)
+
+  uploaderType: restic               # 파일 레벨 백업
+  defaultVolumesToFsBackup: true     # PV 기본 백업 활성화
+
+  logLevel: info
+  logFormat: json
+
+# 리소스 제한 (WSL2 최적화)
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Restic (node-agent) 리소스
+nodeAgent:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Prometheus 메트릭
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+  prometheusRule:
+    enabled: true
+    spec:
+      - alert: VeleroBackupFailed
+        expr: increase(velero_backup_failure_total[1h]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Velero 백업 실패 ({{ $labels.schedule }})"
+      - alert: VeleroBackupNotRunning
+        expr: time() - velero_backup_last_successful_timestamp > 86400
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Velero 백업 24시간 이상 미실행"
+
+# 자격 증명 (Sealed Secrets로 보호)
+credentials:
+  useSecret: true
+  name: velero-credentials
+  secretContents:
+    cloud: |
+      [default]
+      aws_access_key_id=velero-backup
+      aws_secret_access_key=CHANGE_ME_USE_SEALED_SECRETS
+
+# 초기화 스케줄 (Helm 설치 시 자동 생성)
+schedules:
+  daily-saas:
+    disabled: false
+    schedule: "0 2 * * *"           # 매일 02:00
+    useOwnerReferencesInBackup: false
+    template:
+      includedNamespaces:
+        - saas
+        - default
+      ttl: 720h                     # 30일 보존
+      storageLocation: default
+      snapshotVolumes: false
+      defaultVolumesToFsBackup: true
+
+  weekly-cluster:
+    disabled: false
+    schedule: "0 3 * * 0"           # 매주 일요일 03:00
+    useOwnerReferencesInBackup: false
+    template:
+      includedNamespaces:
+        - saas
+        - default
+        - monitoring
+        - flux-system
+      excludedResources:
+        - events
+        - events.events.k8s.io
+      ttl: 2160h                    # 90일 보존
+      storageLocation: default
+
+  daily-pv:
+    disabled: false
+    schedule: "0 4 * * *"           # 매일 04:00
+    useOwnerReferencesInBackup: false
+    template:
+      includedNamespaces:
+        - saas
+      ttl: 336h                     # 14일 보존
+      storageLocation: default
+      defaultVolumesToFsBackup: true
+      snapshotVolumes: false

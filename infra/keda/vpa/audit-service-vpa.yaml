@@ -1,0 +1,24 @@
+# VPA: audit-service (추천 전용)
+# Design Ref: MTU-N56 Section 3.3
+# Plan SC: FR-N56.6
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: audit-service-vpa
+  namespace: saas
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: audit-service
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: audit-service
+        minAllowed:
+          cpu: 50m
+          memory: 64Mi
+        maxAllowed:
+          cpu: 500m
+          memory: 512Mi

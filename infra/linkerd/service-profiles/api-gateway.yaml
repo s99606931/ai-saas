@@ -1,0 +1,55 @@
+# ServiceProfile: api-gateway
+# Design Ref: MTU-N54 Section 3.4
+# Plan SC: FR-N54.5, FR-N54.6
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: api-gateway.saas.svc.cluster.local
+  namespace: saas
+spec:
+  routes:
+    - name: ALL /api/v1/*
+      condition:
+        pathRegex: /api/v1/.*
+      timeout: 10s
+      isRetryable: false            # 게이트웨이에서는 재시도 불필요 (하위 서비스에서 처리)
+
+    - name: GET /health
+      condition:
+        method: GET
+        pathRegex: /health
+      timeout: 3s
+      isRetryable: true
+
+    - name: GET /metrics
+      condition:
+        method: GET
+        pathRegex: /metrics
+      timeout: 5s
+      isRetryable: false
+
+    - name: POST /api/v1/auth/*
+      condition:
+        method: POST
+        pathRegex: /api/v1/auth/.*
+      timeout: 10s
+      isRetryable: false
+
+    - name: GET /api/v1/tenants/*
+      condition:
+        method: GET
+        pathRegex: /api/v1/tenants/.*
+      timeout: 10s
+      isRetryable: true
+
+    - name: POST /api/v1/ai/*
+      condition:
+        method: POST
+        pathRegex: /api/v1/ai/.*
+      timeout: 30s                  # AI 요청은 긴 타임아웃
+      isRetryable: false
+
+  retryBudget:
+    retryRatio: 0.1
+    minRetriesPerSecond: 5
+    ttl: 10s

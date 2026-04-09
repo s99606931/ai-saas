@@ -1,0 +1,24 @@
+# VPA: catalog-service (Initial 모드)
+# Design Ref: MTU-N56 Section 3.3
+# Plan SC: FR-N56.6, FR-N56.7
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: catalog-service-vpa
+  namespace: saas
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: catalog-service
+  updatePolicy:
+    updateMode: "Initial"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: catalog-service
+        minAllowed:
+          cpu: 50m
+          memory: 64Mi
+        maxAllowed:
+          cpu: 500m
+          memory: 512Mi

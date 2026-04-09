@@ -1,0 +1,214 @@
+{
+  "annotations": { "list": [] },
+  "description": "CSAP 준수 현황 실시간 모니터링 — 공공기관 SaaS 플랫폼",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "CSAP 준수 현황 개요",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "title": "Kyverno 정책 준수율",
+      "description": "CSAP D-08 접근통제 관련 Kyverno 정책 통과 비율",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "(\n  sum(policy_report_result{status=\"pass\"})\n  /\n  (sum(policy_report_result{status=\"pass\"}) + sum(policy_report_result{status=\"fail\"}))\n) or vector(1)",
+          "legendFormat": "정책 준수율"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.8, "color": "orange" },
+              { "value": 0.95, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Gatekeeper 제약 위반 수",
+      "description": "OPA Gatekeeper ConstraintTemplate 위반 현황",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(gatekeeper_violations) or vector(0)",
+          "legendFormat": "위반 수"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 1, "color": "orange" },
+              { "value": 10, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Falco 보안 이벤트 (24시간)",
+      "description": "CSAP D-06 침해사고 관리 — 런타임 보안 이벤트",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(increase(falco_events_total[24h])) or vector(0)",
+          "legendFormat": "보안 이벤트 수"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 5, "color": "yellow" },
+              { "value": 20, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "클러스터 전체 가용성",
+      "description": "Pod Ready 비율 (MTU-N57 Recording Rule 활용)",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 },
+      "targets": [
+        {
+          "expr": "cluster:pod_ready:ratio or vector(1)",
+          "legendFormat": "Pod Ready 비율"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0.9, "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.95, "color": "yellow" },
+              { "value": 0.99, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "정책 위반 트렌드",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "collapsed": false
+    },
+    {
+      "title": "Kyverno 정책 위반 트렌드 (7일)",
+      "description": "CSAP D-08 접근통제 정책 위반 추이",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum by (policy) (policy_report_result{status=\"fail\"}) or vector(0)",
+          "legendFormat": "{{policy}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 20 }
+        }
+      }
+    },
+    {
+      "title": "Falco 이벤트 트렌드 (7일)",
+      "description": "D-06 보안 이벤트 추이 — 심각도별",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum by (priority) (rate(falco_events_total[1h])) or vector(0)",
+          "legendFormat": "{{priority}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 20 }
+        }
+      }
+    },
+    {
+      "title": "감사 로그 통계",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "collapsed": false
+    },
+    {
+      "title": "일별 감사 이벤트 수",
+      "description": "CSAP D-06 감사 로그 — append-only 이벤트 카운트",
+      "type": "barchart",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
+      "targets": [
+        {
+          "expr": "sum by (action) (count_over_time({namespace=\"production\"} |= \"audit\" [24h]))",
+          "legendFormat": "{{action}}"
+        }
+      ]
+    },
+    {
+      "title": "CSAP 영역별 점검 테이블",
+      "description": "D-01~D-13 영역별 마지막 점검 결과",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 17 },
+      "targets": [
+        {
+          "expr": "policy_report_result{status=\"pass\"}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "policy": "정책명",
+              "status": "상태",
+              "namespace": "네임스페이스",
+              "Value": "결과"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["csap", "compliance", "security", "public-saas"],
+  "time": { "from": "now-7d", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "CSAP 준수 현황 대시보드",
+  "uid": "csap-compliance-status",
+  "version": 1
+}

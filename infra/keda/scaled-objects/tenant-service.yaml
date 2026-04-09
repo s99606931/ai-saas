@@ -1,0 +1,27 @@
+# ScaledObject: tenant-service (CPU 기반)
+# Design Ref: MTU-N56 Section 3.2
+# Plan SC: FR-N56.3
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: tenant-service-scaler
+  namespace: saas
+  labels:
+    app: tenant-service
+    scaling-strategy: cpu-based
+spec:
+  scaleTargetRef:
+    name: tenant-service
+  pollingInterval: 15
+  cooldownPeriod: 120
+  minReplicaCount: 1
+  maxReplicaCount: 5
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
+    - type: memory
+      metricType: Utilization
+      metadata:
+        value: "80"

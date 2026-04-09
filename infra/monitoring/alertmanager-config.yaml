@@ -1,0 +1,185 @@
+# =============================================================================
+# AlertManager 고급 라우팅 + 억제 규칙 — 공공기관 SaaS 플랫폼
+# Design Ref: MTU-N57 Design §3
+# Plan SC: FR-N57.5, FR-N57.6, FR-N57.7, FR-N57.9
+# CSAP: D-06(침해사고 관리 — 알림 체계), D-08(접근통제 위반 알림)
+#
+# 이 파일은 kube-prometheus-stack values.yaml의 alertmanager.config를
+# 대체하는 독립 참조 설정입니다.
+#
+# 적용 방법:
+#   helm upgrade kube-prometheus-stack prometheus/kube-prometheus-stack \
+#     --namespace monitoring \
+#     -f infra/monitoring/kube-prometheus-stack/values.yaml \
+#     --set-file alertmanager.config=infra/monitoring/alertmanager-config.yaml
+#
+# 또는 values.yaml의 alertmanager.config 섹션에 직접 복사
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# 전역 설정
+# ---------------------------------------------------------------------------
+global:
+  resolve_timeout: 5m
+  # SMTP 설정 (공공기관 메일 서버 연동 시)
+  # smtp_smarthost: 'smtp.gov.kr:587'
+  # smtp_from: 'alertmanager@saas-platform.gov.kr'
+  # smtp_auth_username: '${SMTP_USERNAME}'
+  # smtp_auth_password: '${SMTP_PASSWORD}'
+  # smtp_require_tls: true
+
+# ---------------------------------------------------------------------------
+# 알림 라우팅 트리 — FR-N57.5
+# 5개 채널: devops, dba, security, sre, management
+# ---------------------------------------------------------------------------
+route:
+  # 기본 그룹핑
+  group_by: ["alertname", "namespace", "severity"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: "devops-default"
+
+  routes:
+    # -----------------------------------------------------------------------
+    # 1. SLO/SRE 알림 → SRE 팀 (최우선)
+    # FR-N57.9: SLO 위반 → 10초 내 알림
+    # -----------------------------------------------------------------------
+    - matchers:
+        - alertname=~".*SLO.*|.*ErrorBudget.*|.*BurnRate.*|.*Availability.*"
+      receiver: "sre-team"
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 2h
+
+    # -----------------------------------------------------------------------
+    # 2. 보안 이벤트 → 보안 팀
+    # CSAP D-08: 접근통제 위반 즉시 알림
+    # -----------------------------------------------------------------------
+    - matchers:
+        - alertname=~"Falco.*|PolicyViolation.*|AuthenticationFailure.*|Gatekeeper.*|Kyverno.*"
+      receiver: "security-team"
+      group_wait: 10s
+      group_interval: 2m
+      repeat_interval: 1h
+
+    # -----------------------------------------------------------------------
+    # 3. DB 관련 → DBA 팀
+    # -----------------------------------------------------------------------
+    - matchers:
+        - team="dba"
+      receiver: "dba-team"
+      group_wait: 30s
+      repeat_interval: 4h
+
+    - matchers:
+        - alertname=~".*PostgreSQL.*|.*SlowQuery.*|.*IndexUsage.*"
+      receiver: "dba-team"
+      group_wait: 30s
+      repeat_interval: 4h
+
+    # -----------------------------------------------------------------------
+    # 4. Critical 알림 → 관리자 에스컬레이션
+    # FR-N57.9: critical 10초 내 알림 + 1시간마다 반복
+    # -----------------------------------------------------------------------
+    - matchers:
+        - severity="critical"
+      receiver: "management-escalation"
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: true  # 다른 라우트도 계속 매칭
+
+    # -----------------------------------------------------------------------
+    # 5. GitOps/배포 관련 → DevOps
+    # -----------------------------------------------------------------------
+    - matchers:
+        - alertname=~"Flux.*|Deployment.*|Helm.*"
+      receiver: "devops-default"
+      group_wait: 30s
+      repeat_interval: 4h
+
+# ---------------------------------------------------------------------------
+# 억제 규칙 — FR-N57.6
+# 상위 알림이 발생하면 하위 알림을 자동 억제하여 알림 폭주 방지
+# ---------------------------------------------------------------------------
+inhibit_rules:
+  # Critical이 발생하면 동일 alertname의 warning 억제
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal: ["alertname", "namespace"]
+
+  # Critical이 발생하면 동일 alertname의 info 억제
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="info"
+    equal: ["alertname", "namespace"]
+
+  # Warning이 발생하면 동일 alertname의 info 억제
+  - source_matchers:
+      - severity="warning"
+    target_matchers:
+      - severity="info"
+    equal: ["alertname", "namespace"]
+
+  # 노드 다운 시 해당 노드의 Pod/Container 알림 억제
+  - source_matchers:
+      - alertname="NodeDown"
+    target_matchers:
+      - alertname=~"Pod.*|Container.*"
+    equal: ["instance"]
+
+  # 클러스터 전체 장애 시 개별 서비스 알림 억제
+  - source_matchers:
+      - alertname="KubernetesClusterUnreachable"
+    target_matchers:
+      - alertname=~".*"
+
+# ---------------------------------------------------------------------------
+# 수신자 정의 — FR-N57.5
+# 실제 webhook URL은 환경별로 설정 (시크릿 참조)
+# ---------------------------------------------------------------------------
+receivers:
+  # DevOps 기본 수신자
+  - name: "devops-default"
+    webhook_configs:
+      - url: "http://alertmanager-webhook.monitoring.svc.cluster.local:9095/devops"
+        send_resolved: true
+        max_alerts: 10
+
+  # SRE 팀 (SLO 전담)
+  - name: "sre-team"
+    webhook_configs:
+      - url: "http://alertmanager-webhook.monitoring.svc.cluster.local:9095/sre"
+        send_resolved: true
+        max_alerts: 5
+
+  # 보안 팀 (CSAP D-06, D-08)
+  - name: "security-team"
+    webhook_configs:
+      - url: "http://alertmanager-webhook.monitoring.svc.cluster.local:9095/security"
+        send_resolved: true
+        max_alerts: 5
+
+  # DBA 팀
+  - name: "dba-team"
+    webhook_configs:
+      - url: "http://alertmanager-webhook.monitoring.svc.cluster.local:9095/dba"
+        send_resolved: true
+        max_alerts: 10
+
+  # 관리자 에스컬레이션 (critical만)
+  - name: "management-escalation"
+    webhook_configs:
+      - url: "http://alertmanager-webhook.monitoring.svc.cluster.local:9095/management"
+        send_resolved: true
+        max_alerts: 3
+
+# ---------------------------------------------------------------------------
+# 알림 템플릿 — FR-N57.7
+# 한국어 알림 메시지 템플릿
+# ---------------------------------------------------------------------------
+templates:
+  - "/etc/alertmanager/templates/*.tmpl"

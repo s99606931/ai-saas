@@ -1,0 +1,35 @@
+# ServiceProfile: catalog-service
+# Design Ref: MTU-N54 Section 3.4
+# Plan SC: FR-N54.5, FR-N54.6
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: catalog-service.saas.svc.cluster.local
+  namespace: saas
+spec:
+  routes:
+    - name: GET /api/catalog/services
+      condition:
+        method: GET
+        pathRegex: /api/catalog/services
+      timeout: 5s
+      isRetryable: true
+
+    - name: GET /api/catalog/services/:id
+      condition:
+        method: GET
+        pathRegex: /api/catalog/services/[^/]+
+      timeout: 5s
+      isRetryable: true
+
+    - name: POST /api/catalog/subscribe
+      condition:
+        method: POST
+        pathRegex: /api/catalog/subscribe
+      timeout: 5s
+      isRetryable: false
+
+  retryBudget:
+    retryRatio: 0.2
+    minRetriesPerSecond: 10
+    ttl: 10s

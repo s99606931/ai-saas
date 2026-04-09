@@ -1,0 +1,88 @@
+# FinOps 비용 알림 규칙
+# Design Ref: MTU-N59 Section 3.2
+# Plan SC: FR-N59.4
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: finops-alerting-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: finops.resource-efficiency
+      interval: 60s
+      rules:
+        # CPU 오버프로비저닝 알림 (20% 미만 사용률)
+        - alert: CPUOverprovisioned
+          expr: |
+            (
+              sum by (namespace, pod) (rate(container_cpu_usage_seconds_total{namespace="saas"}[1h]))
+              / sum by (namespace, pod) (kube_pod_container_resource_requests{namespace="saas", resource="cpu"})
+            ) < 0.2
+          for: 24h
+          labels:
+            severity: info
+            team: finops
+          annotations:
+            summary: "CPU 오버프로비저닝: {{ $labels.pod }} ({{ $labels.namespace }})"
+            description: "CPU 사용률이 요청 대비 20% 미만 ({{ $value | humanizePercentage }}). Right-sizing 권고."
+            runbook_url: "scripts/finops/optimization-runbook.md#2-우측-크기-조정"
+
+        # 메모리 오버프로비저닝 알림
+        - alert: MemoryOverprovisioned
+          expr: |
+            (
+              sum by (namespace, pod) (container_memory_working_set_bytes{namespace="saas"})
+              / sum by (namespace, pod) (kube_pod_container_resource_requests{namespace="saas", resource="memory"})
+            ) < 0.2
+          for: 24h
+          labels:
+            severity: info
+            team: finops
+          annotations:
+            summary: "메모리 오버프로비저닝: {{ $labels.pod }}"
+            description: "메모리 사용률이 요청 대비 20% 미만. Right-sizing 권고."
+
+        # 네임스페이스 리소스 제한 초과 경고
+        - alert: NamespaceResourceQuotaHigh
+          expr: |
+            kube_resourcequota{type="used"} / kube_resourcequota{type="hard"} > 0.9
+          for: 1h
+          labels:
+            severity: warning
+            team: finops
+          annotations:
+            summary: "리소스 쿼타 90% 초과: {{ $labels.namespace }}"
+
+        # 미사용 PVC 알림
+        - alert: UnusedPVC
+          expr: |
+            kube_persistentvolumeclaim_status_phase{phase="Bound"} == 1
+            unless on(persistentvolumeclaim, namespace)
+            kube_pod_spec_volumes_persistentvolumeclaims_info
+          for: 168h      # 7일 이상 미사용
+          labels:
+            severity: info
+            team: finops
+          annotations:
+            summary: "미사용 PVC 감지: {{ $labels.persistentvolumeclaim }}"
+            description: "7일 이상 Pod에 마운트되지 않은 PVC. 정리 권고."
+
+    - name: finops.cost-alerts
+      interval: 300s
+      rules:
+        # 리소스 급증 알림 (24시간 대비 50% 증가)
+        - alert: ResourceSpike
+          expr: |
+            (
+              sum by (namespace) (kube_pod_container_resource_requests{resource="cpu"})
+              / sum by (namespace) (kube_pod_container_resource_requests{resource="cpu"} offset 24h)
+            ) > 1.5
+          for: 1h
+          labels:
+            severity: warning
+            team: finops
+          annotations:
+            summary: "리소스 급증: {{ $labels.namespace }} (24h 대비 50%+ 증가)"

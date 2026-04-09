@@ -1,0 +1,263 @@
+# =============================================================================
+# Prometheus Recording Rules — 공공기관 SaaS 플랫폼
+# Design Ref: MTU-N57 Design §2
+# Plan SC: FR-N57.1, FR-N57.2, FR-N57.3, FR-N57.4
+# CSAP: D-06(모니터링 성능 최적화), D-08(접근통제 메트릭 집계)
+#
+# Recording Rules는 자주 사용되는 PromQL 쿼리를 사전 계산하여
+# 대시보드 로드 시간을 단축하고 SLO 번레이트 계산 정확도를 높입니다.
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: saas-recording-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 — 모니터링 쿼리 사전 계산으로 실시간 탐지 성능 향상"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 서비스 RED 메트릭 (Rate, Errors, Duration)
+    # Design Ref: MTU-N57 Design §2.1
+    # FR-N57.1: 서비스별 RED 메트릭 집계
+    # =========================================================================
+    - name: saas:service:red_metrics
+      interval: 15s
+      rules:
+        # --- Rate (요청 비율) ---
+        - record: service:http_requests:rate5m
+          expr: |
+            sum by (service) (
+              rate(http_requests_total[5m])
+            )
+          labels:
+            aggregation: "recording_rule"
+
+        - record: service:http_requests:rate1h
+          expr: |
+            sum by (service) (
+              rate(http_requests_total[1h])
+            )
+          labels:
+            aggregation: "recording_rule"
+
+        # --- Errors (에러 비율) ---
+        - record: service:http_errors:ratio_rate5m
+          expr: |
+            (
+              sum by (service) (rate(http_requests_total{code=~"5.."}[5m]))
+              /
+              sum by (service) (rate(http_requests_total[5m]))
+            ) or vector(0)
+          labels:
+            aggregation: "recording_rule"
+
+        - record: service:http_errors:ratio_rate1h
+          expr: |
+            (
+              sum by (service) (rate(http_requests_total{code=~"5.."}[1h]))
+              /
+              sum by (service) (rate(http_requests_total[1h]))
+            ) or vector(0)
+          labels:
+            aggregation: "recording_rule"
+
+        # --- Duration (지연 시간) ---
+        - record: service:http_request_duration:p50_5m
+          expr: |
+            histogram_quantile(0.50,
+              sum by (service, le) (rate(http_request_duration_seconds_bucket[5m]))
+            )
+          labels:
+            aggregation: "recording_rule"
+
+        - record: service:http_request_duration:p95_5m
+          expr: |
+            histogram_quantile(0.95,
+              sum by (service, le) (rate(http_request_duration_seconds_bucket[5m]))
+            )
+          labels:
+            aggregation: "recording_rule"
+
+        - record: service:http_request_duration:p99_5m
+          expr: |
+            histogram_quantile(0.99,
+              sum by (service, le) (rate(http_request_duration_seconds_bucket[5m]))
+            )
+          labels:
+            aggregation: "recording_rule"
+
+    # =========================================================================
+    # 그룹 2: 노드 리소스 사용률
+    # Design Ref: MTU-N57 Design §2.2
+    # FR-N57.2: 노드별 CPU, 메모리, 디스크 사용률 사전 계산
+    # =========================================================================
+    - name: saas:node:resource_utilization
+      interval: 15s
+      rules:
+        # CPU 사용률 (%)
+        - record: node:cpu_utilization:ratio
+          expr: |
+            1 - avg by (instance) (
+              rate(node_cpu_seconds_total{mode="idle"}[5m])
+            )
+          labels:
+            aggregation: "recording_rule"
+
+        # 메모리 사용률 (%)
+        - record: node:memory_utilization:ratio
+          expr: |
+            1 - (
+              node_memory_MemAvailable_bytes
+              /
+              node_memory_MemTotal_bytes
+            )
+          labels:
+            aggregation: "recording_rule"
+
+        # 디스크 사용률 (루트 마운트)
+        - record: node:disk_utilization:ratio
+          expr: |
+            1 - (
+              node_filesystem_avail_bytes{mountpoint="/"}
+              /
+              node_filesystem_size_bytes{mountpoint="/"}
+            )
+          labels:
+            aggregation: "recording_rule"
+
+        # 네트워크 수신 바이트 비율
+        - record: node:network_receive:bytes_rate5m
+          expr: |
+            sum by (instance) (
+              rate(node_network_receive_bytes_total{device!~"lo|veth.*|cali.*|flannel.*"}[5m])
+            )
+          labels:
+            aggregation: "recording_rule"
+
+        # 네트워크 전송 바이트 비율
+        - record: node:network_transmit:bytes_rate5m
+          expr: |
+            sum by (instance) (
+              rate(node_network_transmit_bytes_total{device!~"lo|veth.*|cali.*|flannel.*"}[5m])
+            )
+          labels:
+            aggregation: "recording_rule"
+
+    # =========================================================================
+    # 그룹 3: SLO 집계 (Sloth 기반)
+    # Design Ref: MTU-N57 Design §2.3
+    # FR-N57.3: SLO 에러 버짓 + 번레이트 사전 계산
+    # =========================================================================
+    - name: saas:slo:aggregations
+      interval: 30s
+      rules:
+        # SLO 에러 버짓 잔여율 (30일 기준)
+        - record: slo:error_budget:remaining_ratio
+          expr: |
+            clamp_min(
+              1 - (
+                slo:sli_error:ratio_rate30d
+                /
+                (1 - slo:objective:ratio)
+              ),
+              0
+            )
+          labels:
+            aggregation: "recording_rule"
+
+        # SLO 번레이트 1시간
+        - record: slo:burn_rate:1h
+          expr: |
+            (
+              slo:sli_error:ratio_rate1h
+              /
+              (1 - slo:objective:ratio)
+            ) or vector(0)
+          labels:
+            aggregation: "recording_rule"
+
+        # SLO 번레이트 6시간
+        - record: slo:burn_rate:6h
+          expr: |
+            (
+              slo:sli_error:ratio_rate6h
+              /
+              (1 - slo:objective:ratio)
+            ) or vector(0)
+          labels:
+            aggregation: "recording_rule"
+
+        # SLO 번레이트 24시간
+        - record: slo:burn_rate:24h
+          expr: |
+            (
+              slo:sli_error:ratio_rate24h
+              /
+              (1 - slo:objective:ratio)
+            ) or vector(0)
+          labels:
+            aggregation: "recording_rule"
+
+    # =========================================================================
+    # 그룹 4: k3s 클러스터 상태
+    # Design Ref: MTU-N57 Design §2.4
+    # FR-N57.4: 클러스터 전체 및 네임스페이스별 리소스 집계
+    # =========================================================================
+    - name: saas:cluster:state
+      interval: 30s
+      rules:
+        # Pod Ready 비율
+        - record: cluster:pod_ready:ratio
+          expr: |
+            (
+              sum(kube_pod_status_ready{condition="true"})
+              /
+              sum(kube_pod_status_ready)
+            ) or vector(1)
+          labels:
+            aggregation: "recording_rule"
+
+        # 네임스페이스별 CPU 사용량 합계
+        - record: namespace:cpu_usage:sum
+          expr: |
+            sum by (namespace) (
+              rate(container_cpu_usage_seconds_total{container!="", container!="POD"}[5m])
+            )
+          labels:
+            aggregation: "recording_rule"
+
+        # 네임스페이스별 메모리 사용량 합계
+        - record: namespace:memory_usage:sum_bytes
+          expr: |
+            sum by (namespace) (
+              container_memory_working_set_bytes{container!="", container!="POD"}
+            )
+          labels:
+            aggregation: "recording_rule"
+
+        # Deployment 가용성 비율
+        - record: cluster:deployment_available:ratio
+          expr: |
+            (
+              sum(kube_deployment_status_replicas_available)
+              /
+              sum(kube_deployment_spec_replicas)
+            ) or vector(1)
+          labels:
+            aggregation: "recording_rule"
+
+        # PVC 사용률
+        - record: cluster:pvc_usage:ratio
+          expr: |
+            (
+              kubelet_volume_stats_used_bytes
+              /
+              kubelet_volume_stats_capacity_bytes
+            ) or vector(0)
+          labels:
+            aggregation: "recording_rule"

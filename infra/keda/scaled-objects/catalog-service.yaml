@@ -1,0 +1,29 @@
+# ScaledObject: catalog-service (CPU 기반)
+# Design Ref: MTU-N56 Section 3.2
+# Plan SC: FR-N56.3
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: catalog-service-scaler
+  namespace: saas
+  labels:
+    app: catalog-service
+    scaling-strategy: cpu-based
+spec:
+  scaleTargetRef:
+    name: catalog-service
+  pollingInterval: 15
+  cooldownPeriod: 120
+  minReplicaCount: 1
+  maxReplicaCount: 3
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.monitoring:9090
+        metricName: catalog_rps
+        query: sum(rate(http_requests_total{service="catalog-service"}[1m]))
+        threshold: "50"

@@ -1,0 +1,27 @@
+# Velero Schedule: 일간 SaaS 네임스페이스 백업
+# Design Ref: MTU-N55 Section 3.2
+# Plan SC: FR-N55.3
+# CSAP: D-06 침해사고 관리
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: daily-saas
+  namespace: velero
+spec:
+  schedule: "0 2 * * *"              # 매일 02:00 KST
+  useOwnerReferencesInBackup: false
+  template:
+    includedNamespaces:
+      - saas
+      - default
+    excludedResources:
+      - events
+      - events.events.k8s.io
+    ttl: 720h                         # 30일 보존
+    storageLocation: default
+    defaultVolumesToFsBackup: true
+    snapshotVolumes: false
+    metadata:
+      labels:
+        schedule-type: daily
+        backup-scope: namespace

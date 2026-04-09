@@ -1,0 +1,31 @@
+# Default Deny: 기본 거부 정책 (Zero Trust)
+# Design Ref: MTU-N54 Section 3.5
+# Plan SC: FR-N54.10
+# CSAP: D-08 접근 통제 (기본 거부, 명시적 허용만)
+apiVersion: policy.linkerd.io/v1beta3
+kind: AuthorizationPolicy
+metadata:
+  name: default-deny
+  namespace: saas
+  annotations:
+    description: "Zero Trust 기본 거부 - 명시적 허용 정책만 통과"
+    csap.compliance/control: "D-08"
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: ""                        # 모든 서버에 적용
+  requiredAuthenticationRefs:
+    - name: mesh-only
+      kind: MeshTLSAuthentication
+      group: policy.linkerd.io
+---
+# 메시 내 서비스 인증만 허용
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: mesh-only
+  namespace: saas
+spec:
+  identities:
+    - "*.saas.serviceaccount.identity.linkerd.cluster.local"

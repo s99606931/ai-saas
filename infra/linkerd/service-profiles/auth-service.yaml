@@ -1,0 +1,49 @@
+# ServiceProfile: auth-service
+# Design Ref: MTU-N54 Section 3.4
+# Plan SC: FR-N54.5, FR-N54.6
+# CSAP: D-08 접근 통제
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: auth-service.saas.svc.cluster.local
+  namespace: saas
+spec:
+  routes:
+    - name: POST /api/auth/login
+      condition:
+        method: POST
+        pathRegex: /api/auth/login
+      responseClasses:
+        - condition:
+            status:
+              min: 200
+              max: 299
+          isFailure: false
+      timeout: 5s
+      isRetryable: false            # 로그인은 재시도 금지
+
+    - name: POST /api/auth/token/refresh
+      condition:
+        method: POST
+        pathRegex: /api/auth/token/refresh
+      timeout: 5s
+      isRetryable: true
+
+    - name: POST /api/auth/logout
+      condition:
+        method: POST
+        pathRegex: /api/auth/logout
+      timeout: 3s
+      isRetryable: false
+
+    - name: GET /api/auth/verify
+      condition:
+        method: GET
+        pathRegex: /api/auth/verify
+      timeout: 3s
+      isRetryable: true
+
+  retryBudget:
+    retryRatio: 0.2
+    minRetriesPerSecond: 10
+    ttl: 10s

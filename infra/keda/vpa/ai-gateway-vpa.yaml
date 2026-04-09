@@ -1,0 +1,24 @@
+# VPA: ai-gateway (추천 전용 - scale-to-zero와 병행)
+# Design Ref: MTU-N56 Section 3.3
+# Plan SC: FR-N56.6
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: ai-gateway-vpa
+  namespace: saas
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-gateway
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: ai-gateway
+        minAllowed:
+          cpu: 50m
+          memory: 128Mi
+        maxAllowed:
+          cpu: 1000m
+          memory: 1Gi

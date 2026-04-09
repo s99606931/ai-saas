@@ -1,0 +1,25 @@
+# VPA: auth-service (추천 전용, HPA 충돌 방지)
+# Design Ref: MTU-N56 Section 3.3
+# Plan SC: FR-N56.6, FR-N56.7
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: auth-service-vpa
+  namespace: saas
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: auth-service
+  updatePolicy:
+    updateMode: "Off"               # 추천만 (HPA와 충돌 방지)
+  resourcePolicy:
+    containerPolicies:
+      - containerName: auth-service
+        minAllowed:
+          cpu: 50m
+          memory: 64Mi
+        maxAllowed:
+          cpu: 500m
+          memory: 512Mi
+        controlledResources: ["cpu", "memory"]

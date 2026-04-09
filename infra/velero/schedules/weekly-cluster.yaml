@@ -1,0 +1,30 @@
+# Velero Schedule: 주간 전체 클러스터 백업
+# Design Ref: MTU-N55 Section 3.2
+# Plan SC: FR-N55.4
+# CSAP: D-06 침해사고 관리
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: weekly-cluster
+  namespace: velero
+spec:
+  schedule: "0 3 * * 0"              # 매주 일요일 03:00
+  useOwnerReferencesInBackup: false
+  template:
+    includedNamespaces:
+      - saas
+      - default
+      - monitoring
+      - flux-system
+    excludedResources:
+      - events
+      - events.events.k8s.io
+      - backups.velero.io
+      - restores.velero.io
+    ttl: 2160h                        # 90일 보존
+    storageLocation: default
+    defaultVolumesToFsBackup: true
+    metadata:
+      labels:
+        schedule-type: weekly
+        backup-scope: cluster

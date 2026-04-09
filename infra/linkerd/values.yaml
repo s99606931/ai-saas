@@ -1,0 +1,74 @@
+# Linkerd v2.16 Control Plane Helm Values
+# Design Ref: MTU-N54 Section 3.3
+# Plan SC: FR-N54.1
+# CSAP: D-09 암호화 (서비스 간 mTLS)
+
+# Trust Anchor 인증서 (실제 배포 시 step CLI로 생성된 인증서 교체)
+identityTrustAnchorsPEM: |
+  -----BEGIN CERTIFICATE-----
+  # Trust Anchor CA 인증서 (step CLI로 생성)
+  # step certificate create root.linkerd.cluster.local ca.crt ca.key \
+  #   --profile root-ca --no-password --insecure --not-after=87600h
+  -----END CERTIFICATE-----
+
+identity:
+  issuer:
+    scheme: kubernetes.io/tls
+    tls:
+      crtPEM: |
+        -----BEGIN CERTIFICATE-----
+        # Identity Issuer 인증서 (step CLI로 생성)
+        -----END CERTIFICATE-----
+      keyPEM: |
+        -----BEGIN EC PRIVATE KEY-----
+        # Identity Issuer 개인키 (Sealed Secrets로 보호)
+        -----END EC PRIVATE KEY-----
+    clockSkewAllowance: 20s
+    issuanceLifetime: 24h0m0s       # 24시간 인증서 유효기간
+
+# 컨트롤 플레인 리소스 (WSL2 최적화)
+controllerResources: &controller_resources
+  cpu:
+    request: 50m
+    limit: 250m
+  memory:
+    request: 64Mi
+    limit: 256Mi
+
+destinationResources: *controller_resources
+identityResources: *controller_resources
+heartbeatResources:
+  cpu:
+    request: 10m
+    limit: 50m
+  memory:
+    request: 10Mi
+    limit: 50Mi
+
+# 데이터 플레인 프록시 리소스 (경량화)
+proxy:
+  resources:
+    cpu:
+      request: 10m
+      limit: 100m
+    memory:
+      request: 10Mi
+      limit: 50Mi
+  logLevel: warn                    # 프로덕션 로그 레벨
+  logFormat: json
+  opaquePorts: "25,443,587,3306,5432,6379,11211"
+
+proxyInit:
+  resources:
+    cpu:
+      request: 10m
+      limit: 100m
+    memory:
+      request: 10Mi
+      limit: 50Mi
+
+# HA 모드 (WSL2에서는 비활성화)
+enableHA: false
+
+# Prometheus 메트릭 노출
+prometheusUrl: "http://kube-prometheus-stack-prometheus.monitoring:9090"

@@ -1,0 +1,29 @@
+# ServiceProfile: ai-gateway
+# Design Ref: MTU-N54 Section 3.4
+# Plan SC: FR-N54.5, FR-N54.6
+# CSAP: N2SF AI 연동 데이터 분류
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: ai-gateway.saas.svc.cluster.local
+  namespace: saas
+spec:
+  routes:
+    - name: POST /api/ai/completion
+      condition:
+        method: POST
+        pathRegex: /api/ai/completion
+      timeout: 30s                  # AI 추론은 긴 타임아웃
+      isRetryable: false            # AI 요청 재시도 금지 (중복 과금 방지)
+
+    - name: GET /api/ai/models
+      condition:
+        method: GET
+        pathRegex: /api/ai/models
+      timeout: 5s
+      isRetryable: true
+
+  retryBudget:
+    retryRatio: 0.05                # AI 요청은 낮은 재시도 비율
+    minRetriesPerSecond: 2
+    ttl: 5s

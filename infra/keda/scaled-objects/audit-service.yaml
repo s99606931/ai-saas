@@ -1,0 +1,31 @@
+# ScaledObject: audit-service (큐 깊이 기반)
+# Design Ref: MTU-N56 Section 3.2
+# Plan SC: FR-N56.3, FR-N56.4
+# CSAP: D-06 침해사고 관리 (감사 로그 처리량 보장)
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: audit-service-scaler
+  namespace: saas
+  labels:
+    app: audit-service
+    scaling-strategy: queue-based
+spec:
+  scaleTargetRef:
+    name: audit-service
+  pollingInterval: 10
+  cooldownPeriod: 60
+  minReplicaCount: 1
+  maxReplicaCount: 5
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.monitoring:9090
+        metricName: audit_queue_depth
+        query: sum(audit_log_queue_size{service="audit-service"})
+        threshold: "50"             # 큐 50개 초과 시 스케일
+        activationThreshold: "10"
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"

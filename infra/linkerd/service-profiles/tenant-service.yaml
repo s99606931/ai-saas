@@ -1,0 +1,42 @@
+# ServiceProfile: tenant-service
+# Design Ref: MTU-N54 Section 3.4
+# Plan SC: FR-N54.5, FR-N54.6
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: tenant-service.saas.svc.cluster.local
+  namespace: saas
+spec:
+  routes:
+    - name: GET /api/tenants
+      condition:
+        method: GET
+        pathRegex: /api/tenants
+      timeout: 5s
+      isRetryable: true
+
+    - name: GET /api/tenants/:id
+      condition:
+        method: GET
+        pathRegex: /api/tenants/[^/]+
+      timeout: 5s
+      isRetryable: true
+
+    - name: POST /api/tenants
+      condition:
+        method: POST
+        pathRegex: /api/tenants
+      timeout: 5s
+      isRetryable: false
+
+    - name: PUT /api/tenants/:id
+      condition:
+        method: PUT
+        pathRegex: /api/tenants/[^/]+
+      timeout: 5s
+      isRetryable: false
+
+  retryBudget:
+    retryRatio: 0.2
+    minRetriesPerSecond: 10
+    ttl: 10s

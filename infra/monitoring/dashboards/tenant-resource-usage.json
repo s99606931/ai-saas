@@ -1,0 +1,252 @@
+{
+  "annotations": { "list": [] },
+  "description": "테넌트별 리소스 사용량 대시보드 — 공공기관 SaaS 멀티테넌시",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "templating": {
+    "list": [
+      {
+        "name": "namespace",
+        "label": "테넌트 (네임스페이스)",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(kube_namespace_status_phase, namespace)",
+        "multi": true,
+        "includeAll": true,
+        "current": { "text": "All", "value": "$__all" },
+        "refresh": 2,
+        "sort": 1
+      },
+      {
+        "name": "interval",
+        "label": "집계 간격",
+        "type": "interval",
+        "query": "1m,5m,15m,1h",
+        "current": { "text": "5m", "value": "5m" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "테넌트 리소스 현황",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "title": "CPU 사용량 (코어)",
+      "description": "네임스페이스별 CPU 사용량 합계 (Recording Rule 활용)",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "namespace:cpu_usage:sum{namespace=~\"$namespace\"}",
+          "legendFormat": "{{namespace}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 1, "color": "yellow" },
+              { "value": 2, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "메모리 사용량",
+      "description": "네임스페이스별 메모리 사용량 합계 (Recording Rule 활용)",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 1 },
+      "targets": [
+        {
+          "expr": "namespace:memory_usage:sum_bytes{namespace=~\"$namespace\"}",
+          "legendFormat": "{{namespace}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 536870912, "color": "yellow" },
+              { "value": 1073741824, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Pod 수",
+      "description": "네임스페이스별 실행 중인 Pod 수",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 1 },
+      "targets": [
+        {
+          "expr": "count by (namespace) (kube_pod_status_phase{phase=\"Running\", namespace=~\"$namespace\"})",
+          "legendFormat": "{{namespace}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "blue" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "리소스 사용 트렌드 (7일)",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "collapsed": false
+    },
+    {
+      "title": "CPU 사용량 트렌드",
+      "description": "테넌트별 CPU 사용량 추이",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "namespace:cpu_usage:sum{namespace=~\"$namespace\"}",
+          "legendFormat": "{{namespace}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "fillOpacity": 20,
+            "stacking": { "mode": "normal" }
+          }
+        }
+      }
+    },
+    {
+      "title": "메모리 사용량 트렌드",
+      "description": "테넌트별 메모리 사용량 추이",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "namespace:memory_usage:sum_bytes{namespace=~\"$namespace\"}",
+          "legendFormat": "{{namespace}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 20,
+            "stacking": { "mode": "normal" }
+          }
+        }
+      }
+    },
+    {
+      "title": "서비스별 성능 지표",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "collapsed": false
+    },
+    {
+      "title": "서비스 에러율 (Recording Rule)",
+      "description": "서비스별 HTTP 5xx 에러 비율",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
+      "targets": [
+        {
+          "expr": "service:http_errors:ratio_rate5m",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "max": 0.1,
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 0.01, "color": "yellow" },
+              { "value": 0.05, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "서비스 P99 레이턴시 (Recording Rule)",
+      "description": "서비스별 P99 응답 시간",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 17 },
+      "targets": [
+        {
+          "expr": "service:http_request_duration:p99_5m",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 0.5, "color": "yellow" },
+              { "value": 2, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "리소스 테이블 (전체 네임스페이스)",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 25 },
+      "targets": [
+        {
+          "expr": "namespace:cpu_usage:sum",
+          "legendFormat": "{{namespace}}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "namespace": "네임스페이스",
+              "Value": "CPU 사용량 (코어)"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["tenant", "resource", "multitenancy", "public-saas"],
+  "time": { "from": "now-7d", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "테넌트별 리소스 사용량",
+  "uid": "tenant-resource-usage",
+  "version": 1
+}

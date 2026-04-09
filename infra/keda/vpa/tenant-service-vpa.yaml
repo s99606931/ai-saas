@@ -1,0 +1,25 @@
+# VPA: tenant-service (Initial 모드 - 최초 배포 시만 적용)
+# Design Ref: MTU-N56 Section 3.3
+# Plan SC: FR-N56.6, FR-N56.7
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: tenant-service-vpa
+  namespace: saas
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tenant-service
+  updatePolicy:
+    updateMode: "Initial"           # Pod 생성 시에만 적용
+  resourcePolicy:
+    containerPolicies:
+      - containerName: tenant-service
+        minAllowed:
+          cpu: 50m
+          memory: 64Mi
+        maxAllowed:
+          cpu: 500m
+          memory: 512Mi
+        controlledResources: ["cpu", "memory"]

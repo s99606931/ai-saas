@@ -1,0 +1,33 @@
+# ScaledObject: auth-service (RPS 기반 수평 확장)
+# Design Ref: MTU-N56 Section 3.2
+# Plan SC: FR-N56.3, FR-N56.4
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: auth-service-scaler
+  namespace: saas
+  labels:
+    app: auth-service
+    scaling-strategy: rps-based
+spec:
+  scaleTargetRef:
+    name: auth-service
+  pollingInterval: 15               # 15초마다 메트릭 확인
+  cooldownPeriod: 60                # 60초 대기 후 축소
+  minReplicaCount: 1
+  maxReplicaCount: 5
+  fallback:
+    failureThreshold: 3
+    replicas: 2                     # 메트릭 실패 시 2개 유지
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.monitoring:9090
+        metricName: auth_service_rps
+        query: sum(rate(http_requests_total{service="auth-service"}[1m]))
+        threshold: "100"
+        activationThreshold: "5"
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"                 # CPU 70% 초과 시 스케일

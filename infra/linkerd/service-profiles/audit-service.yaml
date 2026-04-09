@@ -1,0 +1,36 @@
+# ServiceProfile: audit-service
+# Design Ref: MTU-N54 Section 3.4
+# Plan SC: FR-N54.5, FR-N54.6
+# CSAP: D-06 침해사고 관리
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: audit-service.saas.svc.cluster.local
+  namespace: saas
+spec:
+  routes:
+    - name: POST /api/audit/log
+      condition:
+        method: POST
+        pathRegex: /api/audit/log
+      timeout: 3s
+      isRetryable: true             # 감사 로그는 반드시 기록 (재시도 허용)
+
+    - name: GET /api/audit/logs
+      condition:
+        method: GET
+        pathRegex: /api/audit/logs
+      timeout: 5s
+      isRetryable: true
+
+    - name: GET /api/audit/search
+      condition:
+        method: GET
+        pathRegex: /api/audit/search
+      timeout: 10s
+      isRetryable: true
+
+  retryBudget:
+    retryRatio: 0.3                 # 감사 로그는 높은 재시도 비율 허용
+    minRetriesPerSecond: 20
+    ttl: 15s
