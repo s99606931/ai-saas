@@ -1,0 +1,87 @@
+{
+  "name": "공공기관 SaaS 프레임워크 개발 환경",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22",
+      "nodeGypDependencies": true
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "ms-azuretools.vscode-docker",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "eamodio.gitlens",
+        "redhat.vscode-yaml",
+        "yzhang.markdown-all-in-one",
+        "rangav.vscode-thunder-client",
+        "usernamehw.errorlens",
+        "wayou.vscode-todo-highlight",
+        "aaron-bond.better-comments",
+        "christian-kohler.path-intellisense"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "typescript.preferences.importModuleSpecifier": "non-relative",
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true,
+        "[yaml]": {
+          "editor.defaultFormatter": "redhat.vscode-yaml"
+        }
+      }
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "remoteUser": "node",
+  "containerEnv": {
+    "KUBECONFIG": "/home/node/.kube/config",
+    "NODE_ENV": "development",
+    "PNPM_HOME": "/home/node/.local/share/pnpm",
+    "PATH": "/home/node/.local/share/pnpm:/home/node/.linkerd2/bin:${containerEnv:PATH}"
+  },
+  "mounts": [
+    {
+      "source": "${localWorkspaceFolder}",
+      "target": "/workspace",
+      "type": "bind"
+    }
+  ],
+  "forwardPorts": [
+    3000,
+    3001,
+    5432,
+    6379,
+    8080,
+    9090,
+    9093,
+    3100
+  ],
+  "portsAttributes": {
+    "3000": { "label": "포털 (Next.js)" },
+    "3001": { "label": "관리자 포털" },
+    "5432": { "label": "PostgreSQL" },
+    "6379": { "label": "Redis" },
+    "8080": { "label": "API Gateway" },
+    "9090": { "label": "Prometheus" },
+    "9093": { "label": "AlertManager" },
+    "3100": { "label": "Loki" }
+  },
+  "shutdownAction": "stopCompose"
+}
