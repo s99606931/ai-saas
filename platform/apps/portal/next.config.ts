@@ -56,9 +56,11 @@ const securityHeaders = [
     key: 'Permissions-Policy',
     value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
   },
+  // OWASP 권장: CSP가 활성화된 경우 레거시 XSS 필터 비활성화
+  // 1; mode=block은 특정 브라우저에서 오히려 보안 취약점을 유발할 수 있음
   {
     key: 'X-XSS-Protection',
-    value: '1; mode=block',
+    value: '0',
   },
 ];
 

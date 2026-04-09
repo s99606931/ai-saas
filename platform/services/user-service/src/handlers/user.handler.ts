@@ -394,9 +394,7 @@ export async function deleteUserHandler(
     return;
   }
 
-  // 영구 비활성화: lockedUntil = 9999-12-31T23:59:59Z
-  const PERMANENT_LOCK = new Date('9999-12-31T23:59:59.000Z');
-
+  // 영구 비활성화: lockedUntil = 9999-12-31T23:59:59Z (PERMANENT_LOCK 상수 재사용)
   await prisma.user.update({
     where: { id: request.params.id },
     data: {

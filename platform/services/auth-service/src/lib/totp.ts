@@ -86,6 +86,8 @@ export function generateTotp(secret: Buffer, counter: number): string {
 /**
  * TOTP 코드 검증 (RFC 6238)
  *
+ * CSAP D-09: timing-safe 비교로 타이밍 공격 방지
+ *
  * @param secret - Base32 인코딩된 시크릿
  * @param code - 6자리 TOTP 코드
  * @param window - 허용 시간 윈도우 (기본 1 = 전후 30초)
@@ -98,7 +100,11 @@ export function verifyTotp(secret: string, code: string, window = 1): boolean {
   for (let i = -window; i <= window; i++) {
     const counter = time + i;
     const generated = generateTotp(secretBuffer, counter);
-    if (generated === code) {
+    // CSAP D-09: timing-safe 비교 (타이밍 공격 방지)
+    if (
+      generated.length === code.length &&
+      crypto.timingSafeEqual(Buffer.from(generated), Buffer.from(code))
+    ) {
       return true;
     }
   }

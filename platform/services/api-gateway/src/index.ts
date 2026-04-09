@@ -104,13 +104,34 @@ async function main(): Promise<void> {
   });
 
   // FR-GW.3: Circuit Breaker 모니터링 엔드포인트 (CSAP D-07 가용성)
-  app.get('/admin/circuits', async () => ({
-    success: true,
-    data: circuitBreaker.getAllStatus(),
-    timestamp: new Date().toISOString(),
-  }));
+  // CSAP D-08-05: 관리 엔드포인트는 내부 서비스 키 인증 필수
+  app.get('/admin/circuits', async (request, reply) => {
+    const internalKey = process.env['INTERNAL_SERVICE_KEY'];
+    const providedKey = request.headers['x-internal-service-key'];
+    if (!internalKey || providedKey !== internalKey) {
+      await reply.status(403).send({
+        success: false,
+        error: { code: 'ADMIN_AUTH_REQUIRED', message: '관리 엔드포인트 접근 권한이 없습니다' },
+      });
+      return;
+    }
+    return {
+      success: true,
+      data: circuitBreaker.getAllStatus(),
+      timestamp: new Date().toISOString(),
+    };
+  });
 
   app.post('/admin/circuits/:serviceId/reset', async (request, reply) => {
+    const internalKey = process.env['INTERNAL_SERVICE_KEY'];
+    const providedKey = request.headers['x-internal-service-key'];
+    if (!internalKey || providedKey !== internalKey) {
+      await reply.status(403).send({
+        success: false,
+        error: { code: 'ADMIN_AUTH_REQUIRED', message: '관리 엔드포인트 접근 권한이 없습니다' },
+      });
+      return;
+    }
     const { serviceId } = request.params as { serviceId: string };
     circuitBreaker.reset(serviceId);
     await reply.send({

@@ -207,5 +207,3 @@ export async function loginHandler(
     },
   });
 }
-
-// getUserPermissions는 ../lib/permissions.ts에서 import (중복 코드 제거)

@@ -38,14 +38,14 @@ export async function passwordChangeHandler(
   reply: FastifyReply,
 ): Promise<void> {
   // 1. 인증 확인
-  const user = (request as FastifyRequest & { user?: { sub: string; tenantId: string } }).user;
-  if (!user) {
+  if (!request.user) {
     await reply.status(401).send({
       success: false,
       error: { code: 'AUTH_REQUIRED', message: '인증이 필요합니다' },
     });
     return;
   }
+  const user = request.user;
 
   // 2. 입력 검증 (CSAP D-12)
   const parseResult = passwordChangeSchema.safeParse(request.body);

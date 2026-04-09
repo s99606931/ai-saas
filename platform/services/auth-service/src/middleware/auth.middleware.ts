@@ -27,7 +27,7 @@ const authPlugin: FastifyPluginCallback = (app, _opts, done) => {
   app.decorateRequest('user', undefined);
 
   app.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
-    // 공개 경로 제�� (CSAP D-08-01: 정확한 경로 매칭으로 인증 우회 방지)
+    // 공개 경로 제외 (CSAP D-08-01: 정확한 경로 매칭으로 인증 우회 방지)
     const urlPath = request.url.split('?')[0] ?? request.url;
     const publicPaths = ['/health', '/ready', '/auth/login', '/auth/refresh'];
     if (publicPaths.some((p) => urlPath === p)) {

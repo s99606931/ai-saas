@@ -40,7 +40,7 @@ const updateStatusSchema = z.object({
 });
 
 /**
- * 테넌트 목록 조��� (슈퍼 어드민 전용)
+ * 테넌트 목록 조회 (슈퍼 어드민 전용)
  */
 export async function listTenantsHandler(
   request: FastifyRequest<{ Querystring: { page?: string; pageSize?: string; status?: string } }>,
@@ -143,7 +143,7 @@ export async function createTenantHandler(
     if (prismaError.code === 'P2002') {
       await reply.status(409).send({
         success: false,
-        error: { code: 'TENANT_SLUG_EXISTS', message: '이미 사용 ��인 slug입니다' },
+        error: { code: 'TENANT_SLUG_EXISTS', message: '이미 사용 중인 slug입니다' },
       });
       return;
     }

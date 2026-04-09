@@ -28,14 +28,14 @@ export async function mfaSetupHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const user = (request as FastifyRequest & { user?: { sub: string; tenantId: string } }).user;
-  if (!user) {
+  if (!request.user) {
     await reply.status(401).send({
       success: false,
       error: { code: 'AUTH_REQUIRED', message: '인증이 필요합니다' },
     });
     return;
   }
+  const user = request.user;
 
   const parseResult = mfaSetupSchema.safeParse(request.body);
   if (!parseResult.success) {
@@ -114,14 +114,14 @@ export async function mfaVerifyHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const user = (request as FastifyRequest & { user?: { sub: string; tenantId: string } }).user;
-  if (!user) {
+  if (!request.user) {
     await reply.status(401).send({
       success: false,
       error: { code: 'AUTH_REQUIRED', message: '인증이 필요합니다' },
     });
     return;
   }
+  const user = request.user;
 
   const parseResult = mfaVerifySchema.safeParse(request.body);
   if (!parseResult.success) {
@@ -184,14 +184,14 @@ export async function mfaDisableHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const user = (request as FastifyRequest & { user?: { sub: string; tenantId: string } }).user;
-  if (!user) {
+  if (!request.user) {
     await reply.status(401).send({
       success: false,
       error: { code: 'AUTH_REQUIRED', message: '인증이 필요합니다' },
     });
     return;
   }
+  const user = request.user;
 
   const parseResult = mfaDisableSchema.safeParse(request.body);
   if (!parseResult.success) {
@@ -250,6 +250,3 @@ export async function mfaDisableHandler(
     message: 'MFA가 비활성화되었습니다',
   });
 }
-
-// TOTP 유틸리티는 ../lib/totp.ts에서 import (중복 코드 제거)
-// Design Ref: SVC-AUTH-R1 DESIGN §1.2
