@@ -1,0 +1,56 @@
+# Flux Drift Detection 강화 설정
+# Design Ref: MTU-N67.design.md §1
+# Plan SC: FR-N67.1, FR-N67.2
+#
+# 기존 Flux Kustomization에 drift detection 활성화 패치
+
+# --- Kustomization Drift Detection ---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: saas-platform
+  namespace: flux-system
+spec:
+  # 5분 간격 동기화 (드리프트 감지)
+  interval: 5m
+  # 자동 복구
+  retryInterval: 2m
+  # prune: Git에 없는 리소스 자동 삭제
+  prune: true
+  # force: 충돌 시 Git 우선
+  force: false
+  # 헬스체크 타임아웃
+  timeout: 3m
+  # 의존성
+  dependsOn: []
+  path: ./infra
+  sourceRef:
+    kind: GitRepository
+    name: saas-platform
+---
+# --- HelmRelease Drift Detection ---
+# 각 HelmRelease에 driftDetection 설정 적용
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: drift-detection-template
+  namespace: flux-system
+  annotations:
+    note: "이 파일은 driftDetection 설정 템플릿입니다. 실제 HelmRelease에 병합하여 사용합니다."
+spec:
+  driftDetection:
+    # enabled: 드리프트 감지 + 자동 복구
+    mode: enabled
+    # HPA/VPA가 관리하는 replicas 필드는 무시
+    ignore:
+      - paths: ["/spec/replicas"]
+        target:
+          kind: Deployment
+      - paths: ["/spec/replicas"]
+        target:
+          kind: StatefulSet
+      # cert-manager가 관리하는 TLS 시크릿 무시
+      - paths: ["/data"]
+        target:
+          kind: Secret
+          annotationSelector: "cert-manager.io/certificate-name"
