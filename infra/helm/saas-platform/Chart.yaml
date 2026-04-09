@@ -1,0 +1,118 @@
+# Design Ref: MTU-N35 Design -- Umbrella Chart 구조
+# Plan SC: FR-N35.1
+apiVersion: v2
+name: saas-platform
+description: 공공기관 SaaS 플랫폼 Helm Umbrella Chart
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+maintainers:
+  - name: SaaS Platform Team
+keywords:
+  - saas
+  - csap
+  - umbrella
+  - public-sector
+
+dependencies:
+  # --- 공통 라이브러리 ---
+  - name: common
+    version: 0.1.0
+    repository: "file://charts/common"
+
+  # --- 인프라 서비스 ---
+  - name: postgres
+    version: 0.1.0
+    repository: "file://charts/postgres"
+    condition: postgres.enabled
+
+  - name: redis
+    version: 0.1.0
+    repository: "file://charts/redis"
+    condition: redis.enabled
+
+  - name: minio
+    version: 0.1.0
+    repository: "file://charts/minio"
+    condition: minio.enabled
+
+  # --- 마이크로서비스 ---
+  - name: api-gateway
+    version: 0.1.0
+    repository: "file://charts/api-gateway"
+    condition: api-gateway.enabled
+
+  - name: auth-service
+    version: 0.1.0
+    repository: "file://charts/auth-service"
+    condition: auth-service.enabled
+
+  - name: user-service
+    version: 0.1.0
+    repository: "file://charts/user-service"
+    condition: user-service.enabled
+
+  - name: tenant-service
+    version: 0.1.0
+    repository: "file://charts/tenant-service"
+    condition: tenant-service.enabled
+
+  - name: menu-service
+    version: 0.1.0
+    repository: "file://charts/menu-service"
+    condition: menu-service.enabled
+
+  - name: saas-catalog-service
+    version: 0.1.0
+    repository: "file://charts/saas-catalog-service"
+    condition: saas-catalog-service.enabled
+
+  - name: subscription-service
+    version: 0.1.0
+    repository: "file://charts/subscription-service"
+    condition: subscription-service.enabled
+
+  - name: billing-service
+    version: 0.1.0
+    repository: "file://charts/billing-service"
+    condition: billing-service.enabled
+
+  - name: crm-service
+    version: 0.1.0
+    repository: "file://charts/crm-service"
+    condition: crm-service.enabled
+
+  - name: ai-service
+    version: 0.1.0
+    repository: "file://charts/ai-service"
+    condition: ai-service.enabled
+
+  - name: notification-service
+    version: 0.1.0
+    repository: "file://charts/notification-service"
+    condition: notification-service.enabled
+
+  - name: file-service
+    version: 0.1.0
+    repository: "file://charts/file-service"
+    condition: file-service.enabled
+
+  - name: audit-service
+    version: 0.1.0
+    repository: "file://charts/audit-service"
+    condition: audit-service.enabled
+
+  - name: compliance-service
+    version: 0.1.0
+    repository: "file://charts/compliance-service"
+    condition: compliance-service.enabled
+
+  - name: security-monitor-service
+    version: 0.1.0
+    repository: "file://charts/security-monitor-service"
+    condition: security-monitor-service.enabled
+
+  - name: portal
+    version: 0.1.0
+    repository: "file://charts/portal"
+    condition: portal.enabled

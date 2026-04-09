@@ -93,6 +93,12 @@
 | **MTU-N18** 머지 준비 | 2026-04-08 | - | `docs/archive/2026-04/MTU-N18-merge-preparation/` |
 | **MTU-N24(obs)** 관찰가능성 스택 (대체됨) | 2026-04-08 | - | `docs/archive/2026-04/MTU-N24-observability-stack/` |
 | **features-legacy** 구 feature 명칭 plan/design (csap/dep/eco/isms/q 계열) | 2026-04-08 | - | `docs/archive/2026-04/features-legacy/` |
+| **MTU-N31** Kyverno Enforce 전환 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N31/` |
+| **MTU-N32** Helm 실전 배포 테스트 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N32/` |
+| **MTU-N33** 부하 테스트 | 2026-04-08 | 100% | `docs/archive/2026-04/MTU-N33/` |
+| **MTU-N34** Policy Reporter 설치 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N34/` |
+| **MTU-N35** Helm Umbrella Chart | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N35/` |
+| **MTU-N36** 릴리스 체크리스트 v1.2.0 업데이트 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N36/` |
 
 ## av-skill 요약
 

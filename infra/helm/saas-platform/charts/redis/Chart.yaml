@@ -1,0 +1,12 @@
+# Design Ref: MTU-N35 Design
+# Plan SC: FR-N35.3
+apiVersion: v2
+name: redis
+description: SaaS Platform redis subchart
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+dependencies:
+  - name: common
+    version: 0.1.0
+    repository: "file://../common"

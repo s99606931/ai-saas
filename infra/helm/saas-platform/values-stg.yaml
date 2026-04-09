@@ -1,0 +1,53 @@
+# Design Ref: MTU-N35 Design -- 스테이징 환경 values
+# Plan SC: FR-N35.5
+# 용도: 스테이징/테스트 환경 (전체 서비스, 표준 리소스)
+
+# --- 전체 서비스 활성화 ---
+api-gateway:
+  enabled: true
+  replicaCount: 1
+auth-service:
+  enabled: true
+  replicaCount: 1
+user-service:
+  enabled: true
+  replicaCount: 1
+tenant-service:
+  enabled: true
+  replicaCount: 1
+menu-service:
+  enabled: true
+  replicaCount: 1
+saas-catalog-service:
+  enabled: true
+  replicaCount: 1
+subscription-service:
+  enabled: true
+  replicaCount: 1
+billing-service:
+  enabled: true
+  replicaCount: 1
+crm-service:
+  enabled: true
+  replicaCount: 1
+ai-service:
+  enabled: true
+  replicaCount: 1
+notification-service:
+  enabled: true
+  replicaCount: 1
+file-service:
+  enabled: true
+  replicaCount: 1
+audit-service:
+  enabled: true
+  replicaCount: 1
+compliance-service:
+  enabled: true
+  replicaCount: 1
+security-monitor-service:
+  enabled: true
+  replicaCount: 1
+portal:
+  enabled: true
+  replicaCount: 1

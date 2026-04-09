@@ -1,11 +1,11 @@
 {
-  "sessionCount": 60,
+  "sessionCount": 68,
   "lastSession": {
-    "startedAt": "2026-04-08T13:44:42.668Z",
+    "startedAt": "2026-04-09T08:50:00.000Z",
     "platform": "claude",
     "level": "Enterprise"
   },
-  "currentFeature": "release-v1.1.0",
+  "currentFeature": "policy-reporter-helm-umbrella-release",
   "currentPhase": "archived",
   "qualityEnhancement": {
     "date": "2026-04-07",
@@ -481,6 +481,54 @@
       "startedAt": "2026-04-08T22:50:00.000Z",
       "archivedAt": "2026-04-08T23:00:00.000Z",
       "description": "stg->main 릴리스 준비 (CHANGELOG + 체크리스트)"
+    },
+    "MTU-N31": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-08T23:00:00.000Z",
+      "archivedAt": "2026-04-08T23:20:00.000Z",
+      "description": "Kyverno Enforce 전환 (v1.17.1 Helm 설치 + 미서명 이미지 차단)"
+    },
+    "MTU-N32": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-08T23:00:00.000Z",
+      "archivedAt": "2026-04-08T23:20:00.000Z",
+      "description": "Helm 실전 배포 테스트 (Chart 작성 + install/upgrade/rollback 전 주기)"
+    },
+    "MTU-N33": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-08T23:00:00.000Z",
+      "archivedAt": "2026-04-08T23:20:00.000Z",
+      "description": "부하 테스트 (autocannon 3 시나리오, Rate Limiting CSAP D-08 검증)"
+    },
+    "MTU-N34": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-09T08:50:00.000Z",
+      "archivedAt": "2026-04-09T09:30:00.000Z",
+      "description": "Kyverno Policy Reporter 설치 (v3.7.3 + UI + Kyverno Plugin + Prometheus + Grafana 3종)"
+    },
+    "MTU-N35": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-09T09:00:00.000Z",
+      "archivedAt": "2026-04-09T09:40:00.000Z",
+      "description": "Helm Umbrella Chart (19 하위 차트 + 공통 라이브러리 + 환경별 values)"
+    },
+    "MTU-N36": {
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 0,
+      "startedAt": "2026-04-09T09:40:00.000Z",
+      "archivedAt": "2026-04-09T09:50:00.000Z",
+      "description": "릴리스 체크리스트 v1.2.0 업데이트 + CHANGELOG + 상태 동기화"
     }
   },
   "platformSync": {

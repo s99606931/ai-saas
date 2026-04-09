@@ -6,6 +6,63 @@
 ## [Unreleased]
 
 ### Added (신규)
+- Kyverno Policy Reporter 설치 (MTU-N34, CSAP D-05-03/D-06-01/D-12-08)
+  - Policy Reporter v3.7.3 Helm Chart (policy-reporter 네임스페이스)
+  - Policy Reporter UI (http://localhost:30380)
+  - Kyverno Plugin (정책 정보 수집)
+  - Prometheus ServiceMonitor + Grafana 대시보드 3종 자동 프로비저닝
+  - Kyverno reportsController 활성화 (PolicyReport 194건 생성)
+  - require-app-labels Audit 정책 (PolicyReport 생성 시연용)
+  - 설치 가이드 (docs/07-infra/policy-reporter-guide.md)
+- Helm Umbrella Chart (MTU-N35, CSAP D-07/D-12)
+  - saas-platform 19개 서비스 통합 Umbrella Chart
+  - 공통 라이브러리 차트 (common/templates/_helpers.tpl)
+  - 환경별 values 파일 (values.yaml, values-dev.yaml, values-stg.yaml)
+  - helm lint 0 failures, helm template 57 리소스 렌더링 확인
+  - Umbrella Chart 사용 가이드 (docs/07-infra/helm-umbrella-guide.md)
+
+### Security (보안 수정 — 안티패턴 제거)
+- **CRITICAL C-01**: 스크립트 6개 Harbor12345 + setup-gitea admin 하드코딩 비밀번호 제거
+  - `deploy-to-k3s.sh`, `build-all.sh`, `setup-harbor-wsl2.sh`, `test-e2e-scenarios.sh`, `test-cicd-pipeline.sh`, `setup-wsl2-all.sh` → `${VAR:?}` 필수 환경변수화
+  - `setup-gitea-wsl2.sh` → GITEA_ADMIN_PASSWORD 기본값 'admin' 제거
+- **CRITICAL C-02**: `next.config.ts` DATABASE_URL env 섹션 제거 (클라이언트 번들 노출 차단)
+- **CRITICAL C-03**: 11개 마이크로서비스 INTERNAL_SERVICE_KEY 내부 인증 추가
+  - billing, tenant, crm, subscription, catalog, file, menu, audit, compliance, security, ai 서비스 routes.ts
+- **HIGH H-02**: `billing.handler.ts` TOCTOU 경쟁조건 수정 — prisma.$transaction으로 원자적 결제 처리
+- **HIGH H-03**: `next.config.ts` CSP에서 `unsafe-eval` 제거 (XSS 방어 강화)
+- **LOW L-01**: `next.config.ts` HSTS 헤더 프로덕션 환경 조건부 적용
+- **MED M-06**: `auth-guard.ts` 빈 tenantId 차단 (SUPER_ADMIN 제외 테넌트 격리 강화)
+- **LOW L-02**: `prisma/seed/index.ts` 프로덕션 실행 차단 가드 추가
+
+### Fixed (인프라 안티패턴 수정)
+- `k8s/infra/postgres.yaml`: emptyDir → PVC(50Gi) + 리소스 제한 + livenessProbe
+- `k8s/infra/redis.yaml`: 리소스 제한 + livenessProbe 추가
+- `k8s/infra/minio.yaml`: emptyDir → PVC(100Gi) + 리소스 requests + livenessProbe
+- `k8s/cicd/act-runner.yaml`: `latest` 태그 → `0.2.6` 고정 버전
+- `k8s/cicd/gitea-values.yaml`: 하드코딩 비밀번호 → existingSecret 참조
+
+### Docs (문서 안티패턴 수정)
+- README.md, production-checklist.md, cluster-setup-recipe.md: 서비스 개수 17개로 통일
+
+### Added (신규)
+- Kyverno Enforce 전환 (MTU-N31, CSAP D-05-03/D-12-08)
+  - Kyverno v1.17.1 (Chart v3.7.1) Helm 설치 (kyverno 네임스페이스)
+  - verify-image-signature 정책 Audit -> Enforce 전환
+  - 미서명 Harbor 이미지(localhost:8080/public-saas/*) 배포 차단 검증
+  - WSL2 최소 설치 values.yaml (reportsController/cleanupController 비활성)
+  - Enforce 전환 가이드 (docs/07-infra/kyverno-enforce-guide.md)
+- Helm 실전 배포 테스트 (MTU-N32, CSAP D-12)
+  - api-gateway Helm Chart 작성 (infra/helm/api-gateway/)
+  - helm install/upgrade/rollback 전 주기 검증 (REVISION 1->4)
+  - helm-test NS 독립 배포 (기존 kustomize와 무충돌)
+  - Pod Running + Health Check /health 200 OK 확인
+  - Helm 배포 가이드 (docs/07-infra/helm-deployment-guide.md)
+- 부하 테스트 (MTU-N33, CSAP NFR/D-08)
+  - autocannon 부하 테스트 스크립트 (scripts/load-test.js)
+  - 3 시나리오 실행: Health Check / Auth 라우팅 / 동시 접속
+  - API Gateway TPS 2,679~4,584 req/s, P99 1~3ms (Rate Limit 제외)
+  - Rate Limiting (429) 정상 동작 확인 (CSAP D-08 접근 통제)
+  - 부하 테스트 보고서 (docs/07-infra/load-test-report.md)
 - Cosign 이미지 서명 실전 적용 (MTU-N27, CSAP D-05-03/D-09-01/D-12-08)
   - Cosign v3.0.6 설치 + ECDSA 키 쌍 생성
   - Harbor public-saas/test-app 이미지 서명 + 검증 성공

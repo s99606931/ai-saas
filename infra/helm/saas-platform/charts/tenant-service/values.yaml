@@ -1,0 +1,42 @@
+# Design Ref: MTU-N35 Design -- 기본 values
+# Plan SC: FR-N35.3
+enabled: true
+replicaCount: 1
+
+image:
+  repository: tenant-service
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+service:
+  type: ClusterIP
+  port: 3000
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+healthCheck:
+  enabled: true
+  path: /health
+  initialDelaySeconds: 10
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+env:
+  NODE_ENV: production
+  PORT: "3000"
+  LOG_LEVEL: info

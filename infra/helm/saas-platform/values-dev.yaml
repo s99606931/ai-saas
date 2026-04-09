@@ -1,0 +1,83 @@
+# Design Ref: MTU-N35 Design -- 개발 환경 values
+# Plan SC: FR-N35.5
+# 용도: WSL2 로컬 개발 환경 (최소 리소스)
+
+# --- 인프라 ---
+postgres:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+redis:
+  enabled: true
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+minio:
+  enabled: true
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# --- 핵심 서비스만 활성화 ---
+api-gateway:
+  enabled: true
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+auth-service:
+  enabled: true
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+user-service:
+  enabled: true
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+tenant-service:
+  enabled: true
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+# --- 선택적 서비스 (dev에서는 비활성) ---
+crm-service:
+  enabled: false
+billing-service:
+  enabled: false
+subscription-service:
+  enabled: false

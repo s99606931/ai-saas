@@ -1,0 +1,37 @@
+# Kyverno ClusterPolicy: 필수 라벨 검증
+# Design Ref: MTU-N34 Design -- PolicyReport 생성을 위한 Audit 정책
+# Plan SC: FR-N34.3 (Kyverno Plugin 정책 결과 시각화)
+# CSAP: D-12-08 (보안 관제)
+#
+# Audit 모드: 위반 시 배포 허용하되 PolicyReport 기록
+# 목적: Policy Reporter UI에서 정책 결과 시각화 시연
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-app-labels
+  annotations:
+    policies.kyverno.io/title: "필수 라벨 검증 (app)"
+    policies.kyverno.io/category: "Best Practices"
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      모든 Pod에 'app' 라벨이 있는지 검증합니다.
+      Audit 모드로 위반 시 PolicyReport에 기록합니다.
+    csap.control: "D-12-08"
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: check-app-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Pod에 'app' 라벨이 필수입니다."
+        pattern:
+          metadata:
+            labels:
+              app: "?*"

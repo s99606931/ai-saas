@@ -1,0 +1,34 @@
+# Design Ref: MTU-N35 Design -- Redis 인프라
+# Plan SC: FR-N35.4
+enabled: true
+replicaCount: 1
+
+image:
+  repository: redis
+  pullPolicy: IfNotPresent
+  tag: "7-alpine"
+
+nameOverride: ""
+fullnameOverride: "redis"
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+service:
+  type: ClusterIP
+  port: 6379
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+healthCheck:
+  enabled: false
+
+env: {}

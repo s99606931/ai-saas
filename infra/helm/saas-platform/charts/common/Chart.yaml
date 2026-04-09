@@ -1,0 +1,7 @@
+# Design Ref: MTU-N35 Design -- 공통 라이브러리 차트
+# Plan SC: FR-N35.2
+apiVersion: v2
+name: common
+description: SaaS 플랫폼 공통 라이브러리 차트 (named templates)
+type: library
+version: 0.1.0

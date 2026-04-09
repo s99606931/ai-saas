@@ -1,0 +1,22 @@
+공공기관 SaaS 플랫폼이 배포되었습니다.
+
+설치된 서비스:
+{{- if index .Values "api-gateway" "enabled" }}
+  - API Gateway (NodePort 32277)
+{{- end }}
+{{- if index .Values "auth-service" "enabled" }}
+  - Auth Service
+{{- end }}
+{{- if index .Values "user-service" "enabled" }}
+  - User Service
+{{- end }}
+{{- if index .Values "tenant-service" "enabled" }}
+  - Tenant Service
+{{- end }}
+{{- if index .Values "portal" "enabled" }}
+  - Portal
+{{- end }}
+
+접근 방법:
+  API Gateway: http://localhost:32277
+  Health Check: http://localhost:32277/health

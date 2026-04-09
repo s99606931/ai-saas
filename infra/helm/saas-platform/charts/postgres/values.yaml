@@ -1,0 +1,36 @@
+# Design Ref: MTU-N35 Design -- PostgreSQL 인프라
+# Plan SC: FR-N35.4
+enabled: true
+replicaCount: 1
+
+image:
+  repository: postgres
+  pullPolicy: IfNotPresent
+  tag: "16-alpine"
+
+nameOverride: ""
+fullnameOverride: "postgres"
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+service:
+  type: ClusterIP
+  port: 5432
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+healthCheck:
+  enabled: false
+
+env:
+  POSTGRES_DB: saas_platform
+  POSTGRES_USER: saas_admin

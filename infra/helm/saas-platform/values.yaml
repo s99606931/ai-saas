@@ -1,0 +1,50 @@
+# Design Ref: MTU-N35 Design -- Umbrella Chart 기본 values
+# Plan SC: FR-N35.5
+# 용도: 프로덕션 기본 설정
+
+# --- 전역 설정 ---
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# --- 인프라 서비스 ---
+postgres:
+  enabled: true
+redis:
+  enabled: true
+minio:
+  enabled: true
+
+# --- 마이크로서비스 (전체 활성화) ---
+api-gateway:
+  enabled: true
+auth-service:
+  enabled: true
+user-service:
+  enabled: true
+tenant-service:
+  enabled: true
+menu-service:
+  enabled: true
+saas-catalog-service:
+  enabled: true
+subscription-service:
+  enabled: true
+billing-service:
+  enabled: true
+crm-service:
+  enabled: true
+ai-service:
+  enabled: true
+notification-service:
+  enabled: true
+file-service:
+  enabled: true
+audit-service:
+  enabled: true
+compliance-service:
+  enabled: true
+security-monitor-service:
+  enabled: true
+portal:
+  enabled: true

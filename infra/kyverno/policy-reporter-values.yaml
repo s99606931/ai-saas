@@ -1,0 +1,67 @@
+# Policy Reporter Helm Chart Values -- WSL2 최소 설치
+# Design Ref: MTU-N34 Design S1
+# Plan SC: FR-N34.1, FR-N34.6
+# CSAP: D-05-03, D-06-01, D-12-08
+#
+# Chart: policy-reporter/policy-reporter v3.7.3
+# Namespace: policy-reporter
+# 설치: helm upgrade --install policy-reporter policy-reporter/policy-reporter \
+#        -n policy-reporter --create-namespace \
+#        -f infra/kyverno/policy-reporter-values.yaml
+
+# --- Core Policy Reporter ---
+# Plan SC: FR-N34.1
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# --- Kyverno Plugin ---
+# Design Ref: MTU-N34 Design -- Kyverno Plugin
+# Plan SC: FR-N34.3
+plugin:
+  kyverno:
+    enabled: true
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+# --- UI ---
+# Design Ref: MTU-N34 Design -- UI 접근
+# Plan SC: FR-N34.2
+ui:
+  enabled: true
+  plugins:
+    kyverno: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  service:
+    type: NodePort
+    nodePort: 30380
+
+# --- Monitoring (Prometheus + Grafana 연동) ---
+# Design Ref: MTU-N34 Design -- Prometheus 연동
+# Plan SC: FR-N34.4, FR-N34.5
+monitoring:
+  enabled: true
+  serviceMonitor:
+    labels:
+      release: kube-prometheus-stack
+  grafana:
+    namespace: monitoring
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      value: "1"
