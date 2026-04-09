@@ -26,16 +26,44 @@ const updateServiceSchema = z.object({
 });
 
 /**
- * 서비스 목록 조회
- * Plan SC: FR-P06.1
+ * 서비스 목록 조회 (검색/필터 고도화)
+ * Plan SC: FR-P06.1, FR-CAT.2
+ * Design Ref: SVC-CAT-R1 DESIGN
  */
 export async function listServicesHandler(
-  request: FastifyRequest<{ Querystring: { category?: string; page?: string; pageSize?: string } }>,
+  request: FastifyRequest<{
+    Querystring: {
+      category?: string;
+      search?: string;
+      isActive?: string;
+      page?: string;
+      pageSize?: string;
+    };
+  }>,
   reply: FastifyReply,
 ): Promise<void> {
   const page = parseInt(request.query.page ?? '1', 10);
   const pageSize = Math.min(parseInt(request.query.pageSize ?? '20', 10), 100);
-  const where = request.query.category ? { category: request.query.category } : {};
+
+  // FR-CAT.2: 동적 where 조건 빌더 (Design Ref: SVC-CAT-R1 DESIGN)
+  const where: Record<string, unknown> = {};
+
+  if (request.query.category) {
+    where['category'] = request.query.category;
+  }
+
+  if (request.query.isActive !== undefined) {
+    where['isActive'] = request.query.isActive === 'true';
+  }
+
+  // FR-CAT.2: 검색 (name, slug, description OR 조건)
+  if (request.query.search) {
+    where['OR'] = [
+      { name: { contains: request.query.search, mode: 'insensitive' } },
+      { slug: { contains: request.query.search, mode: 'insensitive' } },
+      { description: { contains: request.query.search, mode: 'insensitive' } },
+    ];
+  }
 
   const [services, total] = await Promise.all([
     prisma.service.findMany({
@@ -276,6 +304,17 @@ export async function toggleFlagHandler(
     update: { enabled: parseResult.data.enabled },
     create: { serviceId: request.params.id, key: request.params.key, enabled: parseResult.data.enabled },
   });
+
+  // FR-CAT.4: Feature Flag 토글 감사 로그 (CSAP D-06, Design Ref: SVC-CAT-R1 DESIGN)
+  const flagActor = (request.headers['x-user-id'] as string) || 'system';
+  await logCatalogEvent(
+    'FLAG_TOGGLED',
+    flagActor,
+    request.params.id,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { key: request.params.key, enabled: parseResult.data.enabled },
+  );
 
   await reply.send({ success: true, data: flag });
 }
