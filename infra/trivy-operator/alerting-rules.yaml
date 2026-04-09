@@ -1,0 +1,66 @@
+# Trivy Operator Prometheus 알림 규칙
+# Design Ref: MTU-N63.design.md §3
+# Plan SC: FR-N63.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: trivy-operator-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+spec:
+  groups:
+    - name: trivy-operator.rules
+      rules:
+        # Critical 취약점 발견
+        - alert: TrivyCriticalVulnerability
+          expr: |
+            sum by (namespace, image_repository) (
+              trivy_image_vulnerabilities{severity="Critical"}
+            ) > 0
+          for: 5m
+          labels:
+            severity: critical
+            team: security
+            csap: D-12
+          annotations:
+            summary: "Critical 취약점 발견: {{ $labels.image_repository }}"
+            description: |
+              이미지 {{ $labels.image_repository }} ({{ $labels.namespace }})에서
+              Critical 취약점 {{ $value }}건이 발견되었습니다.
+              즉시 이미지 업데이트가 필요합니다.
+
+        # High 취약점 10개 초과
+        - alert: TrivyHighVulnerabilityExcessive
+          expr: |
+            sum by (namespace, image_repository) (
+              trivy_image_vulnerabilities{severity="High"}
+            ) > 10
+          for: 1h
+          labels:
+            severity: warning
+            team: security
+            csap: D-12
+          annotations:
+            summary: "High 취약점 다수: {{ $labels.image_repository }}"
+            description: |
+              이미지 {{ $labels.image_repository }}에서
+              High 취약점 {{ $value }}건 발견.
+
+        # 설정 감사 실패
+        - alert: TrivyConfigAuditFailed
+          expr: |
+            sum by (namespace) (
+              trivy_resource_configaudits{severity="CRITICAL"}
+            ) > 0
+          for: 30m
+          labels:
+            severity: warning
+            team: security
+            csap: D-12
+          annotations:
+            summary: "설정 감사 Critical 실패: {{ $labels.namespace }}"
+            description: |
+              {{ $labels.namespace }} 네임스페이스에서
+              Critical 설정 감사 실패 {{ $value }}건.

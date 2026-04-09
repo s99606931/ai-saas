@@ -1,0 +1,26 @@
+# tenant-service HTTPRoute
+# Design Ref: MTU-N65.design.md §1
+# Plan SC: FR-N65.3
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tenant-route
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: tenant-service
+spec:
+  parentRefs:
+    - name: saas-gateway
+      sectionName: https
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1/tenants
+      backendRefs:
+        - name: tenant-service
+          port: 8080
+      timeouts:
+        request: 30s
+        backendRequest: 25s

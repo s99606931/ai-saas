@@ -1,0 +1,26 @@
+# api-gateway HTTPRoute (기본 라우팅)
+# Design Ref: MTU-N65.design.md §1
+# Plan SC: FR-N65.3
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: api-gateway-route
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: api-gateway
+spec:
+  parentRefs:
+    - name: saas-gateway
+      sectionName: https
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1
+      backendRefs:
+        - name: api-gateway
+          port: 8080
+      timeouts:
+        request: 60s
+        backendRequest: 55s

@@ -1,0 +1,72 @@
+# CloudNativePG 스케줄 백업
+# Design Ref: MTU-N64.design.md §3
+# Plan SC: FR-N64.3
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: saas-db-daily-backup
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: database-backup
+spec:
+  # 매일 03:00 KST (UTC 18:00)
+  schedule: "0 18 * * *"
+  # 즉시 누락된 백업 실행
+  immediate: true
+  # 백업 소유자: 현재 Primary
+  backupOwnerReference: self
+  cluster:
+    name: saas-main-db
+  # 백업 대상 선택: standby 우선 (Primary 부하 방지)
+  target: prefer-standby
+---
+# DB TLS Certificate (cert-manager 연동)
+# Plan SC: FR-N64.4
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: saas-main-db-tls
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: database
+spec:
+  secretName: saas-main-db-tls-secret
+  duration: 2160h
+  renewBefore: 720h
+  commonName: saas-main-db.saas.svc.cluster.local
+  dnsNames:
+    - saas-main-db-rw
+    - saas-main-db-rw.saas
+    - saas-main-db-rw.saas.svc
+    - saas-main-db-rw.saas.svc.cluster.local
+    - saas-main-db-ro
+    - saas-main-db-ro.saas
+    - saas-main-db-ro.saas.svc
+    - saas-main-db-ro.saas.svc.cluster.local
+    - saas-main-db-r
+    - saas-main-db-r.saas
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: saas-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+# MinIO 자격 증명 (Sealed Secret으로 관리)
+# Plan SC: FR-N64.3
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cnpg-minio-creds
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+  annotations:
+    note: "실제 배포 시 SealedSecret으로 교체 필수"
+type: Opaque
+stringData:
+  ACCESS_KEY_ID: "CHANGE_ME_ACCESS_KEY"
+  SECRET_ACCESS_KEY: "CHANGE_ME_SECRET_KEY"

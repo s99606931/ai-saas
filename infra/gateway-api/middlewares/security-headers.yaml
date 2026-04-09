@@ -1,0 +1,46 @@
+# 보안 헤더 미들웨어 (Traefik CRD)
+# Design Ref: MTU-N65.design.md §3
+# Plan SC: FR-N65.5
+#
+# CSAP D-08 접근통제 + OWASP 보안 헤더
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: security-headers
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    csap: D-08
+spec:
+  headers:
+    # XSS 방지
+    browserXssFilter: true
+    # Content-Type 스니핑 방지
+    contentTypeNosniff: true
+    # 클릭재킹 방지
+    frameDeny: true
+    customFrameOptionsValue: "SAMEORIGIN"
+    # HSTS (1년)
+    stsIncludeSubdomains: true
+    stsPreload: true
+    stsSeconds: 31536000
+    # CSP
+    contentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'"
+    # Referrer Policy
+    referrerPolicy: "strict-origin-when-cross-origin"
+    # 서버 헤더 숨김
+    customResponseHeaders:
+      X-Powered-By: ""
+      Server: ""
+    # CORS 설정
+    accessControlAllowMethods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - OPTIONS
+    accessControlAllowHeaders:
+      - Authorization
+      - Content-Type
+      - X-Request-ID
+    accessControlMaxAge: 3600

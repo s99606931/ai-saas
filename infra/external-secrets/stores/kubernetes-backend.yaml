@@ -1,0 +1,61 @@
+# Kubernetes Backend SecretStore
+# Design Ref: MTU-N66.design.md §1
+# Plan SC: FR-N66.2
+#
+# Vault 없이 Kubernetes 자체 Secret을 소스로 사용합니다.
+# 운영 환경에서는 HashiCorp Vault 또는 AWS SM으로 교체 권장.
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: kubernetes-backend
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/managed-by: external-secrets
+spec:
+  provider:
+    kubernetes:
+      # 동일 클러스터 내 시크릿 참조
+      remoteNamespace: saas-secrets
+      server:
+        caProvider:
+          type: ConfigMap
+          name: kube-root-ca.crt
+          key: ca.crt
+      auth:
+        serviceAccount:
+          name: eso-service-account
+---
+# ESO 서비스 계정
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eso-service-account
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+---
+# ESO RBAC (시크릿 읽기 전용)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: eso-secret-reader
+  namespace: saas-secrets
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: eso-secret-reader-binding
+  namespace: saas-secrets
+subjects:
+  - kind: ServiceAccount
+    name: eso-service-account
+    namespace: saas
+roleRef:
+  kind: Role
+  name: eso-secret-reader
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,66 @@
+# CloudNativePG Prometheus 알림 규칙
+# Design Ref: MTU-N64.design.md §4
+# Plan SC: FR-N64.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cloudnative-pg-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+spec:
+  groups:
+    - name: cnpg.rules
+      rules:
+        # 복제 지연 30초 초과
+        - alert: CNPGReplicationLag
+          expr: |
+            cnpg_pg_replication_lag > 30
+          for: 5m
+          labels:
+            severity: warning
+            team: dba
+            csap: D-06
+          annotations:
+            summary: "DB 복제 지연: {{ $labels.cluster }}"
+            description: |
+              클러스터 {{ $labels.cluster }}의 복제 지연이
+              {{ $value }}초입니다.
+
+        # 연결 수 80% 초과
+        - alert: CNPGConnectionsHigh
+          expr: |
+            cnpg_pg_stat_activity_count / cnpg_pg_settings_setting{name="max_connections"} > 0.8
+          for: 5m
+          labels:
+            severity: warning
+            team: dba
+          annotations:
+            summary: "DB 연결 수 경고: {{ $labels.cluster }}"
+            description: "연결 사용률 {{ $value | humanizePercentage }}"
+
+        # WAL 백업 실패
+        - alert: CNPGWALArchiveFailed
+          expr: |
+            increase(cnpg_pg_stat_archiver_failed_count[1h]) > 0
+          for: 10m
+          labels:
+            severity: critical
+            team: dba
+            csap: D-06
+          annotations:
+            summary: "WAL 아카이빙 실패: {{ $labels.cluster }}"
+            description: "지난 1시간 WAL 아카이빙 실패 {{ $value }}건"
+
+        # Primary 인스턴스 전환
+        - alert: CNPGFailoverOccurred
+          expr: |
+            changes(cnpg_pg_replication_in_recovery[5m]) > 0
+          for: 1m
+          labels:
+            severity: critical
+            team: dba
+          annotations:
+            summary: "DB 장애 복구 발생: {{ $labels.cluster }}"
+            description: "Primary 인스턴스 전환이 감지되었습니다."

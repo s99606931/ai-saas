@@ -1,0 +1,38 @@
+# Rate Limiting 미들웨어 (Traefik CRD)
+# Design Ref: MTU-N65.design.md §3
+# Plan SC: FR-N65.4
+#
+# CSAP D-08 접근통제: API Rate Limiting 적용
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    csap: D-08
+spec:
+  rateLimit:
+    # 초당 평균 100 요청
+    average: 100
+    # 버스트 허용 200
+    burst: 200
+    # IP 기반 제한
+    sourceCriterion:
+      requestHeaderName: X-Forwarded-For
+---
+# AI Gateway 전용 Rate Limit (더 엄격)
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: ai-rate-limit
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    csap: D-08
+spec:
+  rateLimit:
+    average: 10
+    burst: 20
+    sourceCriterion:
+      requestHeaderName: X-Forwarded-For

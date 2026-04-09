@@ -1,0 +1,255 @@
+{
+  "annotations": { "list": [] },
+  "description": "인증/보안 이벤트 실시간 모니터링 — CSAP D-06, D-08 준수",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "templating": {
+    "list": [
+      {
+        "name": "namespace",
+        "label": "네임스페이스",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(kube_namespace_status_phase, namespace)",
+        "multi": true,
+        "includeAll": true,
+        "current": { "text": "All", "value": "$__all" },
+        "refresh": 2
+      },
+      {
+        "name": "timerange",
+        "label": "시간 범위",
+        "type": "interval",
+        "query": "5m,15m,1h,6h,24h",
+        "current": { "text": "1h", "value": "1h" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "인증 현황 개요",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "title": "인증 성공률",
+      "description": "CSAP D-08 — 인증 서비스 성공 비율",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "(\n  sum(rate(http_requests_total{service=\"auth-service\",code=~\"2..\"}[$timerange]))\n  /\n  sum(rate(http_requests_total{service=\"auth-service\"}[$timerange]))\n) or vector(1)",
+          "legendFormat": "인증 성공률"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0.9, "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.95, "color": "yellow" },
+              { "value": 0.99, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "인증 실패 수 (24시간)",
+      "description": "D-08 접근통제 — 인증 실패 이벤트 수",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(increase(http_requests_total{service=\"auth-service\",code=~\"40[13]\"}[24h])) or vector(0)",
+          "legendFormat": "인증 실패"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 50, "color": "yellow" },
+              { "value": 200, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Falco 보안 경고",
+      "description": "런타임 보안 이벤트 — 심각도별",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum by (priority) (increase(falco_events_total[24h])) or vector(0)",
+          "legendFormat": "{{priority}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 1, "color": "orange" },
+              { "value": 10, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "정책 위반 현황",
+      "description": "Kyverno + Gatekeeper 정책 위반",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(policy_report_result{status=\"fail\"}) or vector(0)",
+          "legendFormat": "정책 위반"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 1, "color": "orange" },
+              { "value": 5, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "인증 이벤트 트렌드",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "collapsed": false
+    },
+    {
+      "title": "인증 성공/실패 추이",
+      "description": "시간별 인증 성공 vs 실패 요청 수",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{service=\"auth-service\",code=~\"2..\"}[$timerange]))",
+          "legendFormat": "인증 성공"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{service=\"auth-service\",code=~\"40[13]\"}[$timerange]))",
+          "legendFormat": "인증 실패"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "fillOpacity": 20 }
+        }
+      }
+    },
+    {
+      "title": "보안 이벤트 타임라인",
+      "description": "Falco 심각도별 이벤트 타임라인",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum by (priority) (rate(falco_events_total[$timerange]))",
+          "legendFormat": "{{priority}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 30,
+            "stacking": { "mode": "normal" }
+          }
+        }
+      }
+    },
+    {
+      "title": "RBAC 접근 거부 로그",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "collapsed": false
+    },
+    {
+      "title": "RBAC 접근 거부 이벤트 (Loki)",
+      "description": "D-08 접근통제 — 권한 부족으로 인한 403 응답 로그",
+      "type": "logs",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 17 },
+      "targets": [
+        {
+          "expr": "{namespace=~\"$namespace\"} |= \"403\" |= \"Forbidden\" | logfmt",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "wrapLogMessage": true
+      }
+    },
+    {
+      "title": "보안 감사 상세",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+      "collapsed": false
+    },
+    {
+      "title": "보안 이벤트 상세 테이블",
+      "description": "Falco 이벤트 상세 내역",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 26 },
+      "targets": [
+        {
+          "expr": "falco_events_total",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "priority": "심각도",
+              "rule": "규칙",
+              "source": "소스",
+              "Value": "이벤트 수"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["security", "authentication", "csap", "d-08", "falco", "public-saas"],
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "인증/보안 이벤트 대시보드",
+  "uid": "security-auth-events",
+  "version": 1
+}

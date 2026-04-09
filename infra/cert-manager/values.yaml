@@ -1,0 +1,76 @@
+# cert-manager Helm Values
+# Design Ref: MTU-N62.design.md §2
+# Plan SC: FR-N62.1
+#
+# 설치: helm install cert-manager jetstack/cert-manager \
+#   --namespace cert-manager --create-namespace \
+#   -f values.yaml
+
+# --- CRD 설치 ---
+crds:
+  enabled: true
+  keep: true
+
+# --- 복제본 (WSL2 단일 노드) ---
+replicaCount: 1
+
+# --- 리소스 제한 ---
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+# --- Prometheus 모니터링 ---
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: true
+    namespace: monitoring
+    labels:
+      release: kube-prometheus-stack
+
+# --- 웹훅 ---
+webhook:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 5m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+
+# --- CA Injector ---
+cainjector:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 5m
+      memory: 32Mi
+    limits:
+      cpu: 50m
+      memory: 128Mi
+
+# --- 로그 설정 ---
+global:
+  logLevel: 2
+
+# --- 네임스페이스 격리 (N2SF) ---
+# cert-manager는 cert-manager 네임스페이스에서만 실행
+namespace: cert-manager
+
+# --- 보안 컨텍스트 ---
+securityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL

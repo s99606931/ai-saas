@@ -1,0 +1,68 @@
+# Trivy Operator Helm Values
+# Design Ref: MTU-N63.design.md §2
+# Plan SC: FR-N63.1
+#
+# 설치: helm install trivy-operator aqua/trivy-operator \
+#   --namespace trivy-system --create-namespace \
+#   -f values.yaml
+
+# --- Trivy 스캐너 설정 ---
+trivy:
+  # Standalone 모드 (외부 서비스 미사용, 온프레미스 대응)
+  mode: Standalone
+  # 취약점 심각도 필터
+  severity: CRITICAL,HIGH,MEDIUM
+  # 오프라인 DB 사용 (N2SF 외부 통신 최소화)
+  offlineScan: false
+  # 타임아웃
+  timeout: 5m0s
+  # 리소스
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# --- Operator 설정 ---
+operator:
+  replicas: 1
+  # 동시 스캔 작업 수 (WSL2 리소스 고려)
+  scanJobsConcurrentLimit: 3
+  # 스캔 작업 재시도
+  scanJobsRetryDelay: 30s
+  # ConfigAudit 스캐너 활성화
+  configAuditScannerEnabled: true
+  # 취약점 스캐너 활성화
+  vulnerabilityScannerEnabled: true
+  # CIS Benchmark 스캔 주기 (6시간)
+  complianceEnabled: true
+
+# --- 컴플라이언스 설정 ---
+compliance:
+  # CIS Kubernetes Benchmark v1.23
+  cron: "0 */6 * * *"
+  reportType: summary
+
+# --- Prometheus 모니터링 ---
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+
+# --- 보안 컨텍스트 ---
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10000
+  seccompProfile:
+    type: RuntimeDefault
+
+# --- 네임스페이스 제외 (시스템 네임스페이스) ---
+excludeNamespaces: "kube-system,kube-public,kube-node-lease"
+
+# --- 이미지 스캔 트리거 ---
+# 새 워크로드 생성/업데이트 시 자동 스캔
+scanJobTolerations: []
+scanJobAnnotations: {}

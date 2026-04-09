@@ -1,0 +1,29 @@
+# api-gateway TLS Certificate
+# Design Ref: MTU-N62.design.md §3
+# Plan SC: FR-N62.4
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: api-gateway-tls
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: api-gateway
+spec:
+  secretName: api-gateway-tls-secret
+  duration: 2160h
+  renewBefore: 720h
+  commonName: api-gateway.saas.svc.cluster.local
+  dnsNames:
+    - api-gateway
+    - api-gateway.saas
+    - api-gateway.saas.svc
+    - api-gateway.saas.svc.cluster.local
+    - "*.saas.local"
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: saas-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io

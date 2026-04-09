@@ -1,0 +1,67 @@
+# Traefik Gateway API 활성화 (k3s HelmChartConfig)
+# Design Ref: MTU-N65.design.md §2
+# Plan SC: FR-N65.7
+#
+# k3s에서 Traefik을 Gateway API 모드로 활성화합니다.
+# /var/lib/rancher/k3s/server/manifests/ 에 배치
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |
+    # Gateway API Provider 활성화
+    providers:
+      kubernetesGateway:
+        enabled: true
+
+    # 실험적 기능 (Gateway API)
+    experimental:
+      kubernetesGateway:
+        enabled: true
+
+    # 포트 설정
+    ports:
+      web:
+        port: 8000
+        exposedPort: 80
+        protocol: TCP
+      websecure:
+        port: 8443
+        exposedPort: 443
+        protocol: TCP
+        tls:
+          enabled: true
+
+    # Prometheus 메트릭
+    metrics:
+      prometheus:
+        entryPoint: metrics
+        addEntryPointsLabels: true
+        addServicesLabels: true
+
+    # 로그 레벨
+    log:
+      level: INFO
+
+    # 접근 로그 (CSAP D-06 감사)
+    accessLog:
+      enabled: true
+      format: json
+      fields:
+        defaultMode: keep
+        headers:
+          defaultMode: drop
+          names:
+            X-Forwarded-For: keep
+            User-Agent: keep
+
+    # 리소스 (WSL2)
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi

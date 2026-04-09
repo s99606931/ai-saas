@@ -1,0 +1,28 @@
+# catalog-service TLS Certificate
+# Design Ref: MTU-N62.design.md §3
+# Plan SC: FR-N62.4
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: catalog-service-tls
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: catalog-service
+spec:
+  secretName: catalog-service-tls-secret
+  duration: 2160h
+  renewBefore: 720h
+  commonName: catalog-service.saas.svc.cluster.local
+  dnsNames:
+    - catalog-service
+    - catalog-service.saas
+    - catalog-service.saas.svc
+    - catalog-service.saas.svc.cluster.local
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: saas-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io

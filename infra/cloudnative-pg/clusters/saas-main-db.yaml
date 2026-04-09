@@ -1,0 +1,99 @@
+# SaaS 메인 PostgreSQL 클러스터
+# Design Ref: MTU-N64.design.md §2, §3
+# Plan SC: FR-N64.2, FR-N64.3, FR-N64.4
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: saas-main-db
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: database
+    n2sf.grade: "C"
+spec:
+  # --- 인스턴스 구성 (HA) ---
+  instances: 3
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.4
+
+  # --- PostgreSQL 설정 ---
+  postgresql:
+    parameters:
+      # 성능 튜닝 (WSL2 환경)
+      shared_buffers: "128MB"
+      effective_cache_size: "256MB"
+      work_mem: "4MB"
+      maintenance_work_mem: "32MB"
+      max_connections: "100"
+      # WAL 설정
+      wal_level: "replica"
+      max_wal_senders: "10"
+      max_replication_slots: "10"
+      # 로깅 (CSAP D-06 감사)
+      log_statement: "ddl"
+      log_connections: "on"
+      log_disconnections: "on"
+      log_checkpoints: "on"
+      log_lock_waits: "on"
+      log_min_duration_statement: "1000"
+      # 보안 (CSAP D-09)
+      ssl: "on"
+      password_encryption: "scram-sha-256"
+    pg_hba:
+      - hostssl all all 0.0.0.0/0 scram-sha-256
+      - hostssl replication all 0.0.0.0/0 scram-sha-256
+
+  # --- 스토리지 ---
+  storage:
+    size: 10Gi
+    storageClass: local-path
+
+  # --- 백업 (MinIO WAL 아카이빙) ---
+  backup:
+    barmanObjectStore:
+      destinationPath: "s3://cnpg-backups/"
+      endpointURL: "http://minio.velero-system.svc:9000"
+      s3Credentials:
+        accessKeyId:
+          name: cnpg-minio-creds
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: cnpg-minio-creds
+          key: SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+        maxParallel: 2
+      data:
+        compression: gzip
+    retentionPolicy: "14d"
+
+  # --- 스케줄 백업 ---
+  # ScheduledBackup은 별도 리소스로 생성
+
+  # --- TLS (cert-manager 연동) ---
+  certificates:
+    serverTLSSecret: saas-main-db-tls-secret
+    serverCASecret: saas-root-ca-secret
+
+  # --- 리소스 ---
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # --- 모니터링 ---
+  monitoring:
+    enablePodMonitor: true
+
+  # --- 고가용성 ---
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: preferred
+
+  # --- 자동 장애 복구 ---
+  failoverDelay: 0
+  primaryUpdateStrategy: unsupervised
+  primaryUpdateMethod: switchover

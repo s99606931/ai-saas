@@ -1,0 +1,120 @@
+{
+  "annotations": { "list": [] },
+  "description": "Trivy Operator 보안 스캔 대시보드 - 취약점/설정감사/CIS 벤치마크",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "취약점 현황",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "title": "심각도별 취약점 수",
+      "description": "CSAP D-12: 전체 클러스터 이미지 취약점 심각도 분포",
+      "type": "piechart",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "targets": [
+        { "expr": "sum(trivy_image_vulnerabilities{severity=\"Critical\"}) or vector(0)", "legendFormat": "Critical" },
+        { "expr": "sum(trivy_image_vulnerabilities{severity=\"High\"}) or vector(0)", "legendFormat": "High" },
+        { "expr": "sum(trivy_image_vulnerabilities{severity=\"Medium\"}) or vector(0)", "legendFormat": "Medium" },
+        { "expr": "sum(trivy_image_vulnerabilities{severity=\"Low\"}) or vector(0)", "legendFormat": "Low" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Critical" }, "properties": [{ "id": "color", "value": { "fixedColor": "dark-red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "High" }, "properties": [{ "id": "color", "value": { "fixedColor": "dark-orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Medium" }, "properties": [{ "id": "color", "value": { "fixedColor": "dark-yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Low" }, "properties": [{ "id": "color", "value": { "fixedColor": "dark-blue", "mode": "fixed" } }] }
+        ]
+      }
+    },
+    {
+      "title": "네임스페이스별 취약 이미지 수",
+      "type": "barchart",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "targets": [
+        { "expr": "count by (namespace) (trivy_image_vulnerabilities{severity=\"Critical\"} > 0)", "legendFormat": "{{ namespace }}" }
+      ]
+    },
+    {
+      "title": "Critical 취약점 이미지 Top 10",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "targets": [
+        { "expr": "topk(10, sum by (image_repository, namespace) (trivy_image_vulnerabilities{severity=\"Critical\"}))", "legendFormat": "{{ image_repository }}", "format": "table", "instant": true }
+      ]
+    },
+    {
+      "title": "설정 감사",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "collapsed": false
+    },
+    {
+      "title": "설정 감사 결과 분포",
+      "type": "piechart",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 10 },
+      "targets": [
+        { "expr": "sum(trivy_resource_configaudits{severity=\"CRITICAL\"}) or vector(0)", "legendFormat": "Critical" },
+        { "expr": "sum(trivy_resource_configaudits{severity=\"HIGH\"}) or vector(0)", "legendFormat": "High" },
+        { "expr": "sum(trivy_resource_configaudits{severity=\"MEDIUM\"}) or vector(0)", "legendFormat": "Medium" }
+      ]
+    },
+    {
+      "title": "CIS 벤치마크 준수율",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 10 },
+      "targets": [
+        { "expr": "(sum(trivy_compliance_checks{status=\"PASS\"}) / (sum(trivy_compliance_checks{status=\"PASS\"}) + sum(trivy_compliance_checks{status=\"FAIL\"}))) * 100 or vector(0)", "legendFormat": "CIS 준수율 (%)" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 60 },
+              { "color": "yellow", "value": 80 },
+              { "color": "green", "value": 90 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "스캔 이력 (24시간)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 10 },
+      "targets": [
+        { "expr": "sum(increase(trivy_image_vulnerabilities[1h]))", "legendFormat": "스캔된 취약점 수" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["trivy", "security", "csap", "vulnerability"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "Trivy 보안 스캔 대시보드",
+  "uid": "trivy-security-scan",
+  "version": 1
+}

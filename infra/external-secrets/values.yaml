@@ -1,0 +1,64 @@
+# External Secrets Operator Helm Values
+# Design Ref: MTU-N66.design.md §1
+# Plan SC: FR-N66.1
+#
+# 설치: helm install external-secrets external-secrets/external-secrets \
+#   --namespace external-secrets --create-namespace \
+#   -f values.yaml
+
+# --- Operator 설정 ---
+replicaCount: 1
+
+# --- 리소스 제한 ---
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+# --- Webhook ---
+webhook:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 5m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+
+# --- Cert Controller ---
+certController:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 5m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+
+# --- Prometheus 모니터링 ---
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  additionalLabels:
+    release: kube-prometheus-stack
+
+# --- 보안 컨텍스트 ---
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# --- 로그 ---
+logLevel: info

@@ -1,0 +1,28 @@
+# auth-service TLS Certificate
+# Design Ref: MTU-N62.design.md §3
+# Plan SC: FR-N62.4
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: auth-service-tls
+  namespace: saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: auth-service
+spec:
+  secretName: auth-service-tls-secret
+  duration: 2160h    # 90일
+  renewBefore: 720h  # 30일 전 갱신
+  commonName: auth-service.saas.svc.cluster.local
+  dnsNames:
+    - auth-service
+    - auth-service.saas
+    - auth-service.saas.svc
+    - auth-service.saas.svc.cluster.local
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: saas-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io

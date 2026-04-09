@@ -1,0 +1,46 @@
+# CloudNativePG Operator Helm Values
+# Design Ref: MTU-N64.design.md §1, §2
+# Plan SC: FR-N64.1
+#
+# 설치: helm install cnpg cloudnative-pg/cloudnative-pg \
+#   --namespace cnpg-system --create-namespace \
+#   -f values.yaml
+
+# --- Operator 설정 ---
+replicaCount: 1
+
+# --- 리소스 제한 ---
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# --- 모니터링 ---
+monitoring:
+  podMonitorEnabled: true
+  podMonitorNamespace: monitoring
+  podMonitorAdditionalLabels:
+    release: kube-prometheus-stack
+
+# --- 보안 ---
+securityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# --- 웹훅 ---
+webhook:
+  mutating:
+    failurePolicy: Fail
+  validating:
+    failurePolicy: Fail
