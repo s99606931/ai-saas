@@ -25,7 +25,7 @@
 
 | 파일 | 크기 | 내용 |
 |------|------|------|
-| `03-n2sf/n2sf-infrastructure-architecture.md` | 20.1KB | N2SF 6영역 x k3s 전체 아키텍처 |
+| `04-n2sf/n2sf-infrastructure-architecture.md` | 20.1KB | N2SF 6영역 x k3s 전체 아키텍처 |
 
 ## 합격 기준 결과
 

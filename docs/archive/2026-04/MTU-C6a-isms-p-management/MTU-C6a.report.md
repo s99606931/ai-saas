@@ -25,10 +25,10 @@
 
 | 파일 | 크기 | 항목 수 |
 |------|------|--------|
-| `04-isms-p/management-controls/M01-M04-policy-org.md` | 9.8KB | M-01~04 (정책/조직) |
-| `04-isms-p/management-controls/M05-M08-risk.md` | 10.0KB | M-05~08 (공표/위험) |
-| `04-isms-p/management-controls/M09-M12-operation.md` | 8.9KB | M-09~12 (운영/감사) |
-| `04-isms-p/management-controls/M13-M16-improvement.md` | 10.7KB | M-13~16 (개선/검토) |
+| `03-isms-p/management-controls/M01-M04-policy-org.md` | 9.8KB | M-01~04 (정책/조직) |
+| `03-isms-p/management-controls/M05-M08-risk.md` | 10.0KB | M-05~08 (공표/위험) |
+| `03-isms-p/management-controls/M09-M12-operation.md` | 8.9KB | M-09~12 (운영/감사) |
+| `03-isms-p/management-controls/M13-M16-improvement.md` | 10.7KB | M-13~16 (개선/검토) |
 
 ## 합격 기준 결과
 

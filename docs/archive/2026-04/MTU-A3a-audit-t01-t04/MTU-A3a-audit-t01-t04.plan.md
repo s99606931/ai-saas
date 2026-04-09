@@ -13,7 +13,7 @@
 | 관점 | 내용 |
 |------|------|
 | 솔루션 | T03 상세설계서 + T04 추적성 매트릭스 |
-| 산출물 | 06-audit-compliance/templates/T03~T04 |
+| 산출물 | 07-audit-compliance/templates/T03~T04 |
 
 ---
 

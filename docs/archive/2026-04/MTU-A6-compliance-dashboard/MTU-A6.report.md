@@ -36,8 +36,8 @@
 
 | 파일 | 줄 수 | 내용 요약 |
 |------|------|---------|
-| `12-compliance-dashboard/dashboard-architecture.md` | 107 | OSCAL→OTel→Prometheus→Grafana 파이프라인 |
-| `12-compliance-dashboard/grafana-dashboard-spec.md` | 65 | Grafana 패널 명세·PromQL·알림 규칙 |
+| `13-compliance-dashboard/dashboard-architecture.md` | 107 | OSCAL→OTel→Prometheus→Grafana 파이프라인 |
+| `13-compliance-dashboard/grafana-dashboard-spec.md` | 65 | Grafana 패널 명세·PromQL·알림 규칙 |
 
 ---
 

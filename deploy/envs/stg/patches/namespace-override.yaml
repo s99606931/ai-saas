@@ -1,0 +1,8 @@
+# Staging 환경 네임스페이스 오버라이드
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: saas-staging
+  labels:
+    environment: staging
+    n2sf.security/grade: "O"

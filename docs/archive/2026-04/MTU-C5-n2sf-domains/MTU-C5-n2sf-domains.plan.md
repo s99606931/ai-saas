@@ -46,12 +46,12 @@
 
 | 산출물 | 경로 | FR ID |
 |--------|------|-------|
-| N01 관리적 보안 | `docs/framework/03-n2sf/domains/N01-management-security.md` | FR-C5.1 |
-| N02 인증 | `docs/framework/03-n2sf/domains/N02-authentication.md` | FR-C5.2 |
-| N03 격리 | `docs/framework/03-n2sf/domains/N03-isolation.md` | FR-C5.3 |
-| N04 암호화 | `docs/framework/03-n2sf/domains/N04-encryption.md` | FR-C5.4 |
-| N05 데이터 | `docs/framework/03-n2sf/domains/N05-data.md` | FR-C5.5 |
-| N06 운영 | `docs/framework/03-n2sf/domains/N06-operations.md` | FR-C5.6 |
+| N01 관리적 보안 | `docs/framework/04-n2sf/domains/N01-management-security.md` | FR-C5.1 |
+| N02 인증 | `docs/framework/04-n2sf/domains/N02-authentication.md` | FR-C5.2 |
+| N03 격리 | `docs/framework/04-n2sf/domains/N03-isolation.md` | FR-C5.3 |
+| N04 암호화 | `docs/framework/04-n2sf/domains/N04-encryption.md` | FR-C5.4 |
+| N05 데이터 | `docs/framework/04-n2sf/domains/N05-data.md` | FR-C5.5 |
+| N06 운영 | `docs/framework/04-n2sf/domains/N06-operations.md` | FR-C5.6 |
 
 ---
 

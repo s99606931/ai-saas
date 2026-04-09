@@ -60,7 +60,7 @@
 | CSAP ID | 항목명 | 상태 | 플랫폼 증적 | 조치 사항 |
 |---------|--------|------|------------|---------|
 | CSAP-D04-01 | IT 자산 목록 관리 | TMPL | `docs/framework/02-csap/guides/d01-d04-guide.md` 자산 대장 양식 | 실제 자산 등록 |
-| CSAP-D04-02 | 자산 분류 및 등급 | IMPL | `docs/framework/03-n2sf/data-classification.md` N2SF 등급 분류 체계 | 자산별 등급 적용 |
+| CSAP-D04-02 | 자산 분류 및 등급 | IMPL | `docs/framework/04-n2sf/data-classification.md` N2SF 등급 분류 체계 | 자산별 등급 적용 |
 | CSAP-D04-03 | 자산 책임자 지정 | TMPL | 동일 가이드 — 책임자 양식 | 실제 책임자 지정 |
 | CSAP-D04-04 | 미디어 관리 | TMPL | 동일 가이드 — 미디어 관리 절차 | 물리적 통제 적용 |
 | CSAP-D04-05 | 자산 폐기 절차 | TMPL | 동일 가이드 — 폐기 절차 템플릿 | 실행 이력 기록 |
@@ -109,7 +109,7 @@
 | CSAP-D08-03 | 특권 계정 관리 | IMPL | `platform/packages/auth-sdk/` RBAC 체계 (SUPER_ADMIN 최소화) | 특권 사용 이력 대시보드 |
 | CSAP-D08-04 | 접근 권한 관리 (RBAC) | IMPL | `platform/packages/auth-sdk/src/rbac.ts`, 모든 API 엔드포인트 권한 검사 | 권한 매트릭스 문서화 |
 | CSAP-D08-05 | 접근 이력 관리 | IMPL | `platform/services/audit-service/` + `security-monitor-service/` 로그인 기록 | 비정상 접근 알림 연동 |
-| CSAP-D08-06 | 원격 접속 통제 | GUIDE | `docs/framework/07-infra/` k3s 클러스터 접근 통제 가이드 | VPN + MFA 설정 |
+| CSAP-D08-06 | 원격 접속 통제 | GUIDE | `docs/framework/08-infra/` k3s 클러스터 접근 통제 가이드 | VPN + MFA 설정 |
 | CSAP-D08-07 | 네트워크 접근 통제 | IMPL | `docker-compose.yml` 네트워크 격리 (saas-network), k3s NetworkPolicy | 방화벽 규칙 문서화 |
 | CSAP-D08-08 | 서비스 이용자 인증 | IMPL | `platform/services/auth-service/` JWT + RBAC | MFA(TOTP) Phase 2 |
 | CSAP-D08-09 | 세션 관리 | IMPL | `platform/services/auth-service/` 세션 타임아웃(15분/7일), 동시 세션 3개 제한 | 로그아웃 블랙리스트 |
@@ -182,7 +182,7 @@
 |---------|--------|------|------------|---------|
 | CSAP-D13-01 | 국내 데이터 저장 | IMPL | 온프레미스/국내 클라우드 전용 설계, 외부 API=LM Studio만 | 데이터센터 위치 증명 |
 | CSAP-D13-02 | 데이터 주권 보장 | TMPL | `docs/framework/02-csap/guides/d08-d13-guide.md` 계약 조항 샘플 | 실제 계약 체결 시 |
-| CSAP-D13-03 | N2SF 데이터 등급 분류 | IMPL | `docs/framework/03-n2sf/` 전체 N2SF 등급 분류 체계 (C/S/O) | 실제 데이터 분류 적용 |
+| CSAP-D13-03 | N2SF 데이터 등급 분류 | IMPL | `docs/framework/04-n2sf/` 전체 N2SF 등급 분류 체계 (C/S/O) | 실제 데이터 분류 적용 |
 | CSAP-D13-04 | 공공기관 전용 영역 분리 | IMPL | k3s namespace + NetworkPolicy 테넌트 격리 | 물리적 분리 구성도 |
 | CSAP-D13-05 | 서비스 수준 협약(SLA) | TMPL | SLA 템플릿 (가용성 99.9%+, 4시간 통보) | 실제 SLA 체결 |
 | CSAP-D13-06 | 감사 추적 강화 | IMPL | `platform/services/audit-service/` append-only + SHA-256 체인 + `.claude/audit.jsonl` | 감리기관 열람 API |

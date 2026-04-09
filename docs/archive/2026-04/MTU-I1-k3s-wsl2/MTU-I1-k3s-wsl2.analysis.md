@@ -19,7 +19,7 @@
 | **WHO** | DevOps 엔지니어, 보안 담당자, 인프라 운영팀 |
 | **RISK** | WSL2 환경 특이성(cgroup, systemd), CNI 선택 오류 시 NetworkPolicy 미동작 |
 | **SUCCESS** | 설치 스크립트 10분 이내 완료 + CSAP-D11 7항목 보안 체크리스트 통과 |
-| **SCOPE** | `docs/framework/07-infra/` 3개 파일 |
+| **SCOPE** | `docs/framework/08-infra/` 3개 파일 |
 
 ---
 
@@ -27,9 +27,9 @@
 
 | Design 산출물 | 실제 파일 | 존재 | 비고 |
 |-------------|---------|------|------|
-| `07-infra/k3s-wsl2/cluster-setup-recipe.md` | `docs/framework/07-infra/k3s-wsl2/cluster-setup-recipe.md` | O | 5개 섹션 + FAQ 포함 |
-| `07-infra/k3s-wsl2/scripts/install-k3s.sh` | `docs/framework/07-infra/k3s-wsl2/scripts/install-k3s.sh` | O | 6단계 자동화 스크립트 |
-| `07-infra/container-security-baseline.md` | `docs/framework/07-infra/container-security-baseline.md` | O | CSAP-D11 7항목 체크리스트 |
+| `08-infra/k3s-wsl2/cluster-setup-recipe.md` | `docs/framework/08-infra/k3s-wsl2/cluster-setup-recipe.md` | O | 5개 섹션 + FAQ 포함 |
+| `08-infra/k3s-wsl2/scripts/install-k3s.sh` | `docs/framework/08-infra/k3s-wsl2/scripts/install-k3s.sh` | O | 6단계 자동화 스크립트 |
+| `08-infra/container-security-baseline.md` | `docs/framework/08-infra/container-security-baseline.md` | O | CSAP-D11 7항목 체크리스트 |
 
 **구조 매칭률**: 3/3 = **100%**
 

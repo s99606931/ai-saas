@@ -37,8 +37,8 @@
 
 | 파일 | 줄 수 | 내용 요약 |
 |------|------|---------|
-| `06-audit-compliance/templates/T07-defect-management.md` | 124 | 결함관리대장 템플릿 |
-| `06-audit-compliance/audit-completion-checklist.md` | 70 | 감리 완료 기준 7항목 |
+| `07-audit-compliance/templates/T07-defect-management.md` | 124 | 결함관리대장 템플릿 |
+| `07-audit-compliance/audit-completion-checklist.md` | 70 | 감리 완료 기준 7항목 |
 
 ---
 

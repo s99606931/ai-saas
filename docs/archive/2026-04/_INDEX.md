@@ -99,6 +99,14 @@
 | **MTU-N34** Policy Reporter 설치 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N34/` |
 | **MTU-N35** Helm Umbrella Chart | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N35/` |
 | **MTU-N36** 릴리스 체크리스트 v1.2.0 업데이트 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N36/` |
+| **MTU-N37** SBOM 생성 + Grype 취약점 스캔 파이프라인 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N37/` |
+| **MTU-N38** Gitea Actions 워크플로우 최적화 (캐싱, 병렬화) | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N38/` |
+| **MTU-N39** Sealed Secrets GitOps 시크릿 관리 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N39/` |
+| **MTU-N40** Flagger 카나리 배포 전략 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N40/` |
+| **MTU-N41** 멀티환경 GitOps 분리 (dev/stg/prod) | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N41/` |
+| **MTU-N42** Semantic Release + CHANGELOG 자동화 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N42/` |
+| **MTU-N43** 파이프라인 성능 벤치마크 + 최적화 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N43/` |
+| **MTU-N44** CI/CD 고도화 통합 검증 (39/39 ALL PASS) | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N44/` |
 
 ## av-skill 요약
 

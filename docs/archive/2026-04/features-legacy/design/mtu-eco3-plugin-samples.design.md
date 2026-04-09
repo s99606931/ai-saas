@@ -83,7 +83,7 @@ API 엔드포인트:
 ### 2.3 플러그인 개발 가이드 (공통)
 
 ```
-docs/framework/05-ecosystem/plugin-development-guide.md
+docs/framework/06-ecosystem/plugin-development-guide.md
 ├── 1. 플러그인 아키텍처 개요
 │   ├── ServiceManifest 인터페이스
 │   ├── Hono 기반 라우팅

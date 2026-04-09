@@ -116,9 +116,9 @@
 - `docs/02-design/mtus/MTU-E3-framework-upgrade.design.md`
 
 ### 프레임워크 산출물 (7개 신규)
-- `docs/framework/10-multitenancy/architecture-guide.md`
-- `docs/framework/10-multitenancy/tenant-isolation-policy.md`
-- `docs/framework/10-multitenancy/onboarding-procedure.md`
+- `docs/framework/11-multitenancy/architecture-guide.md`
+- `docs/framework/11-multitenancy/tenant-isolation-policy.md`
+- `docs/framework/11-multitenancy/onboarding-procedure.md`
 - `docs/framework/07-isms-p/certification-guide.md`
 - `docs/framework/07-isms-p/auto-evidence-collection.md`
 - `docs/framework/14-framework-upgrade/version-management-guide.md`

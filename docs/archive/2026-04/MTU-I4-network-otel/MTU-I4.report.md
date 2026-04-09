@@ -25,11 +25,11 @@
 
 | 파일 | 크기 | 내용 |
 |------|------|------|
-| `07-infra/network-policy-guide.md` | 11.9KB | C/S/O NetworkPolicy + N2SF N03 매핑 |
-| `07-infra/opentelemetry-guide.md` | 13.3KB | OTel Collector + D06 탐지 + 모니터링 스택 |
-| `07-infra/network-policies/grade-c-isolation.yaml` | 1.0KB | C등급 완전 격리 정책 |
-| `07-infra/network-policies/grade-s-restricted.yaml` | 1.2KB | S등급 제한적 통신 정책 |
-| `07-infra/network-policies/grade-o-ai-gateway.yaml` | 1.2KB | O등급 AI GW 외부 통신 정책 |
+| `08-infra/network-policy-guide.md` | 11.9KB | C/S/O NetworkPolicy + N2SF N03 매핑 |
+| `08-infra/opentelemetry-guide.md` | 13.3KB | OTel Collector + D06 탐지 + 모니터링 스택 |
+| `08-infra/network-policies/grade-c-isolation.yaml` | 1.0KB | C등급 완전 격리 정책 |
+| `08-infra/network-policies/grade-s-restricted.yaml` | 1.2KB | S등급 제한적 통신 정책 |
+| `08-infra/network-policies/grade-o-ai-gateway.yaml` | 1.2KB | O등급 AI GW 외부 통신 정책 |
 
 ## 합격 기준 결과
 

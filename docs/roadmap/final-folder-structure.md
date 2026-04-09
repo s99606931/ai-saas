@@ -380,16 +380,16 @@ docs/
 │   ├── 00-getting-started/
 │   ├── 01-dev-standards/
 │   ├── 02-csap/                      # CSAP 79항목 (표준/간편등급)
-│   ├── 03-n2sf/                      # N2SF 6영역
-│   ├── 04-isms-p/                    # ISMS-P 101항목
+│   ├── 04-n2sf/                      # N2SF 6영역
+│   ├── 03-isms-p/                    # ISMS-P 101항목
 │   ├── 05-audit-docs/                # 행안부 감리 문서
-│   ├── 06-audit-compliance/          # T01~T07 템플릿
-│   ├── 07-infra/                     # k3s, Gitea, Flux, Harbor
-│   ├── 08-ai-integration/            # AI 게이트웨이, MCP
-│   ├── 09-cc-harness/                # Claude Code 하네스
+│   ├── 07-audit-compliance/          # T01~T07 템플릿
+│   ├── 08-infra/                     # k3s, Gitea, Flux, Harbor
+│   ├── 09-ai-integration/            # AI 게이트웨이, MCP
+│   ├── 10-cc-harness/                # Claude Code 하네스
 │   ├── 10-oscal/                     # OSCAL 매핑
-│   ├── 11-documentation-portal/      # Docusaurus 설정
-│   ├── 12-compliance-dashboard/      # Grafana 대시보드
+│   ├── 12-documentation-portal/      # Docusaurus 설정
+│   ├── 13-compliance-dashboard/      # Grafana 대시보드
 │   ├── 13-multitenancy/              # 멀티테넌시 아키텍처
 │   ├── 14-framework-upgrade/         # 업그레이드 전략
 │   └── 99-references/                # 규정·용어

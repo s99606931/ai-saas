@@ -25,10 +25,10 @@
 
 | 파일 | 크기 | 감리 단계 |
 |------|------|---------|
-| `06-audit-compliance/templates/T01-business-plan.md` | 8.1KB | 사업 기획 |
-| `06-audit-compliance/templates/T02-requirements.md` | 8.5KB | 요구사항 분석 |
-| `06-audit-compliance/templates/T03-detailed-design.md` | 12.0KB | 설계 |
-| `06-audit-compliance/templates/T04-traceability-matrix.md` | 8.4KB | 추적성 검증 |
+| `07-audit-compliance/templates/T01-business-plan.md` | 8.1KB | 사업 기획 |
+| `07-audit-compliance/templates/T02-requirements.md` | 8.5KB | 요구사항 분석 |
+| `07-audit-compliance/templates/T03-detailed-design.md` | 12.0KB | 설계 |
+| `07-audit-compliance/templates/T04-traceability-matrix.md` | 8.4KB | 추적성 검증 |
 
 ## 합격 기준 결과
 

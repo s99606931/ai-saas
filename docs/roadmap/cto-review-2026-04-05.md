@@ -146,7 +146,7 @@
    - 국정원 가이드라인 업데이트 RSS/공지사항 주간 확인
    - 변경 발생 시 30일 이내 영향 분석 + 업데이트 (NFR-7 기준)
 2. Module 3 문서에 **버전 격리 전략** 적용:
-   - `03-n2sf/grade-classification-guide.md`에 "적용 기준일: YYYY-MM-DD" 메타데이터 추가
+   - `04-n2sf/grade-classification-guide.md`에 "적용 기준일: YYYY-MM-DD" 메타데이터 추가
    - 기준 변경 시 신규 버전 파일 생성 (기존 파일 보존)
 3. MTU-C4(N2SF 매핑) 내에 "미확정 항목" 섹션을 두고, 확정 시점까지 TBD로 관리
 

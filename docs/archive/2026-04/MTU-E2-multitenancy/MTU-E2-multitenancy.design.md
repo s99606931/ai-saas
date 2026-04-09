@@ -46,9 +46,9 @@
 
 | 파일 | 문서 유형 | 핵심 내용 |
 |------|---------|---------|
-| `10-multitenancy/architecture-guide.md` | 아키텍처 레퍼런스 | N2SF 등급별 격리 전략 + 전체 구성도 |
-| `10-multitenancy/tenant-isolation-policy.md` | 구현 가이드 | Kyverno 정책 YAML + C등급 에어갭 |
-| `10-multitenancy/onboarding-procedure.md` | 절차서 | 자동 온보딩 타임라인 (24시간 이내) |
+| `11-multitenancy/architecture-guide.md` | 아키텍처 레퍼런스 | N2SF 등급별 격리 전략 + 전체 구성도 |
+| `11-multitenancy/tenant-isolation-policy.md` | 구현 가이드 | Kyverno 정책 YAML + C등급 에어갭 |
+| `11-multitenancy/onboarding-procedure.md` | 절차서 | 자동 온보딩 타임라인 (24시간 이내) |
 
 ---
 

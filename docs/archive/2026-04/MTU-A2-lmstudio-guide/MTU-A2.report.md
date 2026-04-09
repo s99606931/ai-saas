@@ -37,8 +37,8 @@
 
 | 파일 | 줄 수 | 내용 요약 |
 |------|------|---------|
-| `08-ai-integration/lmstudio-guide.md` | 113 | LM Studio 설치·설정·WSL2 접근 |
-| `08-ai-integration/lmstudio-client-examples.md` | 77 | Python/TypeScript 클라이언트 코드 |
+| `09-ai-integration/lmstudio-guide.md` | 113 | LM Studio 설치·설정·WSL2 접근 |
+| `09-ai-integration/lmstudio-client-examples.md` | 77 | Python/TypeScript 클라이언트 코드 |
 
 ---
 

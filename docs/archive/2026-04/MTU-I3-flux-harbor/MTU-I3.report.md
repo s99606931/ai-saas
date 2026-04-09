@@ -25,9 +25,9 @@
 
 | 파일 | 크기 | 내용 |
 |------|------|------|
-| `07-infra/flux-gitops-guide.md` | 10.9KB | Flux v2 설치 + Gitea 연동 + 배포 파이프라인 |
-| `07-infra/harbor-registry-guide.md` | 12.5KB | Harbor 설치 + Trivy 오프라인 + Cosign 정책 |
-| `07-infra/flux-gitops/kustomization-templates/git-repository.yaml` | 2.2KB | Flux 리소스 YAML 템플릿 (6개 리소스) |
+| `08-infra/flux-gitops-guide.md` | 10.9KB | Flux v2 설치 + Gitea 연동 + 배포 파이프라인 |
+| `08-infra/harbor-registry-guide.md` | 12.5KB | Harbor 설치 + Trivy 오프라인 + Cosign 정책 |
+| `08-infra/flux-gitops/kustomization-templates/git-repository.yaml` | 2.2KB | Flux 리소스 YAML 템플릿 (6개 리소스) |
 
 ## 합격 기준 결과
 

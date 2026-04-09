@@ -42,10 +42,10 @@ FR ID의 모듈 번호는 프레임워크 구조에 대응합니다.
 |---------|--------|----------------|-------|---------|
 | 0 | Foundation | `00-getting-started/`, `01-dev-standards/`, `99-references/` | 1 | MTU-F1~F6 |
 | 1 | CSAP 표준등급 | `02-csap/standard-grade/` | 2 | MTU-C1~C3 |
-| 2 | N2SF | `03-n2sf/` | 2 | MTU-C4~C5 |
-| 3 | Infrastructure | `07-infra/` | 2 | MTU-I1~I5 |
+| 2 | N2SF | `04-n2sf/` | 2 | MTU-C4~C5 |
+| 3 | Infrastructure | `08-infra/` | 2 | MTU-I1~I5 |
 | 4 | AI Integration | (Phase 3) | 3 | MTU-A1~A2 |
-| 5 | Audit Compliance | `05-audit-docs/`, `06-audit-compliance/` | 1, 3 | MTU-F5, MTU-A3~A4 |
+| 5 | Audit Compliance | `05-audit-docs/`, `07-audit-compliance/` | 1, 3 | MTU-F5, MTU-A3~A4 |
 
 ### FR 번호 부여 규칙
 
@@ -171,5 +171,5 @@ export async function checkPermission(user: User, resource: string): Promise<boo
 
 | 버전 | 일자 | 내용 | 작성자 |
 |------|------|------|--------|
-| 0.1.1 | 2026-04-05 | DEF-07 품질 검토 수정 — 모듈 번호 테이블 경로 수정 (`06-csap-standard/`→`02-csap/standard-grade/`, N2SF 경로→`03-n2sf/`) | Implementer Agent |
+| 0.1.1 | 2026-04-05 | DEF-07 품질 검토 수정 — 모듈 번호 테이블 경로 수정 (`06-csap-standard/`→`02-csap/standard-grade/`, N2SF 경로→`04-n2sf/`) | Implementer Agent |
 | 0.1.0 | 2026-04-05 | 최초 작성 -- 5종 ID 체계 + 모듈 번호 6개 + CSAP 13개 분야 + 교차 참조 규칙 | Claude Code (PM Lead) |

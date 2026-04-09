@@ -145,7 +145,7 @@ spec:
 
 ### 구현 방법
 
-> 상세 등급 분류 체계: MTU-C4 [`03-n2sf/data-grade-classification.md`](../../03-n2sf/data-grade-classification.md)
+> 상세 등급 분류 체계: MTU-C4 [`04-n2sf/data-grade-classification.md`](../../04-n2sf/data-grade-classification.md)
 
 | 등급 | 분류 기준 | AI API | 저장 | 전송 |
 |------|---------|--------|------|------|

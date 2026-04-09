@@ -12,7 +12,7 @@ k3s는 경량 Kubernetes로, 프로덕션 환경에서 사용합니다.
 
 ```bash
 # 1. k3s 설치 (공공 SaaS 보안 옵션 포함)
-sudo ./docs/framework/07-infra/k3s-wsl2/scripts/install-k3s.sh
+sudo ./docs/framework/08-infra/k3s-wsl2/scripts/install-k3s.sh
 
 # 2. kubectl 설정
 mkdir -p ~/.kube && sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config

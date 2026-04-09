@@ -335,7 +335,7 @@ npx @cyclonedx/cyclonedx-npm --output-file sbom.json
 npx license-checker --production --failOn 'GPL-3.0'
 ```
 
-> 상세 SBOM/CVE 관리: MTU-C8 [`07-infra/supply-chain/sbom-guide.md`](../../../07-infra/supply-chain/sbom-guide.md)
+> 상세 SBOM/CVE 관리: MTU-C8 [`08-infra/supply-chain/sbom-guide.md`](../../../08-infra/supply-chain/sbom-guide.md)
 
 ### 필요 증거 자료
 
@@ -460,7 +460,7 @@ spec:
                       -----END PUBLIC KEY-----
 ```
 
-> 상세 정책 구성: MTU-C7 [`07-infra/policy-as-code/kyverno-policies.md`](../../../07-infra/policy-as-code/kyverno-policies.md)
+> 상세 정책 구성: MTU-C7 [`08-infra/policy-as-code/kyverno-policies.md`](../../../08-infra/policy-as-code/kyverno-policies.md)
 
 ### 필요 증거 자료
 

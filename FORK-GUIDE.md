@@ -124,8 +124,8 @@ pnpm build
 
 ### 감리 대응
 
-- 감리 산출물 T01~T07 템플릿 활용: `docs/framework/06-audit-compliance/`
-- 포크 기관용 감리 가이드: `docs/framework/05-ecosystem/troubleshooting-faq.md` 3절 참조
+- 감리 산출물 T01~T07 템플릿 활용: `docs/framework/07-audit-compliance/`
+- 포크 기관용 감리 가이드: `docs/framework/06-ecosystem/troubleshooting-faq.md` 3절 참조
 
 ---
 
@@ -165,9 +165,9 @@ git merge upstream/main
 
 | 문서 | 설명 |
 |------|------|
-| [현장 적용 체크리스트](docs/framework/05-ecosystem/deployment-checklist.md) | 35항목 상세 체크리스트 |
-| [트러블슈팅/FAQ](docs/framework/05-ecosystem/troubleshooting-faq.md) | 오류 해결 + FAQ 20건 |
-| [플러그인 개발 가이드](docs/framework/05-ecosystem/plugin-development-guide.md) | 비즈니스 플러그인 작성법 |
+| [현장 적용 체크리스트](docs/framework/06-ecosystem/deployment-checklist.md) | 35항목 상세 체크리스트 |
+| [트러블슈팅/FAQ](docs/framework/06-ecosystem/troubleshooting-faq.md) | 오류 해결 + FAQ 20건 |
+| [플러그인 개발 가이드](docs/framework/06-ecosystem/plugin-development-guide.md) | 비즈니스 플러그인 작성법 |
 
 ---
 

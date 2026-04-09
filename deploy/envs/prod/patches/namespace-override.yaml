@@ -1,0 +1,12 @@
+# Production 환경 네임스페이스 오버라이드
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: saas-production
+  labels:
+    environment: production
+    n2sf.security/grade: "S"
+  annotations:
+    # Production은 모든 CSAP 보안 정책 적용
+    csap.compliance/level: "standard"
+    n2sf.security/isolation: "full"

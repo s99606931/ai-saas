@@ -28,7 +28,7 @@ CSAP 표준등급 79항목과 ISMS-P 101항목의 중복 영역을 통합 관리
 |---|---------|----------|-----------|------------|-------|---------|---------|
 | 1 | D01-01 | 정보보호 정책 수립 | 1.1.1 | 경영진의 참여 | 정보보호정책서 | `docs/framework/01-security-policy/` | PDF (서명) |
 | 2 | D01-02 | 정보보호 정책 공표 | 1.3.2 | 보호대책 공유 | 정책 공표 이력 | `docs/framework/01-security-policy/distribution-log.md` | PDF |
-| 3 | D01-03 | 정보보호 정책 검토 | 1.4.1 | 법적 요구사항 준수 검토 | 정기 검토 회의록 | `docs/framework/06-audit-compliance/review-log.md` | PDF |
+| 3 | D01-03 | 정보보호 정책 검토 | 1.4.1 | 법적 요구사항 준수 검토 | 정기 검토 회의록 | `docs/framework/07-audit-compliance/review-log.md` | PDF |
 | 4 | D01-04 | 관련 법령 준수 | 1.3.4 | 법적 요구사항 준수 검토 | 법령 인덱스 | `docs/framework/01-security-policy/legal-index.md` | PDF |
 | 5 | D02-01 | 정보보호 조직 구성 | 1.1.3 | 조직 구성 | 조직도 | `docs/framework/01-security-policy/organization.md` | PDF |
 | 6 | D02-02 | 정보보호 책임 할당 | 1.1.2 | 최고책임자 지정 | CISO 임명장 | 기관 내부 문서 | PDF (서명) |
@@ -48,8 +48,8 @@ CSAP 표준등급 79항목과 ISMS-P 101항목의 중복 영역을 통합 관리
 | # | CSAP ID | CSAP 항목 | ISMS-P ID | ISMS-P 항목 | 증적명 | 증적 경로 | 제출 형태 |
 |---|---------|----------|-----------|------------|-------|---------|---------|
 | 12 | D04-01~05 | 자산 관리 | 2.1.3 | 정보자산 관리 | 자산 관리 가이드 | `docs/framework/01-security-policy/asset-management.md` | PDF |
-| 13 | D05-01 | 공급망 보안 정책 | 2.3.2 | 외부자 계약 시 보안 | 공급망 보안 규정 | `docs/framework/05-ecosystem/supply-chain/` | PDF |
-| 14 | D05-02~03 | 공급업체 관리 | 2.3.3 | 외부자 보안 이행 | 공급업체 평가 | `docs/framework/05-ecosystem/supply-chain/assessment.md` | PDF |
+| 13 | D05-01 | 공급망 보안 정책 | 2.3.2 | 외부자 계약 시 보안 | 공급망 보안 규정 | `docs/framework/06-ecosystem/supply-chain/` | PDF |
+| 14 | D05-02~03 | 공급업체 관리 | 2.3.3 | 외부자 보안 이행 | 공급업체 평가 | `docs/framework/06-ecosystem/supply-chain/assessment.md` | PDF |
 | 15 | D12-01 | 보안 요구사항 정의 | 2.4.1 | 보안 요구사항 정의 | 시큐어코딩 정책 | `docs/framework/02-csap/secure-coding/` | PDF |
 
 ### 2.4 접근 통제 영역 (6항목)
@@ -61,7 +61,7 @@ CSAP 표준등급 79항목과 ISMS-P 101항목의 중복 영역을 통합 관리
 | 18 | D08-07 | 비밀번호 관리 | 2.5.4 | 비밀번호 관리 | 비밀번호 정책 | `docs/framework/02-csap/standard-grade/D-08/` | PDF + 시연 |
 | 19 | D08-08 | 관리자 접근 통제 | 2.5.5 | 특수 계정 및 권한 | Admin Portal | `platform/apps/admin/` | 시연 |
 | 20 | D08-09 | 원격 접근 통제 | 2.6.6 | 원격 접근 통제 | TLS + VPN | `docs/framework/02-csap/standard-grade/D-08/` | PDF + 시연 |
-| 21 | D08-12 | 접근 권한 검토 | 2.5.6 | 접근 권한 검토 | 분기별 검토 기록 | `docs/framework/06-audit-compliance/` | PDF |
+| 21 | D08-12 | 접근 권한 검토 | 2.5.6 | 접근 권한 검토 | 분기별 검토 기록 | `docs/framework/07-audit-compliance/` | PDF |
 
 ### 2.5 암호화 영역 (3항목)
 
@@ -77,7 +77,7 @@ CSAP 표준등급 79항목과 ISMS-P 101항목의 중복 영역을 통합 관리
 |---|---------|----------|-----------|------------|-------|---------|---------|
 | 25 | D06-01 | 침해사고 대응 절차 | 2.11.1 | 사고 예방 및 대응 | 사고 대응 절차서 | `docs/framework/02-csap/standard-grade/D-06/` | PDF |
 | 26 | D06-03 | 감사 로그 | 2.9.3 | 로그 및 접속 기록 관리 | audit.jsonl | `.claude/audit.jsonl` | 시연 |
-| 27 | D06-04 | 로그 분석 | 2.9.4 | 로그 및 접속 기록 점검 | 로그 분석 보고서 | `docs/framework/06-audit-compliance/` | PDF |
+| 27 | D06-04 | 로그 분석 | 2.9.4 | 로그 및 접속 기록 점검 | 로그 분석 보고서 | `docs/framework/07-audit-compliance/` | PDF |
 | 28 | D06-04 | 로그 분석 | 2.11.3 | 이상 행위 분석 | security-monitor | `platform/services/security-monitor-service/` | 시연 |
 | 29 | D06-05 | 사후 관리 | 2.11.5 | 사고 분석 및 공유 | 사후 분석 보고서 | `docs/framework/02-csap/standard-grade/D-06/` | PDF |
 

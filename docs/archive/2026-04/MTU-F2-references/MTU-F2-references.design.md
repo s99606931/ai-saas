@@ -55,7 +55,7 @@ docs/framework/
 
 ```
 [02-csap/*]  ---------> [99-references/regulations-index.md]
-[03-n2sf/*]  ---------> [99-references/regulations-index.md]
+[04-n2sf/*]  ---------> [99-references/regulations-index.md]
 [04-audit/*] ---------> [99-references/regulations-index.md]
 [모든 MTU]   ---------> [99-references/glossary-and-acronyms.md]
 

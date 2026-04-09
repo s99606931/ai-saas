@@ -1,0 +1,59 @@
+# =============================================================================
+# 재사용 가능 워크플로우: Node.js + pnpm 환경 설정
+# Design Ref: MTU-N38 Design S3.3
+# Plan SC: FR-N38.3
+#
+# 목적: 모든 CI 워크플로우에서 공통으로 사용하는 설정을 한 곳에서 관리
+#       - Node.js 설치
+#       - pnpm 설치 + store 캐싱
+#       - 의존성 설치 (frozen lockfile)
+# =============================================================================
+
+name: Setup Node.js + pnpm
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js 버전"
+        type: string
+        default: "22"
+      pnpm-version:
+        description: "pnpm 버전"
+        type: string
+        default: "9.15.0"
+      install-dependencies:
+        description: "의존성 자동 설치 여부"
+        type: boolean
+        default: true
+
+jobs:
+  setup:
+    runs-on: self-hosted
+    steps:
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ inputs.pnpm-version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      # pnpm store 캐싱 -- Design Ref: MTU-N38 S3.1
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        if: ${{ inputs.install-dependencies }}
+        run: pnpm install --frozen-lockfile

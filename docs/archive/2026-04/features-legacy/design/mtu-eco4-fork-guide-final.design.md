@@ -38,7 +38,7 @@ FORK-GUIDE.md (기존 확장)
 ### 2.2 현장 적용 체크리스트 (FR-ECO4.1, FR-ECO4.2)
 
 ```
-docs/framework/05-ecosystem/deployment-checklist.md
+docs/framework/06-ecosystem/deployment-checklist.md
 ├── Phase A: 사전 준비 (10항목)
 │   ├── A01: 서버 사양 확인 (CPU 4코어+, RAM 16GB+, SSD 100GB+)
 │   ├── A02: 네트워크 요건 (인터넷 접속, 내부망 분리)
@@ -84,7 +84,7 @@ docs/framework/05-ecosystem/deployment-checklist.md
 ### 2.3 트러블슈팅/FAQ (FR-ECO4.3, FR-ECO4.4)
 
 ```
-docs/framework/05-ecosystem/troubleshooting-faq.md
+docs/framework/06-ecosystem/troubleshooting-faq.md
 ├── 1. 트러블슈팅 (10건+)
 │   ├── TS01: Docker Compose 기동 실패 (포트 충돌)
 │   ├── TS02: PostgreSQL 연결 거부 (pg_hba.conf)

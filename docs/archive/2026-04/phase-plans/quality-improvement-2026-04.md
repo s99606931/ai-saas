@@ -67,8 +67,8 @@
 
 | # | ID | 파일 | 이슈 | 상태 | 증거 |
 |---|-----|------|------|------|------|
-| 1 | H-01 | `07-infra/k3s-wsl2/scripts/install-k3s.sh` 라인 119 | kubeconfig 권한 644 → 600 (CSAP-D08 접근 통제 위반) | ✅ PASS | TC-H01-1/2 완료 |
-| 2 | H-02 | `03-n2sf/domains/N05-data.md` 라인 201-205 | PII 마스킹 regex `test()` + `g` 플래그 버그 (N2SF N-05 위반, 데이터 누락 위험) | ✅ PASS | TC-H02-1/2/3 완료 |
+| 1 | H-01 | `08-infra/k3s-wsl2/scripts/install-k3s.sh` 라인 119 | kubeconfig 권한 644 → 600 (CSAP-D08 접근 통제 위반) | ✅ PASS | TC-H01-1/2 완료 |
+| 2 | H-02 | `04-n2sf/domains/N05-data.md` 라인 201-205 | PII 마스킹 regex `test()` + `g` 플래그 버그 (N2SF N-05 위반, 데이터 누락 위험) | ✅ PASS | TC-H02-1/2/3 완료 |
 
 **조치 현황**: 양 건 모두 implementer 에이전트 수정 완료, tester 에이전트 검증 통과.
 
@@ -312,7 +312,7 @@
 
 | # | 과제 | 책임 | 기한 | 비고 |
 |---|------|------|------|------|
-| 10 | L-04 검증 스크립트 분리 (`09-cc-harness/scripts/harness-verify.sh`) | 하네스 담당 | Q2 2026 | CI/CD 자동화 연계 |
+| 10 | L-04 검증 스크립트 분리 (`10-cc-harness/scripts/harness-verify.sh`) | 하네스 담당 | Q2 2026 | CI/CD 자동화 연계 |
 | 11 | L-02 IP 기반 Egress → FQDN 기반 정책 (ExternalName Service) | 인프라 담당 | Q2 2026 | 정책 유연성 향상 |
 
 ---

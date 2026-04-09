@@ -1,0 +1,100 @@
+# =============================================================================
+# 멀티스테이지 Dockerfile — 최적화 버전
+# Design Ref: MTU-N51 Design §Dockerfile
+# Plan SC: FR-N51.2
+#
+# 3단계 빌드: deps → build → runtime
+# 최적화: 공통 base 레이어 캐싱, 최소 런타임 이미지
+# 보안: non-root 사용자, 불필요 패키지 제거
+# =============================================================================
+
+# ===========================================================================
+# Stage 1: 의존성 설치 (캐시 레이어)
+# ===========================================================================
+FROM node:20-alpine AS deps
+
+# 빌드 인자
+ARG SERVICE_NAME=api-gateway
+
+# pnpm 설치 (캐시 가능한 레이어)
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# 의존성 파일만 먼저 복사 (캐시 활용)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/*/package.json packages/*/
+COPY services/${SERVICE_NAME}/package.json services/${SERVICE_NAME}/
+
+# 의존성 설치 (프로덕션만)
+RUN pnpm install --frozen-lockfile --filter ${SERVICE_NAME}... --prod
+
+# ===========================================================================
+# Stage 2: 빌드
+# ===========================================================================
+FROM node:20-alpine AS build
+
+ARG SERVICE_NAME=api-gateway
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# 전체 의존성 설치 (devDependencies 포함)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/ packages/
+COPY services/${SERVICE_NAME}/ services/${SERVICE_NAME}/
+
+RUN pnpm install --frozen-lockfile --filter ${SERVICE_NAME}...
+
+# TypeScript 빌드
+RUN pnpm --filter ${SERVICE_NAME} build
+
+# ===========================================================================
+# Stage 3: 런타임 (최소 이미지)
+# ===========================================================================
+FROM node:20-alpine AS runtime
+
+ARG SERVICE_NAME=api-gateway
+
+# 보안: non-root 사용자 (CSAP D-08)
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+
+# 불필요 패키지 제거 (최소 공격 표면)
+RUN apk --no-cache add dumb-init && \
+    rm -rf /var/cache/apk/*
+
+WORKDIR /app
+
+# Stage 1에서 프로덕션 의존성 복사
+COPY --from=deps --chown=appuser:appgroup /app/node_modules ./node_modules
+COPY --from=deps --chown=appuser:appgroup /app/services/${SERVICE_NAME}/node_modules ./services/${SERVICE_NAME}/node_modules
+
+# Stage 2에서 빌드 결과 복사
+COPY --from=build --chown=appuser:appgroup /app/services/${SERVICE_NAME}/dist ./services/${SERVICE_NAME}/dist
+COPY --from=build --chown=appuser:appgroup /app/services/${SERVICE_NAME}/package.json ./services/${SERVICE_NAME}/
+
+# 공통 패키지 복사
+COPY --from=build --chown=appuser:appgroup /app/packages/ ./packages/
+
+# non-root 사용자로 실행
+USER appuser
+
+# 환경 변수
+ENV NODE_ENV=production
+ENV SERVICE_NAME=${SERVICE_NAME}
+
+# 헬스체크 (CSAP D-08)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:3000/health || exit 1
+
+# dumb-init으로 PID 1 프로세스 관리
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "services/${SERVICE_NAME}/dist/main.js"]
+
+# 메타데이터
+LABEL maintainer="platform-team"
+LABEL org.opencontainers.image.source="https://gitea.local/saas/ai-saas"
+LABEL org.opencontainers.image.description="공공기관 SaaS - ${SERVICE_NAME}"
+LABEL csap.compliance.level="standard"

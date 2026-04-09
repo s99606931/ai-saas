@@ -1,0 +1,31 @@
+# =============================================================================
+# Staging 환경 Kustomize Overlay
+# Design Ref: MTU-N41 Design S3
+# Plan SC: FR-N41.2
+# N2SF 등급: O (공개) -- 이미지 서명 검증 필수
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: saas-staging
+
+resources:
+  - ../../base
+
+patches:
+  - path: patches/namespace-override.yaml
+
+commonLabels:
+  environment: staging
+  n2sf.security/grade: "O"
+
+# Staging 이미지 태그 (CI/CD에서 자동 업데이트)
+images:
+  - name: localhost:8080/public-saas/api-gateway
+    newTag: stg-latest
+  - name: localhost:8080/public-saas/auth-service
+    newTag: stg-latest
+  - name: localhost:8080/public-saas/user-service
+    newTag: stg-latest
+  - name: localhost:8080/public-saas/tenant-service
+    newTag: stg-latest

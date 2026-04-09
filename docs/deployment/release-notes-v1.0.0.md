@@ -134,4 +134,4 @@ kubectl apply -f k8s/portal/portal.yaml
 - [API 라우트 문서](/docs/api-routes.md)
 - [k8s 배포 가이드](/k8s/README.md)
 - [CSAP 준수 가이드](/docs/framework/02-csap/)
-- [N2SF 가이드](/docs/framework/03-n2sf/)
+- [N2SF 가이드](/docs/framework/04-n2sf/)

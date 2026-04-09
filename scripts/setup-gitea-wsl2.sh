@@ -167,7 +167,9 @@ configure_gitea() {
   source "${GITEA_DIR}/.env"
 
   local admin_user="${GITEA_ADMIN_USER:-saas-admin}"
-  local admin_pass="${GITEA_ADMIN_PASSWORD:-admin}"
+  # H-05 수정: 기본값 'admin' 제거 — 배포 전 GITEA_ADMIN_PASSWORD 환경변수 필수
+  # .env에 설정되어 있지 않으면 환경변수에서 읽음. 예: export GITEA_ADMIN_PASSWORD=$(openssl rand -hex 12)
+  local admin_pass="${GITEA_ADMIN_PASSWORD:?오류: GITEA_ADMIN_PASSWORD 환경변수를 설정하세요}"
   local admin_email="${GITEA_ADMIN_EMAIL:-admin@public-saas.local}"
 
   # admin 계정 생성 (이미 존재하면 스킵)

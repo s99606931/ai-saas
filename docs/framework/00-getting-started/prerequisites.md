@@ -106,10 +106,10 @@ ls -la CLAUDE.md
 ls -la .claude/agents/*.md .claude/rules/*.md .claude/settings.json
 # 기대 결과: 에이전트 5개 + 규칙 3개 + 설정 1개 = 9개 파일
 
-# 상세 검증: 09-cc-harness/harness-verification-guide.md 참조
+# 상세 검증: 10-cc-harness/harness-verification-guide.md 참조
 ```
 
-> **중요**: CC 하네스가 올바르게 구성되지 않으면 이후 모든 산출물 품질이 보장되지 않습니다. `09-cc-harness/harness-verification-guide.md`의 15항목 체크리스트를 반드시 수행하세요.
+> **중요**: CC 하네스가 올바르게 구성되지 않으면 이후 모든 산출물 품질이 보장되지 않습니다. `10-cc-harness/harness-verification-guide.md`의 15항목 체크리스트를 반드시 수행하세요.
 
 ---
 

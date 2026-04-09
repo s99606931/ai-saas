@@ -48,12 +48,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **kubeconfig 권한 보안 강화** (CSAP-D08 위반 수정):
-  - `/docs/framework/07-infra/k3s-wsl2/scripts/install-k3s.sh` 라인 119
+  - `/docs/framework/08-infra/k3s-wsl2/scripts/install-k3s.sh` 라인 119
   - `--write-kubeconfig-mode 644` → `--write-kubeconfig-mode 600` (비인가 사용자 접근 차단)
-  - `/docs/framework/07-infra/k3s-wsl2/cluster-setup-recipe.md` 라인 114 동기화
+  - `/docs/framework/08-infra/k3s-wsl2/cluster-setup-recipe.md` 라인 114 동기화
 
 - **PII 마스킹 regex 버그 수정** (N2SF N-05 위반 수정):
-  - `/docs/framework/03-n2sf/domains/N05-data.md` 라인 201-205
+  - `/docs/framework/04-n2sf/domains/N05-data.md` 라인 201-205
   - regex `test()` + `g` 플래그 혼용 → `new RegExp(pattern.source, 'g')` 패턴으로 변경
   - lastIndex 버그로 인한 PII 마스킹 누락 방지
 

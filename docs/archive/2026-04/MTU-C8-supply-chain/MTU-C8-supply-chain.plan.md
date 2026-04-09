@@ -32,8 +32,8 @@
 
 | 산출물 | 경로 | FR ID |
 |--------|------|-------|
-| SBOM 가이드 | `docs/framework/07-infra/supply-chain/sbom-guide.md` | FR-C8.1 |
-| Sigstore 서명 가이드 | `docs/framework/07-infra/supply-chain/sigstore-signing.md` | FR-C8.2 |
+| SBOM 가이드 | `docs/framework/08-infra/supply-chain/sbom-guide.md` | FR-C8.1 |
+| Sigstore 서명 가이드 | `docs/framework/08-infra/supply-chain/sigstore-signing.md` | FR-C8.2 |
 
 ---
 

@@ -244,8 +244,8 @@ curl -sfL https://get.k3s.io | \
 
 ```bash
 # 프로젝트 내 스크립트 사용
-chmod +x docs/framework/07-infra/k3s-wsl2/scripts/install-k3s.sh
-sudo ./docs/framework/07-infra/k3s-wsl2/scripts/install-k3s.sh
+chmod +x docs/framework/08-infra/k3s-wsl2/scripts/install-k3s.sh
+sudo ./docs/framework/08-infra/k3s-wsl2/scripts/install-k3s.sh
 
 # 환경 변수로 커스터마이즈
 K3S_VERSION=v1.34.6+k3s1 \

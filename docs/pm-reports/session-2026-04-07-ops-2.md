@@ -17,7 +17,7 @@
 ### 1. OpenTelemetry 분산 추적
 
 **현황**: 인프라 계획 수준 완전 -- 실제 SDK 미통합
-- OTel Collector DaemonSet 구성 가이드 완비 (`docs/framework/07-infra/opentelemetry-guide.md`)
+- OTel Collector DaemonSet 구성 가이드 완비 (`docs/framework/08-infra/opentelemetry-guide.md`)
 - Jaeger/Loki/Prometheus 통합 파이프라인 설계 완료
 - CSAP-D06 침해사고 탐지 연동 규칙 5개 정의
 - Correlation ID (X-Request-ID) 플러그인 구현 완료 + 테스트 5건

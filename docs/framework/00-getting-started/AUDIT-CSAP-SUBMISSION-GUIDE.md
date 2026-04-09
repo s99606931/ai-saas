@@ -7,7 +7,7 @@
 | 최종 수정일 | 2026-04-05 |
 | 대상 | PM, 보안 담당자, 감리 담당자, CISO |
 | 목적 | 감리(행안부) 및 CSAP 인증 취득 시 제출 절차·준비 사항 완전 가이드 |
-| 관련 문서 | [FRAMEWORK-GUIDE.md](FRAMEWORK-GUIDE.md), [T01](../06-audit-compliance/templates/T01-business-plan.md) ~ [T07](../06-audit-compliance/templates/T07-defect-management.md) |
+| 관련 문서 | [FRAMEWORK-GUIDE.md](FRAMEWORK-GUIDE.md), [T01](../07-audit-compliance/templates/T01-business-plan.md) ~ [T07](../07-audit-compliance/templates/T07-defect-management.md) |
 
 ---
 
@@ -33,13 +33,13 @@
 
 | 번호 | 산출물명 | 감리 근거 | 파일 경로 | 제출 단계 | 현재 상태 |
 |------|---------|---------|---------|---------|---------|
-| T01 | 사업계획서 | §5 사업계획서 작성 | `06-audit-compliance/templates/T01-business-plan.md` | 예비 감리 | 🟡 내용 입력 필요 |
-| T02 | 요구사항정의서 | §6 요구사항 명세 | `06-audit-compliance/templates/T02-requirements.md` | 예비/1차 | 🟡 비즈니스 FR 추가 필요 |
-| T03 | 상세설계서 | §7 상세 설계 | `06-audit-compliance/templates/T03-detailed-design.md` | 1차 감리 | 🟡 ER/API 설계 삽입 필요 |
-| T04 | 추적성 매트릭스 | §8 추적성 | `06-audit-compliance/templates/T04-traceability-matrix.md` | 1차/최종 | 🟢 프레임워크 항목 완비 |
-| T05 | 시험계획서 | §7 시험 계획 | `06-audit-compliance/templates/T05-test-plan.md` | 2차 감리 | 🟢 79항목 계획 완비 |
-| T06 | 시험결과서 | §7 시험 결과 | `06-audit-compliance/templates/T06-test-result.md` | 최종 감리 | 🔴 실제 결과 입력 필요 |
-| T07 | 결함관리대장 | §8 결함 관리 | `06-audit-compliance/templates/T07-defect-management.md` | 전 단계 | 🔴 실제 결함 등록 필요 |
+| T01 | 사업계획서 | §5 사업계획서 작성 | `07-audit-compliance/templates/T01-business-plan.md` | 예비 감리 | 🟡 내용 입력 필요 |
+| T02 | 요구사항정의서 | §6 요구사항 명세 | `07-audit-compliance/templates/T02-requirements.md` | 예비/1차 | 🟡 비즈니스 FR 추가 필요 |
+| T03 | 상세설계서 | §7 상세 설계 | `07-audit-compliance/templates/T03-detailed-design.md` | 1차 감리 | 🟡 ER/API 설계 삽입 필요 |
+| T04 | 추적성 매트릭스 | §8 추적성 | `07-audit-compliance/templates/T04-traceability-matrix.md` | 1차/최종 | 🟢 프레임워크 항목 완비 |
+| T05 | 시험계획서 | §7 시험 계획 | `07-audit-compliance/templates/T05-test-plan.md` | 2차 감리 | 🟢 79항목 계획 완비 |
+| T06 | 시험결과서 | §7 시험 결과 | `07-audit-compliance/templates/T06-test-result.md` | 최종 감리 | 🔴 실제 결과 입력 필요 |
+| T07 | 결함관리대장 | §8 결함 관리 | `07-audit-compliance/templates/T07-defect-management.md` | 전 단계 | 🔴 실제 결함 등록 필요 |
 
 **범례**: 🟢 제출 즉시 가능 | 🟡 내용 보완 후 제출 | 🔴 실제 시험/운영 후 작성
 
@@ -47,7 +47,7 @@
 
 ### 1.2 T01 사업계획서 완성 가이드
 
-**파일**: `06-audit-compliance/templates/T01-business-plan.md`
+**파일**: `07-audit-compliance/templates/T01-business-plan.md`
 
 #### 필수 입력 항목 체크리스트
 
@@ -102,7 +102,7 @@ T01 하단 감리관 확인란은 감리관이 현장에서 서명합니다. 사
 
 ### 1.3 T02 요구사항정의서 완성 가이드
 
-**파일**: `06-audit-compliance/templates/T02-requirements.md`
+**파일**: `07-audit-compliance/templates/T02-requirements.md`
 
 #### 필수 입력 및 추가 항목
 
@@ -136,7 +136,7 @@ T01 하단 감리관 확인란은 감리관이 현장에서 서명합니다. 사
 
 ### 1.4 T03 상세설계서 완성 가이드
 
-**파일**: `06-audit-compliance/templates/T03-detailed-design.md`
+**파일**: `07-audit-compliance/templates/T03-detailed-design.md`
 
 #### 필수 입력 항목
 
@@ -185,7 +185,7 @@ T01 하단 감리관 확인란은 감리관이 현장에서 서명합니다. 사
 
 ### 1.5 T04 추적성 매트릭스 완성 가이드
 
-**파일**: `06-audit-compliance/templates/T04-traceability-matrix.md`
+**파일**: `07-audit-compliance/templates/T04-traceability-matrix.md`
 
 **현재 상태**: 프레임워크 FR-1.x ~ FR-10.x 추적성 완비 (제출 가능)
 
@@ -200,7 +200,7 @@ T01 하단 감리관 확인란은 감리관이 현장에서 서명합니다. 사
 
 ### 1.6 T06 시험결과서 완성 가이드
 
-**파일**: `06-audit-compliance/templates/T06-test-result.md`
+**파일**: `07-audit-compliance/templates/T06-test-result.md`
 
 > **주의**: 이 문서는 실제 시험 실행 후 작성합니다. 가상의 수치를 기입하면 감리 불통과 원인이 됩니다.
 
@@ -219,7 +219,7 @@ T01 하단 감리관 확인란은 감리관이 현장에서 서명합니다. 사
 
 ### 1.7 T07 결함관리대장 완성 가이드
 
-**파일**: `06-audit-compliance/templates/T07-defect-management.md`
+**파일**: `07-audit-compliance/templates/T07-defect-management.md`
 
 > **운영 지침**: T07은 프로젝트 시작부터 종료까지 **상시 관리** 문서입니다.
 
@@ -277,8 +277,8 @@ T01 하단 감리관 확인란은 감리관이 현장에서 서명합니다. 사
 - [ ] 자산 변경 이력 관리 기록
 
 **D-05 공급망 보안 (DevOps)**
-- [ ] SBOM 파일 (Syft 자동 생성) — `07-infra/supply-chain/sbom-guide.md` 참조
-- [ ] 이미지 서명 검증 설정 — `07-infra/supply-chain/sigstore-signing.md` 참조
+- [ ] SBOM 파일 (Syft 자동 생성) — `08-infra/supply-chain/sbom-guide.md` 참조
+- [ ] 이미지 서명 검증 설정 — `08-infra/supply-chain/sigstore-signing.md` 참조
 - [ ] 공급업체 보안 계약서 사본
 
 **D-06 침해사고 관리 (보안/운영)**
@@ -307,7 +307,7 @@ T01 하단 감리관 확인란은 감리관이 현장에서 서명합니다. 사
 
 **D-10 네트워크 보안 (인프라/DevOps)**
 - [ ] 방화벽 정책 문서
-- [ ] NetworkPolicy YAML 파일들 (`07-infra/network-policies/` 활용)
+- [ ] NetworkPolicy YAML 파일들 (`08-infra/network-policies/` 활용)
 - [ ] 네트워크 구성도 (C/S/O 등급 격리)
 - [ ] IDS/IPS 설정 기록
 
@@ -316,7 +316,7 @@ T01 하단 감리관 확인란은 감리관이 현장에서 서명합니다. 사
 - [ ] PSS(Pod Security Standards) 설정
 - [ ] 이미지 서명 검증 설정
 - [ ] Falco 보안 규칙 설정
-- [ ] `07-infra/container-security-baseline.md` 설정 적용 증거
+- [ ] `08-infra/container-security-baseline.md` 설정 적용 증거
 
 **D-12 시스템 개발 보안 (개발팀)**
 - [ ] 시큐어 코딩 기준 문서 (`01-dev-standards/coding-style-guide.md`)
@@ -328,8 +328,8 @@ T01 하단 감리관 확인란은 감리관이 현장에서 서명합니다. 사
 **D-13 공공기관 추가 보호조치 (PM/보안)**
 - [ ] 서비스 운영 절차서
 - [ ] SLA 관리 기록
-- [ ] N2SF 데이터 등급 분류 문서 (`03-n2sf/data-grade-classification.md`)
-- [ ] AI 보안 게이트웨이 설정 (`08-ai-integration/security-gateway-pattern.md`)
+- [ ] N2SF 데이터 등급 분류 문서 (`04-n2sf/data-grade-classification.md`)
+- [ ] AI 보안 게이트웨이 설정 (`09-ai-integration/security-gateway-pattern.md`)
 
 #### Phase 3: KISA 심사 신청 (D-day 기준 4주 전)
 
@@ -354,12 +354,12 @@ T01 하단 감리관 확인란은 감리관이 현장에서 서명합니다. 사
 
 | 심사관 질문 예상 항목 | 참조 파일 |
 |------------------|---------|
-| "AI API 데이터 등급 통제는?" | `08-ai-integration/security-gateway-pattern.md` |
-| "컨테이너 이미지 서명 검증은?" | `07-infra/supply-chain/sigstore-signing.md` |
-| "네트워크 격리 정책은?" | `07-infra/network-policies/*.yaml` |
+| "AI API 데이터 등급 통제는?" | `09-ai-integration/security-gateway-pattern.md` |
+| "컨테이너 이미지 서명 검증은?" | `08-infra/supply-chain/sigstore-signing.md` |
+| "네트워크 격리 정책은?" | `08-infra/network-policies/*.yaml` |
 | "감사 로그는 어디서 확인?" | `.claude/audit.jsonl` + OpenTelemetry 대시보드 |
 | "RBAC 설정 보여달라" | `02-csap/standard-grade/implementation-guide/D08-access-control.md` |
-| "SBOM은 어떻게 생성?" | `07-infra/supply-chain/sbom-guide.md` |
+| "SBOM은 어떻게 생성?" | `08-infra/supply-chain/sbom-guide.md` |
 
 ---
 
@@ -404,20 +404,20 @@ T01 하단 감리관 확인란은 감리관이 현장에서 서명합니다. 사
 
 | 증명 항목 | 증명 문서 |
 |---------|---------|
-| C/S/O 데이터 등급 분류 | `03-n2sf/data-grade-classification.md` |
-| 6개 영역 통제 이행 | `03-n2sf/domains/N01~N06.md` |
-| CSAP-N2SF 매핑 관계 | `03-n2sf/csap-n2sf-mapping.md` |
-| 인프라 아키텍처 | `03-n2sf/n2sf-infrastructure-architecture.md` |
-| AI API 데이터 통제 | `08-ai-integration/security-gateway-pattern.md` |
-| 네트워크 격리 설정 | `07-infra/network-policies/*.yaml` |
+| C/S/O 데이터 등급 분류 | `04-n2sf/data-grade-classification.md` |
+| 6개 영역 통제 이행 | `04-n2sf/domains/N01~N06.md` |
+| CSAP-N2SF 매핑 관계 | `04-n2sf/csap-n2sf-mapping.md` |
+| 인프라 아키텍처 | `04-n2sf/n2sf-infrastructure-architecture.md` |
+| AI API 데이터 통제 | `09-ai-integration/security-gateway-pattern.md` |
+| 네트워크 격리 설정 | `08-infra/network-policies/*.yaml` |
 
 ### 4.2 N2SF AI 연동 데이터 통제 증명
 
 > N2SF N-05 규정에 따라 C/S등급 데이터의 외부 AI API 전송은 절대 금지입니다.
 
 **증명 방법**:
-1. `03-n2sf/data-grade-classification.md`의 등급 분류 기준 제시
-2. `08-ai-integration/security-gateway-pattern.md`의 게이트웨이 코드 제시
+1. `04-n2sf/data-grade-classification.md`의 등급 분류 기준 제시
+2. `09-ai-integration/security-gateway-pattern.md`의 게이트웨이 코드 제시
 3. 실제 API 로그에서 C/S등급 데이터 외부 전송 없음 확인
 
 ---
@@ -441,7 +441,7 @@ CSAP 취득 후 ISMS-P 심사 시 자동 면제·경감 항목:
 
 ### 5.2 ISMS-P 준비 타임라인
 
-`04-isms-p/certification-guide.md` 참조:
+`03-isms-p/certification-guide.md` 참조:
 
 | 시기 | 마일스톤 |
 |------|---------|
@@ -460,7 +460,7 @@ CSAP 취득 후 ISMS-P 심사 시 자동 면제·경감 항목:
 
 ### 6.1 감리 제출 전 필수 수정 항목 (전수 체크 필요)
 
-#### T01 사업계획서 (`06-audit-compliance/templates/T01-business-plan.md`)
+#### T01 사업계획서 (`07-audit-compliance/templates/T01-business-plan.md`)
 
 - [ ] `{사업명}` → 실제 사업명 교체 (전체 문서)
 - [ ] `{발주 기관명}` → 실제 발주 기관 교체
@@ -471,41 +471,41 @@ CSAP 취득 후 ISMS-P 심사 시 자동 면제·경감 항목:
 - [ ] `[TODO]` 담당자 연락처 → 실제 연락처 기입
 - [ ] `[TODO]` 위험 관리 → 사업별 위험 추가
 
-#### T02 요구사항정의서 (`06-audit-compliance/templates/T02-requirements.md`)
+#### T02 요구사항정의서 (`07-audit-compliance/templates/T02-requirements.md`)
 
 - [ ] FR-20.x 이상 비즈니스 서비스 기능 요구사항 추가
 - [ ] NFR 응답 시간·가용성·동시 사용자 수 실제 수치 기입
 - [ ] INFR 서버 실제 사양 기입
 - [ ] `{작성자}`, `{승인자}` 실제 이름 기입
 
-#### T03 상세설계서 (`06-audit-compliance/templates/T03-detailed-design.md`)
+#### T03 상세설계서 (`07-audit-compliance/templates/T03-detailed-design.md`)
 
 - [ ] 실제 ER 다이어그램 삽입 (Mermaid 또는 이미지)
 - [ ] 실제 API 엔드포인트 전수 기재
 - [ ] 실제 RBAC 역할 목록 기재
 - [ ] `{작성자}`, `{승인자}` 실제 이름 기입
 
-#### T04 추적성 매트릭스 (`06-audit-compliance/templates/T04-traceability-matrix.md`)
+#### T04 추적성 매트릭스 (`07-audit-compliance/templates/T04-traceability-matrix.md`)
 
 - [ ] FR-20.x 이상 추가 항목 매트릭스에 반영
 - [ ] 구현 파일 경로 실제 경로로 업데이트
 - [ ] 테스트 케이스 ID 실제 TC ID로 업데이트
 - [ ] '진행 중'/'미착수' 항목 → '완료'로 상태 업데이트
 
-#### T05 시험계획서 (`06-audit-compliance/templates/T05-test-plan.md`)
+#### T05 시험계획서 (`07-audit-compliance/templates/T05-test-plan.md`)
 
 - [ ] `{작성자}`, `{승인자}` 실제 이름 기입
 - [ ] 시험 일정 실제 날짜 기입
 - [ ] 시험 담당자 실제 이름 기입
 
-#### T06 시험결과서 (`06-audit-compliance/templates/T06-test-result.md`)
+#### T06 시험결과서 (`07-audit-compliance/templates/T06-test-result.md`)
 
 - [ ] 실제 시험 기간 기입
 - [ ] 79항목 각각 PASS/CONDITIONAL/FAIL/N/A 판정 기입
 - [ ] 전체 통과율 수치 기입
 - [ ] 시험자 서명 기입
 
-#### T07 결함관리대장 (`06-audit-compliance/templates/T07-defect-management.md`)
+#### T07 결함관리대장 (`07-audit-compliance/templates/T07-defect-management.md`)
 
 - [ ] 실제 발견 결함 전수 등록 (DEF-XXX-YYY 형식)
 - [ ] 각 결함 심각도 분류
@@ -607,7 +607,7 @@ CSAP_심사_패키지/
 
 ### Q5. N2SF 준수는 별도 인증이 필요한가요?
 
-**A**: 현재(2026년 기준) N2SF는 별도 인증이 아닌 **CSAP D-13 공공기관 추가 보호조치**에 포함되어 심사됩니다. 2026년 하반기 본격 시행 후 별도 심사 도입 여부를 모니터링하십시오 (`03-n2sf/n2sf-change-monitoring.md`).
+**A**: 현재(2026년 기준) N2SF는 별도 인증이 아닌 **CSAP D-13 공공기관 추가 보호조치**에 포함되어 심사됩니다. 2026년 하반기 본격 시행 후 별도 심사 도입 여부를 모니터링하십시오 (`04-n2sf/n2sf-change-monitoring.md`).
 
 ---
 

@@ -3,7 +3,7 @@
 > **문서 ID**: ISMS-P-EVIDENCE-PIPELINE
 > **버전**: 1.0.0 | **일자**: 2026-04-06 | **작성자**: PM Agent
 > **Plan SC**: FR-ISMS1.3 | **Design Ref**: MTU-ISMS1 Design 3
-> **참조**: docs/framework/04-isms-p/auto-evidence-collection.md
+> **참조**: docs/framework/03-isms-p/auto-evidence-collection.md
 
 ---
 

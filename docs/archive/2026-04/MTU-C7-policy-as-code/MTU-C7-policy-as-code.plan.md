@@ -39,9 +39,9 @@
 
 | 산출물 | 경로 | FR ID |
 |--------|------|-------|
-| Policy as Code README | `docs/framework/07-infra/policy-as-code/README.md` | FR-C7.1 |
-| Kyverno 정책 가이드 | `docs/framework/07-infra/policy-as-code/kyverno-policies.md` | FR-C7.2 |
-| OPA Gatekeeper 가이드 | `docs/framework/07-infra/policy-as-code/opa-gatekeeper.md` | FR-C7.3 |
+| Policy as Code README | `docs/framework/08-infra/policy-as-code/README.md` | FR-C7.1 |
+| Kyverno 정책 가이드 | `docs/framework/08-infra/policy-as-code/kyverno-policies.md` | FR-C7.2 |
+| OPA Gatekeeper 가이드 | `docs/framework/08-infra/policy-as-code/opa-gatekeeper.md` | FR-C7.3 |
 
 ---
 

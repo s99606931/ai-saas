@@ -1,0 +1,105 @@
+# =============================================================================
+# 공공기관 SaaS 플랫폼 -- 자동 릴리스 파이프라인
+# Design Ref: MTU-N42 Design
+# Plan SC: FR-N42.1, FR-N42.2, FR-N42.5
+#
+# Conventional Commits 기반:
+#   feat: → minor 버전 증가
+#   fix:  → patch 버전 증가
+#   BREAKING CHANGE → major 버전 증가
+#
+# main 브랜치 push 시 자동 릴리스:
+#   → 커밋 분석 → 버전 결정 → CHANGELOG 생성 → Git 태그 → 릴리스
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+env:
+  PNPM_VERSION: "9.15.0"
+  NODE_VERSION: "22"
+
+# 릴리스 동시 실행 방지
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: "Semantic Release"
+    runs-on: self-hosted
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Git 태그 + 전체 히스토리 필요 (semantic-release)
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # pnpm store 캐싱 (MTU-N38 최적화)
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # semantic-release 플러그인 설치
+      - name: Install release plugins
+        run: |
+          pnpm add -D semantic-release \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator \
+            @semantic-release/changelog \
+            @semantic-release/git \
+            conventional-changelog-conventionalcommits \
+            @commitlint/config-conventional
+
+      # Semantic Release 실행
+      - name: Run semantic-release
+        env:
+          # Gitea 토큰 (GitHub API 호환)
+          GITHUB_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          GIT_AUTHOR_NAME: "Release Bot"
+          GIT_AUTHOR_EMAIL: "release@saas-platform.local"
+          GIT_COMMITTER_NAME: "Release Bot"
+          GIT_COMMITTER_EMAIL: "release@saas-platform.local"
+        run: |
+          npx semantic-release --no-ci 2>&1 || echo "[INFO] 릴리스할 변경사항 없음"
+
+      # 감사 로그
+      - name: Audit log
+        if: always()
+        run: |
+          TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+          echo "{\"timestamp\":\"${TIMESTAMP}\",\"action\":\"RELEASE\",\"actor\":\"${{ github.actor }}\",\"ref\":\"${{ github.ref_name }}\",\"sha\":\"${{ github.sha }}\",\"status\":\"${{ job.status }}\",\"csap_ref\":\"D-12\"}" >> release-audit.jsonl
+
+      - name: Upload audit log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-audit-${{ github.run_id }}
+          path: release-audit.jsonl
+          retention-days: 365

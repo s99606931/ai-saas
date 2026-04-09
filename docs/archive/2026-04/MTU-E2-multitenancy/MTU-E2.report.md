@@ -33,9 +33,9 @@
 
 | 파일 | 상태 | 비고 |
 |------|------|------|
-| `10-multitenancy/architecture-guide.md` | PASS | C/S/O 3등급 격리 + 전체 구성도 |
-| `10-multitenancy/tenant-isolation-policy.md` | PASS | Kyverno 정책 6종 + ResourceQuota |
-| `10-multitenancy/onboarding-procedure.md` | PASS | Gitea Actions 자동화 + 24h 타임라인 |
+| `11-multitenancy/architecture-guide.md` | PASS | C/S/O 3등급 격리 + 전체 구성도 |
+| `11-multitenancy/tenant-isolation-policy.md` | PASS | Kyverno 정책 6종 + ResourceQuota |
+| `11-multitenancy/onboarding-procedure.md` | PASS | Gitea Actions 자동화 + 24h 타임라인 |
 
 ### 합격 기준 충족 현황
 

@@ -75,13 +75,13 @@
 
 프레임워크 산출물은 다음 경로에 분산 저장되어 있음:
 
-- docs/framework/03-n2sf/ - n2sf-change-monitoring.md ✓ (MTU-A7)
-- docs/framework/06-audit-compliance/templates/ - T01~T07 감리 템플릿 ✓ (MTU-A3a~A3c)
+- docs/framework/04-n2sf/ - n2sf-change-monitoring.md ✓ (MTU-A7)
+- docs/framework/07-audit-compliance/templates/ - T01~T07 감리 템플릿 ✓ (MTU-A3a~A3c)
 - docs/framework/07-isms-p/ - ISMS-P 가이드 ✓ (MTU-E1)
-- docs/framework/08-ai-integration/ - AI 게이트웨이 + LM Studio ✓ (MTU-A1, A2)
-- docs/framework/10-multitenancy/ - 멀티테넌시 아키텍처 ✓ (MTU-E2)
-- docs/framework/11-documentation-portal/ - Docusaurus 포털 ✓ (MTU-A5)
-- docs/framework/12-compliance-dashboard/ - 준수 대시보드 ✓ (MTU-A6)
+- docs/framework/09-ai-integration/ - AI 게이트웨이 + LM Studio ✓ (MTU-A1, A2)
+- docs/framework/11-multitenancy/ - 멀티테넌시 아키텍처 ✓ (MTU-E2)
+- docs/framework/12-documentation-portal/ - Docusaurus 포털 ✓ (MTU-A5)
+- docs/framework/13-compliance-dashboard/ - 준수 대시보드 ✓ (MTU-A6)
 - docs/framework/14-framework-upgrade/ - 프레임워크 업그레이드 ✓ (MTU-E3)
 - docs/framework/99-references/oscal/ - OSCAL 매핑 ✓ (MTU-A4)
 

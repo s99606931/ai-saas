@@ -109,7 +109,7 @@ check_prerequisites() {
   # 포트 충돌 확인
   echo ""
   log_info "  포트 사용 확인:"
-  for port_info in "3000:Gitea" "2222:Gitea SSH" "5433:PostgreSQL" "8080:Harbor"; do
+  for port_info in "3000:Gitea" "2222:Gitea SSH" "5434:Gitea PostgreSQL" "8080:Harbor" "30090:Prometheus" "30302:Grafana"; do
     local port="${port_info%%:*}"
     local name="${port_info#*:}"
     if ss -tlnp 2>/dev/null | grep -q ":${port} " || netstat -tlnp 2>/dev/null | grep -q ":${port} "; then
@@ -294,12 +294,15 @@ configure_registry() {
     sudo cp "${k3s_registries}" "${k3s_registries}.bak.$(date +%Y%m%d%H%M%S)"
   fi
 
-  # Harbor .env에서 비밀번호 읽기
-  local harbor_pass="Harbor12345"
-  if [ -f "${PROJECT_ROOT}/infra/harbor/.env" ]; then
+  # Harbor .env에서 비밀번호 읽기 (C-01 수정: 하드코딩 Harbor12345 제거)
+  local harbor_pass="${HARBOR_ADMIN_PASSWORD:-}"
+  if [ -z "${harbor_pass}" ] && [ -f "${PROJECT_ROOT}/infra/harbor/.env" ]; then
     # shellcheck disable=SC1091
     source "${PROJECT_ROOT}/infra/harbor/.env"
-    harbor_pass="${HARBOR_ADMIN_PASSWORD:-Harbor12345}"
+    harbor_pass="${HARBOR_ADMIN_PASSWORD:-}"
+  fi
+  if [ -z "${harbor_pass}" ]; then
+    log_warn "HARBOR_ADMIN_PASSWORD 미설정 — k3s registries.yaml에 임시 빈값 사용"
   fi
 
   sudo mkdir -p "$(dirname "${k3s_registries}")"
@@ -339,9 +342,12 @@ verify_all() {
   local failed=0
   local total=0
 
-  # Gitea 확인
+  # Gitea 확인 (REQUIRE_SIGNIN_VIEW 시 인증 필요)
   total=$((total + 1))
-  if curl -sf "http://localhost:3000/api/v1/version" &>/dev/null; then
+  local gitea_check
+  gitea_check=$(curl -sf "http://localhost:3000/api/v1/version" 2>/dev/null || \
+    curl -sf -o /dev/null -w "%{http_code}" "http://localhost:3000/" 2>/dev/null)
+  if [ -n "$gitea_check" ] && [ "$gitea_check" != "000" ]; then
     log_info "  [PASS] Gitea 접속 확인 (localhost:3000)"
     passed=$((passed + 1))
   else
@@ -352,7 +358,7 @@ verify_all() {
   # PostgreSQL 확인
   total=$((total + 1))
   if docker exec gitea-postgres pg_isready -U gitea &>/dev/null 2>&1; then
-    log_info "  [PASS] PostgreSQL 접속 확인 (localhost:5433)"
+    log_info "  [PASS] PostgreSQL 접속 확인 (localhost:5434)"
     passed=$((passed + 1))
   else
     log_error "  [FAIL] PostgreSQL 접속 실패"
@@ -429,18 +435,18 @@ show_status() {
     log_error "k3s: 미실행 또는 Not Ready"
   fi
 
-  # Gitea
-  if curl -sf "http://localhost:3000/api/v1/version" &>/dev/null; then
-    local gitea_ver
-    gitea_ver=$(curl -sf "http://localhost:3000/api/v1/version" | grep -o '"version":"[^"]*"' | cut -d'"' -f4)
-    log_info "Gitea: 실행 중 (v${gitea_ver}) -- http://localhost:3000"
+  # Gitea (REQUIRE_SIGNIN_VIEW 시 인증 없이도 상태 확인)
+  local gitea_http
+  gitea_http=$(curl -sf -o /dev/null -w "%{http_code}" "http://localhost:3000/" 2>/dev/null)
+  if [ "$gitea_http" = "200" ] || [ "$gitea_http" = "302" ] || [ "$gitea_http" = "303" ] || [ "$gitea_http" = "403" ]; then
+    log_info "Gitea: 실행 중 -- http://localhost:3000 (HTTP ${gitea_http})"
   else
     log_error "Gitea: 미실행"
   fi
 
   # PostgreSQL
   if docker exec gitea-postgres pg_isready -U gitea &>/dev/null 2>&1; then
-    log_info "PostgreSQL: 실행 중 (localhost:5433)"
+    log_info "PostgreSQL: 실행 중 (localhost:5434)"
   else
     log_error "PostgreSQL: 미실행"
   fi

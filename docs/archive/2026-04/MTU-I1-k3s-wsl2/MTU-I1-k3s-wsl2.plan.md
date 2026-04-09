@@ -29,9 +29,9 @@ WSL2 환경에서 CSAP D-11 보안 설정이 적용된 k3s 클러스터를 10분
 
 | 파일 | 문서 유형 | 핵심 내용 |
 |------|---------|---------|
-| `07-infra/k3s-wsl2/cluster-setup-recipe.md` | 구현 가이드형 | 10분 k3s 설치 레시피 |
-| `07-infra/k3s-wsl2/scripts/install-k3s.sh` | 스크립트 | 자동화 설치 스크립트 |
-| `07-infra/container-security-baseline.md` | 체크리스트형 | CIS Benchmark × CSAP-D11 매핑 |
+| `08-infra/k3s-wsl2/cluster-setup-recipe.md` | 구현 가이드형 | 10분 k3s 설치 레시피 |
+| `08-infra/k3s-wsl2/scripts/install-k3s.sh` | 스크립트 | 자동화 설치 스크립트 |
+| `08-infra/container-security-baseline.md` | 체크리스트형 | CIS Benchmark × CSAP-D11 매핑 |
 
 ---
 

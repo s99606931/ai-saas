@@ -1,6 +1,6 @@
 # 공공기관 SaaS 플랫폼 — CI 파이프라인
-# Design Ref: DESIGN-MTU-DEP3
-# Plan SC: FR-DEP3.1, FR-DEP3.2, FR-DEP3.6
+# Design Ref: DESIGN-MTU-DEP3, MTU-N38 S3.1/S3.4
+# Plan SC: FR-DEP3.1, FR-DEP3.2, FR-DEP3.6, FR-N38.1, FR-N38.5
 # CSAP: D-12 시스템 개발 보안
 
 name: CI
@@ -14,6 +14,12 @@ on:
 env:
   PNPM_VERSION: "9.15.0"
   NODE_VERSION: "22"
+
+# 동시 실행 제한 -- Design Ref: MTU-N38 S3.4
+# Plan SC: FR-N38.6
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ci:
@@ -61,7 +67,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+
+      # pnpm store 캐싱 -- Design Ref: MTU-N38 S3.1
+      # Plan SC: FR-N38.1, FR-N38.5
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

@@ -25,8 +25,8 @@
 
 | 파일 | 크기 | 내용 |
 |------|------|------|
-| `07-infra/supply-chain/sbom-guide.md` | 11.5KB | SBOM 생성 + 취약점 스캔 + CVE 대응 + 라이선스 |
-| `07-infra/supply-chain/sigstore-signing.md` | 10.2KB | Cosign 서명/검증 + 키 관리 + Kyverno + SLSA |
+| `08-infra/supply-chain/sbom-guide.md` | 11.5KB | SBOM 생성 + 취약점 스캔 + CVE 대응 + 라이선스 |
+| `08-infra/supply-chain/sigstore-signing.md` | 10.2KB | Cosign 서명/검증 + 키 관리 + Kyverno + SLSA |
 
 ## 합격 기준 결과
 

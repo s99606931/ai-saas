@@ -28,7 +28,7 @@
 
 ### 2.1 H-01: kubeconfig 권한 600 적용 (CSAP-D08 위반 수정)
 
-**대상 파일**: `/data/ai-saas/docs/framework/07-infra/k3s-wsl2/scripts/install-k3s.sh`
+**대상 파일**: `/data/ai-saas/docs/framework/08-infra/k3s-wsl2/scripts/install-k3s.sh`
 
 #### TC-H01-1: `--write-kubeconfig-mode 600` 적용 여부
 
@@ -62,7 +62,7 @@
 
 ### 2.2 H-02: PII 마스킹 lastIndex 버그 수정 (N2SF N-05 위반 수정)
 
-**대상 파일**: `/data/ai-saas/docs/framework/03-n2sf/domains/N05-data.md`
+**대상 파일**: `/data/ai-saas/docs/framework/04-n2sf/domains/N05-data.md`
 
 #### TC-H02-1: `regex.test()` + `g` 플래그 단일 객체 혼용 패턴 제거 여부
 

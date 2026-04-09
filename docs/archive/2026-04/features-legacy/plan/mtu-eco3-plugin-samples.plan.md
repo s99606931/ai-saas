@@ -50,7 +50,7 @@
 |--------|------|------|
 | 전자결재 플러그인 | `platform/plugins/electronic-approval/` | TypeScript |
 | 공공데이터 연동 플러그인 | `platform/plugins/public-data-integration/` | TypeScript |
-| 플러그인 개발 가이드 | `docs/framework/05-ecosystem/plugin-development-guide.md` | Markdown |
+| 플러그인 개발 가이드 | `docs/framework/06-ecosystem/plugin-development-guide.md` | Markdown |
 
 ## 변경 이력
 

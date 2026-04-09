@@ -44,8 +44,8 @@
 |------|------|-----------|
 | CTO/팀장 | 프레임워크 전체 파악 | README.md |
 | PM/기획자 | CSAP 인증 준비 | `02-csap/simple-grade/checklist-simple.md` |
-| 개발자 | 개발 환경 구성 | `07-infra/k3s-wsl2/cluster-setup-recipe.md` |
-| 감리 담당 | 산출물 준비 | `06-audit-compliance/templates/T01-business-plan.md` |
+| 개발자 | 개발 환경 구성 | `08-infra/k3s-wsl2/cluster-setup-recipe.md` |
+| 감리 담당 | 산출물 준비 | `07-audit-compliance/templates/T01-business-plan.md` |
 | 보안 담당 | CSAP/N2SF 확인 | `02-csap/standard-grade/checklist-master.md` |
 
 ---

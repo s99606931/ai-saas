@@ -1,0 +1,84 @@
+# =============================================================================
+# Semantic Release 설정
+# Design Ref: MTU-N42 Design
+# Plan SC: FR-N42.1, FR-N42.5
+#
+# Conventional Commits 기반 자동 버저닝 + CHANGELOG 생성
+# main 브랜치 → 정식 릴리스 (v1.x.x)
+# stg 브랜치 → 프리릴리스 (v1.x.x-stg.1)
+# =============================================================================
+
+branches:
+  # main 브랜치: 정식 릴리스
+  - name: main
+  # stg 브랜치: 프리릴리스
+  - name: stg
+    prerelease: stg
+
+plugins:
+  # 1. 커밋 분석 (Conventional Commits)
+  - - "@semantic-release/commit-analyzer"
+    - preset: conventionalcommits
+      releaseRules:
+        - type: feat
+          release: minor
+        - type: fix
+          release: patch
+        - type: perf
+          release: patch
+        - type: docs
+          release: false
+        - type: style
+          release: false
+        - type: refactor
+          release: patch
+        - type: test
+          release: false
+        - type: ci
+          release: false
+        - type: chore
+          release: false
+        # 보안 수정은 패치 릴리스
+        - type: security
+          release: patch
+        # Breaking change는 메이저 릴리스
+        - breaking: true
+          release: major
+
+  # 2. 릴리스 노트 생성
+  - - "@semantic-release/release-notes-generator"
+    - preset: conventionalcommits
+      presetConfig:
+        types:
+          - type: feat
+            section: "신규 기능"
+          - type: fix
+            section: "버그 수정"
+          - type: perf
+            section: "성능 개선"
+          - type: security
+            section: "보안 수정"
+          - type: refactor
+            section: "리팩토링"
+          - type: docs
+            section: "문서"
+            hidden: true
+          - type: ci
+            section: "CI/CD"
+            hidden: true
+
+  # 3. CHANGELOG.md 자동 업데이트
+  - - "@semantic-release/changelog"
+    - changelogFile: CHANGELOG.md
+      changelogTitle: "# 변경 이력 (CHANGELOG)"
+
+  # 4. Git 태그 + CHANGELOG 커밋
+  - - "@semantic-release/git"
+    - assets:
+        - CHANGELOG.md
+        - package.json
+      message: "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+
+  # 5. Gitea Release 생성
+  # Gitea는 GitHub Release API 호환
+  # GITEA_TOKEN 환경변수 필요

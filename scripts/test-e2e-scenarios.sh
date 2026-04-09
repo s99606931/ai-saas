@@ -189,7 +189,8 @@ BODY=$(curl -s "http://localhost:30302/api/health" 2>/dev/null || echo "{}")
 assert_contains "Grafana 헬스" "ok" "$BODY"
 
 # TC: Harbor API
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" --user admin:Harbor12345 "http://localhost:8080/api/v2.0/projects" 2>/dev/null || echo "000")
+# C-01 수정: 하드코딩 비밀번호 제거 — HARBOR_ADMIN_PASSWORD 환경변수 사용
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" --user "admin:${HARBOR_ADMIN_PASSWORD:-}" "http://localhost:8080/api/v2.0/projects" 2>/dev/null || echo "000")
 assert_status "Harbor API 접근" "200" "$STATUS"
 
 # === S4: NetworkPolicy 격리 검증 ===

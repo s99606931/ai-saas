@@ -32,11 +32,11 @@
 | `docs/framework/02-csap/standard-grade/checklist-master.md` | CSAP 마스터 체크리스트 | 1 |
 | `docs/framework/02-csap/standard-grade/implementation-guide/` | CSAP D01~D13 구현 가이드 | 13 |
 | `docs/framework/02-csap/simple-grade/` | CSAP 간편등급 체크리스트 + 빠른시작 | 2 |
-| `docs/framework/03-n2sf/` | N2SF 매핑 + 데이터 등급 분류 | 2 |
-| `docs/framework/03-n2sf/domains/` | N2SF N01~N06 구현 가이드 | 6 |
+| `docs/framework/04-n2sf/` | N2SF 매핑 + 데이터 등급 분류 | 2 |
+| `docs/framework/04-n2sf/domains/` | N2SF N01~N06 구현 가이드 | 6 |
 | `docs/framework/05-audit-docs/` | T01 사업계획서 + T02 요구사항정의서 | 2 |
-| `docs/framework/07-infra/` | k3s 레시피 + 컨테이너 보안 + Policy as Code | 6 |
-| `docs/framework/09-cc-harness/` | CC 하네스 검증 절차서 | 1 |
+| `docs/framework/08-infra/` | k3s 레시피 + 컨테이너 보안 + Policy as Code | 6 |
+| `docs/framework/10-cc-harness/` | CC 하네스 검증 절차서 | 1 |
 | `docs/framework/00-getting-started/` | 진입점 문서 | 3 |
 | `docs/framework/01-dev-standards/` | 개발 표준 가이드 | 4 |
 | `docs/framework/99-references/` | 규정 인덱스 + 용어 사전 | 2 |
@@ -222,7 +222,7 @@
 
 | 결함 ID | 심각도 | 분류 | 위치 | 설명 | 보완 방법 |
 |---------|--------|------|------|------|---------|
-| DEF-01 | HIGH | 감리 산출물 | `docs/framework/06-audit-compliance/templates/` | T03~T07 감리 산출물 템플릿 미작성. 디렉토리는 존재하나 파일 0개. | Phase 3 MTU-A3a~A3e에서 T03(설계서), T04(시험계획서), T05(사업수행계획서), T06(유지보수계획서), T07(추적성매트릭스) 템플릿 작성 |
+| DEF-01 | HIGH | 감리 산출물 | `docs/framework/07-audit-compliance/templates/` | T03~T07 감리 산출물 템플릿 미작성. 디렉토리는 존재하나 파일 0개. | Phase 3 MTU-A3a~A3e에서 T03(설계서), T04(시험계획서), T05(사업수행계획서), T06(유지보수계획서), T07(추적성매트릭스) 템플릿 작성 |
 | DEF-02 | HIGH | 증거 자료 | D01~D04 전체 | 관리적 통제 증거 자료(정책서 서명본, 서약서 원본, 교육 출석부 등) 미준비. 체크리스트 전 항목 미체크 상태. | 실제 사업 착수 시 증거 자료 수집 프로세스 정의 및 실행. 증거 자료 체크리스트의 "준비 상태" 컬럼 업데이트 |
 | DEF-03 | HIGH | 증거 자료 | D05~D13 전체 | 기술적 통제 증거 자료(시스템 설정 스크린샷, 보안 도구 스캔 결과, 감사 로그 샘플 등) 미준비. | k3s 클러스터 구축 후 각 항목별 설정 화면 캡처, 보안 도구(Trivy, Falco) 스캔 결과 저장 |
 | DEF-04 | MEDIUM | 설계 문서 | MTU-C2b, MTU-C5, MTU-C7 아카이브 | 일부 MTU에서 Design 문서 누락. MTU-C2b는 Plan과 Report만 존재, Design 미작성. MTU-C5, C7도 Report만 존재. | PDCA 원칙상 Design 없이 Do 진행은 프로세스 위반. 소급하여 Design 문서 작성 또는 면제 사유 기록 |
@@ -232,7 +232,7 @@
 | DEF-08 | MEDIUM | 감사 로그 | `.claude/audit.jsonl` | session-start 이벤트가 0건. session-end만 36건 기록. 세션 시작 시점 추적 불가. | ECC 하네스 설정에서 session-start 이벤트 기록 활성화 |
 | DEF-09 | MEDIUM | 감사 로그 | `.claude/audit.jsonl` | 도구 사용 기록에 action 상세(파일 경로, 실행 명령어 등)가 미포함. CSAP D06-03 요건상 "민감 작업 전수 기록"의 충분성 의문. | audit.jsonl 스키마를 확장하여 `action`, `target`, `detail` 필드 추가 |
 | DEF-10 | LOW | 감사 로그 | `.claude/audit.jsonl` | append-only 파일 보호 미구현. 일반 파일 시스템에 기록되어 수정/삭제 가능. CSAP D06-03 "로그 무결성" 요건 미충족. | chattr +a (Linux) 또는 별도 로그 저장소(Loki, OpenSearch) 도입으로 무결성 보장 |
-| DEF-11 | LOW | 문서 구조 | `docs/framework/06-audit-compliance/templates/` | 디렉토리가 존재하나 파일 0개. 빈 디렉토리는 의도와 상태가 불명확. | 빈 디렉토리 제거 또는 README.md 추가하여 "Phase 3에서 T03~T07 작성 예정" 안내 |
+| DEF-11 | LOW | 문서 구조 | `docs/framework/07-audit-compliance/templates/` | 디렉토리가 존재하나 파일 0개. 빈 디렉토리는 의도와 상태가 불명확. | 빈 디렉토리 제거 또는 README.md 추가하여 "Phase 3에서 T03~T07 작성 예정" 안내 |
 | DEF-12 | LOW | 문서 품질 | T01, T02 감리 산출물 | 템플릿 상태로 모든 내용이 `[대괄호 플레이스홀더]`. 실제 사업 정보 미기입. | 실제 사업 착수 시 플레이스홀더를 실제 내용으로 교체. 현재는 템플릿 상태가 정상 |
 | DEF-13 | INFO | 아카이브 | `docs/archive/2026-04/_INDEX.md` | MTU-C5, MTU-C7 아카이브에 Report만 존재. Plan/Design/Analysis 문서 미포함. 완전한 PDCA 아카이브가 아님. | 해당 MTU의 Plan 문서를 소급 아카이브하거나, 기존 Plan이 상위 MTU(C1, C3)에 포함되어 있으면 참조 링크 추가 |
 | DEF-14 | INFO | 커버리지 | CSAP 간편등급 | 간편등급 체크리스트 30항목이 표준등급 79항목과의 매핑 관계 미명시. | 간편등급 체크리스트에 "표준등급 대응 항목" 컬럼 추가 권고 |

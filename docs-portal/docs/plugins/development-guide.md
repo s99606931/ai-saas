@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # 플러그인 개발 가이드
 
-자세한 내용은 `docs/framework/05-ecosystem/plugin-development-guide.md`를 참조하세요.
+자세한 내용은 `docs/framework/06-ecosystem/plugin-development-guide.md`를 참조하세요.
 
 ## 플러그인 구조
 

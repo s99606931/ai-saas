@@ -2,7 +2,7 @@
 
 > **버전**: 1.0.0 | **일자**: 2026-04-06 | **작성자**: PM Agent
 > **Phase**: ISMS (의무화 대응) | **복잡도**: HIGH
-> **참조**: ISMS-P 인증기준 안내서(2023.11.23), docs/framework/04-isms-p/
+> **참조**: ISMS-P 인증기준 안내서(2023.11.23), docs/framework/03-isms-p/
 
 ---
 

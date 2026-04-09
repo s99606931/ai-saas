@@ -33,7 +33,7 @@
 
 | 파일 | 상태 | 비고 |
 |------|------|------|
-| `03-n2sf/n2sf-change-monitoring.md` | PASS | 모니터링 채널 3개 + 30일 SLA + 버전 격리 |
+| `04-n2sf/n2sf-change-monitoring.md` | PASS | 모니터링 채널 3개 + 30일 SLA + 버전 격리 |
 
 ### 합격 기준 충족 현황
 

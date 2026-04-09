@@ -42,14 +42,14 @@
 ## 4. 컨테이너 빌드 (CSAP D-11)
 
 ```bash
-# 전체 빌드 (16개 서비스 + 1개 포털)
+# 전체 빌드 (17개 서비스 + 1개 포털)
 ./scripts/build-all.sh
 
 # 또는 병렬 빌드
 ./scripts/build-all.sh --parallel
 ```
 
-- [x] 16개 서비스 Dockerfile 존재
+- [x] 17개 서비스 Dockerfile 존재
 - [x] 포털 Dockerfile 존재
 - [x] 컨테이너 non-root 실행 (runAsUser: 1001)
 - [x] readOnlyRootFilesystem: true

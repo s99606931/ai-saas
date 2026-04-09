@@ -42,7 +42,7 @@
 **변경 파일 (3개)**:
 - `platform/services/saas-catalog-service/package.json`
 - `docs/framework/02-csap/vulnerability/scanning-guide.md`
-- `docs/framework/07-infra/k3s-wsl2/cluster-setup-recipe.md`
+- `docs/framework/08-infra/k3s-wsl2/cluster-setup-recipe.md`
 
 ### 현상 유지 판정 (3건)
 
@@ -120,5 +120,5 @@
 ### 정리/문서 (4개)
 - `platform/services/saas-catalog-service/package.json`
 - `docs/framework/02-csap/vulnerability/scanning-guide.md`
-- `docs/framework/07-infra/k3s-wsl2/cluster-setup-recipe.md`
+- `docs/framework/08-infra/k3s-wsl2/cluster-setup-recipe.md`
 - `CHANGELOG.md`

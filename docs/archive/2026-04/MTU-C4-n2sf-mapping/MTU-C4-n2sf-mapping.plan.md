@@ -28,8 +28,8 @@ CSAP 79개 통제항목과 N2SF(국가사이버안전관리규정) 6개 보안 �
 
 | 파일 | 문서 유형 | 핵심 내용 |
 |------|---------|---------|
-| `03-n2sf/csap-n2sf-mapping.md` | 매핑 테이블형 | CSAP 79항목 × N2SF 6개 영역 전수 매핑 |
-| `03-n2sf/data-grade-classification.md` | 구현 가이드형 | C/S/O 등급별 통제 요건 + AI API 연동 판단 기준 |
+| `04-n2sf/csap-n2sf-mapping.md` | 매핑 테이블형 | CSAP 79항목 × N2SF 6개 영역 전수 매핑 |
+| `04-n2sf/data-grade-classification.md` | 구현 가이드형 | C/S/O 등급별 통제 요건 + AI API 연동 판단 기준 |
 
 ---
 

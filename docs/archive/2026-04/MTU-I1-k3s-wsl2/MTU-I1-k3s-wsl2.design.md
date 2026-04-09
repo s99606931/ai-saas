@@ -20,7 +20,7 @@
 | **WHO** | DevOps 엔지니어, 보안 담당자, 인프라 운영팀 |
 | **RISK** | WSL2 환경 특이성(cgroup, systemd), CNI 선택 오류 시 NetworkPolicy 미동작, k3s 버전 변경 시 호환성 |
 | **SUCCESS** | 설치 스크립트 10분 이내 완료 + CSAP-D11 7항목 보안 체크리스트 통과 + Kyverno 적용 준비 |
-| **SCOPE** | `docs/framework/07-infra/k3s-wsl2/` 3개 파일 |
+| **SCOPE** | `docs/framework/08-infra/k3s-wsl2/` 3개 파일 |
 
 ---
 

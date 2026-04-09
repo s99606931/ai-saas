@@ -179,19 +179,19 @@ MTU-E2 (멀티테넌시) ── MTU-U1 (공공 SaaS UI/UX 디자인 시스템) [
 
 | 번호 | 파일 경로 | MTU | 근거 |
 |------|---------|-----|------|
-| 55 | `03-n2sf/mls-implementation-guide.md` | MTU-C5 | N2SF MLS 다층보안 2026 |
-| 56 | `07-infra/flux-gitops/` | MTU-I3 | 폐쇄망 GitOps 표준 |
-| 57 | `07-infra/harbor-registry.md` | MTU-I3 | 이미지 보안 강화 |
-| 58 | `07-infra/opentelemetry-config.md` | MTU-I4 | 관찰성 표준화 |
-| 59 | `07-infra/policy-as-code/kyverno-policies.md` | MTU-C7 | K8s 정책 자동화 |
-| 60 | `07-infra/policy-as-code/opa-gatekeeper.md` | MTU-C7 | 복잡한 컴플라이언스 정책 |
-| 61 | `07-infra/supply-chain/sbom-guide.md` | MTU-C8 | 공급망 보안 |
-| 62 | `07-infra/supply-chain/sigstore-signing.md` | MTU-C8 | 이미지 서명 검증 |
-| 63 | `08-ai-integration/mcp-integration-guide.md` | MTU-A1 | MCP 표준 AI 연동 |
-| 64 | `08-ai-integration/lmstudio-guide.md` | MTU-A2 | LM Studio (Windows 호스트, host.docker.internal:1234) 연동 |
-| 65 | `04-isms-p/checklist-101.md` | MTU-C6a | ISMS-P 101항목 (신규 모듈) |
-| 66 | `04-isms-p/evidence-automation-guide.md` | MTU-C6b | 2027 의무화 자동 증적 |
-| 67 | `04-isms-p/self-diagnosis.md` | MTU-C6b | ISMS-P 자가진단 |
+| 55 | `04-n2sf/mls-implementation-guide.md` | MTU-C5 | N2SF MLS 다층보안 2026 |
+| 56 | `08-infra/flux-gitops/` | MTU-I3 | 폐쇄망 GitOps 표준 |
+| 57 | `08-infra/harbor-registry.md` | MTU-I3 | 이미지 보안 강화 |
+| 58 | `08-infra/opentelemetry-config.md` | MTU-I4 | 관찰성 표준화 |
+| 59 | `08-infra/policy-as-code/kyverno-policies.md` | MTU-C7 | K8s 정책 자동화 |
+| 60 | `08-infra/policy-as-code/opa-gatekeeper.md` | MTU-C7 | 복잡한 컴플라이언스 정책 |
+| 61 | `08-infra/supply-chain/sbom-guide.md` | MTU-C8 | 공급망 보안 |
+| 62 | `08-infra/supply-chain/sigstore-signing.md` | MTU-C8 | 이미지 서명 검증 |
+| 63 | `09-ai-integration/mcp-integration-guide.md` | MTU-A1 | MCP 표준 AI 연동 |
+| 64 | `09-ai-integration/lmstudio-guide.md` | MTU-A2 | LM Studio (Windows 호스트, host.docker.internal:1234) 연동 |
+| 65 | `03-isms-p/checklist-101.md` | MTU-C6a | ISMS-P 101항목 (신규 모듈) |
+| 66 | `03-isms-p/evidence-automation-guide.md` | MTU-C6b | 2027 의무화 자동 증적 |
+| 67 | `03-isms-p/self-diagnosis.md` | MTU-C6b | ISMS-P 자가진단 |
 | 68 | `10-oscal/csap-oscal-mapping.md` | MTU-A6 | NIST OSCAL 호환성 |
 | 69 | `05-isms-p/certification-guide.md` | MTU-E1 | ISMS-P 심사 절차 + 2027 타임라인 |
 | 70 | `05-isms-p/auto-evidence-collection.md` | MTU-E1 | 자동 증적 수집 → ISMS-P 보고서 생성 |

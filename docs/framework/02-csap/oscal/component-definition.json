@@ -417,7 +417,7 @@
                 "control-id": "CSAP-D11-01",
                 "description": "가상화 보안 정책: 가상화 환경 보안 정책 수립",
                 "props": [{"name": "implementation-status", "value": "implemented"}],
-                "remarks": "k3s 컨테이너 보안 정책. docs/framework/07-infra/ 참조."
+                "remarks": "k3s 컨테이너 보안 정책. docs/framework/08-infra/ 참조."
               },
               {
                 "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80b002",
@@ -550,7 +550,7 @@
                 "control-id": "CSAP-D13-02",
                 "description": "공공기관 데이터 보호: 공공 데이터 등급 분류 및 보호",
                 "props": [{"name": "implementation-status", "value": "implemented"}],
-                "remarks": "N2SF C/S/O 등급 분류. docs/framework/03-n2sf/"
+                "remarks": "N2SF C/S/O 등급 분류. docs/framework/04-n2sf/"
               },
               {
                 "uuid": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f80d003",

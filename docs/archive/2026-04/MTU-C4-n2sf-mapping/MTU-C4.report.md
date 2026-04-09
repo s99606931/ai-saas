@@ -25,8 +25,8 @@
 
 | 파일 | 설명 |
 |------|------|
-| `docs/framework/03-n2sf/csap-n2sf-mapping.md` | CSAP 79항목 x N2SF 6영역 전수 매핑 테이블 |
-| `docs/framework/03-n2sf/data-grade-classification.md` | C/S/O 등급별 처리 기준 + AI API 연동 판단 가이드 |
+| `docs/framework/04-n2sf/csap-n2sf-mapping.md` | CSAP 79항목 x N2SF 6영역 전수 매핑 테이블 |
+| `docs/framework/04-n2sf/data-grade-classification.md` | C/S/O 등급별 처리 기준 + AI API 연동 판단 가이드 |
 
 ---
 

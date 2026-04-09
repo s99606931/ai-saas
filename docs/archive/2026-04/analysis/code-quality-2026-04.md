@@ -14,19 +14,19 @@
 
 | 파일/영역 | 점수 | 비고 |
 |---------|------|------|
-| `07-infra/k3s-wsl2/scripts/install-k3s.sh` | 82/100 | 양호. 보안 관련 개선 필요 |
-| `07-infra/k3s-wsl2/cluster-setup-recipe.md` (코드블록) | 78/100 | kubeconfig 권한, 테스트 시크릿 이슈 |
-| `07-infra/container-security-baseline.md` (코드블록) | 85/100 | 양호. 체계적인 CIS 매핑 |
-| `07-infra/policy-as-code/kyverno-policies.md` (YAML) | 88/100 | 양호. 플레이스홀더 키 주의 |
-| `07-infra/policy-as-code/opa-gatekeeper.md` (Rego) | 90/100 | 우수. Rego 로직 정확 |
+| `08-infra/k3s-wsl2/scripts/install-k3s.sh` | 82/100 | 양호. 보안 관련 개선 필요 |
+| `08-infra/k3s-wsl2/cluster-setup-recipe.md` (코드블록) | 78/100 | kubeconfig 권한, 테스트 시크릿 이슈 |
+| `08-infra/container-security-baseline.md` (코드블록) | 85/100 | 양호. 체계적인 CIS 매핑 |
+| `08-infra/policy-as-code/kyverno-policies.md` (YAML) | 88/100 | 양호. 플레이스홀더 키 주의 |
+| `08-infra/policy-as-code/opa-gatekeeper.md` (Rego) | 90/100 | 우수. Rego 로직 정확 |
 | `02-csap/standard-grade/implementation-guide/D08-*.md` (TypeScript) | 85/100 | 양호. Rate limiter 메모리 누수 가능성 |
 | `02-csap/standard-grade/implementation-guide/D09-*.md` (TypeScript) | 90/100 | 우수. AES-256-GCM + bcrypt 정확 |
 | `02-csap/standard-grade/implementation-guide/D12-*.md` (TypeScript) | 87/100 | 양호. OWASP 대응 체계적 |
 | `02-csap/standard-grade/implementation-guide/D06-*.md` (TypeScript) | 86/100 | 양호. 해시 체인 무결성 로직 정확 |
-| `03-n2sf/data-grade-classification.md` (TypeScript) | 83/100 | PII 마스킹 regex 버그 존재 |
-| `03-n2sf/domains/N05-data.md` (TypeScript) | 84/100 | regex.test + replace 연계 버그 |
-| `03-n2sf/domains/N03-isolation.md` (YAML/TypeScript) | 87/100 | 양호. NetworkPolicy 체계적 |
-| `09-cc-harness/harness-verification-guide.md` (Bash) | 85/100 | 양호. 검증 스크립트 실용적 |
+| `04-n2sf/data-grade-classification.md` (TypeScript) | 83/100 | PII 마스킹 regex 버그 존재 |
+| `04-n2sf/domains/N05-data.md` (TypeScript) | 84/100 | regex.test + replace 연계 버그 |
+| `04-n2sf/domains/N03-isolation.md` (YAML/TypeScript) | 87/100 | 양호. NetworkPolicy 체계적 |
+| `10-cc-harness/harness-verification-guide.md` (Bash) | 85/100 | 양호. 검증 스크립트 실용적 |
 
 **종합 점수: 85/100**
 
@@ -67,7 +67,7 @@
 | L-01 | `coding-style-guide.md` | 243~244행 | 하드코딩 시크릿 예시(`my-secret-key`, `sk-1234567890abcdef`)가 "금지" 교육 목적으로 존재 | 금지 패턴 교육용이므로 허용. 단, git-secrets 자동 스캔 시 오탐 방지를 위해 `# allowlist:` 주석 추가 권고 |
 | L-02 | `N03-isolation.md` | 322행 | `cidr: 160.79.104.0/23` -- Anthropic API IP가 예시로 하드코딩. 실제 IP 범위와 다를 수 있음 | 주석에 "(예시)"가 명기되어 있음. ExternalName Service나 FQDN 기반 Egress 정책으로 대체 권고 |
 | L-03 | `container-security-baseline.md` | 476행 | metrics-server TLS 우회: `--kubelet-insecure-tls` -- 개발 환경 전용이지만 운영 적용 시 보안 취약 | "개발 환경만" 주석 존재하나 더 명확한 경고 추가 권고: `# WARNING: 운영 환경 적용 금지` |
-| L-04 | `harness-verification-guide.md` | 전체 | 검증 스크립트가 `.md` 내 코드블록으로만 존재 -- 별도 `.sh` 파일로 추출하면 자동화 용이 | `09-cc-harness/scripts/harness-verify.sh`로 분리 권고 |
+| L-04 | `harness-verification-guide.md` | 전체 | 검증 스크립트가 `.md` 내 코드블록으로만 존재 -- 별도 `.sh` 파일로 추출하면 자동화 용이 | `10-cc-harness/scripts/harness-verify.sh`로 분리 권고 |
 
 ---
 
@@ -159,8 +159,8 @@
 
 ### 1. [H-01] kubeconfig 파일 권한 644 -> 600
 
-**파일**: `docs/framework/07-infra/k3s-wsl2/scripts/install-k3s.sh` 115행
-**파일**: `docs/framework/07-infra/k3s-wsl2/cluster-setup-recipe.md` 114행
+**파일**: `docs/framework/08-infra/k3s-wsl2/scripts/install-k3s.sh` 115행
+**파일**: `docs/framework/08-infra/k3s-wsl2/cluster-setup-recipe.md` 114행
 
 ```bash
 # 현재 (보안 취약)
@@ -174,7 +174,7 @@
 
 ### 2. [H-02] PII 마스킹 regex `test()` + `g` 플래그 버그
 
-**파일**: `docs/framework/03-n2sf/domains/N05-data.md` 196~199행
+**파일**: `docs/framework/04-n2sf/domains/N05-data.md` 196~199행
 
 ```typescript
 // 현재 (버그)
@@ -217,7 +217,7 @@ for (const [field, pattern] of Object.entries(PII_PATTERNS)) {
 
 ### 장기 (아키텍처 개선)
 
-8. **L-04 검증 스크립트 분리** -- `09-cc-harness/` 내 Bash 검증 스크립트를 별도 `.sh` 파일로 추출하여 CI/CD 자동화 연계
+8. **L-04 검증 스크립트 분리** -- `10-cc-harness/` 내 Bash 검증 스크립트를 별도 `.sh` 파일로 추출하여 CI/CD 자동화 연계
 9. **L-02 IP 기반 Egress -> FQDN 기반 전환** -- Anthropic API IP 하드코딩 대신 ExternalName Service 또는 FQDN 기반 정책 검토
 
 ---

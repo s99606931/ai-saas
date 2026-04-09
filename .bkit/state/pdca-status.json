@@ -1,6 +1,6 @@
 {
   "version": "3.0",
-  "lastUpdated": "2026-04-08T11:00:00.000Z",
+  "lastUpdated": "2026-04-09T22:08:13.576Z",
   "activeFeatures": [
     "public-saas-framework",
     "scripts",
@@ -46,7 +46,10 @@
     "saas-catalog-service",
     "unit",
     "helpers",
-    "scenarios"
+    "scenarios",
+    "kunkin",
+    "browser",
+    "specs"
   ],
   "primaryFeature": "public-saas-framework",
   "features": {
@@ -74,9 +77,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T10:19:06.640Z",
-        "lastUpdated": "2026-04-08T05:51:04.405Z"
+        "lastUpdated": "2026-04-09T14:37:11.379Z"
       },
-      "lastFile": "/data/ai-saas/scripts/test-cicd-pipeline.sh"
+      "lastFile": "/data/ai-saas/scripts/test-cicd-round2-integration.sh"
     },
     ".claude": {
       "phase": "archived",
@@ -172,10 +175,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:38:58.114Z",
-        "lastUpdated": "2026-04-07T13:58:59.479Z",
+        "lastUpdated": "2026-04-09T13:53:21.199Z",
         "archivedAt": "2026-04-07T09:35:55.082196Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/auth-service/src/lib/password.ts"
+      "lastFile": "/data/ai-saas/platform/services/auth-service/src/lib/telemetry.ts"
     },
     "user-service": {
       "phase": "do",
@@ -193,10 +196,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:41:58.767Z",
-        "lastUpdated": "2026-04-07T13:59:02.475Z",
+        "lastUpdated": "2026-04-09T14:35:30.069Z",
         "archivedAt": "2026-04-07T09:00:00.000Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/user-service/src/handlers/password-reset.handler.ts",
+      "lastFile": "/data/ai-saas/platform/services/user-service/tests/integration/user-enhancements.test.ts",
       "qualityEnhancement": {
         "previousMatchRate": "88.9%",
         "enhancedMatchRate": "90%",
@@ -224,10 +227,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:43:00.403Z",
-        "lastUpdated": "2026-04-07T12:50:40.342Z",
+        "lastUpdated": "2026-04-09T14:13:17.685Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/tenant-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/tenant-service/src/handlers/tenant.handler.ts"
     },
     "api-gateway": {
       "phase": "do",
@@ -245,10 +248,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:43:52.165Z",
-        "lastUpdated": "2026-04-07T13:09:49.954Z",
+        "lastUpdated": "2026-04-09T14:07:45.173Z",
         "archivedAt": "2026-04-07T09:00:00.000Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/api-gateway/tests/unit/circuit-breaker.test.ts",
+      "lastFile": "/data/ai-saas/platform/services/api-gateway/tests/integration/gateway-security.test.ts",
       "qualityEnhancement": {
         "previousMatchRate": "81.8%",
         "enhancedMatchRate": "100%",
@@ -278,10 +281,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:47:08.863Z",
-        "lastUpdated": "2026-04-07T12:51:11.500Z",
+        "lastUpdated": "2026-04-09T14:17:28.444Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/ai-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/ai-service/tests/integration/ai-security.test.ts"
     },
     "audit-service": {
       "phase": "do",
@@ -299,10 +302,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:47:23.809Z",
-        "lastUpdated": "2026-04-07T12:50:45.302Z",
+        "lastUpdated": "2026-04-09T14:15:05.686Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/audit-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/audit-service/tests/integration/audit-analytics.test.ts"
     },
     "menu-service": {
       "phase": "do",
@@ -320,10 +323,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:36:21.565Z",
-        "lastUpdated": "2026-04-07T22:34:51.938Z",
+        "lastUpdated": "2026-04-09T13:50:17.139Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/menu-service/src/handlers/menu.handler.ts"
+      "lastFile": "/data/ai-saas/platform/services/menu-service/src/routes.ts"
     },
     "catalog-service": {
       "phase": "do",
@@ -341,10 +344,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:36:59.353Z",
-        "lastUpdated": "2026-04-07T22:35:08.713Z",
+        "lastUpdated": "2026-04-09T13:50:06.758Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/catalog-service/src/handlers/catalog.handler.ts"
+      "lastFile": "/data/ai-saas/platform/services/catalog-service/src/routes.ts"
     },
     "subscription-service": {
       "phase": "do",
@@ -362,10 +365,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:37:30.366Z",
-        "lastUpdated": "2026-04-07T22:34:20.635Z",
+        "lastUpdated": "2026-04-09T13:50:01.049Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/subscription-service/src/handlers/subscription.handler.ts"
+      "lastFile": "/data/ai-saas/platform/services/subscription-service/src/routes.ts"
     },
     "billing-service": {
       "phase": "do",
@@ -383,10 +386,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:38:14.606Z",
-        "lastUpdated": "2026-04-07T22:33:44.400Z",
+        "lastUpdated": "2026-04-09T13:49:41.436Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/billing-service/src/handlers/billing.handler.ts"
+      "lastFile": "/data/ai-saas/platform/services/billing-service/src/routes.ts"
     },
     "crm-service": {
       "phase": "do",
@@ -404,10 +407,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:39:00.296Z",
-        "lastUpdated": "2026-04-07T22:33:09.649Z",
+        "lastUpdated": "2026-04-09T13:49:52.944Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/crm-service/src/handlers/crm.handler.ts"
+      "lastFile": "/data/ai-saas/platform/services/crm-service/src/routes.ts"
     },
     "notification-service": {
       "phase": "do",
@@ -425,10 +428,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:40:24.293Z",
-        "lastUpdated": "2026-04-07T12:51:58.534Z",
+        "lastUpdated": "2026-04-09T14:40:36.093Z",
         "archivedAt": "2026-04-07T09:00:00.000Z"
       },
-      "lastFile": "/data/ai-saas/platform/services/notification-service/src/index.ts",
+      "lastFile": "/data/ai-saas/platform/services/notification-service/tests/integration/notification-enhancements.test.ts",
       "qualityEnhancement": {
         "previousMatchRate": "80%",
         "enhancedMatchRate": "100%",
@@ -456,10 +459,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:40:57.046Z",
-        "lastUpdated": "2026-04-07T14:01:01.974Z",
+        "lastUpdated": "2026-04-09T13:50:10.013Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/file-service/tests/unit/file-csap.test.ts"
+      "lastFile": "/data/ai-saas/platform/services/file-service/src/routes.ts"
     },
     "compliance-service": {
       "phase": "do",
@@ -477,10 +480,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:51:28.065Z",
-        "lastUpdated": "2026-04-07T12:51:50.722Z",
+        "lastUpdated": "2026-04-09T13:50:30.877Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/compliance-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/compliance-service/src/routes.ts"
     },
     "security-service": {
       "phase": "do",
@@ -498,10 +501,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:51:48.809Z",
-        "lastUpdated": "2026-04-07T12:52:04.868Z",
+        "lastUpdated": "2026-04-09T13:50:37.744Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/security-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/security-service/src/routes.ts"
     },
     "portal": {
       "phase": "do",
@@ -519,10 +522,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:53:26.213Z",
-        "lastUpdated": "2026-04-07T12:17:09.380Z",
+        "lastUpdated": "2026-04-09T00:17:43.712Z",
         "archivedAt": "2026-04-07T09:35:55.082196Z"
       },
-      "lastFile": "/data/ai-saas/platform/apps/portal/next.config.ts"
+      "lastFile": "/data/ai-saas/platform/apps/portal/src/lib/auth-guard.ts"
     },
     "security-monitor-service": {
       "phase": "do",
@@ -540,10 +543,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:54:00.942Z",
-        "lastUpdated": "2026-04-07T12:52:13.883Z",
+        "lastUpdated": "2026-04-09T22:08:13.575Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/security-monitor-service/src/index.ts"
+      "lastFile": "/data/ai-saas/platform/services/security-monitor-service/src/routes.ts"
     },
     "business-sdk": {
       "phase": "archived",
@@ -598,17 +601,17 @@
       "lastFile": "/data/ai-saas/platform/tests/load/load-test.ts"
     },
     "ai-saas": {
-      "phase": "archived",
-      "phaseNumber": 7,
+      "phase": "do",
+      "phaseNumber": 3,
       "matchRate": null,
       "iterationCount": 0,
       "requirements": [],
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T15:22:18.341Z",
-        "lastUpdated": "2026-04-07T09:35:55.082196Z"
+        "lastUpdated": "2026-04-09T14:05:52.338Z"
       },
-      "lastFile": "/data/ai-saas/playwright.config.ts"
+      "lastFile": "/data/ai-saas/commitlint.config.js"
     },
     "seed": {
       "phase": "do",
@@ -619,7 +622,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T15:22:21.505Z",
-        "lastUpdated": "2026-04-07T12:16:42.712Z"
+        "lastUpdated": "2026-04-09T00:17:50.388Z"
       },
       "lastFile": "/data/ai-saas/prisma/seed/index.ts"
     },
@@ -884,6 +887,84 @@
         "lastUpdated": "2026-04-07T16:10:43.807Z"
       },
       "lastFile": "/data/ai-saas/platform/tests/e2e/scenarios/ai-data-grade.e2e.test.ts"
+    },
+    "MTU-N21": {
+      "phase": "archived",
+      "phaseNumber": 7,
+      "matchRate": "100%",
+      "iterationCount": 0,
+      "description": "WSL DevOps 환경 완전 구축 (k3s+Gitea+Harbor+Flux+Prometheus)",
+      "timestamps": {
+        "started": "2026-04-08T19:20:00.000Z",
+        "lastUpdated": "2026-04-08T19:58:00.000Z",
+        "completedAt": "2026-04-08T19:48:00.000Z",
+        "archivedAt": "2026-04-08T19:58:00.000Z"
+      }
+    },
+    "MTU-N22": {
+      "phase": "archived",
+      "phaseNumber": 7,
+      "matchRate": "92.3%",
+      "iterationCount": 0,
+      "description": "DevOps 파이프라인 통합 테스트 (28개 테스트, 24 PASS)",
+      "timestamps": {
+        "started": "2026-04-08T19:35:00.000Z",
+        "lastUpdated": "2026-04-08T19:58:00.000Z",
+        "completedAt": "2026-04-08T19:48:00.000Z",
+        "archivedAt": "2026-04-08T19:58:00.000Z"
+      }
+    },
+    "MTU-N23": {
+      "phase": "archived",
+      "phaseNumber": 7,
+      "matchRate": "100%",
+      "iterationCount": 0,
+      "description": "WSL DevOps 완전 가이드 문서 (3개 문서, 850줄+)",
+      "timestamps": {
+        "started": "2026-04-08T19:40:00.000Z",
+        "lastUpdated": "2026-04-08T19:58:00.000Z",
+        "completedAt": "2026-04-08T19:48:00.000Z",
+        "archivedAt": "2026-04-08T19:58:00.000Z"
+      }
+    },
+    "kunkin": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-09T00:11:57.319Z",
+        "lastUpdated": "2026-04-09T00:11:57.319Z"
+      },
+      "lastFile": "/home/kunkin/disk-optimize.sh"
+    },
+    "browser": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-09T13:43:59.642Z",
+        "lastUpdated": "2026-04-09T13:43:59.642Z"
+      },
+      "lastFile": "/data/ai-saas/tests/browser/playwright.config.js"
+    },
+    "specs": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-09T13:46:41.018Z",
+        "lastUpdated": "2026-04-09T14:04:19.139Z"
+      },
+      "lastFile": "/data/ai-saas/tests/browser/specs/grafana-monitoring.spec.js"
     }
   },
   "pipeline": {
@@ -894,7 +975,7 @@
   "session": {
     "startedAt": "2026-04-05T05:33:14.156Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-04-08T06:10:40.753Z"
+    "lastActivity": "2026-04-09T22:08:13.576Z"
   },
   "history": [
     {
@@ -5442,6 +5523,972 @@
     {
       "timestamp": "2026-04-08T06:10:40.752Z",
       "feature": "unit",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T10:44:50.911Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T10:45:08.678Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T10:45:13.386Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T10:45:17.462Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T10:45:27.511Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T10:55:31.627Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T11:07:52.741Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T11:08:08.118Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T11:08:16.181Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T11:08:51.385Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T11:09:08.974Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T13:45:00.016Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T13:45:19.320Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T13:45:51.531Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T13:45:54.145Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T13:48:09.002Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T13:48:38.110Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T13:49:16.993Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-08T14:05:44.018Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:01:00.296Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:03:27.384Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:03:30.896Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:03:34.729Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:03:40.150Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:10:19.974Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:11:57.321Z",
+      "feature": "kunkin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:17:26.210Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:17:35.748Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:17:43.713Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:17:50.389Z",
+      "feature": "seed",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:18:45.489Z",
+      "feature": "billing-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:18:56.699Z",
+      "feature": "billing-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:19:06.553Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:19:12.144Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:19:18.120Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:19:29.118Z",
+      "feature": "catalog-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:19:34.204Z",
+      "feature": "file-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:19:39.422Z",
+      "feature": "menu-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:19:50.720Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:19:56.307Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:20:01.735Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:20:09.156Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:20:18.170Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:20:23.846Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:20:35.706Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:20:42.261Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:20:48.850Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T00:21:02.135Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:43:59.644Z",
+      "feature": "browser",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:46:41.019Z",
+      "feature": "specs",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:47:29.082Z",
+      "feature": "specs",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:48:01.494Z",
+      "feature": "specs",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:48:48.807Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:48:57.780Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:49:08.614Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:49:15.749Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:49:28.396Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:49:33.818Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:49:35.980Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:49:39.236Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:49:41.437Z",
+      "feature": "billing-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:49:47.612Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:49:50.840Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:49:52.945Z",
+      "feature": "crm-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:50:01.051Z",
+      "feature": "subscription-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:50:06.760Z",
+      "feature": "catalog-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:50:10.018Z",
+      "feature": "file-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:50:11.583Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:50:17.141Z",
+      "feature": "menu-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:50:23.815Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:50:26.545Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:50:30.878Z",
+      "feature": "compliance-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:50:37.746Z",
+      "feature": "security-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:50:40.928Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:50:43.194Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:50:49.742Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:50:56.759Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:51:02.650Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:51:13.286Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:51:32.657Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:51:39.024Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:51:47.153Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:52:49.091Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:52:58.582Z",
+      "feature": "specs",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:53:21.201Z",
+      "feature": "auth-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T13:57:04.535Z",
+      "feature": "specs",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:00:10.607Z",
+      "feature": "specs",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:04:19.141Z",
+      "feature": "specs",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:05:52.339Z",
+      "feature": "ai-saas",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:06:04.119Z",
+      "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:06:17.753Z",
+      "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:06:25.778Z",
+      "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:06:30.464Z",
+      "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:06:37.806Z",
+      "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:06:46.040Z",
+      "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:06:52.807Z",
+      "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:07:02.095Z",
+      "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:07:22.139Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:07:45.176Z",
+      "feature": "api-gateway",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:09:05.801Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:09:55.578Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:11:40.370Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:11:47.807Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:12:15.391Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:12:21.868Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:12:29.288Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:13:04.378Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:13:17.686Z",
+      "feature": "tenant-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:14:37.562Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:14:43.268Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:14:49.116Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:15:05.687Z",
+      "feature": "audit-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:15:56.124Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:16:14.617Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:16:26.008Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:16:33.862Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:16:44.612Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:16:55.917Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:17:28.446Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:18:36.643Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:19:12.677Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:19:45.101Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:20:02.412Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:20:17.651Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:21:07.601Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:23:21.940Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:23:46.389Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:24:23.930Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:26:54.900Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:29:24.879Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:29:42.881Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:29:56.858Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:30:07.292Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:30:20.130Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:30:29.208Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:30:39.838Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:30:49.012Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:30:57.274Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:31:07.261Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:31:14.658Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:31:42.628Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:31:58.468Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:32:35.322Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:32:43.876Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:33:00.754Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:33:23.788Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:34:06.189Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:34:43.166Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:35:30.070Z",
+      "feature": "user-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:35:45.430Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:37:11.380Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:38:37.592Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:39:05.895Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:39:16.448Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:39:41.795Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T14:40:36.094Z",
+      "feature": "notification-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T22:06:57.014Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T22:07:06.399Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T22:07:32.907Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T22:07:51.587Z",
+      "feature": "security-monitor-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-09T22:08:13.576Z",
+      "feature": "security-monitor-service",
       "phase": "do",
       "action": "updated"
     }

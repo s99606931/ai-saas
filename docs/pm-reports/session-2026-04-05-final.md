@@ -85,7 +85,7 @@
 
 - **문서 프레임워크**: docs/framework/ (9개 디렉토리, 50+ 파일)
 - **플랫폼 코드**: platform/ (16개 서비스, 5개 패키지, 1개 포털)
-- **감리 산출물**: docs/framework/06-audit-compliance/templates/ (T01~T07)
+- **감리 산출물**: docs/framework/07-audit-compliance/templates/ (T01~T07)
 - **아카이브**: docs/archive/2026-04/ (60개 MTU 디렉토리)
 
 ---

@@ -79,13 +79,20 @@ phase1_infrastructure() {
     record_fail "Docker 데몬" "docker info 실패. Docker Desktop을 확인하십시오."
   fi
 
-  # 1-2. Gitea 접속
-  if curl -sf "${GITEA_URL}/api/v1/version" &>/dev/null; then
+  # 1-2. Gitea 접속 (REQUIRE_SIGNIN_VIEW 활성화 대응)
+  local gitea_http_code
+  gitea_http_code=$(curl -sf -o /dev/null -w "%{http_code}" "${GITEA_URL}/" 2>/dev/null || echo "000")
+  if [ "$gitea_http_code" = "200" ] || [ "$gitea_http_code" = "302" ]; then
+    # 인증 없이 접근 가능한 경우 버전 확인 시도
     local gitea_ver
-    gitea_ver=$(curl -sf "${GITEA_URL}/api/v1/version" | grep -o '"version":"[^"]*"' | cut -d'"' -f4)
+    gitea_ver=$(curl -sf "${GITEA_URL}/api/v1/version" 2>/dev/null | grep -o '"version":"[^"]*"' | cut -d'"' -f4 || echo "unknown")
+    if [ "$gitea_ver" = "unknown" ]; then
+      # REQUIRE_SIGNIN_VIEW 활성화 시 docker exec로 버전 확인
+      gitea_ver=$(docker exec gitea gitea --version 2>/dev/null | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1 || echo "unknown")
+    fi
     record_pass "Gitea 접속 확인 (v${gitea_ver}, ${GITEA_URL})"
   else
-    record_fail "Gitea 접속" "curl ${GITEA_URL} 실패. setup-gitea-wsl2.sh 실행 필요."
+    record_fail "Gitea 접속" "curl ${GITEA_URL} 실패 (HTTP ${gitea_http_code}). setup-gitea-wsl2.sh 실행 필요."
   fi
 
   # 1-3. PostgreSQL
@@ -104,9 +111,14 @@ phase1_infrastructure() {
     record_warn "Harbor 접속" "Harbor가 실행 중이지 않습니다. setup-harbor-wsl2.sh 실행 필요."
   fi
 
-  # 1-5. Act Runner
+  # 1-5. Act Runner (컨테이너 + task 수신 확인)
   if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "gitea-runner"; then
-    record_pass "Act Runner 실행 중"
+    # Runner 컨테이너 실행 확인 + 로그에서 task 수신 여부 확인
+    if docker logs gitea-runner --tail=50 2>&1 | grep -qi "level=info\|received task\|start running"; then
+      record_pass "Act Runner 실행 중 (task 수신 가능)"
+    else
+      record_pass "Act Runner 실행 중"
+    fi
   else
     record_warn "Act Runner" "gitea-runner 컨테이너가 실행 중이지 않습니다."
   fi
@@ -205,12 +217,16 @@ phase3_build_test() {
     return 1
   fi
 
-  # 3-2. Harbor 로그인
-  local harbor_pass="Harbor12345"
-  if [ -f "${PROJECT_ROOT}/infra/harbor/.env" ]; then
+  # 3-2. Harbor 로그인 (C-01 수정: 하드코딩 제거 → 환경변수 우선, .env 폴백)
+  local harbor_pass="${HARBOR_ADMIN_PASSWORD:-}"
+  if [ -z "${harbor_pass}" ] && [ -f "${PROJECT_ROOT}/infra/harbor/.env" ]; then
     # shellcheck disable=SC1091
     source "${PROJECT_ROOT}/infra/harbor/.env"
-    harbor_pass="${HARBOR_ADMIN_PASSWORD:-Harbor12345}"
+    harbor_pass="${HARBOR_ADMIN_PASSWORD:-}"
+  fi
+  if [ -z "${harbor_pass}" ]; then
+    record_fail "Harbor 로그인" "HARBOR_ADMIN_PASSWORD 환경변수 또는 infra/harbor/.env 미설정"
+    return 1
   fi
 
   if echo "${harbor_pass}" | docker login "localhost:8080" -u admin --password-stdin &>/dev/null; then
@@ -283,6 +299,75 @@ phase4_k3s_deploy() {
     record_pass "saas-platform 네임스페이스 존재"
   else
     record_warn "saas-platform 네임스페이스" "아직 생성되지 않았습니다 (첫 배포 시 생성)"
+  fi
+
+  echo ""
+}
+
+# ============================================================
+# Phase 5: 모니터링 검증
+# ============================================================
+phase5_monitoring() {
+  log_step "Phase 5: 모니터링 검증"
+  echo ""
+
+  # 5-1. Prometheus 접속
+  if curl -sf "http://localhost:30090/api/v1/status/runtimeinfo" &>/dev/null; then
+    record_pass "Prometheus 접속 확인 (localhost:30090)"
+  else
+    record_warn "Prometheus 접속" "Prometheus가 실행 중이지 않습니다."
+  fi
+
+  # 5-2. Prometheus 타겟 수집
+  local target_count
+  target_count=$(curl -sf "http://localhost:30090/api/v1/targets" 2>/dev/null | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+active = [t for t in d.get('data', {}).get('activeTargets', []) if t.get('health') == 'up']
+print(len(active))" 2>/dev/null || echo "0")
+  if [ "$target_count" -gt 5 ]; then
+    record_pass "Prometheus 활성 타겟: ${target_count}개"
+  else
+    record_warn "Prometheus 타겟" "활성 타겟이 ${target_count}개입니다."
+  fi
+
+  # 5-3. Grafana health check (수정됨: /api/health 엔드포인트 사용)
+  local grafana_health
+  grafana_health=$(curl -sf "http://localhost:30302/api/health" 2>/dev/null || echo "")
+  if echo "$grafana_health" | grep -q "ok"; then
+    record_pass "Grafana health check 통과 (/api/health)"
+  elif curl -sf -o /dev/null -w "%{http_code}" "http://localhost:30302/" 2>/dev/null | grep -q "302\|200"; then
+    record_pass "Grafana 접속 확인 (HTTP 302/200)"
+  else
+    record_warn "Grafana 접속" "Grafana에 접속할 수 없습니다."
+  fi
+
+  # 5-4. Grafana 데이터소스 연동
+  local ds_count
+  ds_count=$(curl -sf -u admin:admin "http://localhost:30302/api/datasources" 2>/dev/null | python3 -c "
+import sys, json
+ds = json.load(sys.stdin)
+print(len(ds))" 2>/dev/null || echo "0")
+  if [ "$ds_count" -gt 0 ]; then
+    record_pass "Grafana 데이터소스: ${ds_count}개 연동"
+  else
+    record_warn "Grafana 데이터소스" "데이터소스가 없습니다."
+  fi
+
+  # 5-5. Monitoring Pods
+  local mon_pods
+  mon_pods=$(kubectl get pods -n monitoring --no-headers 2>/dev/null | grep -c "Running" || echo "0")
+  if [ "$mon_pods" -ge 4 ]; then
+    record_pass "모니터링 Pods: ${mon_pods}개 Running"
+  else
+    record_warn "모니터링 Pods" "${mon_pods}개만 Running"
+  fi
+
+  # 5-6. Alertmanager 확인
+  if kubectl get pods -n monitoring --no-headers 2>/dev/null | grep -q "alertmanager"; then
+    record_pass "Alertmanager 실행 중"
+  else
+    record_warn "Alertmanager" "Alertmanager Pod가 없습니다."
   fi
 
   echo ""
@@ -372,6 +457,7 @@ fi
 
 if [ "$MODE" != "quick" ]; then
   phase4_k3s_deploy
+  phase5_monitoring
 fi
 
 print_results

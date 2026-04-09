@@ -52,7 +52,7 @@
 | 자동 증적 보고서 생성 | `05-isms-p/auto-evidence-collection.md` | 구현 가이드형 | 보고서 자동 생성 파이프라인, 심사 패키지 |
 
 > **경로 참고**: Plan 문서에는 `05-isms-p/`로 기재되어 있으나, 기존 프레임워크 구조상
-> `docs/framework/04-isms-p/` 하위에 배치합니다 (MTU-C6a/C6b 산출물과 동일 경로).
+> `docs/framework/03-isms-p/` 하위에 배치합니다 (MTU-C6a/C6b 산출물과 동일 경로).
 
 ### 2.1 산출물 간 의존 관계
 
@@ -274,7 +274,7 @@ MTU-E1 (본 MTU: 완성 가이드)
 ### 6.1 File Structure
 
 ```
-docs/framework/04-isms-p/
+docs/framework/03-isms-p/
 ├── management-controls/          (MTU-C6a 기존)
 ├── protection-controls/          (MTU-C6b 기존)
 ├── privacy-controls/             (MTU-C6b 기존)

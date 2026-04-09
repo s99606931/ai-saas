@@ -25,12 +25,12 @@
 
 | 파일 | 크기 | N2SF 영역 | CSAP 역참조 수 |
 |------|------|---------|-------------|
-| `03-n2sf/domains/N01-management-security.md` | 8.8KB | N01 관리적 보안 | D01(4) + D02(3) + D03(4) = 11 |
-| `03-n2sf/domains/N02-authentication.md` | 10.5KB | N02 인증 | D08(12) = 12 전수 |
-| `03-n2sf/domains/N03-isolation.md` | 15.2KB | N03 격리 | D10(3) + D08(2) = 5 |
-| `03-n2sf/domains/N04-encryption.md` | 10.5KB | N04 암호화 | D09(4) = 4 전수 |
-| `03-n2sf/domains/N05-data.md` | 12.4KB | N05 데이터 | D04(5) + D13(4) = 9 |
-| `03-n2sf/domains/N06-operations.md` | 13.2KB | N06 운영 | D06(5) + D07(3) + D12(3) = 11 |
+| `04-n2sf/domains/N01-management-security.md` | 8.8KB | N01 관리적 보안 | D01(4) + D02(3) + D03(4) = 11 |
+| `04-n2sf/domains/N02-authentication.md` | 10.5KB | N02 인증 | D08(12) = 12 전수 |
+| `04-n2sf/domains/N03-isolation.md` | 15.2KB | N03 격리 | D10(3) + D08(2) = 5 |
+| `04-n2sf/domains/N04-encryption.md` | 10.5KB | N04 암호화 | D09(4) = 4 전수 |
+| `04-n2sf/domains/N05-data.md` | 12.4KB | N05 데이터 | D04(5) + D13(4) = 9 |
+| `04-n2sf/domains/N06-operations.md` | 13.2KB | N06 운영 | D06(5) + D07(3) + D12(3) = 11 |
 
 **총 산출물**: 6개 파일, 70.6KB
 

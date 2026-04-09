@@ -299,7 +299,7 @@ cosign verify --key cosign.pub myregistry/myapp:latest
 crictl rmi --prune
 ```
 
-> 상세 이미지 서명/검증 절차: MTU-C8 [`07-infra/supply-chain/sigstore-signing.md`](../../../07-infra/supply-chain/sigstore-signing.md)
+> 상세 이미지 서명/검증 절차: MTU-C8 [`08-infra/supply-chain/sigstore-signing.md`](../../../08-infra/supply-chain/sigstore-signing.md)
 
 ### 필요 증거 자료
 

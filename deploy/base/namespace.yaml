@@ -1,0 +1,7 @@
+# Design Ref: MTU-N41 Design S3
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: saas-platform
+  labels:
+    app.kubernetes.io/part-of: saas-platform

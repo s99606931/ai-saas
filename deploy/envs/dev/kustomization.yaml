@@ -1,0 +1,32 @@
+# =============================================================================
+# Dev 환경 Kustomize Overlay
+# Design Ref: MTU-N41 Design S3
+# Plan SC: FR-N41.2
+# N2SF 등급: O (공개) -- 최소 보안 정책
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: saas-dev
+
+resources:
+  - ../../base
+
+patches:
+  - path: patches/namespace-override.yaml
+
+# Dev 환경 설정
+commonLabels:
+  environment: dev
+  n2sf.security/grade: "O"
+
+# 이미지 태그 override (dev 환경)
+images:
+  - name: localhost:8080/public-saas/api-gateway
+    newTag: dev-latest
+  - name: localhost:8080/public-saas/auth-service
+    newTag: dev-latest
+  - name: localhost:8080/public-saas/user-service
+    newTag: dev-latest
+  - name: localhost:8080/public-saas/tenant-service
+    newTag: dev-latest

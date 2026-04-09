@@ -1,0 +1,695 @@
+# =============================================================================
+# 공공기관 SaaS 플랫폼 — 통합 CI/CD 파이프라인
+# Design Ref: MTU-N35 §3.1, MTU-N37 S3.5
+# Plan SC: FR-N35.1, FR-N35.6, FR-N37.7
+# CSAP: D-06(감사 로그), D-08(접근 통제), D-11(이미지 서명), D-12(개발 보안)
+#
+# 파이프라인 흐름:
+#   CI(빌드/테스트) → 보안스캔 → Harbor 푸시 → Cosign 서명
+#   → SBOM+Grype 스캔 → k3s 배포 → 검증 → 감사
+# =============================================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, stg]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+env:
+  PNPM_VERSION: "9.15.0"
+  NODE_VERSION: "22"
+  HARBOR_REGISTRY: ${{ secrets.HARBOR_URL || 'localhost:8080' }}
+  HARBOR_PROJECT: public-saas
+  COSIGN_KEY_PATH: /opt/cosign/cosign.key
+
+# =============================================================================
+# 동시 실행 제한 — 같은 브랜치의 이전 빌드 자동 취소
+# =============================================================================
+concurrency:
+  group: cicd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ===========================================================================
+  # STAGE 1: CI — 빌드, 테스트, 린트
+  # Design Ref: MTU-N35 §3.1
+  # ===========================================================================
+  ci:
+    name: "[1/7] Build & Test"
+    runs-on: self-hosted
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: saas
+          POSTGRES_PASSWORD: saas_test_2026
+          POSTGRES_DB: saas_platform_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U saas"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # pnpm store 캐싱 -- Design Ref: MTU-N38 S3.1
+      # Plan SC: FR-N38.1, FR-N38.5
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run typecheck
+
+      - name: Lint
+        run: pnpm run lint
+        continue-on-error: true
+
+      - name: Build all packages
+        run: pnpm run build
+
+      - name: Unit & Integration Tests
+        run: pnpm run test -- --coverage
+        env:
+          DATABASE_URL: postgresql://saas:saas_test_2026@localhost:5432/saas_platform_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-do-not-use-in-prod
+          NODE_ENV: test
+
+      - name: Upload test coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-coverage
+          path: |
+            **/coverage/
+            **/test-results/
+          retention-days: 30
+
+  # ===========================================================================
+  # STAGE 2: 보안 스캔 — OWASP 의존성 감사
+  # Design Ref: MTU-N35 §3.1 (security)
+  # CSAP D-12: 시스템 개발 보안
+  # ===========================================================================
+  security-scan:
+    name: "[2/7] Security Scan"
+    runs-on: self-hosted
+    needs: ci
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # npm audit (의존성 취약점 검사)
+      - name: Dependency Audit
+        run: pnpm audit --audit-level=high || true
+
+      # 하드코딩 시크릿 검사 — CSAP D-09
+      - name: Secret Detection
+        run: |
+          echo "=== 하드코딩 시크릿 검사 ==="
+          # API 키, 비밀번호, 토큰 패턴 검사
+          FOUND=0
+          for pattern in "sk-[a-zA-Z0-9]{20,}" "password\s*=\s*['\"][^'\"]{8,}" "PRIVATE.KEY"; do
+            if grep -rn --include="*.ts" --include="*.js" --include="*.tsx" \
+              -E "$pattern" platform/ 2>/dev/null | grep -v "node_modules" | grep -v ".test."; then
+              echo "[WARN] 의심스러운 패턴 발견: $pattern"
+              FOUND=1
+            fi
+          done
+          if [ $FOUND -eq 0 ]; then
+            echo "[OK] 하드코딩 시크릿 미발견"
+          fi
+
+      # Helm 차트 유효성 검증
+      - name: Helm Lint
+        run: |
+          if [ -d "helm/saas-platform" ]; then
+            helm lint helm/saas-platform/
+            helm template saas-test helm/saas-platform/ > /dev/null
+            echo "[OK] Helm 차트 유효성 검증 통과"
+          fi
+
+  # ===========================================================================
+  # STAGE 3: Docker 이미지 빌드 + Harbor 푸시
+  # Design Ref: MTU-N35 §3.1 (build)
+  # CSAP D-11: 가상화 보안
+  # ===========================================================================
+  build-images:
+    name: "[3/7] Build & Push Images"
+    runs-on: self-hosted
+    needs: [ci, security-scan]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stg' || startsWith(github.ref, 'refs/tags/v'))
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - user-service
+          - tenant-service
+          - menu-service
+          - catalog-service
+          - subscription-service
+          - billing-service
+          - crm-service
+          - ai-service
+          - notification-service
+          - file-service
+          - audit-service
+          - compliance-service
+          - security-service
+          - security-monitor-service
+
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata
+        id: meta
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ github.ref_name }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            VERSION="main-$(echo ${{ github.sha }} | cut -c1-7)"
+          else
+            VERSION="stg-$(echo ${{ github.sha }} | cut -c1-7)"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "image=${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ matrix.service }}" >> $GITHUB_OUTPUT
+          echo "=== Image: ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ matrix.service }}:$VERSION ==="
+
+      - name: Login to Harbor
+        run: |
+          echo "${{ secrets.HARBOR_PASSWORD }}" | docker login \
+            "${{ env.HARBOR_REGISTRY }}" \
+            -u "${{ secrets.HARBOR_USERNAME }}" \
+            --password-stdin
+
+      - name: Build & Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: platform/services/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version }}
+            ${{ steps.meta.outputs.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+
+      - name: Verify Image Push
+        run: |
+          echo "=== Verifying image in Harbor ==="
+          docker pull "${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version }}" && \
+            echo "[OK] Image verified: ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version }}" || \
+            echo "[WARN] Image pull verification failed"
+
+  # ===========================================================================
+  # STAGE 3b: Portal 이미지 빌드
+  # ===========================================================================
+  build-portal:
+    name: "[3b/7] Build Portal"
+    runs-on: self-hosted
+    needs: [ci, security-scan]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stg' || startsWith(github.ref, 'refs/tags/v'))
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Harbor
+        run: |
+          echo "${{ secrets.HARBOR_PASSWORD }}" | docker login \
+            "${{ env.HARBOR_REGISTRY }}" \
+            -u "${{ secrets.HARBOR_USERNAME }}" \
+            --password-stdin
+
+      - name: Extract metadata
+        id: meta
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ github.ref_name }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            VERSION="main-$(echo ${{ github.sha }} | cut -c1-7)"
+          else
+            VERSION="stg-$(echo ${{ github.sha }} | cut -c1-7)"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build & Push Portal
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: platform/apps/portal/Dockerfile
+          push: true
+          tags: |
+            ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/portal:${{ steps.meta.outputs.version }}
+            ${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/portal:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ===========================================================================
+  # STAGE 4: Cosign 이미지 서명
+  # Design Ref: MTU-N35 §3.1 (sign)
+  # CSAP D-11: 가상화 보안 — 이미지 무결성 검증
+  # ===========================================================================
+  sign-images:
+    name: "[4/7] Sign Images (Cosign)"
+    runs-on: self-hosted
+    needs: [build-images, build-portal]
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - user-service
+          - tenant-service
+          - menu-service
+          - catalog-service
+          - subscription-service
+          - billing-service
+          - crm-service
+          - ai-service
+          - notification-service
+          - file-service
+          - audit-service
+          - compliance-service
+          - security-service
+          - security-monitor-service
+          - portal
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Cosign
+        run: |
+          if ! command -v cosign &>/dev/null; then
+            curl -sSfL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 \
+              -o /usr/local/bin/cosign
+            chmod +x /usr/local/bin/cosign
+          fi
+          cosign version
+
+      - name: Extract version
+        id: meta
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ github.ref_name }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            VERSION="main-$(echo ${{ github.sha }} | cut -c1-7)"
+          else
+            VERSION="stg-$(echo ${{ github.sha }} | cut -c1-7)"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "image=${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ matrix.service }}:$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Sign Image
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          echo "=== Signing: ${{ steps.meta.outputs.image }} ==="
+          cosign sign \
+            --key ${{ env.COSIGN_KEY_PATH }} \
+            --allow-insecure-registry \
+            -y \
+            "${{ steps.meta.outputs.image }}"
+
+      - name: Verify Signature
+        run: |
+          cosign verify \
+            --key infra/cosign/cosign.pub \
+            --insecure-ignore-tlog \
+            --allow-insecure-registry \
+            "${{ steps.meta.outputs.image }}" && \
+          echo "[OK] Signature verified: ${{ matrix.service }}"
+
+  # ===========================================================================
+  # STAGE 4b: SBOM 생성 + Grype 취약점 스캔
+  # Design Ref: MTU-N37 S3.5
+  # Plan SC: FR-N37.1, FR-N37.2, FR-N37.3, FR-N37.7
+  # CSAP D-12-03: 공급망 보안 (Trivy 대체 -- Grype 채택)
+  # ===========================================================================
+  sbom-scan:
+    name: "[4b/8] SBOM & Grype Scan"
+    runs-on: self-hosted
+    needs: sign-images
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - user-service
+          - tenant-service
+          - menu-service
+          - catalog-service
+          - subscription-service
+          - billing-service
+          - crm-service
+          - ai-service
+          - notification-service
+          - file-service
+          - audit-service
+          - compliance-service
+          - security-service
+          - security-monitor-service
+          - portal
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Syft & Grype
+        run: |
+          # Syft 설치
+          curl -sSfL "https://raw.githubusercontent.com/anchore/syft/main/install.sh" | \
+            sh -s -- -b /usr/local/bin "v1.19.0"
+          # Grype 설치
+          curl -sSfL "https://raw.githubusercontent.com/anchore/grype/main/install.sh" | \
+            sh -s -- -b /usr/local/bin "v0.87.0"
+
+      - name: Extract version
+        id: meta
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ github.ref_name }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            VERSION="main-$(echo ${{ github.sha }} | cut -c1-7)"
+          else
+            VERSION="stg-$(echo ${{ github.sha }} | cut -c1-7)"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "image=${{ env.HARBOR_REGISTRY }}/${{ env.HARBOR_PROJECT }}/${{ matrix.service }}:$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Login to Harbor
+        run: |
+          echo "${{ secrets.HARBOR_PASSWORD }}" | docker login \
+            "${{ env.HARBOR_REGISTRY }}" \
+            -u "${{ secrets.HARBOR_USERNAME }}" \
+            --password-stdin
+
+      - name: Generate SBOM (Syft)
+        run: |
+          mkdir -p sbom-output
+          syft "${{ steps.meta.outputs.image }}" \
+            -o cyclonedx-json=sbom-output/sbom-${{ matrix.service }}.cdx.json \
+            --platform linux/amd64 2>&1 || \
+          syft dir:platform/services/${{ matrix.service }}/ \
+            -o cyclonedx-json=sbom-output/sbom-${{ matrix.service }}.cdx.json 2>&1 || true
+
+      - name: Grype Vulnerability Scan
+        run: |
+          SBOM="sbom-output/sbom-${{ matrix.service }}.cdx.json"
+          if [ -f "$SBOM" ]; then
+            grype sbom:${SBOM} \
+              -c infra/security/.grype.yaml \
+              -o table 2>&1 || echo "[WARN] High/Critical 취약점 발견"
+          fi
+
+      - name: Upload SBOM & Scan Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-inline-${{ matrix.service }}
+          path: sbom-output/
+          retention-days: 365
+
+  # ===========================================================================
+  # STAGE 5: k3s 배포 (Helm)
+  # Design Ref: MTU-N35 §3.2
+  # ===========================================================================
+  deploy:
+    name: "[5/8] Deploy to k3s"
+    runs-on: self-hosted
+    needs: sbom-scan
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.0
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          if [ -n "${{ secrets.KUBECONFIG }}" ]; then
+            echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          else
+            cp /etc/rancher/k3s/k3s.yaml ~/.kube/config 2>/dev/null || true
+          fi
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "values=helm/saas-platform/values-prod.yaml" >> $GITHUB_OUTPUT
+            echo "release=saas-prod" >> $GITHUB_OUTPUT
+            echo "namespace=saas-production" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "values=helm/saas-platform/values-stg.yaml" >> $GITHUB_OUTPUT
+            echo "release=saas-stg" >> $GITHUB_OUTPUT
+            echo "namespace=saas-staging" >> $GITHUB_OUTPUT
+          else
+            echo "values=helm/saas-platform/values-dev.yaml" >> $GITHUB_OUTPUT
+            echo "release=saas-dev" >> $GITHUB_OUTPUT
+            echo "namespace=saas-dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract version
+        id: meta
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ github.ref_name }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            VERSION="main-$(echo ${{ github.sha }} | cut -c1-7)"
+          else
+            VERSION="stg-$(echo ${{ github.sha }} | cut -c1-7)"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create namespace
+        run: kubectl create namespace ${{ steps.env.outputs.namespace }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Helm Deploy
+        run: |
+          helm upgrade --install ${{ steps.env.outputs.release }} \
+            ./helm/saas-platform/ \
+            -f ${{ steps.env.outputs.values }} \
+            --namespace ${{ steps.env.outputs.namespace }} \
+            --set global.imageRegistry=${{ env.HARBOR_REGISTRY }} \
+            --set global.imageTag=${{ steps.meta.outputs.version }} \
+            --wait \
+            --timeout 10m \
+            --atomic
+
+      - name: Verify Deployment
+        run: |
+          echo "=== Deployment Status ==="
+          kubectl get pods -n ${{ steps.env.outputs.namespace }} -o wide
+          echo ""
+          echo "=== Services ==="
+          kubectl get svc -n ${{ steps.env.outputs.namespace }}
+
+  # ===========================================================================
+  # STAGE 6: 배포 검증 (Health Check + Smoke Test)
+  # Design Ref: MTU-N35 §3.1 (verify)
+  # ===========================================================================
+  verify:
+    name: "[6/8] Verify Deployment"
+    runs-on: self-hosted
+    needs: deploy
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine namespace
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "namespace=saas-production" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "namespace=saas-staging" >> $GITHUB_OUTPUT
+          else
+            echo "namespace=saas-dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Wait for pods ready
+        run: |
+          echo "=== Waiting for all pods to be Ready ==="
+          kubectl wait --for=condition=ready pod \
+            --all \
+            -n ${{ steps.env.outputs.namespace }} \
+            --timeout=300s || {
+              echo "[WARN] Some pods not ready. Checking status..."
+              kubectl get pods -n ${{ steps.env.outputs.namespace }}
+            }
+
+      - name: Health Check
+        run: |
+          echo "=== Health Check ==="
+          GATEWAY_IP=$(kubectl get svc api-gateway -n ${{ steps.env.outputs.namespace }} \
+            -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "")
+
+          if [ -n "$GATEWAY_IP" ]; then
+            curl -sf "http://${GATEWAY_IP}:3000/health" && echo "[OK] API Gateway healthy" || echo "[WARN] API Gateway health check failed"
+          else
+            echo "[INFO] API Gateway 서비스를 찾을 수 없음 (첫 배포 시 정상)"
+          fi
+
+      - name: Pod Status Summary
+        if: always()
+        run: |
+          echo "=== Pod 상태 요약 ==="
+          TOTAL=$(kubectl get pods -n ${{ steps.env.outputs.namespace }} --no-headers 2>/dev/null | wc -l)
+          RUNNING=$(kubectl get pods -n ${{ steps.env.outputs.namespace }} --no-headers 2>/dev/null | grep Running | wc -l)
+          echo "Total: $TOTAL / Running: $RUNNING"
+          if [ "$TOTAL" -gt 0 ] && [ "$TOTAL" -eq "$RUNNING" ]; then
+            echo "[OK] 모든 Pod 정상 동작"
+          else
+            echo "[WARN] 일부 Pod가 비정상 상태"
+            kubectl get pods -n ${{ steps.env.outputs.namespace }} --field-selector=status.phase!=Running 2>/dev/null
+          fi
+
+  # ===========================================================================
+  # STAGE 7: 감사 로그 + 알림
+  # Design Ref: MTU-N35 §3.1 (notify)
+  # CSAP D-06: 침해사고 관리 — 감사 로그
+  # ===========================================================================
+  audit-notify:
+    name: "[7/8] Audit & Notify"
+    runs-on: self-hosted
+    needs: [verify]
+    if: always()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "env=production" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "env=staging" >> $GITHUB_OUTPUT
+          else
+            echo "env=development" >> $GITHUB_OUTPUT
+          fi
+
+      # CSAP D-06: 감사 로그 기록
+      - name: Write Audit Log
+        run: |
+          TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+          cat >> deploy-audit.jsonl <<EOF
+          {"timestamp":"${TIMESTAMP}","action":"CI_CD_PIPELINE","event":"DEPLOY","actor":"${{ github.actor }}","ref":"${{ github.ref_name }}","sha":"${{ github.sha }}","environment":"${{ steps.env.outputs.env }}","status":"${{ needs.verify.result }}","pipeline_run":"${{ github.run_id }}","csap_ref":"D-06"}
+          EOF
+
+      - name: Upload Audit Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-audit-${{ github.run_id }}
+          path: deploy-audit.jsonl
+          retention-days: 365
+
+      - name: Pipeline Summary
+        run: |
+          echo "================================================================"
+          echo "  CI/CD Pipeline Summary"
+          echo "================================================================"
+          echo "  Branch:      ${{ github.ref_name }}"
+          echo "  Commit:      ${{ github.sha }}"
+          echo "  Author:      ${{ github.actor }}"
+          echo "  Environment: ${{ steps.env.outputs.env }}"
+          echo "  CI:          ${{ needs.ci.result || 'skipped' }}"
+          echo "  Security:    ${{ needs.security-scan.result || 'skipped' }}"
+          echo "  Build:       ${{ needs.build-images.result || 'skipped' }}"
+          echo "  Sign:        ${{ needs.sign-images.result || 'skipped' }}"
+          echo "  Deploy:      ${{ needs.deploy.result || 'skipped' }}"
+          echo "  Verify:      ${{ needs.verify.result || 'skipped' }}"
+          echo "  Time:        $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "================================================================"

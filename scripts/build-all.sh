@@ -190,7 +190,8 @@ if [ "${PUSH_TO_HARBOR}" = true ]; then
   if [ -f "${PROJECT_ROOT}/infra/harbor/.env" ]; then
     # shellcheck disable=SC1091
     source "${PROJECT_ROOT}/infra/harbor/.env"
-    echo "${HARBOR_ADMIN_PASSWORD:-Harbor12345}" | docker login "localhost:8080" -u admin --password-stdin 2>/dev/null || {
+    # C-01 수정: Harbor12345 기본값 제거 — HARBOR_ADMIN_PASSWORD 환경변수 필수
+    echo "${HARBOR_ADMIN_PASSWORD:?오류: HARBOR_ADMIN_PASSWORD 환경변수를 설정하세요}" | docker login "localhost:8080" -u admin --password-stdin 2>/dev/null || {
       log_error "Harbor 로그인 실패"
       exit 1
     }

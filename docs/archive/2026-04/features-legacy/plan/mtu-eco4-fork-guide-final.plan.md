@@ -40,8 +40,8 @@
 | 산출물 | 경로 | 형식 |
 |--------|------|------|
 | FORK-GUIDE 확장 | `FORK-GUIDE.md` (기존 파일 확장) | Markdown |
-| 현장 적용 체크리스트 | `docs/framework/05-ecosystem/deployment-checklist.md` | Markdown |
-| 트러블슈팅/FAQ | `docs/framework/05-ecosystem/troubleshooting-faq.md` | Markdown |
+| 현장 적용 체크리스트 | `docs/framework/06-ecosystem/deployment-checklist.md` | Markdown |
+| 트러블슈팅/FAQ | `docs/framework/06-ecosystem/troubleshooting-faq.md` | Markdown |
 
 ## 변경 이력
 

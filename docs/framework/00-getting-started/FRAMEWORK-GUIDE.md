@@ -33,16 +33,16 @@
 | **시작 가이드** | `00-getting-started/` | 4 | 역할별 진입점, 사전 요건 |
 | **개발 표준** | `01-dev-standards/` | 4 | 코딩 스타일, 문서 템플릿, 리뷰 기준 |
 | **CSAP 인증** | `02-csap/` | 16 | CSAP 일반·표준등급 체크리스트, D01~D13 구현 가이드 |
-| **N2SF 보안** | `03-n2sf/` | 8 | 데이터 등급 분류, 6개 영역 통제, CSAP 매핑 |
-| **ISMS-P** | `04-isms-p/` | 10 | 101항목 체크리스트, 증적 자동화, 2027 의무화 대비 |
+| **N2SF 보안** | `04-n2sf/` | 8 | 데이터 등급 분류, 6개 영역 통제, CSAP 매핑 |
+| **ISMS-P** | `03-isms-p/` | 10 | 101항목 체크리스트, 증적 자동화, 2027 의무화 대비 |
 | **감리 산출물 T01~T02** | `05-audit-docs/` | 2 | 사업계획서, 요구사항정의서 (원본 참조) |
-| **감리 산출물 T03~T07** | `06-audit-compliance/` | 8 | 설계서, 테스트, 추적성, 결함관리대장, 감리 체크리스트 |
-| **인프라** | `07-infra/` | 20 | k3s, GitOps, CI/CD, Harbor, 네트워크 정책, OTel |
-| **AI 연동** | `08-ai-integration/` | 5 | AI 보안 게이트웨이, LM Studio, MCP, 데이터 마스킹 |
-| **CC 하네스** | `09-cc-harness/` | 1 | Claude Code 하네스 검증 절차 |
-| **멀티테넌시** | `10-multitenancy/` | 3 | 테넌트 격리, 온보딩 자동화 |
-| **문서 포털** | `11-documentation-portal/` | 2 | Docusaurus 설치, 콘텐츠 구성 |
-| **준수 대시보드** | `12-compliance-dashboard/` | 2 | Grafana CSAP/N2SF 실시간 현황 |
+| **감리 산출물 T03~T07** | `07-audit-compliance/` | 8 | 설계서, 테스트, 추적성, 결함관리대장, 감리 체크리스트 |
+| **인프라** | `08-infra/` | 20 | k3s, GitOps, CI/CD, Harbor, 네트워크 정책, OTel |
+| **AI 연동** | `09-ai-integration/` | 5 | AI 보안 게이트웨이, LM Studio, MCP, 데이터 마스킹 |
+| **CC 하네스** | `10-cc-harness/` | 1 | Claude Code 하네스 검증 절차 |
+| **멀티테넌시** | `11-multitenancy/` | 3 | 테넌트 격리, 온보딩 자동화 |
+| **문서 포털** | `12-documentation-portal/` | 2 | Docusaurus 설치, 콘텐츠 구성 |
+| **준수 대시보드** | `13-compliance-dashboard/` | 2 | Grafana CSAP/N2SF 실시간 현황 |
 | **버전 관리** | `14-framework-upgrade/` | 2 | 업그레이드 절차, 버전 관리 가이드 |
 | **참조** | `99-references/` | 4 | 외부 규정 인덱스, 용어 사전, OSCAL |
 | **합계** | — | **91** | — |
@@ -51,11 +51,11 @@
 
 | 관련도 | 설명 | 해당 디렉토리 |
 |--------|------|-------------|
-| **감리 필수 제출** | 행안부 고시 §5~§8에 따른 필수 산출물 | `05-audit-docs/`, `06-audit-compliance/templates/` |
-| **CSAP 직접 증거** | CSAP 심사관에게 증거 자료로 제출 가능 | `02-csap/`, `03-n2sf/`, `08-ai-integration/` |
-| **CSAP 구현 근거** | CSAP 통제항목 구현 방법 설명 | `07-infra/`, `01-dev-standards/` |
-| **ISMS-P 증거** | 2027 의무화 대비 | `04-isms-p/` |
-| **내부 운영** | 팀 내부 운영 도구 | `09-cc-harness/`, `11~12/`, `14/` |
+| **감리 필수 제출** | 행안부 고시 §5~§8에 따른 필수 산출물 | `05-audit-docs/`, `07-audit-compliance/templates/` |
+| **CSAP 직접 증거** | CSAP 심사관에게 증거 자료로 제출 가능 | `02-csap/`, `04-n2sf/`, `09-ai-integration/` |
+| **CSAP 구현 근거** | CSAP 통제항목 구현 방법 설명 | `08-infra/`, `01-dev-standards/` |
+| **ISMS-P 증거** | 2027 의무화 대비 | `03-isms-p/` |
+| **내부 운영** | 팀 내부 운영 도구 | `10-cc-harness/`, `11~12/`, `14/` |
 
 ---
 
@@ -148,7 +148,7 @@
 
 ---
 
-### 2.4 `03-n2sf/` — N2SF 보안 (8개 문서)
+### 2.4 `04-n2sf/` — N2SF 보안 (8개 문서)
 
 **목적**: 국가 망 보안체계(N2SF) C/S/O 등급 분류 및 6개 보안 영역 통제 가이드
 
@@ -176,7 +176,7 @@
 
 ---
 
-### 2.5 `04-isms-p/` — ISMS-P (10개 문서)
+### 2.5 `03-isms-p/` — ISMS-P (10개 문서)
 
 **목적**: 2027년 7월 의무화 예정인 ISMS-P 101항목 준비 및 증적 자동화
 
@@ -209,7 +209,7 @@
 
 ### 2.6 `05-audit-docs/` — 감리 T01~T02 원본 (2개 문서)
 
-> **주의**: 이 디렉토리의 파일은 참조용입니다. **실제 감리 제출**은 `06-audit-compliance/templates/` 파일을 사용하십시오.
+> **주의**: 이 디렉토리의 파일은 참조용입니다. **실제 감리 제출**은 `07-audit-compliance/templates/` 파일을 사용하십시오.
 
 | 파일명 | 목적 |
 |--------|------|
@@ -218,7 +218,7 @@
 
 ---
 
-### 2.7 `06-audit-compliance/` — 감리 산출물 T01~T07 (8개 문서)
+### 2.7 `07-audit-compliance/` — 감리 산출물 T01~T07 (8개 문서)
 
 **목적**: 행안부 고시 제2023-1호에 따른 7개 필수 감리 산출물 템플릿
 
@@ -255,7 +255,7 @@
 
 ---
 
-### 2.8 `07-infra/` — 인프라 (20개 문서)
+### 2.8 `08-infra/` — 인프라 (20개 문서)
 
 **목적**: k3s(WSL2) 기반 공공 SaaS 인프라 구성 및 CSAP 보안 설정 가이드
 
@@ -290,7 +290,7 @@
 
 ---
 
-### 2.9 `08-ai-integration/` — AI 연동 보안 (5개 문서)
+### 2.9 `09-ai-integration/` — AI 연동 보안 (5개 문서)
 
 **목적**: N2SF 데이터 등급에 따른 AI API 접근 제어 및 LM Studio 온프레미스 운영
 
@@ -312,7 +312,7 @@
 
 ---
 
-### 2.10 `09-cc-harness/` — CC 하네스 검증 (1개 문서)
+### 2.10 `10-cc-harness/` — CC 하네스 검증 (1개 문서)
 
 | 파일명 | 목적 |
 |--------|------|
@@ -322,7 +322,7 @@
 
 ---
 
-### 2.11 `10-multitenancy/` — 멀티테넌시 (3개 문서) {#10-multitenancy}
+### 2.11 `11-multitenancy/` — 멀티테넌시 (3개 문서) {#11-multitenancy}
 
 | 파일명 | 목적 |
 |--------|------|
@@ -337,7 +337,7 @@
 
 ---
 
-### 2.12 `11-documentation-portal/` — 문서 포털 (2개 문서)
+### 2.12 `12-documentation-portal/` — 문서 포털 (2개 문서)
 
 | 파일명 | 목적 |
 |--------|------|
@@ -346,7 +346,7 @@
 
 ---
 
-### 2.13 `12-compliance-dashboard/` — 준수 현황 대시보드 (2개 문서)
+### 2.13 `13-compliance-dashboard/` — 준수 현황 대시보드 (2개 문서)
 
 | 파일명 | 목적 |
 |--------|------|
@@ -398,8 +398,8 @@
 
 | 산출물 | 파일 경로 | 완성 필요 사항 |
 |--------|---------|------------|
-| T01 사업계획서 | `06-audit-compliance/templates/T01-business-plan.md` | {중괄호} 전체 채우기 |
-| T02 요구사항정의서 (초안) | `06-audit-compliance/templates/T02-requirements.md` | FR/NFR 초안 작성 |
+| T01 사업계획서 | `07-audit-compliance/templates/T01-business-plan.md` | {중괄호} 전체 채우기 |
+| T02 요구사항정의서 (초안) | `07-audit-compliance/templates/T02-requirements.md` | FR/NFR 초안 작성 |
 
 **체크리스트**:
 - [ ] T01: 사업명·기관명·기간·목적 기입 완료
@@ -439,7 +439,7 @@
 
 **제출 필요 산출물**: T01~T07 전체 최종본
 
-**핵심 확인 사항** (`06-audit-compliance/audit-completion-checklist.md` 참조):
+**핵심 확인 사항** (`07-audit-compliance/audit-completion-checklist.md` 참조):
 - [ ] CL-01: T01~T07 전수 완비
 - [ ] CL-02: FR 추적성 100% (T04 매트릭스 완결)
 - [ ] CL-03: CSAP 해당 Phase 100%
@@ -472,7 +472,7 @@
 **핵심 활용 문서**:
 - `02-csap/simple-grade/checklist-simple.md` (자가진단)
 - `02-csap/simple-grade/quick-start-guide.md` (등급 비교)
-- `03-n2sf/data-grade-classification.md` (데이터 분류)
+- `04-n2sf/data-grade-classification.md` (데이터 분류)
 
 ### 4.2 CSAP 표준등급 취득 절차 (소요 기간: 약 3~6개월)
 
@@ -485,7 +485,7 @@
   → 각 D0X.md의 "증거 자료" 목록 대로 파일 수집
 
 3단계: 감리 산출물 T01~T04 완성
-  → 06-audit-compliance/templates/ 전체
+  → 07-audit-compliance/templates/ 전체
 
 4단계: 시험 실행 + T05~T07 완성
   → T05 계획 → 실제 시험 실행 → T06 결과 기입 → T07 결함 관리
@@ -519,7 +519,7 @@
 
 - **연 1회 사후 심사**: 변경된 항목을 `checklist-master.md`에 재점검
 - **규정 변경 모니터링**: `99-references/regulations-index.md` 분기 1회 URL 유효성 확인
-- **증적 자동화**: `07-isms-p/auto-evidence-collection.md` 및 `04-isms-p/evidence-automation-guide.md`
+- **증적 자동화**: `07-isms-p/auto-evidence-collection.md` 및 `03-isms-p/evidence-automation-guide.md`
 
 ---
 
@@ -529,15 +529,15 @@
 
 ```
 1단계: 데이터 등급 분류
-  → 03-n2sf/data-grade-classification.md
+  → 04-n2sf/data-grade-classification.md
   → 실제 서비스 데이터를 C/S/O로 분류
 
 2단계: 6개 영역별 통제 구현
-  → 03-n2sf/domains/N01~N06.md 순서대로
-  → 인프라 보안: 07-infra/network-policy-guide.md
+  → 04-n2sf/domains/N01~N06.md 순서대로
+  → 인프라 보안: 08-infra/network-policy-guide.md
 
 3단계: CSAP-N2SF 교차 증명
-  → 03-n2sf/csap-n2sf-mapping.md
+  → 04-n2sf/csap-n2sf-mapping.md
   → CSAP 심사 시 N2SF 준수 매핑으로 중복 증명
 ```
 
@@ -553,14 +553,14 @@ CSAP 취득 완료
 중복 항목 40개 자동 대응
     ↓
 추가 61개 항목 준비
-  → 04-isms-p/management-controls/ (관리체계 16항목)
-  → 04-isms-p/protection-controls/ (보호대책 64항목)
-  → 04-isms-p/privacy-controls/ (개인정보보호 21항목)
+  → 03-isms-p/management-controls/ (관리체계 16항목)
+  → 03-isms-p/protection-controls/ (보호대책 64항목)
+  → 03-isms-p/privacy-controls/ (개인정보보호 21항목)
     ↓
 2026.09 예비 심사 신청
 ```
 
-**핵심 참조**: `04-isms-p/certification-guide.md` (2026~2027 월별 타임라인)
+**핵심 참조**: `03-isms-p/certification-guide.md` (2026~2027 월별 타임라인)
 
 ---
 
@@ -573,41 +573,41 @@ CSAP 취득 완료
 
 | 우선순위 | 파일 경로 | 수정 내용 |
 |---------|---------|---------|
-| 🔴 P0 | `06-audit-compliance/templates/T01-business-plan.md` | 사업명, 기관명, 사업 기간, 예산 전체 기입 |
-| 🔴 P0 | `06-audit-compliance/templates/T02-requirements.md` | 비즈니스 FR 항목 추가 (FR-20.x 이상) |
-| 🔴 P0 | `03-n2sf/data-grade-classification.md` | 실제 처리 데이터 유형별 C/S/O 등급 기입 |
+| 🔴 P0 | `07-audit-compliance/templates/T01-business-plan.md` | 사업명, 기관명, 사업 기간, 예산 전체 기입 |
+| 🔴 P0 | `07-audit-compliance/templates/T02-requirements.md` | 비즈니스 FR 항목 추가 (FR-20.x 이상) |
+| 🔴 P0 | `04-n2sf/data-grade-classification.md` | 실제 처리 데이터 유형별 C/S/O 등급 기입 |
 | 🔴 P0 | `02-csap/standard-grade/checklist-master.md` | 현재 준수 상태 체크 (☐ → ☑) |
 
 ### 7.2 인프라 구축 후 (필수)
 
 | 우선순위 | 파일 경로 | 수정 내용 |
 |---------|---------|---------|
-| 🔴 P0 | `06-audit-compliance/templates/T03-detailed-design.md` | 실제 ER, API, 보안 설계 삽입 |
-| 🟡 P1 | `03-n2sf/n2sf-infrastructure-architecture.md` | 실제 k3s 클러스터 구성 반영 |
-| 🟡 P1 | `07-infra/network-policies/` YAML 파일들 | 실제 서비스 네임스페이스 반영 |
+| 🔴 P0 | `07-audit-compliance/templates/T03-detailed-design.md` | 실제 ER, API, 보안 설계 삽입 |
+| 🟡 P1 | `04-n2sf/n2sf-infrastructure-architecture.md` | 실제 k3s 클러스터 구성 반영 |
+| 🟡 P1 | `08-infra/network-policies/` YAML 파일들 | 실제 서비스 네임스페이스 반영 |
 
 ### 7.3 AI 기능 개발 시 (필수)
 
 | 우선순위 | 파일 경로 | 수정 내용 |
 |---------|---------|---------|
-| 🔴 P0 | `08-ai-integration/security-gateway-pattern.md` | 실제 AI API 목록 및 라우팅 규칙 반영 |
-| 🔴 P0 | `08-ai-integration/data-classification-masking.md` | 실제 PII 필드 마스킹 목록 반영 |
+| 🔴 P0 | `09-ai-integration/security-gateway-pattern.md` | 실제 AI API 목록 및 라우팅 규칙 반영 |
+| 🔴 P0 | `09-ai-integration/data-classification-masking.md` | 실제 PII 필드 마스킹 목록 반영 |
 
 ### 7.4 시험·감리 전 (필수)
 
 | 우선순위 | 파일 경로 | 수정 내용 |
 |---------|---------|---------|
-| 🔴 P0 | `06-audit-compliance/templates/T06-test-result.md` | 실제 시험 결과 수치 기입 |
-| 🔴 P0 | `06-audit-compliance/templates/T07-defect-management.md` | 발견 결함 전수 등록 |
-| 🔴 P0 | `06-audit-compliance/audit-completion-checklist.md` | CL-01~CL-07 전수 체크 |
+| 🔴 P0 | `07-audit-compliance/templates/T06-test-result.md` | 실제 시험 결과 수치 기입 |
+| 🔴 P0 | `07-audit-compliance/templates/T07-defect-management.md` | 발견 결함 전수 등록 |
+| 🔴 P0 | `07-audit-compliance/audit-completion-checklist.md` | CL-01~CL-07 전수 체크 |
 
 ### 7.5 개인정보 처리 서비스 (해당 시 필수)
 
 | 우선순위 | 파일 경로 | 수정 내용 |
 |---------|---------|---------|
-| 🔴 P0 | `04-isms-p/privacy-controls/I01-I07-collection.md` | 실제 개인정보 수집 항목 기재 |
-| 🔴 P0 | `04-isms-p/privacy-controls/I08-I14-processing.md` | 실제 처리 방법 기재 |
-| 🔴 P0 | `04-isms-p/privacy-controls/I15-I21-disposal.md` | 실제 파기 절차 기재 |
+| 🔴 P0 | `03-isms-p/privacy-controls/I01-I07-collection.md` | 실제 개인정보 수집 항목 기재 |
+| 🔴 P0 | `03-isms-p/privacy-controls/I08-I14-processing.md` | 실제 처리 방법 기재 |
+| 🔴 P0 | `03-isms-p/privacy-controls/I15-I21-disposal.md` | 실제 파기 절차 기재 |
 
 ---
 
