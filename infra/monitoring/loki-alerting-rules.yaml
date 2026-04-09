@@ -1,0 +1,117 @@
+# =============================================================================
+# Loki 로그 기반 알림 규칙 — 공공기관 SaaS 플랫폼
+# Design Ref: MTU-N69 Design §1.2
+# Plan SC: FR-N69.3
+# CSAP: D-06(침해사고 관리 — 로그 기반 실시간 탐지)
+#
+# Loki Ruler가 이 규칙을 평가하여 AlertManager로 알림 전송
+# 설정: loki values.yaml → rulerConfig 참조
+# =============================================================================
+groups:
+  # =========================================================================
+  # 에러 로그 알림
+  # =========================================================================
+  - name: saas-log-error-alerts
+    rules:
+      # 프로덕션 에러 로그 급증 (5분간 초당 10건 초과)
+      - alert: HighErrorLogRate
+        expr: |
+          sum(rate({namespace="production"} |= "error" [5m])) > 10
+        for: 2m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "프로덕션 에러 로그 급증"
+          description: "5분간 에러 로그 비율이 초당 10건을 초과했습니다."
+          csap_ref: "D-06-03"
+          runbook: "docs/operations/logql-traceql-query-guide.md#11-에러-로그-분석"
+
+      # 특정 서비스 500 에러 급증
+      - alert: ServiceHTTP500Spike
+        expr: |
+          sum by (app) (rate({namespace="production"} | json | status >= 500 [5m])) > 1
+        for: 2m
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "서비스 {{ $labels.app }} HTTP 500 에러 급증"
+          description: "{{ $labels.app }}에서 5분간 500 에러가 초당 1건 이상 발생 중입니다."
+          csap_ref: "D-06-03"
+
+  # =========================================================================
+  # 보안 이벤트 알림 (CSAP D-08)
+  # =========================================================================
+  - name: saas-log-security-alerts
+    rules:
+      # 인증 실패 급증 (무차별 대입 공격 의심)
+      - alert: AuthenticationFailureSpike
+        expr: |
+          sum(rate({app="auth-service"} |= "401" [5m])) > 5
+        for: 1m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "인증 실패 급증 — 무차별 대입 공격 의심"
+          description: "인증 서비스에서 5분간 401 응답이 초당 5건 초과. 공격 가능성 확인 필요."
+          csap_ref: "D-08-05"
+          runbook: "docs/operations/logql-traceql-query-guide.md#12-보안-이벤트-분석"
+
+      # PII 유출 탐지 (주민번호 패턴)
+      - alert: PIILeakageDetected
+        expr: |
+          sum(rate({namespace="production"} |~ "\\d{6}-\\d{7}" [5m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "PII 유출 탐지 — 주민번호 패턴 로그 발견"
+          description: "프로덕션 로그에서 주민번호 패턴이 감지되었습니다. 즉시 조사 필요."
+          csap_ref: "D-09-02"
+
+      # 권한 부족 접근 시도 급증
+      - alert: ForbiddenAccessSpike
+        expr: |
+          sum(rate({namespace="production"} |= "403" |= "Forbidden" [5m])) > 3
+        for: 2m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "RBAC 권한 거부 급증"
+          description: "403 Forbidden 응답이 5분간 초당 3건 초과. RBAC 설정 확인 필요."
+          csap_ref: "D-08-01"
+
+  # =========================================================================
+  # 클러스터 장애 알림
+  # =========================================================================
+  - name: saas-log-cluster-alerts
+    rules:
+      # OOM Kill 감지
+      - alert: OOMKillDetected
+        expr: |
+          count_over_time({namespace=~".+"} |= "OOMKilled" [5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "OOM Kill 감지"
+          description: "컨테이너가 메모리 부족으로 종료되었습니다. 리소스 제한 검토 필요."
+          csap_ref: "D-06-04"
+
+      # CrashLoop 감지
+      - alert: CrashLoopDetected
+        expr: |
+          count_over_time({namespace=~".+"} |= "CrashLoopBackOff" [5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "CrashLoopBackOff 감지"
+          description: "Pod가 반복 재시작 중입니다. 로그 확인 후 조치 필요."
+          csap_ref: "D-06-04"
