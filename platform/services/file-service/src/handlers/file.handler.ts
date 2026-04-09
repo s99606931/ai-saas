@@ -156,8 +156,9 @@ export async function uploadFileHandler(
 
 /**
  * 파일 다운로드 (접근 제어)
- * Plan SC: FR-P12.2
+ * Plan SC: FR-P12.2, FR-FILE.3
  * CSAP D-08: 테넌트별 접근 제어
+ * CSAP D-06: 다운로드 감사 로그 (Design Ref: SVC-FILE-R1 DESIGN)
  */
 export async function downloadFileHandler(
   request: FastifyRequest<{ Params: { id: string }; Querystring: { tenantId?: string } }>,
@@ -178,14 +179,37 @@ export async function downloadFileHandler(
   // CSAP D-08: 테넌트 접근 제어 (JWT 클레임 기반 — 클라이언트 제공 값이 아닌 게이트웨이 주입 헤더 사용)
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
+  const downloadActor = (request.headers['x-user-id'] as string) || 'anonymous';
 
   if (jwtRole !== 'SUPER_ADMIN' && jwtTenantId && file.tenantId !== jwtTenantId) {
+    // FR-FILE.3: 접근 거부 감사 로그 (CSAP D-06)
+    await logFileEvent(
+      'FILE_ACCESS_DENIED',
+      downloadActor,
+      file.id,
+      file.tenantId,
+      request.ip,
+      request.headers['user-agent'] ?? 'unknown',
+      { name: file.name, reason: 'TENANT_MISMATCH' },
+    );
+
     await reply.status(403).send({
       success: false,
       error: { code: 'ACCESS_DENIED', message: '파일에 대한 접근 권한이 없습니다' },
     });
     return;
   }
+
+  // FR-FILE.3: 다운로드 감사 로그 (CSAP D-06, Design Ref: SVC-FILE-R1 DESIGN)
+  await logFileEvent(
+    'FILE_DOWNLOADED',
+    downloadActor,
+    file.id,
+    file.tenantId,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { name: file.name, mimeType: file.mimeType, size: file.size.toString() },
+  );
 
   // NOTE: 실제 MinIO에서 파일 스트리밍은 MinIO 클라이언트 구성 시 구현
   await reply.send({
@@ -198,12 +222,31 @@ export async function downloadFileHandler(
   });
 }
 
+// FR-FILE.2: 유효 정렬 필드 (Design Ref: SVC-FILE-R1 DESIGN)
+const VALID_SORT_FIELDS = ['name', 'size', 'createdAt', 'mimeType'] as const;
+type SortField = (typeof VALID_SORT_FIELDS)[number];
+
 /**
- * 파일 목록 조회
- * Plan SC: FR-P12.1
+ * 파일 목록 조회 (검색/필터 고도화)
+ * Plan SC: FR-P12.1, FR-FILE.2
+ * Design Ref: SVC-FILE-R1 DESIGN
  */
 export async function listFilesHandler(
-  request: FastifyRequest<{ Querystring: { tenantId: string; page?: string; pageSize?: string } }>,
+  request: FastifyRequest<{
+    Querystring: {
+      tenantId: string;
+      page?: string;
+      pageSize?: string;
+      search?: string;
+      mimeType?: string;
+      minSize?: string;
+      maxSize?: string;
+      startDate?: string;
+      endDate?: string;
+      sortBy?: string;
+      sortOrder?: string;
+    };
+  }>,
   reply: FastifyReply,
 ): Promise<void> {
   const page = parseInt(request.query.page ?? '1', 10);
@@ -224,14 +267,57 @@ export async function listFilesHandler(
     return;
   }
 
+  // FR-FILE.2: 동적 where 조건 빌더 (Design Ref: SVC-FILE-R1 DESIGN)
+  const where: Record<string, unknown> = { tenantId: effectiveTenantId };
+
+  // 이름 검색 (부분 일치, 대소문자 무시)
+  if (request.query.search) {
+    where['name'] = { contains: request.query.search, mode: 'insensitive' };
+  }
+
+  // MIME 타입 필터
+  if (request.query.mimeType) {
+    where['mimeType'] = request.query.mimeType;
+  }
+
+  // 크기 범위 필터
+  const sizeFilter: Record<string, bigint> = {};
+  if (request.query.minSize) {
+    sizeFilter['gte'] = BigInt(request.query.minSize);
+  }
+  if (request.query.maxSize) {
+    sizeFilter['lte'] = BigInt(request.query.maxSize);
+  }
+  if (Object.keys(sizeFilter).length > 0) {
+    where['size'] = sizeFilter;
+  }
+
+  // 날짜 범위 필터
+  const dateFilter: Record<string, Date> = {};
+  if (request.query.startDate) {
+    dateFilter['gte'] = new Date(request.query.startDate);
+  }
+  if (request.query.endDate) {
+    dateFilter['lte'] = new Date(request.query.endDate);
+  }
+  if (Object.keys(dateFilter).length > 0) {
+    where['createdAt'] = dateFilter;
+  }
+
+  // FR-FILE.2: 정렬 (Design Ref: SVC-FILE-R1 DESIGN)
+  const sortBy = VALID_SORT_FIELDS.includes(request.query.sortBy as SortField)
+    ? (request.query.sortBy as SortField)
+    : 'createdAt';
+  const sortOrder = request.query.sortOrder === 'asc' ? 'asc' : 'desc';
+
   const [files, total] = await Promise.all([
     prisma.file.findMany({
-      where: { tenantId: effectiveTenantId },
+      where,
       skip: (page - 1) * pageSize,
       take: pageSize,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { [sortBy]: sortOrder },
     }),
-    prisma.file.count({ where: { tenantId: effectiveTenantId } }),
+    prisma.file.count({ where }),
   ]);
 
   await reply.send({

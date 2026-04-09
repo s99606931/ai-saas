@@ -229,12 +229,27 @@ export async function deleteMenuHandler(
   }
 
   await prisma.menuItem.delete({ where: { id: request.params.id } });
+
+  // FR-MENU.3: 삭제 감사 로그 (CSAP D-06, Design Ref: SVC-MENU-R1 DESIGN)
+  const deleteMenuActor = (request.headers['x-user-id'] as string) || 'system';
+  await logMenuEvent(
+    'MENU_DELETED',
+    deleteMenuActor,
+    request.params.id,
+    deleteMenu.tenantId ?? 'platform',
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { tenantId: deleteMenu.tenantId },
+  );
+
   await reply.send({ success: true, message: '메뉴 항목이 삭제되었습니다' });
 }
 
 /**
  * 메뉴 순서 변경 (드래그앤드롭)
- * Plan SC: FR-P05.3
+ * Plan SC: FR-P05.3, FR-MENU.4
+ * Design Ref: SVC-MENU-R1 DESIGN
+ * CSAP D-08-05: 테넌트 격리, D-06: 감사 로그
  */
 export async function reorderMenuHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
@@ -249,6 +264,28 @@ export async function reorderMenuHandler(
     return;
   }
 
+  // FR-MENU.4: 테넌트 격리 (CSAP D-08-05, Design Ref: SVC-MENU-R1 DESIGN)
+  const existingReorder = await prisma.menuItem.findUnique({
+    where: { id: request.params.id },
+    select: { tenantId: true, order: true },
+  });
+  if (!existingReorder) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'MENU_NOT_FOUND', message: '메뉴 항목을 찾을 수 없습니다' },
+    });
+    return;
+  }
+  const reorderJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const reorderJwtRole = request.headers['x-user-role'] as string | undefined;
+  if (reorderJwtRole !== 'SUPER_ADMIN' && reorderJwtTenantId && existingReorder.tenantId !== reorderJwtTenantId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
+    });
+    return;
+  }
+
   const menuItem = await prisma.menuItem.update({
     where: { id: request.params.id },
     data: {
@@ -257,5 +294,65 @@ export async function reorderMenuHandler(
     },
   });
 
+  // FR-MENU.4: 순서변경 감사 로그 (CSAP D-06, Design Ref: SVC-MENU-R1 DESIGN)
+  const reorderActor = (request.headers['x-user-id'] as string) || 'system';
+  await logMenuEvent(
+    'MENU_REORDERED',
+    reorderActor,
+    menuItem.id,
+    existingReorder.tenantId ?? 'platform',
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { oldOrder: existingReorder.order, newOrder: parseResult.data.order },
+  );
+
   await reply.send({ success: true, data: menuItem });
+}
+
+/**
+ * FR-MENU.2: 메뉴 검색
+ * GET /menu/search?q={keyword}
+ * Design Ref: SVC-MENU-R1 DESIGN
+ * CSAP D-08-05: 테넌트 격리
+ */
+export async function searchMenuHandler(
+  request: FastifyRequest<{ Querystring: { q?: string; tenantId?: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const searchQuery = request.query.q;
+  if (!searchQuery || searchQuery.trim().length === 0) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'SEARCH_REQUIRED', message: '검색어를 입력하세요' },
+    });
+    return;
+  }
+
+  // CSAP D-08-05: 테넌트 격리
+  const searchJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const searchJwtRole = request.headers['x-user-role'] as string | undefined;
+  const effectiveTenantId = searchJwtRole === 'SUPER_ADMIN'
+    ? (request.query.tenantId ?? searchJwtTenantId)
+    : searchJwtTenantId;
+
+  if (!effectiveTenantId) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'TENANT_REQUIRED', message: '테넌트 ID가 필요합니다' },
+    });
+    return;
+  }
+
+  const items = await prisma.menuItem.findMany({
+    where: {
+      tenantId: effectiveTenantId,
+      OR: [
+        { label: { contains: searchQuery, mode: 'insensitive' } },
+        { path: { contains: searchQuery, mode: 'insensitive' } },
+      ],
+    },
+    orderBy: { order: 'asc' },
+  });
+
+  await reply.send({ success: true, data: items, total: items.length });
 }

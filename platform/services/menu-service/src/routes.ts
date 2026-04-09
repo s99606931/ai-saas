@@ -1,6 +1,6 @@
 // 메뉴 서비스 라우트
-// Design Ref: DESIGN-MTU-P05
-// Plan SC: FR-P05.1~FR-P05.5
+// Design Ref: DESIGN-MTU-P05, SVC-MENU-R1 DESIGN
+// Plan SC: FR-P05.1~FR-P05.5, FR-MENU.1~FR-MENU.5
 
 import type { FastifyInstance } from 'fastify';
 import {
@@ -10,7 +10,10 @@ import {
   updateMenuHandler,
   deleteMenuHandler,
   reorderMenuHandler,
+  searchMenuHandler,
 } from './handlers/menu.handler.js';
+import { menuStatsHandler } from './handlers/menu-stats.handler.js';
+import { createRateLimiter } from './middleware/rate-limit.middleware.js';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   // C-03 수정 (CSAP D-08): 서비스 간 내부 인증 — API 게이트웨이 우회 차단
@@ -32,10 +35,33 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     });
   }
 
-  app.get('/menu/tree', getMenuTreeHandler);
-  app.get('/menu/filtered', getFilteredMenuHandler);
-  app.post('/menu', createMenuHandler);
-  app.put('/menu/:id', updateMenuHandler);
-  app.delete('/menu/:id', deleteMenuHandler);
-  app.put('/menu/:id/order', reorderMenuHandler);
+  // FR-MENU.1: Rate Limiting (Design Ref: SVC-MENU-R1 DESIGN)
+  const readLimiter = createRateLimiter(100, 60, 'rl:menu:read');
+  const writeLimiter = createRateLimiter(30, 60, 'rl:menu:write');
+  const deleteLimiter = createRateLimiter(10, 300, 'rl:menu:delete');
+
+  // 정적 경로 우선 등록 (Fastify 라우팅 우선순위)
+  // FR-MENU.2: 메뉴 검색
+  app.get('/menu/search', { preHandler: readLimiter }, searchMenuHandler as never);
+
+  // FR-MENU.5: 메뉴 통계
+  app.get('/menu/stats', { preHandler: readLimiter }, menuStatsHandler as never);
+
+  // FR-P05.1: 메뉴 트리 조회
+  app.get('/menu/tree', { preHandler: readLimiter }, getMenuTreeHandler as never);
+
+  // FR-P05.2: 역할별 메뉴 필터링
+  app.get('/menu/filtered', { preHandler: readLimiter }, getFilteredMenuHandler as never);
+
+  // FR-P05.1: 메뉴 생성
+  app.post('/menu', { preHandler: writeLimiter }, createMenuHandler as never);
+
+  // FR-P05.1: 메뉴 수정
+  app.put('/menu/:id', { preHandler: writeLimiter }, updateMenuHandler as never);
+
+  // FR-P05.1: 메뉴 삭제 + FR-MENU.3 감사 로그
+  app.delete('/menu/:id', { preHandler: deleteLimiter }, deleteMenuHandler as never);
+
+  // FR-P05.3: 메뉴 순서 변경 + FR-MENU.4 테넌트 격리/감사
+  app.put('/menu/:id/order', { preHandler: writeLimiter }, reorderMenuHandler as never);
 }
