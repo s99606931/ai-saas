@@ -58,9 +58,11 @@ export async function getMenuTreeHandler(
     return;
   }
 
+  // CSAP D-10: 방어 코딩 — 최대 1000건 제한 (메뉴 트리 특성상 충분)
   const items = await prisma.menuItem.findMany({
     where: { tenantId: effectiveTenantId },
     orderBy: { order: 'asc' },
+    take: 1000,
   });
 
   await reply.send({ success: true, data: items });
@@ -93,9 +95,11 @@ export async function getFilteredMenuHandler(
     return;
   }
 
+  // CSAP D-10: 방어 코딩 — 최대 1000건 제한
   const items = await prisma.menuItem.findMany({
     where: { tenantId: effectiveTenantId, isVisible: true },
     orderBy: { order: 'asc' },
+    take: 1000,
   });
 
   // roles Json 필드에서 역할 필터링
@@ -343,6 +347,7 @@ export async function searchMenuHandler(
     return;
   }
 
+  // CSAP D-10: 방어 코딩 — 최대 200건 제한
   const items = await prisma.menuItem.findMany({
     where: {
       tenantId: effectiveTenantId,
@@ -352,6 +357,7 @@ export async function searchMenuHandler(
       ],
     },
     orderBy: { order: 'asc' },
+    take: 200,
   });
 
   await reply.send({ success: true, data: items, total: items.length });

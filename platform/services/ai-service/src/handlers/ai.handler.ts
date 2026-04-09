@@ -39,9 +39,11 @@ export async function listModelsHandler(
   _request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-10: 페이지네이션으로 DoS 방어 (최대 100건)
   const models = await prisma.aiModel.findMany({
     where: { isActive: true },
     orderBy: { name: 'asc' },
+    take: 100,
   });
 
   await reply.send({ success: true, data: models });

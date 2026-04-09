@@ -28,10 +28,12 @@ async function main(): Promise<void> {
     },
   });
 
-  // CORS 설정
+  // CORS 설정 (CSAP D-10: 허용 메서드/헤더 명시적 제한)
   await app.register(cors, {
     origin: process.env['CORS_ORIGIN']?.split(',') ?? ['http://localhost:3000'],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'Content-Type', 'X-Tenant-Id', 'X-Request-ID'],
   });
 
   // JWT 인증 미들웨어 등록 (Plan SC: FR-P01.2)

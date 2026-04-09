@@ -38,6 +38,7 @@ export async function verifyAuditLogIntegrity(
     };
   }
 
+  // CSAP D-10: 방어 코딩 — 단일 검증 요청 최대 100,000건 제한 (OOM 방지)
   const logs = await prisma.auditLog.findMany({
     where,
     orderBy: { createdAt: 'asc' },
@@ -52,6 +53,7 @@ export async function verifyAuditLogIntegrity(
       hash: true,
       previousHash: true,
     },
+    take: 100000,
   });
 
   let previousHash = '0'.repeat(64);

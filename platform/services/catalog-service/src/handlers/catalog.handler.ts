@@ -244,8 +244,10 @@ export async function listFlagsHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-10: 방어 코딩 — 최대 500건 제한
   const flags = await prisma.featureFlag.findMany({
     where: { serviceId: request.params.id },
+    take: 500,
   });
 
   await reply.send({ success: true, data: flags });

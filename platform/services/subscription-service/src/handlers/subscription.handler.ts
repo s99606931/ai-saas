@@ -26,15 +26,18 @@ const subscribeSchema = z.object({
 /**
  * 플랜 목록 조회
  * Plan SC: FR-P07.1
+ * CSAP D-10: 페이지네이션으로 DoS 방어 (최대 100건)
  */
 export async function listPlansHandler(
   _request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
+  // Design Ref: DESIGN-MTU-P07 — 플랜 수는 제한적이나 방어 코딩으로 take 적용
   const plans = await prisma.plan.findMany({
     where: { isActive: true },
     include: { services: { include: { service: true } } },
     orderBy: { price: 'asc' },
+    take: 100,
   });
 
   await reply.send({ success: true, data: plans });
@@ -175,10 +178,12 @@ export async function getTenantSubscriptionHandler(
     return;
   }
 
+  // CSAP D-10: 페이지네이션으로 DoS 방어 (최대 100건)
   const subscriptions = await prisma.subscription.findMany({
     where: { tenantId: request.params.tenantId },
     include: { plan: true },
     orderBy: { createdAt: 'desc' },
+    take: 100,
   });
 
   await reply.send({ success: true, data: subscriptions });

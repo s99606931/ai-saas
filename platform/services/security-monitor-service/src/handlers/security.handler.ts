@@ -34,6 +34,20 @@ interface SecurityAlert {
 const alerts: SecurityAlert[] = [];
 let alertIdCounter = 1;
 
+// CSAP D-10: In-memory 배열 최대 크기 제한 (메모리 누수 방지)
+const MAX_ALERTS_IN_MEMORY = 10000;
+
+/**
+ * 알림 추가 시 최대 크기 초과하면 가장 오래된 것부터 제거
+ */
+function pushAlert(alert: SecurityAlert): void {
+  alerts.push(alert);
+  if (alerts.length > MAX_ALERTS_IN_MEMORY) {
+    // 가장 오래된 50개 제거 (batch eviction)
+    alerts.splice(0, 50);
+  }
+}
+
 // --- Zod 스키마 (CSAP D-12: 모든 입력 검증) ---
 
 // FR-SECMON.5: IP 형식 검증 강화 (Design Ref: SVC-SECMON-R1 DESIGN)
@@ -112,7 +126,7 @@ export async function loginFailuresHandler(
         createdAt: new Date().toISOString(),
         acknowledged: false,
       };
-      alerts.push(alert);
+      pushAlert(alert);
       await logSecurityEvent('LOGIN_FAILURE_ALERT', { ip: s.ip, count: s.failureCount });
     }
 

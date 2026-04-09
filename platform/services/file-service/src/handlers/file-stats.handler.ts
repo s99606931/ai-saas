@@ -103,6 +103,7 @@ export async function fileStatsHandler(
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+  // CSAP D-10: 방어 코딩 — 7일 내 최대 10000건 제한
   const recentFiles = await prisma.file.findMany({
     where: {
       tenantId: effectiveTenantId,
@@ -110,6 +111,7 @@ export async function fileStatsHandler(
     },
     select: { createdAt: true },
     orderBy: { createdAt: 'asc' },
+    take: 10000,
   });
 
   // 일별 집계

@@ -416,10 +416,11 @@ async function invalidateTenantSessions(
     return;
   }
 
-  // 테넌트 내 모든 사용자 조회
+  // 테넌트 내 모든 사용자 조회 (CSAP D-10: 방어 코딩 — 최대 10000건)
   const users = await prisma.user.findMany({
     where: { tenantId },
     select: { id: true },
+    take: 10000,
   });
 
   // 각 사용자의 세션 무효화 (HMAC 서비스 토큰 사용)

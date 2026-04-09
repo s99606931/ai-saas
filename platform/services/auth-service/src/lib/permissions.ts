@@ -15,9 +15,11 @@ import { prisma } from './prisma.js';
  * @returns 권한 이름 목록
  */
 export async function getUserPermissions(role: string): Promise<string[]> {
+  // CSAP D-10: 방어 코딩 — 역할당 권한 최대 200개 제한
   const rolePermissions = await prisma.rolePermission.findMany({
     where: { role: role as 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'USER' | 'VIEWER' | 'AUDITOR' },
     include: { permission: true },
+    take: 200,
   });
 
   return rolePermissions.map((rp) => rp.permission.name);

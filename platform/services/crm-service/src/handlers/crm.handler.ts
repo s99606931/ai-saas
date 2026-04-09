@@ -221,9 +221,11 @@ export async function listContactsHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-10: 방어 코딩 — 최대 200건 제한
   const contacts = await prisma.contact.findMany({
     where: { customerId: request.params.id },
     orderBy: { isPrimary: 'desc' },
+    take: 200,
   });
 
   await reply.send({ success: true, data: contacts });

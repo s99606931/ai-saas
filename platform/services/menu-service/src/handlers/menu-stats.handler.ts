@@ -32,9 +32,11 @@ export async function menuStatsHandler(
     return;
   }
 
+  // CSAP D-10: 방어 코딩 — 최대 2000건 제한 (통계 집계용)
   const allItems = await prisma.menuItem.findMany({
     where: { tenantId: effectiveTenantId },
     select: { id: true, parentId: true, isVisible: true },
+    take: 2000,
   });
 
   const totalMenus = allItems.length;
