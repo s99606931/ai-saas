@@ -34,6 +34,7 @@ describe('getUserPermissions (CSAP D-08-05)', () => {
     expect(mockPrisma.rolePermission.findMany).toHaveBeenCalledWith({
       where: { role: 'SUPER_ADMIN' },
       include: { permission: true },
+      take: 200, // CSAP D-10: 방어 코딩 — 역할당 권한 최대 200개 제한
     });
   });
 
