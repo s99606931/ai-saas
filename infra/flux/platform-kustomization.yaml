@@ -1,0 +1,114 @@
+# Flux Kustomization — 공공기관 SaaS 플랫폼 전체 배포 오케스트레이션
+# Design Ref: MTU-N35 §3.2
+# Plan SC: FR-N35.2
+# CSAP: D-12(시스템 개발 보안 — GitOps 배포 자동화)
+#
+# Flux가 이 Kustomization을 통해 플랫폼 전체를 순서대로 배포합니다:
+#   1. 인프라 (DB, Redis, 메시징)
+#   2. 모니터링 스택
+#   3. 애플리케이션 서비스
+#   4. Ingress / 네트워크 정책
+---
+# 1단계: 인프라 기반 서비스 (DB, Redis)
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: saas-infra
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/part-of: public-saas
+    kustomize.toolkit.fluxcd.io/layer: infra
+spec:
+  interval: 10m
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: fleet-infra
+  path: ./infra/base
+  prune: true
+  wait: true
+  timeout: 10m
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: StatefulSet
+      name: saas-postgres-postgresql
+      namespace: saas-platform
+    - apiVersion: apps/v1
+      kind: StatefulSet
+      name: saas-redis-master
+      namespace: saas-platform
+
+---
+# 2단계: 모니터링 스택 (Prometheus, Loki, Tempo)
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: saas-monitoring
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/part-of: public-saas
+    kustomize.toolkit.fluxcd.io/layer: monitoring
+spec:
+  interval: 10m
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: fleet-infra
+  path: ./infra/monitoring
+  prune: true
+  wait: true
+  timeout: 15m
+  dependsOn:
+    - name: saas-infra
+
+---
+# 3단계: 애플리케이션 서비스 배포
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: saas-apps
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/part-of: public-saas
+    kustomize.toolkit.fluxcd.io/layer: apps
+spec:
+  interval: 5m
+  retryInterval: 1m
+  sourceRef:
+    kind: GitRepository
+    name: fleet-infra
+  path: ./infra/flux
+  prune: true
+  wait: true
+  timeout: 10m
+  dependsOn:
+    - name: saas-infra
+    - name: saas-monitoring
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: saas-platform
+      namespace: flux-system
+
+---
+# 4단계: 네트워크 정책 + Ingress
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: saas-network
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/part-of: public-saas
+    kustomize.toolkit.fluxcd.io/layer: network
+spec:
+  interval: 10m
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: fleet-infra
+  path: ./infra/network-policies
+  prune: true
+  wait: true
+  timeout: 5m
+  dependsOn:
+    - name: saas-apps

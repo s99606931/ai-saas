@@ -34,10 +34,18 @@ export async function getAuthContext(): Promise<PortalAuthContext | null> {
     return null
   }
 
+  const resolvedRole = role ?? 'VIEWER'
+
+  // M-06 수정 (CSAP D-08-05): 테넌트 격리 — SUPER_ADMIN 외 tenantId 필수
+  // API 게이트웨이 없이 직접 접근 시 빈 tenantId로 인한 격리 우회 차단
+  if (!tenantId && resolvedRole !== 'SUPER_ADMIN') {
+    return null
+  }
+
   return {
     userId,
     tenantId: tenantId ?? '',
-    role: role ?? 'VIEWER',
+    role: resolvedRole,
   }
 }
 

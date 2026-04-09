@@ -1,0 +1,22 @@
+# SealedSecret 템플릿: Cosign 서명 키
+# Design Ref: MTU-N39 Design S3.3 | Plan SC: FR-N39.3
+# CSAP: D-11 (이미지 무결성), D-09 (암호화)
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: cosign-keys
+  namespace: saas-platform
+  annotations:
+    sealedsecrets.bitnami.com/managed: "true"
+    sealedsecrets.bitnami.com/cluster-wide: "false"
+spec:
+  encryptedData:
+    COSIGN_PASSWORD: "AgBy3i4OJSWK..."  # 예시
+  template:
+    metadata:
+      name: cosign-keys
+      namespace: saas-platform
+      labels:
+        app.kubernetes.io/part-of: saas-platform
+        app.kubernetes.io/component: security
+    type: Opaque

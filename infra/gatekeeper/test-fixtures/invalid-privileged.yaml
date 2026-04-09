@@ -1,0 +1,20 @@
+# 테스트 Fixture: 특권 컨테이너 (차단 대상)
+# Design Ref: MTU-N53 TC-02
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-privileged-pod
+  namespace: default
+spec:
+  containers:
+    - name: bad-container
+      image: harbor.local/library/nginx:1.25.4
+      securityContext:
+        privileged: true
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi

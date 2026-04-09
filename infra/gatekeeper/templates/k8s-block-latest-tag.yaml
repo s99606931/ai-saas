@@ -1,0 +1,38 @@
+# ConstraintTemplate: latest 태그 사용 차단
+# Design Ref: MTU-N53 Section 3.2.5
+# Plan SC: FR-N53.8
+# CSAP: D-12 시스템 개발 보안
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sblocklatesttag
+  annotations:
+    description: "latest 태그 또는 태그 미지정 이미지를 차단합니다"
+    csap.compliance/control: "D-12"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sBlockLatestTag
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sblocklatesttag
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          endswith(container.image, ":latest")
+          msg := sprintf("[CSAP D-12] latest 태그 사용 금지: %v", [container.image])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not contains(container.image, ":")
+          msg := sprintf("[CSAP D-12] 이미지 태그 미지정 금지: %v", [container.image])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.initContainers[_]
+          endswith(container.image, ":latest")
+          msg := sprintf("[CSAP D-12] initContainer latest 태그 금지: %v", [container.image])
+        }

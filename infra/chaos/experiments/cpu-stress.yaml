@@ -1,0 +1,76 @@
+# =============================================================================
+# 카오스 실험 2: CPU Stress
+# Design Ref: MTU-N50 Design §카오스 실험 시나리오 #2
+# Plan SC: FR-N50.2
+#
+# 목적: CPU 부하 시 서비스 성능 저하 허용 범위 검증
+# =============================================================================
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosExperiment
+metadata:
+  name: cpu-stress-auth-service
+  namespace: staging
+  labels:
+    app.kubernetes.io/part-of: chaos-engineering
+    experiment-type: resource
+spec:
+  definition:
+    scope: Namespaced
+    permissions:
+      - apiGroups: [""]
+        resources: ["pods"]
+        verbs: ["create", "delete", "get", "list", "patch", "update"]
+      - apiGroups: [""]
+        resources: ["events"]
+        verbs: ["create", "get", "list", "patch", "update"]
+    image: "litmuschaos/go-runner:3.0.0"
+    imagePullPolicy: Always
+    args:
+      - -c
+      - ./experiments -name pod-cpu-hog-exec
+    command:
+      - /bin/bash
+    env:
+      - name: APP_NAMESPACE
+        value: "staging"
+      - name: APP_LABEL
+        value: "app.kubernetes.io/name=auth-service"
+      - name: TOTAL_CHAOS_DURATION
+        value: "60"
+      # CPU 부하 80%
+      - name: CPU_CORES
+        value: "1"
+      - name: CPU_LOAD
+        value: "80"
+    labels:
+      name: cpu-stress-auth-service
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: cpu-stress-auth-engine
+  namespace: staging
+spec:
+  engineState: "active"
+  appinfo:
+    appns: "staging"
+    applabel: "app.kubernetes.io/name=auth-service"
+    appkind: "deployment"
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: cpu-stress-auth-service
+      spec:
+        probe:
+          - name: "auth-response-time"
+            type: "httpProbe"
+            httpProbe/inputs:
+              url: "http://auth-service.staging.svc.cluster.local/health"
+              method:
+                get:
+                  criteria: "=="
+                  responseCode: "200"
+            mode: "Continuous"
+            runProperties:
+              probeTimeout: 10
+              interval: 5
+              retry: 3

@@ -1,0 +1,20 @@
+# Constraint: hostPath 마운트 차단 (Enforce)
+# Design Ref: MTU-N53 Section 3.2.4
+# Plan SC: FR-N53.7
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sBlockHostPath
+metadata:
+  name: block-hostpath-volumes
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    excludedNamespaces:
+      - kube-system
+      - gatekeeper-system
+      - monitoring     # Prometheus node-exporter는 hostPath 필요
+      - falco          # Falco는 호스트 접근 필요

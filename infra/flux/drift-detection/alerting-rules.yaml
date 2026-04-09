@@ -1,0 +1,111 @@
+# =============================================================================
+# Flux Drift Detection Prometheus 알림 규칙
+# Design Ref: MTU-N47 Design §아키텍처
+# Plan SC: FR-N47.3
+#
+# CSAP D-06: 설정 변조 감지 시 즉시 알림
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: flux-drift-detection-alerts
+  namespace: flux-system
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: flux-gitops
+    csap.compliance/domain: "D-06"
+spec:
+  groups:
+    # =========================================================================
+    # Drift Detection 알림
+    # =========================================================================
+    - name: flux.drift
+      rules:
+        - alert: FluxDriftDetected
+          expr: |
+            gotk_reconcile_condition{type="Ready",status="False",kind=~"HelmRelease|Kustomization"} == 1
+          for: 2m
+          labels:
+            severity: warning
+            csap_domain: "D-06"
+            team: devops
+          annotations:
+            summary: "Flux 설정 드리프트 감지: {{ $labels.name }}"
+            description: >
+              {{ $labels.kind }}/{{ $labels.name }}에서 설정 드리프트가 감지되었습니다.
+              클러스터 상태가 Git 소스와 불일치합니다.
+              네임스페이스: {{ $labels.namespace }}
+              CSAP D-06 준수를 위해 즉시 확인이 필요합니다.
+
+        - alert: FluxDriftRemediated
+          expr: |
+            increase(gotk_reconcile_duration_seconds_count{kind=~"HelmRelease|Kustomization",exported_namespace=~"production|prod"}[5m]) > 1
+          for: 0m
+          labels:
+            severity: info
+            csap_domain: "D-06"
+            team: devops
+          annotations:
+            summary: "Flux 자동 교정 수행: {{ $labels.name }}"
+            description: >
+              {{ $labels.kind }}/{{ $labels.name }}에서 드리프트가 자동 교정되었습니다.
+              감사 로그를 확인하십시오.
+
+        - alert: FluxReconcileFailure
+          expr: |
+            gotk_reconcile_condition{type="Ready",status="False"} == 1
+          for: 10m
+          labels:
+            severity: critical
+            csap_domain: "D-06"
+            team: devops
+          annotations:
+            summary: "Flux Reconcile 실패 지속: {{ $labels.name }}"
+            description: >
+              {{ $labels.kind }}/{{ $labels.name }} reconcile이 10분 이상 실패 상태입니다.
+              수동 개입이 필요합니다. Git 소스와 클러스터 상태를 확인하십시오.
+
+        - alert: FluxSuspended
+          expr: |
+            gotk_suspend_status == 1
+          for: 1h
+          labels:
+            severity: warning
+            csap_domain: "D-06"
+            team: devops
+          annotations:
+            summary: "Flux 리소스 일시 중단: {{ $labels.name }}"
+            description: >
+              {{ $labels.kind }}/{{ $labels.name }}이 1시간 이상 일시 중단 상태입니다.
+              의도적인 중단인지 확인이 필요합니다.
+
+    # =========================================================================
+    # Flux 상태 모니터링
+    # =========================================================================
+    - name: flux.health
+      rules:
+        - alert: FluxControllerDown
+          expr: |
+            up{job=~".*flux.*"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            team: devops
+          annotations:
+            summary: "Flux Controller 다운"
+            description: >
+              Flux 컨트롤러가 5분 이상 다운 상태입니다.
+              GitOps 자동 배포 및 드리프트 탐지가 중단되었습니다.
+
+        - alert: FluxSourceNotReady
+          expr: |
+            gotk_reconcile_condition{type="Ready",status="False",kind="GitRepository"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            team: devops
+          annotations:
+            summary: "Flux Git 소스 동기화 실패: {{ $labels.name }}"
+            description: >
+              GitRepository {{ $labels.name }}이 5분 이상 준비되지 않았습니다.
+              Git 리포지토리 접근 권한 또는 네트워크를 확인하십시오.

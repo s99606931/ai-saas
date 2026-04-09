@@ -1,0 +1,336 @@
+# PostgreSQL Exporter 0.17 Helm Values
+# Design Ref: MTU-N24 §FR-N24.3 — SQL 쿼리 모니터링
+# Plan SC: FR-N24.3
+# CSAP 준수: D-08(Secret 참조 — 하드코딩 금지), D-12(SQL 쿼리 민감정보 마스킹)
+
+# ---------------------------------------------------------------------------
+# PostgreSQL 연결 설정 — CSAP D-08: 시크릿은 반드시 Secret 참조
+# 하드코딩 절대 금지 (감리 결함 처리)
+# ---------------------------------------------------------------------------
+config:
+  datasource:
+    # Secret 참조 방식 (값 하드코딩 금지)
+    # 사전에 아래 Secret 생성 필요:
+    #   kubectl create secret generic postgres-exporter-secret \
+    #     --from-literal=DATA_SOURCE_NAME="postgresql://exporter:PASS@postgresql.default.svc:5432/appdb?sslmode=disable" \
+    #     -n monitoring
+    datasourceSecret:
+      name: postgres-exporter-secret
+      key: DATA_SOURCE_NAME
+
+  # ---------------------------------------------------------------------------
+  # 수집 메트릭 설정
+  # ---------------------------------------------------------------------------
+  disableDefaultMetrics: false  # 기본 메트릭 활성화 (pg_stat_*)
+  disableSettingsMetrics: false  # PostgreSQL 설정 메트릭 활성화
+
+  # ---------------------------------------------------------------------------
+  # 커스텀 쿼리 설정 — FR-N24.3: 슬로우쿼리 TOP 20
+  # CSAP D-12: 쿼리 본문은 pg_stat_statements에서 마스킹 처리
+  # ---------------------------------------------------------------------------
+  queries: |-
+    # =========================================================================
+    # pg_stat_statements — 슬로우쿼리 TOP 20 (5초 이상)
+    # FR-N24.3: 인덱스 미사용 쿼리 감지 및 성능 분석
+    # CSAP D-12: query 컬럼은 pg_stat_statements.track 설정으로 익명화됨
+    # =========================================================================
+    pg_slow_queries:
+      query: |
+        SELECT
+          queryid,
+          -- CSAP D-12: 쿼리 본문에서 리터럴 값 제거 (pg_stat_statements 자동 처리)
+          -- query_text 제거됨 (ADR-N24-003: CSAP D-12 준수 — queryid만 노출)
+          calls,
+          total_exec_time / 1000.0 AS total_exec_time_seconds,
+          mean_exec_time / 1000.0 AS mean_exec_time_seconds,
+          max_exec_time / 1000.0 AS max_exec_time_seconds,
+          stddev_exec_time / 1000.0 AS stddev_exec_time_seconds,
+          rows,
+          shared_blks_hit,
+          shared_blks_read,
+          CASE WHEN (shared_blks_hit + shared_blks_read) > 0
+               THEN round(shared_blks_hit::numeric / (shared_blks_hit + shared_blks_read) * 100, 2)
+               ELSE 0
+          END AS cache_hit_ratio
+        FROM pg_stat_statements
+        WHERE mean_exec_time > 5000  -- 5초 이상 슬로우쿼리만 (FR-N24.3)
+        ORDER BY mean_exec_time DESC
+        LIMIT 20
+      metrics:
+        - queryid:
+            usage: LABEL
+            description: "쿼리 ID (pg_stat_statements)"
+        # query_text 수집 제거 — G-10/ADR-N24-003: queryid만 수집, 원문 미수집 (CSAP D-12)
+        # query_text 레이블은 민감 데이터 포함 위험 → queryid로 pg_stat_statements 조인
+        - calls:
+            usage: GAUGE
+            description: "쿼리 실행 횟수"
+        - total_exec_time_seconds:
+            usage: GAUGE
+            description: "쿼리 총 실행 시간 (초)"
+        - mean_exec_time_seconds:
+            usage: GAUGE
+            description: "쿼리 평균 실행 시간 (초)"
+        - max_exec_time_seconds:
+            usage: GAUGE
+            description: "쿼리 최대 실행 시간 (초)"
+        - rows:
+            usage: GAUGE
+            description: "쿼리 처리 행 수"
+        - cache_hit_ratio:
+            usage: GAUGE
+            description: "쿼리 캐시 히트율 (%)"
+
+    # =========================================================================
+    # pg_stat_activity — 현재 활성 연결 및 대기 쿼리 모니터링
+    # =========================================================================
+    pg_stat_activity_detail:
+      query: |
+        SELECT
+          datname AS database,
+          state,
+          wait_event_type,
+          COUNT(*) AS count,
+          MAX(EXTRACT(EPOCH FROM (NOW() - query_start))) AS max_query_duration_seconds
+        FROM pg_stat_activity
+        WHERE state IS NOT NULL
+          AND pid != pg_backend_pid()
+        GROUP BY datname, state, wait_event_type
+      metrics:
+        - database:
+            usage: LABEL
+            description: "데이터베이스 이름"
+        - state:
+            usage: LABEL
+            description: "연결 상태 (active/idle/idle in transaction)"
+        - wait_event_type:
+            usage: LABEL
+            description: "대기 이벤트 유형"
+        - count:
+            usage: GAUGE
+            description: "해당 상태의 연결 수"
+        - max_query_duration_seconds:
+            usage: GAUGE
+            description: "최대 쿼리 실행 시간 (초)"
+
+    # =========================================================================
+    # pg_stat_database — 데이터베이스별 TPS, 캐시 히트율
+    # =========================================================================
+    pg_stat_database_detail:
+      query: |
+        SELECT
+          datname AS database,
+          numbackends,
+          xact_commit AS transactions_committed,
+          xact_rollback AS transactions_rolled_back,
+          blks_read,
+          blks_hit,
+          CASE WHEN (blks_hit + blks_read) > 0
+               THEN round(blks_hit::numeric / (blks_hit + blks_read) * 100, 2)
+               ELSE 0
+          END AS cache_hit_ratio,
+          tup_returned,
+          tup_fetched,
+          tup_inserted,
+          tup_updated,
+          tup_deleted,
+          conflicts,
+          deadlocks,
+          temp_files,
+          temp_bytes
+        FROM pg_stat_database
+        WHERE datname NOT IN ('template0', 'template1', 'postgres')
+      metrics:
+        - database:
+            usage: LABEL
+            description: "데이터베이스 이름"
+        - numbackends:
+            usage: GAUGE
+            description: "현재 연결 수"
+        - transactions_committed:
+            usage: COUNTER
+            description: "커밋된 트랜잭션 수"
+        - transactions_rolled_back:
+            usage: COUNTER
+            description: "롤백된 트랜잭션 수"
+        - cache_hit_ratio:
+            usage: GAUGE
+            description: "버퍼 캐시 히트율 (%)"
+        - deadlocks:
+            usage: COUNTER
+            description: "데드락 발생 수 (알림 대상)"
+        - temp_files:
+            usage: COUNTER
+            description: "임시 파일 생성 수 (인덱스 부족 지표)"
+
+    # =========================================================================
+    # pg_stat_bgwriter — 백그라운드 라이터 (I/O 부하 분석)
+    # =========================================================================
+    pg_stat_bgwriter_detail:
+      query: |
+        SELECT
+          checkpoints_timed,
+          checkpoints_req,
+          checkpoint_write_time / 1000.0 AS checkpoint_write_time_seconds,
+          checkpoint_sync_time / 1000.0 AS checkpoint_sync_time_seconds,
+          buffers_checkpoint,
+          buffers_clean,
+          maxwritten_clean,
+          buffers_backend,
+          buffers_backend_fsync,
+          buffers_alloc
+        FROM pg_stat_bgwriter
+      metrics:
+        - checkpoints_timed:
+            usage: COUNTER
+            description: "스케줄된 체크포인트 수"
+        - checkpoints_req:
+            usage: COUNTER
+            description: "요청된 체크포인트 수 (높으면 I/O 과부하)"
+        - checkpoint_write_time_seconds:
+            usage: GAUGE
+            description: "체크포인트 쓰기 시간 (초)"
+        - buffers_checkpoint:
+            usage: COUNTER
+            description: "체크포인트에서 쓴 버퍼 수"
+        - buffers_clean:
+            usage: COUNTER
+            description: "백그라운드 라이터가 쓴 버퍼 수"
+        - maxwritten_clean:
+            usage: COUNTER
+            description: "백그라운드 라이터 중단 횟수"
+
+    # =========================================================================
+    # pg_locks — 락 대기 모니터링 (데드락 조기 감지)
+    # =========================================================================
+    pg_locks_detail:
+      query: |
+        SELECT
+          mode,
+          granted,
+          COUNT(*) AS count
+        FROM pg_locks
+        GROUP BY mode, granted
+      metrics:
+        - mode:
+            usage: LABEL
+            description: "락 모드"
+        - granted:
+            usage: LABEL
+            description: "락 획득 여부"
+        - count:
+            usage: GAUGE
+            description: "해당 모드의 락 수"
+
+    # =========================================================================
+    # pg_replication_slots — 복제 슬롯 모니터링 (WAL 누적 감지)
+    # =========================================================================
+    pg_replication_slot_lag:
+      query: |
+        SELECT
+          slot_name,
+          slot_type,
+          active,
+          pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn) AS lag_bytes
+        FROM pg_replication_slots
+        WHERE slot_type = 'logical'
+      metrics:
+        - slot_name:
+            usage: LABEL
+            description: "복제 슬롯 이름"
+        - active:
+            usage: LABEL
+            description: "슬롯 활성 여부"
+        - lag_bytes:
+            usage: GAUGE
+            description: "복제 지연 크기 (바이트) — 높으면 WAL 누적 위험"
+
+    # =========================================================================
+    # pg_index_usage — 인덱스 사용률 모니터링 (G-9 수정: FR-N24.3 누락 항목 추가)
+    # LowIndexUsage 알림 규칙과 연동 — CSAP D-12-10
+    # =========================================================================
+    pg_index_usage:
+      query: |
+        SELECT
+          schemaname,
+          relname AS table_name,
+          seq_scan,
+          idx_scan,
+          CASE WHEN (seq_scan + idx_scan) > 0
+               THEN round(idx_scan::numeric / (seq_scan + idx_scan) * 100, 2)
+               ELSE 0
+          END AS index_usage_ratio,
+          n_live_tup AS live_rows
+        FROM pg_stat_user_tables
+        WHERE (seq_scan + idx_scan) > 100   -- 충분한 통계가 쌓인 테이블만
+          AND n_live_tup > 1000             -- 소형 테이블 제외 (풀스캔이 유리)
+        ORDER BY seq_scan DESC
+        LIMIT 30
+      metrics:
+        - schemaname:
+            usage: LABEL
+            description: "스키마 이름"
+        - table_name:
+            usage: LABEL
+            description: "테이블 이름"
+        - seq_scan:
+            usage: GAUGE
+            description: "순차 스캔 횟수 (높으면 인덱스 미사용)"
+        - idx_scan:
+            usage: GAUGE
+            description: "인덱스 스캔 횟수"
+        - index_usage_ratio:
+            usage: GAUGE
+            description: "인덱스 사용률 (%) — 30% 미만 시 LowIndexUsage 알림"
+        - live_rows:
+            usage: GAUGE
+            description: "테이블 활성 행 수"
+
+# ---------------------------------------------------------------------------
+# 리소스 제한 — WSL2 메모리 보호 (NFR-N24.4)
+# ---------------------------------------------------------------------------
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# ---------------------------------------------------------------------------
+# ServiceMonitor 자동 생성 (kube-prometheus-stack 연동)
+# ---------------------------------------------------------------------------
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack  # kube-prometheus-stack이 감지하는 레이블
+  interval: 15s   # NFR-N24.1: 15초 수집 주기
+  scrapeTimeout: 10s
+  honorLabels: true
+  metricRelabelings:
+    # 카디널리티 제한 (쿼리 텍스트 레이블 값 정규화)
+    - sourceLabels: [query_text]
+      targetLabel: query_text
+      regex: (.{100}).*
+      replacement: '$1...'
+
+# ---------------------------------------------------------------------------
+# 공통 레이블
+# ---------------------------------------------------------------------------
+commonLabels:
+  app.kubernetes.io/part-of: observability-stack
+
+# 파드 어노테이션
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9187"
+
+# 보안 컨텍스트 — CSAP D-08: 최소 권한
+securityContext:
+  runAsUser: 65534   # nobody
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL

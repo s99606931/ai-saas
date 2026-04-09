@@ -1,0 +1,21 @@
+# Constraint: 읽기 전용 루트 FS 강제 (Enforce)
+# Design Ref: MTU-N53 Section 3.2.8
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequireReadOnlyRootFS
+metadata:
+  name: require-readonly-rootfs
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    excludedNamespaces:
+      - kube-system
+      - gatekeeper-system
+      - monitoring
+      - falco
+      - flux-system
+      - litmus

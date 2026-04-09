@@ -1,0 +1,46 @@
+# =============================================================================
+# Flagger -- Progressive Delivery Operator
+# Design Ref: MTU-N40 Design S3.1
+# Plan SC: FR-N40.1
+# CSAP: D-12 (시스템 개발 보안 -- 배포 안전성)
+#
+# 설치:
+#   helm repo add flagger https://flagger.app
+#   helm install flagger flagger/flagger \
+#     --namespace flagger-system --create-namespace \
+#     -f infra/flagger/values.yaml
+# =============================================================================
+
+# k3s 기본 IngressController: Traefik
+meshProvider: traefik
+
+# Prometheus 메트릭 수집 URL
+metricsServer: http://prometheus-kube-prometheus-prometheus.monitoring:9090
+
+# 리소스 제한 (k3s WSL2 환경)
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# Prometheus ServiceMonitor
+prometheus:
+  install: false  # 기존 Prometheus 스택 사용
+
+# 레플리카
+replicaCount: 1
+
+# Pod 보안 (CSAP D-08)
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 10000
+
+# 로그 레벨
+logLevel: info
+
+# Leader Election (단일 인스턴스)
+leaderElection:
+  enabled: false

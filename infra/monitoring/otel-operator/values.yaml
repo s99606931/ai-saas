@@ -1,0 +1,85 @@
+# OpenTelemetry Operator Helm Values
+# Design Ref: MTU-N24 §FR-N24.2 — OpenTelemetry Operator 자동 계측
+# Plan SC: FR-N24.2
+# CSAP 준수: D-08(접근통제 — RBAC), D-12(보안 — 시크릿 환경변수)
+
+# ---------------------------------------------------------------------------
+# Operator 설정
+# ---------------------------------------------------------------------------
+manager:
+  image:
+    repository: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+    tag: ""  # Chart appVersion 사용
+
+  # 리소스 제한 — WSL2 메모리 보호 (NFR-N24.4)
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  # Operator 로그 레벨
+  extraArgs:
+    - --zap-log-level=info
+    - --enable-nginx-instrumentation=true
+
+# ---------------------------------------------------------------------------
+# Admission Webhook (자동 계측 주입)
+# ---------------------------------------------------------------------------
+admissionWebhooks:
+  create: true
+  certManager:
+    enabled: false  # cert-manager 미설치 — 자체 서명 인증서 사용
+  autoGenerateCert:
+    enabled: true
+    recreate: false
+
+# ---------------------------------------------------------------------------
+# OTel Collector 설정 (Operator 내장)
+# OTLP → Loki(로그) + Tempo(트레이스) + Prometheus(메트릭) 동시 전송
+# Design Ref: MTU-N24 §OTel Pipeline
+# ---------------------------------------------------------------------------
+collector:
+  # Operator가 관리하는 기본 Collector 설정
+  # 상세 설정은 otel-collector.yaml (OpenTelemetryCollector CRD) 참고
+  enabled: false  # CRD로 별도 관리 (otel-collector.yaml)
+
+# ---------------------------------------------------------------------------
+# Instrumentation CR 기본 설정
+# 상세 설정은 instrumentation.yaml 참고
+# ---------------------------------------------------------------------------
+instrumentation:
+  enabled: false  # CR로 별도 관리 (instrumentation.yaml)
+
+# ---------------------------------------------------------------------------
+# RBAC 설정 — CSAP D-08: 최소 권한 원칙
+# ---------------------------------------------------------------------------
+rbac:
+  create: true
+
+serviceAccount:
+  create: true
+  name: opentelemetry-operator-controller-manager
+
+# ---------------------------------------------------------------------------
+# 메트릭 수집 (Prometheus)
+# ---------------------------------------------------------------------------
+metricsService:
+  enabled: true
+
+serviceMonitor:
+  enabled: true
+  additionalLabels:
+    release: kube-prometheus-stack
+
+# ---------------------------------------------------------------------------
+# 공통 레이블 및 어노테이션
+# ---------------------------------------------------------------------------
+commonLabels:
+  app.kubernetes.io/part-of: observability-stack
+
+# OTel Operator 자체 텔레메트리 설정
+## Batch 처리 전역 설정 (개별 Collector에서 오버라이드 가능)
+config: {}

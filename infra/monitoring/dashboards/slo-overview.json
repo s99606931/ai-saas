@@ -1,0 +1,257 @@
+{
+  "annotations": { "list": [] },
+  "description": "SLO 현황 대시보드 — 에러 버짓 + 번레이트 알림",
+  "editable": true,
+  "panels": [
+    {
+      "title": "SLO 현황 개요",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "title": "API Gateway 가용성 (99.9%)",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "1 - slo:sli_error:ratio_rate30d{sloth_service=\"api-gateway\",sloth_slo=\"availability\"} or vector(0.999)",
+          "legendFormat": "SLI"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0.99,
+          "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.999, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Auth Service (99.95%)",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 4, "x": 4, "y": 1 },
+      "targets": [
+        {
+          "expr": "1 - slo:sli_error:ratio_rate30d{sloth_service=\"auth-service\",sloth_slo=\"authentication-success\"} or vector(0.9995)",
+          "legendFormat": "SLI"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0.999,
+          "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.9995, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Tenant Service (99.9%)",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 4, "x": 8, "y": 1 },
+      "targets": [
+        {
+          "expr": "1 - slo:sli_error:ratio_rate30d{sloth_service=\"tenant-service\",sloth_slo=\"crud-success\"} or vector(0.999)",
+          "legendFormat": "SLI"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0.99,
+          "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.999, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Audit Service (99.99%)",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 4, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "1 - slo:sli_error:ratio_rate30d{sloth_service=\"audit-service\",sloth_slo=\"log-recording-success\"} or vector(0.9999)",
+          "legendFormat": "SLI"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0.999,
+          "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.9999, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "AI Gateway (99.5%)",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 4, "x": 16, "y": 1 },
+      "targets": [
+        {
+          "expr": "1 - slo:sli_error:ratio_rate30d{sloth_service=\"ai-gateway\",sloth_slo=\"response-success\"} or vector(0.995)",
+          "legendFormat": "SLI"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0.99,
+          "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.995, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "API GW 지연시간 (P95<500ms)",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 4, "x": 20, "y": 1 },
+      "targets": [
+        {
+          "expr": "1 - slo:sli_error:ratio_rate30d{sloth_service=\"api-gateway\",sloth_slo=\"latency\"} or vector(0.99)",
+          "legendFormat": "SLI"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0.98,
+          "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.99, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "에러 버짓 소진율",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "collapsed": false
+    },
+    {
+      "title": "에러 버짓 잔여율 (30일)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "1 - (slo:sli_error:ratio_rate30d / (1 - slo:objective:ratio))",
+          "legendFormat": "{{ sloth_service }}/{{ sloth_slo }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.25, "color": "orange" },
+              { "value": 0.5, "color": "yellow" },
+              { "value": 0.75, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "번레이트 (Burn Rate)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "slo:sli_error:ratio_rate1h / (1 - slo:objective:ratio)",
+          "legendFormat": "1h {{ sloth_service }}"
+        },
+        {
+          "expr": "slo:sli_error:ratio_rate6h / (1 - slo:objective:ratio)",
+          "legendFormat": "6h {{ sloth_service }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 1, "color": "yellow" },
+              { "value": 10, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "SLO 상세 테이블",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "slo:objective:ratio",
+          "legendFormat": "{{ sloth_service }}/{{ sloth_slo }}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "sloth_service": "서비스",
+              "sloth_slo": "SLO",
+              "Value": "목표"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["slo", "sli", "sloth", "sre"],
+  "time": { "from": "now-7d", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "SLO 현황 대시보드",
+  "uid": "slo-overview",
+  "version": 1
+}

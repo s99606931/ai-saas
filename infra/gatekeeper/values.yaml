@@ -1,0 +1,53 @@
+# OPA Gatekeeper v3.18 Helm Values
+# Design Ref: MTU-N53 Section 3.3
+# Plan SC: FR-N53.1
+
+replicas: 1                         # WSL2 경량 환경
+auditInterval: 60                   # 60초 주기 감사
+constraintViolationsLimit: 20
+auditFromCache: true
+emitAdmissionEvents: true           # Admission 이벤트 발행
+emitAuditEvents: true               # Audit 이벤트 발행
+logLevel: INFO
+
+# 리소스 제한 (WSL2 최적화)
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Prometheus 메트릭 노출
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8888"
+
+# Audit 설정
+audit:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# Webhook 설정
+webhook:
+  failurePolicy: Fail              # Enforce 모드
+  timeoutSeconds: 10
+
+# 네임스페이스 예외 (시스템 네임스페이스)
+exemptNamespaces:
+  - kube-system
+  - kube-public
+  - kube-node-lease
+  - gatekeeper-system
+  - flux-system
+  - monitoring
+  - kyverno
+  - sealed-secrets
+  - falco
+  - litmus

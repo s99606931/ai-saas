@@ -1,0 +1,121 @@
+# 노드 상세 모니터링 대시보드 ConfigMap
+# Design Ref: MTU-N36 §2.3
+# Plan SC: FR-N36.5
+# WSL2 노드의 CPU, 메모리, 디스크, 네트워크 상세 모니터링
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: saas-node-exporter-detail
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/part-of: public-saas
+  annotations:
+    grafana_folder: "Public SaaS"
+data:
+  saas-node-exporter-detail.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 1,
+      "panels": [
+        {
+          "title": "CPU 코어별 사용률",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "targets": [
+            {
+              "expr": "100 - (avg by (cpu) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+              "legendFormat": "CPU {{cpu}}"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "percent", "max": 100, "min": 0}}
+        },
+        {
+          "title": "메모리 상세",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "targets": [
+            {"expr": "node_memory_MemTotal_bytes / 1024 / 1024 / 1024", "legendFormat": "전체"},
+            {"expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1024 / 1024 / 1024", "legendFormat": "사용"},
+            {"expr": "node_memory_Cached_bytes / 1024 / 1024 / 1024", "legendFormat": "캐시"},
+            {"expr": "node_memory_Buffers_bytes / 1024 / 1024 / 1024", "legendFormat": "버퍼"}
+          ],
+          "fieldConfig": {"defaults": {"unit": "decgbytes"}}
+        },
+        {
+          "title": "디스크 사용률 (마운트포인트별)",
+          "type": "gauge",
+          "gridPos": {"h": 6, "w": 12, "x": 0, "y": 8},
+          "targets": [
+            {
+              "expr": "(1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay\"}) * 100",
+              "legendFormat": "{{mountpoint}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent", "max": 100, "min": 0,
+              "thresholds": {"steps": [{"value": 0, "color": "green"}, {"value": 70, "color": "yellow"}, {"value": 85, "color": "red"}]}
+            }
+          }
+        },
+        {
+          "title": "디스크 I/O",
+          "type": "timeseries",
+          "gridPos": {"h": 6, "w": 12, "x": 12, "y": 8},
+          "targets": [
+            {"expr": "rate(node_disk_read_bytes_total[5m]) / 1024 / 1024", "legendFormat": "읽기 ({{device}})"},
+            {"expr": "rate(node_disk_written_bytes_total[5m]) / 1024 / 1024", "legendFormat": "쓰기 ({{device}})"}
+          ],
+          "fieldConfig": {"defaults": {"unit": "MBs"}}
+        },
+        {
+          "title": "네트워크 트래픽",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+          "targets": [
+            {"expr": "rate(node_network_receive_bytes_total{device!~\"lo|veth.*|cali.*|flannel.*\"}[5m]) / 1024 / 1024", "legendFormat": "수신 ({{device}})"},
+            {"expr": "rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|cali.*|flannel.*\"}[5m]) / 1024 / 1024", "legendFormat": "송신 ({{device}})"}
+          ],
+          "fieldConfig": {"defaults": {"unit": "MBs"}}
+        },
+        {
+          "title": "네트워크 에러/드롭",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+          "targets": [
+            {"expr": "rate(node_network_receive_errs_total[5m])", "legendFormat": "수신 에러 ({{device}})"},
+            {"expr": "rate(node_network_transmit_errs_total[5m])", "legendFormat": "송신 에러 ({{device}})"},
+            {"expr": "rate(node_network_receive_drop_total[5m])", "legendFormat": "수신 드롭 ({{device}})"},
+            {"expr": "rate(node_network_transmit_drop_total[5m])", "legendFormat": "송신 드롭 ({{device}})"}
+          ],
+          "fieldConfig": {"defaults": {"unit": "pps"}}
+        },
+        {
+          "title": "시스템 부하 (Load Average)",
+          "type": "timeseries",
+          "gridPos": {"h": 6, "w": 12, "x": 0, "y": 22},
+          "targets": [
+            {"expr": "node_load1", "legendFormat": "1분"},
+            {"expr": "node_load5", "legendFormat": "5분"},
+            {"expr": "node_load15", "legendFormat": "15분"},
+            {"expr": "count(node_cpu_seconds_total{mode=\"idle\"})", "legendFormat": "CPU 코어 수"}
+          ]
+        },
+        {
+          "title": "파일 디스크립터 사용",
+          "type": "timeseries",
+          "gridPos": {"h": 6, "w": 12, "x": 12, "y": 22},
+          "targets": [
+            {"expr": "node_filefd_allocated", "legendFormat": "할당된 FD"},
+            {"expr": "node_filefd_maximum", "legendFormat": "최대 FD"}
+          ]
+        }
+      ],
+      "schemaVersion": 39,
+      "tags": ["node", "system", "public-saas"],
+      "time": {"from": "now-1h", "to": "now"},
+      "title": "Public SaaS - 노드 상세 모니터링",
+      "uid": "saas-node-detail"
+    }

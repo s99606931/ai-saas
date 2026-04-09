@@ -1,0 +1,46 @@
+# ConstraintTemplate: 허용된 컨테이너 레지스트리만 사용
+# Design Ref: MTU-N53 Section 3.2.3
+# Plan SC: FR-N53.6
+# CSAP: D-09 암호화 (공급망 보안)
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sallowedregistries
+  annotations:
+    description: "승인된 레지스트리의 이미지만 허용합니다 (CSAP D-09)"
+    csap.compliance/control: "D-09"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sAllowedRegistries
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            registries:
+              type: array
+              items:
+                type: string
+              description: "허용된 레지스트리 목록 (prefix 매칭)"
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sallowedregistries
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not registry_allowed(container.image)
+          msg := sprintf("[CSAP D-09] 미승인 레지스트리: %v. 허용: %v", [container.image, input.parameters.registries])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.initContainers[_]
+          not registry_allowed(container.image)
+          msg := sprintf("[CSAP D-09] 미승인 레지스트리(initContainer): %v", [container.image])
+        }
+
+        registry_allowed(image) {
+          registry := input.parameters.registries[_]
+          startswith(image, registry)
+        }

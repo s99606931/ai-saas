@@ -1,0 +1,124 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "OPA Gatekeeper 정책 위반 모니터링 대시보드",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "정책 위반 총계",
+      "description": "Gatekeeper Constraint 별 위반 수",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(gatekeeper_violations)",
+          "legendFormat": "총 위반 수"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 20 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "정책별 위반 분포",
+      "description": "ConstraintTemplate 별 위반 분포",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (constraint_kind) (gatekeeper_violations)",
+          "legendFormat": "{{ constraint_kind }}"
+        }
+      ]
+    },
+    {
+      "title": "ConstraintTemplate 상태",
+      "description": "ConstraintTemplate 생성 및 오류 상태",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "gatekeeper_constraint_template_status",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "title": "Audit 소요 시간 (초)",
+      "description": "감사 주기별 소요 시간",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "gatekeeper_audit_duration_seconds",
+          "legendFormat": "감사 소요 시간"
+        }
+      ]
+    },
+    {
+      "title": "위반 추이 (시계열)",
+      "description": "시간대별 정책 위반 발생 추이",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (constraint_kind) (rate(gatekeeper_violations[5m]))",
+          "legendFormat": "{{ constraint_kind }}"
+        }
+      ]
+    },
+    {
+      "title": "Webhook 요청 지연 (p99)",
+      "description": "Gatekeeper Webhook 응답 시간 p99",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(gatekeeper_validation_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99 지연"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["gatekeeper", "opa", "policy", "csap", "security"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "OPA Gatekeeper 정책 모니터링",
+  "uid": "gatekeeper-policy-monitor",
+  "version": 1
+}

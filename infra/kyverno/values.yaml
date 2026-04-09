@@ -1,0 +1,29 @@
+# Kyverno Helm Chart Values -- WSL2 최소 설치
+# Design Ref: MTU-N31 Design -- Kyverno Enforce 전환
+# Plan SC: FR-N31.1
+
+admissionController:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 384Mi
+
+backgroundController:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+reportsController:
+  enabled: false
+
+cleanupController:
+  enabled: false

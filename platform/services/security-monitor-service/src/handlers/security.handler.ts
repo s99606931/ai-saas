@@ -36,8 +36,15 @@ let alertIdCounter = 1;
 
 // --- Zod 스키마 (CSAP D-12: 모든 입력 검증) ---
 
+// FR-SECMON.5: IP 형식 검증 강화 (Design Ref: SVC-SECMON-R1 DESIGN)
+// IPv4, IPv6, CIDR 표기 지원
+const IP_PATTERN = /^(?:(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?|[0-9a-fA-F:]+(?:\/\d{1,3})?)$/;
+
 const ipBlockSchema = z.object({
-  ip: z.string().min(1).max(45),
+  ip: z.string().min(1).max(45).refine(
+    (val) => IP_PATTERN.test(val),
+    { message: '유효한 IPv4, IPv6 또는 CIDR 형식이어야 합니다' },
+  ),
   reason: z.string().min(1).max(255),
   expiresAt: z.string().optional(),
 });
@@ -178,13 +185,28 @@ export async function anomaliesHandler(
 /**
  * FR-P15.3: IP 차단 목록 조회
  * GET /security/ip-blocklist
+ * FR-SECMON.4: 만료된 엔트리 자동 정리 (Design Ref: SVC-SECMON-R1 DESIGN)
  */
 export async function getBlocklistHandler(
   _request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
+  // FR-SECMON.4: 만료된 엔트리 자동 정리
+  const now = new Date();
+  let expiredCount = 0;
+  for (const [ip, entry] of ipBlocklist) {
+    if (entry.expiresAt && new Date(entry.expiresAt) < now) {
+      ipBlocklist.delete(ip);
+      expiredCount++;
+    }
+  }
+
   const list = Array.from(ipBlocklist.values());
-  await reply.send({ items: list, total: list.length });
+  await reply.send({
+    items: list,
+    total: list.length,
+    expiredCleaned: expiredCount,
+  });
 }
 
 /**
@@ -273,4 +295,73 @@ export async function alertsHandler(
     items: filtered.slice(0, 50),
     total: filtered.length,
   });
+}
+
+/**
+ * FR-SECMON.2: 알림 확인(Acknowledge)
+ * PUT /security/alerts/:id/acknowledge
+ * Design Ref: SVC-SECMON-R1 DESIGN
+ * CSAP D-06: 감사 로그 기록
+ */
+export async function acknowledgeAlertHandler(
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const alert = alerts.find((a) => a.id === request.params.id);
+
+  if (!alert) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'ALERT_NOT_FOUND', message: '보안 알림을 찾을 수 없습니다' },
+    });
+    return;
+  }
+
+  if (alert.acknowledged) {
+    await reply.send({
+      success: true,
+      data: alert,
+      message: '이미 확인된 알림입니다',
+    });
+    return;
+  }
+
+  alert.acknowledged = true;
+
+  // 감사 로그 (CSAP D-06)
+  const actor = (request.headers['x-user-id'] as string) || 'system';
+  await logSecurityEvent('ALERT_ACKNOWLEDGED', {
+    alertId: alert.id,
+    severity: alert.severity,
+    type: alert.type,
+    actor,
+  });
+
+  await reply.send({ success: true, data: alert });
+}
+
+/**
+ * FR-SECMON.3: 알림 심각도 대시보드
+ * GET /security/alerts/summary
+ * Design Ref: SVC-SECMON-R1 DESIGN
+ */
+export async function alertsSummaryHandler(
+  _request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  const summary = {
+    total: alerts.length,
+    unacknowledged: alerts.filter((a) => !a.acknowledged).length,
+    bySeverity: {
+      critical: alerts.filter((a) => a.severity === 'critical').length,
+      high: alerts.filter((a) => a.severity === 'high').length,
+      medium: alerts.filter((a) => a.severity === 'medium').length,
+      low: alerts.filter((a) => a.severity === 'low').length,
+    },
+    latestAlert: alerts.length > 0
+      ? alerts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+      : null,
+  };
+
+  await reply.send({ success: true, data: summary });
 }

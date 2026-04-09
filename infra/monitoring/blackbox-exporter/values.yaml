@@ -1,0 +1,178 @@
+# =============================================================================
+# Blackbox Exporter Helm Values — 외부 서비스 가용성 모니터링
+# Design Ref: MTU-N36 §2.2
+# Plan SC: FR-N36.6
+# CSAP: D-06(감사 로그 — 서비스 다운타임 기록)
+#
+# 배포: helm upgrade --install blackbox-exporter prometheus/prometheus-blackbox-exporter \
+#         --namespace monitoring -f infra/monitoring/blackbox-exporter/values.yaml
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# 리소스 제한 (WSL2 경량)
+# ---------------------------------------------------------------------------
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+# ---------------------------------------------------------------------------
+# 프로브 모듈 설정
+# ---------------------------------------------------------------------------
+config:
+  modules:
+    # HTTP 200 OK 확인 (기본)
+    http_2xx:
+      prober: http
+      timeout: 10s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+        valid_status_codes: [200]
+        method: GET
+        follow_redirects: true
+        preferred_ip_protocol: "ip4"
+        tls_config:
+          insecure_skip_verify: true
+
+    # HTTP POST 확인 (API 엔드포인트)
+    http_post_2xx:
+      prober: http
+      timeout: 10s
+      http:
+        valid_status_codes: [200, 201]
+        method: POST
+        preferred_ip_protocol: "ip4"
+        tls_config:
+          insecure_skip_verify: true
+
+    # TCP 연결 확인 (DB, Redis 등)
+    tcp_connect:
+      prober: tcp
+      timeout: 5s
+      tcp:
+        preferred_ip_protocol: "ip4"
+
+    # ICMP Ping 확인
+    icmp:
+      prober: icmp
+      timeout: 5s
+      icmp:
+        preferred_ip_protocol: "ip4"
+
+# ---------------------------------------------------------------------------
+# ServiceMonitor (Prometheus 자동 수집)
+# ---------------------------------------------------------------------------
+serviceMonitor:
+  enabled: true
+  defaults:
+    labels:
+      release: kube-prometheus-stack
+    interval: 30s
+    scrapeTimeout: 10s
+
+  # 모니터링 대상 서비스 정의
+  targets:
+    # Gitea (Git 저장소)
+    - name: gitea
+      url: http://172.18.120.97:3000
+      module: http_2xx
+      labels:
+        service: gitea
+        tier: devops
+
+    # Harbor (이미지 레지스트리)
+    - name: harbor
+      url: http://172.18.120.97:8080/api/v2.0/health
+      module: http_2xx
+      labels:
+        service: harbor
+        tier: devops
+
+    # Grafana (모니터링 UI)
+    - name: grafana
+      url: http://kube-prometheus-stack-grafana.monitoring.svc.cluster.local/api/health
+      module: http_2xx
+      labels:
+        service: grafana
+        tier: monitoring
+
+    # API Gateway (SaaS 플랫폼 진입점)
+    - name: api-gateway
+      url: http://api-gateway.saas-platform.svc.cluster.local:3000/health
+      module: http_2xx
+      labels:
+        service: api-gateway
+        tier: application
+
+    # PostgreSQL (TCP 연결)
+    - name: postgresql
+      url: postgres.saas-platform.svc.cluster.local:5432
+      module: tcp_connect
+      labels:
+        service: postgresql
+        tier: database
+
+    # Redis (TCP 연결)
+    - name: redis
+      url: redis.saas-platform.svc.cluster.local:6379
+      module: tcp_connect
+      labels:
+        service: redis
+        tier: cache
+
+    # Loki (로그 집계)
+    - name: loki
+      url: http://loki-gateway.monitoring.svc.cluster.local/ready
+      module: http_2xx
+      labels:
+        service: loki
+        tier: monitoring
+
+    # Tempo (분산 추적)
+    - name: tempo
+      url: http://tempo.monitoring.svc.cluster.local:3100/ready
+      module: http_2xx
+      labels:
+        service: tempo
+        tier: monitoring
+
+# ---------------------------------------------------------------------------
+# PrometheusRule (서비스 다운 알림)
+# ---------------------------------------------------------------------------
+prometheusRule:
+  enabled: true
+  additionalLabels:
+    release: kube-prometheus-stack
+  rules:
+    - alert: ServiceDown
+      expr: probe_success == 0
+      for: 2m
+      labels:
+        severity: critical
+        team: devops
+      annotations:
+        summary: "서비스 {{ $labels.target }} 다운"
+        description: "{{ $labels.target }} ({{ $labels.service }})이(가) 2분 이상 응답하지 않습니다."
+        csap_ref: "D-06-04"
+
+    - alert: ServiceSlowResponse
+      expr: probe_duration_seconds > 5
+      for: 5m
+      labels:
+        severity: warning
+        team: devops
+      annotations:
+        summary: "서비스 {{ $labels.target }} 응답 지연 (5초 초과)"
+        description: "{{ $labels.target }} 응답 시간: {{ $value | printf \"%.2f\" }}초"
+
+    - alert: SSLCertExpiringSoon
+      expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 30
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        summary: "SSL 인증서 만료 임박 (30일 이내)"
+        description: "{{ $labels.target }}의 SSL 인증서가 30일 이내 만료됩니다."

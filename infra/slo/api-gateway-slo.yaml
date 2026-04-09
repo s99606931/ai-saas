@@ -1,0 +1,79 @@
+# =============================================================================
+# API Gateway SLO 정의 (Sloth CRD 형식)
+# Design Ref: MTU-N49 Design §SLO 정의
+# Plan SC: FR-N49.1, FR-N49.2, FR-N49.3
+#
+# Sloth가 이 CRD를 읽어 Prometheus recording rules + alerting rules 자동 생성
+# =============================================================================
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: api-gateway-slo
+  namespace: production
+  labels:
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/part-of: saas-platform
+    csap.compliance/domain: "D-06"
+    team: platform
+spec:
+  service: "api-gateway"
+  labels:
+    owner: "platform-team"
+    tier: "critical"
+
+  slos:
+    # =========================================================================
+    # SLO 1: 가용성 — 99.9% 성공률 (non-5xx)
+    # =========================================================================
+    - name: "availability"
+      objective: 99.9
+      description: "API Gateway HTTP 요청 성공률 (5xx 제외)"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_requests_total{job="api-gateway",code=~"5.."}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_requests_total{job="api-gateway"}[{{.window}}]))
+      alerting:
+        name: APIGatewayAvailabilitySLOBreach
+        labels:
+          category: "availability"
+          severity: "critical"
+          csap_domain: "D-06"
+        annotations:
+          summary: "API Gateway 가용성 SLO 위반"
+          description: >
+            API Gateway 가용성이 99.9% SLO 미달입니다.
+            에러 버짓 소진율이 임계값을 초과했습니다.
+            즉시 원인 분석 및 대응이 필요합니다.
+        pageAlert:
+          labels:
+            severity: "critical"
+        ticketAlert:
+          labels:
+            severity: "warning"
+
+    # =========================================================================
+    # SLO 2: 지연시간 — P95 < 500ms
+    # =========================================================================
+    - name: "latency"
+      objective: 99.0
+      description: "API Gateway P95 응답시간 500ms 미만"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_request_duration_seconds_bucket{job="api-gateway",le="0.5"}[{{.window}}]))
+            -
+            sum(rate(http_request_duration_seconds_count{job="api-gateway"}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_request_duration_seconds_count{job="api-gateway"}[{{.window}}]))
+      alerting:
+        name: APIGatewayLatencySLOBreach
+        labels:
+          category: "latency"
+          severity: "warning"
+        annotations:
+          summary: "API Gateway 지연시간 SLO 위반"
+          description: >
+            API Gateway P95 응답시간이 500ms를 초과하는 비율이
+            SLO 목표(99%)를 미달하고 있습니다.

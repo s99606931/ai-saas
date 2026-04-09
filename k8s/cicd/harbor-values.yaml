@@ -1,0 +1,79 @@
+# Harbor Helm Values -- k3s 배포용
+# Design Ref: MTU-N28 SS3 | Plan SC: FR-N28.6, FR-N28.7, FR-N28.8
+# CSAP: D-09 (시크릿 관리), D-11-04 (이미지 스캔)
+#
+# 차트: harbor/harbor v1.18.3 (appVersion 2.14.3)
+# 사용법:
+#   helm install harbor harbor/harbor -n cicd -f k8s/cicd/harbor-values.yaml
+
+# -- 서비스 노출 (FR-N28.7)
+expose:
+  type: nodePort
+  tls:
+    enabled: false
+  nodePort:
+    name: harbor
+    ports:
+      http:
+        port: 80
+        nodePort: 30080
+      https:
+        port: 443
+        nodePort: 30443
+
+# -- 외부 접속 URL
+externalURL: http://localhost:30080
+
+# -- Harbor admin 비밀번호 (CSAP D-09)
+harborAdminPassword: "Harbor_8000458f5f68425c"
+
+# -- 내부 TLS 비활성화 (개발 환경)
+internalTLS:
+  enabled: false
+
+# -- 영속 볼륨 (FR-N28.14)
+persistence:
+  enabled: true
+  resourcePolicy: "keep"
+  persistentVolumeClaim:
+    registry:
+      storageClass: local-path
+      size: 20Gi
+      accessMode: ReadWriteOnce
+    jobservice:
+      jobLog:
+        storageClass: local-path
+        size: 1Gi
+        accessMode: ReadWriteOnce
+    database:
+      storageClass: local-path
+      size: 5Gi
+      accessMode: ReadWriteOnce
+    redis:
+      storageClass: local-path
+      size: 1Gi
+      accessMode: ReadWriteOnce
+    trivy:
+      storageClass: local-path
+      size: 5Gi
+      accessMode: ReadWriteOnce
+
+# -- 내장 데이터베이스 (PostgreSQL)
+database:
+  type: internal
+
+# -- 내장 Redis
+redis:
+  type: internal
+
+# -- Trivy 취약점 스캐너 (FR-N28.8, CSAP D-11-04)
+trivy:
+  enabled: true
+
+# -- 메트릭 비활성화
+metrics:
+  enabled: false
+
+# -- 캐시 비활성화
+cache:
+  enabled: false

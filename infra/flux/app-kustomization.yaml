@@ -1,0 +1,23 @@
+# Flux Kustomization — 샘플 앱 자동 배포
+# Design Ref: MTU-N24 §3
+# Plan SC: FR-N24.2
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: sample-apps
+  namespace: flux-system
+spec:
+  interval: 5m
+  sourceRef:
+    kind: GitRepository
+    name: fleet-infra
+  path: ./apps/sample-app
+  prune: true
+  targetNamespace: gitops-demo
+  timeout: 3m
+  wait: true
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: nginx-demo
+      namespace: gitops-demo

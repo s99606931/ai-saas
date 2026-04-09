@@ -9,6 +9,12 @@ import fp from 'fastify-plugin';
 /** 감사 로그 제외 경로 (노이즈 방지) */
 const EXCLUDED_PATHS = new Set(['/health', '/ready', '/health/services']);
 
+/** FR-GW.5: 느린 요청 감지 임계값 (ms) */
+const SLOW_REQUEST_THRESHOLD_MS = parseInt(
+  process.env['SLOW_REQUEST_THRESHOLD_MS'] ?? '5000',
+  10,
+);
+
 /** 민감 헤더 마스킹 (N2SF 데이터 등급 준수) */
 function maskAuthHeader(value: string | undefined): string {
   if (!value) return 'none';
@@ -85,6 +91,21 @@ async function auditLoggerPlugin(app: FastifyInstance): Promise<void> {
     // 비동기 fire-and-forget (응답 지연 방지)
     // 요청 본문은 의도적으로 로깅하지 않음 (N2SF 데이터 등급 위반 방지)
     app.log.info(entry, 'audit-log');
+
+    // FR-GW.5: 느린 요청 감지 (Design Ref: SVC-GATEWAY-R1 DESIGN §5)
+    if (latencyMs > SLOW_REQUEST_THRESHOLD_MS) {
+      app.log.warn(
+        {
+          action: 'SLOW_REQUEST',
+          target: `${request.method} ${url}`,
+          latencyMs,
+          threshold: SLOW_REQUEST_THRESHOLD_MS,
+          actor,
+          ip: request.ip,
+        },
+        `느린 요청 감지: ${request.method} ${url} (${latencyMs}ms > ${SLOW_REQUEST_THRESHOLD_MS}ms)`,
+      );
+    }
   });
 }
 

@@ -1,0 +1,95 @@
+# =============================================================================
+# 카오스 실험 1: Pod Kill
+# Design Ref: MTU-N50 Design §카오스 실험 시나리오 #1
+# Plan SC: FR-N50.2
+#
+# 목적: Pod 장애 시 자동 복구 능력 검증
+# 대상: staging 네임스페이스 api-gateway
+# =============================================================================
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosExperiment
+metadata:
+  name: pod-kill-api-gateway
+  namespace: staging
+  labels:
+    app.kubernetes.io/part-of: chaos-engineering
+    experiment-type: pod
+spec:
+  definition:
+    scope: Namespaced
+    permissions:
+      - apiGroups: [""]
+        resources: ["pods"]
+        verbs: ["create", "delete", "get", "list", "patch", "update"]
+      - apiGroups: [""]
+        resources: ["events"]
+        verbs: ["create", "get", "list", "patch", "update"]
+      - apiGroups: ["apps"]
+        resources: ["deployments", "replicasets"]
+        verbs: ["get", "list"]
+    image: "litmuschaos/go-runner:3.0.0"
+    imagePullPolicy: Always
+    args:
+      - -c
+      - ./experiments -name pod-delete
+    command:
+      - /bin/bash
+    env:
+      # 대상 앱 레이블
+      - name: APP_NAMESPACE
+        value: "staging"
+      - name: APP_LABEL
+        value: "app.kubernetes.io/name=api-gateway"
+      # 실험 지속 시간
+      - name: TOTAL_CHAOS_DURATION
+        value: "30"
+      # Pod 삭제 간격
+      - name: CHAOS_INTERVAL
+        value: "10"
+      # 강제 삭제
+      - name: FORCE
+        value: "false"
+      # 랜덤 시퀀스
+      - name: SEQUENCE
+        value: "parallel"
+    labels:
+      name: pod-kill-api-gateway
+      csap.compliance/domain: "D-12"
+---
+# ChaosEngine — 실험 실행 트리거
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: pod-kill-api-gateway-engine
+  namespace: staging
+  labels:
+    app.kubernetes.io/part-of: chaos-engineering
+spec:
+  engineState: "active"
+  appinfo:
+    appns: "staging"
+    applabel: "app.kubernetes.io/name=api-gateway"
+    appkind: "deployment"
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-kill-api-gateway
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "30"
+        probe:
+          # SLO 프로브: 실험 중에도 서비스 가용성 확인
+          - name: "api-health-check"
+            type: "httpProbe"
+            httpProbe/inputs:
+              url: "http://api-gateway.staging.svc.cluster.local/health"
+              method:
+                get:
+                  criteria: "=="
+                  responseCode: "200"
+            mode: "Continuous"
+            runProperties:
+              probeTimeout: 5
+              interval: 5
+              retry: 3

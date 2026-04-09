@@ -1,0 +1,217 @@
+# Tempo 2.x Helm Values — Monolithic 모드 (WSL2 단일노드)
+# Design Ref: MTU-N24 §FR-N24.2 — 분산 추적 (Tempo + OpenTelemetry)
+# Plan SC: FR-N24.2
+# CSAP 준수: D-06(트레이스 보존 7일), D-08(접근통제 — 내부 전용)
+
+# ---------------------------------------------------------------------------
+# 배포 모드: Monolithic (단일 파드, 개발/소규모 환경)
+# 전체 Tempo 기능을 단일 컴포넌트로 운영 — WSL2 리소스 효율
+# ---------------------------------------------------------------------------
+tempo:
+  # ---------------------------------------------------------------------------
+  # 수신기 설정 — OTLP gRPC (4317), HTTP (4318)
+  # FR-N24.2: OpenTelemetry Operator와 연동
+  # ---------------------------------------------------------------------------
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+    # Jaeger 프로토콜 지원 (기존 레거시 서비스 마이그레이션 대비)
+    jaeger:
+      protocols:
+        thrift_http:
+          endpoint: 0.0.0.0:14268
+        grpc:
+          endpoint: 0.0.0.0:14250
+
+  # ---------------------------------------------------------------------------
+  # 트레이스 데이터 보존 정책 — NFR-N24.5: 트레이스 7일
+  # ---------------------------------------------------------------------------
+  retention: 168h  # 7일
+
+  # ---------------------------------------------------------------------------
+  # 스토리지 설정 (로컬 파일시스템)
+  # ---------------------------------------------------------------------------
+  storage:
+    trace:
+      backend: local
+      local:
+        path: /var/tempo/traces
+      wal:
+        path: /var/tempo/wal
+
+  # ---------------------------------------------------------------------------
+  # 샘플링 전략 — FR-N24.2
+  # Head-based 10% + Tail-based 에러/슬로우 100%
+  # ---------------------------------------------------------------------------
+  overrides:
+    defaults:
+      ingestion:
+        rate_limit_bytes: 15000000   # 15MB/s
+        burst_size_bytes: 20000000   # 20MB 버스트
+        max_traces_per_user: 100000
+
+  # Tail-based 샘플링 (에러 및 슬로우 요청은 100% 보존)
+  # OTel Collector에서 처리 (otel-collector.yaml 참고)
+
+  # ---------------------------------------------------------------------------
+  # 쿼리 설정 (TraceQL 지원)
+  # ---------------------------------------------------------------------------
+  querier:
+    max_concurrent_queries: 20
+
+  query_frontend:
+    max_retries: 5
+    search:
+      max_duration: 30s
+      concurrent_jobs: 1000
+      target_bytes_per_job: 104857600  # 100MB
+
+  # 메트릭 생성기 (RED 메트릭 자동 생성 — FR-N24.5 트래픽 모니터링)
+  metrics_generator:
+    enabled: true
+    storage:
+      path: /var/tempo/generator/wal
+    registry:
+      collection_interval: 15s  # NFR-N24.1: 15초 수집 주기
+    processor:
+      service_graphs:
+        enabled: true
+        dimensions:
+          - http.method
+          - http.status_code
+        max_items: 10000
+        wait: 10s
+        workers: 10
+      span_metrics:
+        enabled: true
+        dimensions:
+          - service.name
+          - http.method
+          - http.status_code
+          - http.route
+    remote_write_flush_deadline: 1m
+    remote_write:
+      - url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+
+  # 압축기 (스토리지 최적화)
+  compactor:
+    compaction:
+      block_retention: 168h  # 7일 보존
+      compacted_block_retention: 1h
+
+# ---------------------------------------------------------------------------
+# 리소스 제한 — WSL2 메모리 보호 (NFR-N24.4)
+# ---------------------------------------------------------------------------
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 500m
+    memory: 1Gi
+
+# ---------------------------------------------------------------------------
+# PVC 설정 — INFR-N24.2: 스토리지 10GB
+# ---------------------------------------------------------------------------
+persistence:
+  enabled: true
+  storageClassName: ""  # 클러스터 기본 StorageClass
+  accessModes:
+    - ReadWriteOnce
+  size: 10Gi
+
+# ---------------------------------------------------------------------------
+# 서비스 설정
+# ---------------------------------------------------------------------------
+service:
+  type: ClusterIP
+  port: 3100
+  # OTLP 포트 추가 노출
+  additionalPorts:
+    - name: otlp-grpc
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+
+# ---------------------------------------------------------------------------
+# Grafana datasource 자동 등록
+# Design Ref: MTU-N24 §Grafana 통합
+# ---------------------------------------------------------------------------
+extraObjects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: tempo-datasource
+      namespace: monitoring
+      labels:
+        grafana_datasource: "1"
+        app.kubernetes.io/part-of: observability-stack
+    data:
+      tempo-datasource.yaml: |
+        # Grafana datasource 자동 등록 — Tempo 2.x
+        apiVersion: 1
+        datasources:
+          - name: Tempo
+            type: tempo
+            uid: tempo
+            url: http://tempo.monitoring.svc.cluster.local:3100
+            access: proxy
+            isDefault: false
+            jsonData:
+              # 트레이스-로그 상관관계 — FR-N24.2 Loki 연동
+              tracesToLogsV2:
+                datasourceUid: loki
+                spanStartTimeShift: '-1m'
+                spanEndTimeShift: '1m'
+                tags:
+                  - key: service.name
+                    value: app
+                filterByTraceID: true
+                filterBySpanID: false
+              # 서비스 그래프 (RED 메트릭) — FR-N24.5
+              serviceMap:
+                datasourceUid: prometheus
+              # TraceQL 검색 설정
+              search:
+                hide: false
+              nodeGraph:
+                enabled: true
+              lokiSearch:
+                datasourceUid: loki
+            version: 1
+            editable: true
+
+# ---------------------------------------------------------------------------
+# 서비스 모니터 (Prometheus 수집)
+# ---------------------------------------------------------------------------
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
+  interval: 15s
+
+# 공통 레이블
+commonLabels:
+  app.kubernetes.io/part-of: observability-stack
+
+# 파드 어노테이션 (Prometheus 자동 감지)
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3100"
+  prometheus.io/path: "/metrics"
+
+# 보안 컨텍스트
+securityContext:
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  runAsNonRoot: true

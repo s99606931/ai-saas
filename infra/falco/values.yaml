@@ -1,0 +1,136 @@
+# =============================================================================
+# Falco Helm Values — 공공기관 SaaS 런타임 보안
+# Design Ref: MTU-N45 Design §아키텍처
+# Plan SC: FR-N45.1
+#
+# 설치: helm install falco falcosecurity/falco -n falco-system -f values.yaml
+# =============================================================================
+
+# --- 드라이버 설정 (eBPF 선택 — WSL2 커널 6.6+ 호환) ---
+driver:
+  kind: ebpf
+  ebpf:
+    # WSL2 커널 호환성을 위한 프로브 설정
+    hostNetwork: true
+    leastPrivileged: false
+
+# --- Falco 엔진 설정 ---
+falco:
+  # JSON 출력 (Falcosidekick + 로그 파싱 용이)
+  jsonOutput: true
+  jsonIncludeOutputProperty: true
+  jsonIncludeTagsProperty: true
+
+  # 로그 설정
+  logStderr: true
+  logSyslog: false
+  logLevel: info
+
+  # 출력 채널
+  httpOutput:
+    enabled: true
+    url: "http://falcosidekick.falco-system.svc.cluster.local:2801"
+    insecure: true
+
+  # gRPC 출력 (Falcosidekick gRPC 연동)
+  grpc:
+    enabled: true
+    bindAddress: "unix:///run/falco/falco.sock"
+    threadiness: 0
+
+  grpcOutput:
+    enabled: true
+
+  # Kubernetes 메타데이터 enrichment
+  metadataDownload:
+    maxMb: 100
+    chunkWaitUs: 1000
+    watchFreqSec: 1
+
+  # 규칙 파일 경로
+  rulesFile:
+    - /etc/falco/falco_rules.yaml
+    - /etc/falco/falco_rules.local.yaml
+    - /etc/falco/rules.d
+
+  # 우선순위 필터 (DEBUG 제외)
+  priority: INFORMATIONAL
+
+  # 버퍼 설정
+  bufferedOutputs: false
+  outputs:
+    rate: 0
+    maxBurst: 1000
+
+# --- Kubernetes 메타데이터 ---
+collectors:
+  kubernetes:
+    enabled: true
+    # Pod/ReplicaSet/Deployment 등 메타데이터 수집
+    nodeNameFilter: ""
+
+# --- 리소스 제한 (공공기관 SaaS 환경 최적화) ---
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# --- DaemonSet 설정 ---
+# k3s 모든 노드에서 실행
+tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+
+# --- 서비스 모니터 (Prometheus 연동) ---
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
+  interval: 30s
+
+# --- 커스텀 규칙 마운트 ---
+customRules:
+  custom-rules.yaml: |-
+    # 공공 SaaS 커스텀 규칙 — ConfigMap으로 별도 관리
+    # infra/falco/custom-rules.yaml 참조
+
+# --- 보안 컨텍스트 ---
+podSecurityContext:
+  runAsNonRoot: false
+
+containerSecurityContext:
+  privileged: true
+  # eBPF 드라이버 필수 권한
+
+# --- 네임스페이스 ---
+# falco-system 네임스페이스에 설치
+namespaceOverride: "falco-system"
+
+# --- 추가 볼륨 (eBPF 필수) ---
+extraVolumes:
+  - name: bpf-maps
+    emptyDir:
+      medium: Memory
+  - name: proc
+    hostPath:
+      path: /proc
+  - name: boot
+    hostPath:
+      path: /boot
+
+extraVolumeMounts:
+  - name: bpf-maps
+    mountPath: /sys/fs/bpf
+  - name: proc
+    mountPath: /host/proc
+    readOnly: true
+  - name: boot
+    mountPath: /host/boot
+    readOnly: true

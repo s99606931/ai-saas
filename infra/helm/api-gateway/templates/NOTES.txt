@@ -1,0 +1,13 @@
+공공기관 SaaS API Gateway 배포 완료!
+
+1. Pod 상태 확인:
+   kubectl get pods -n {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "api-gateway.name" . }}"
+
+2. 서비스 확인:
+{{- if eq .Values.service.type "NodePort" }}
+   export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "api-gateway.fullname" . }})
+   curl http://localhost:$NODE_PORT{{ .Values.healthCheck.path }}
+{{- else }}
+   kubectl port-forward svc/{{ include "api-gateway.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+   curl http://localhost:{{ .Values.service.port }}{{ .Values.healthCheck.path }}
+{{- end }}

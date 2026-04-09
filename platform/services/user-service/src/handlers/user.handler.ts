@@ -30,12 +30,38 @@ const updateUserSchema = z.object({
  * CSAP D-08-05: JWT 클레임 기반 테넌트 강제 격리
  * SUPER_ADMIN만 tenantId 파라미터로 교차 테넌트 조회 가능
  */
+/** 영구 비활성화 날짜 상수 */
+const PERMANENT_LOCK = new Date('9999-12-31T23:59:59.000Z');
+
+/** 유효한 정렬 필드 */
+const VALID_SORT_FIELDS = ['name', 'email', 'createdAt', 'lastLoginAt'] as const;
+type SortField = typeof VALID_SORT_FIELDS[number];
+
+/**
+ * 사용자 목록 조회 (검색/필터링/정렬 지원)
+ * Design Ref: SVC-USER-R1 DESIGN §1
+ * Plan SC: FR-USR.1
+ * CSAP D-08-05: JWT 클레임 기반 테넌트 강제 격리
+ * SUPER_ADMIN만 tenantId 파라미터로 교차 테넌트 조회 가능
+ */
 export async function listUsersHandler(
-  request: FastifyRequest<{ Querystring: { page?: string; pageSize?: string; tenantId?: string } }>,
+  request: FastifyRequest<{
+    Querystring: {
+      page?: string;
+      pageSize?: string;
+      tenantId?: string;
+      search?: string;
+      role?: string;
+      status?: string;
+      sortBy?: string;
+      sortOrder?: string;
+    };
+  }>,
   reply: FastifyReply,
 ): Promise<void> {
   const page = parseInt(request.query.page ?? '1', 10);
   const pageSize = Math.min(parseInt(request.query.pageSize ?? '20', 10), 100);
+  const { search, role, status, sortBy, sortOrder } = request.query;
 
   // 게이트웨이가 주입한 JWT 클레임 헤더에서 테넌트 ID 추출
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
@@ -54,7 +80,49 @@ export async function listUsersHandler(
     return;
   }
 
-  const where = { tenantId };
+  // FR-USR.1: Prisma where 조건 빌더 (Design Ref: SVC-USER-R1 DESIGN §1.2)
+  const where: Record<string, unknown> = { tenantId };
+
+  // 이름 또는 이메일 부분 일치 검색
+  if (search && search.trim().length > 0) {
+    where['OR'] = [
+      { name: { contains: search.trim(), mode: 'insensitive' } },
+      { email: { contains: search.trim(), mode: 'insensitive' } },
+    ];
+  }
+
+  // 역할 필터링
+  if (role && ['TENANT_ADMIN', 'USER', 'VIEWER', 'AUDITOR'].includes(role)) {
+    where['role'] = role;
+  }
+
+  // 상태 필터링
+  const now = new Date();
+  if (status === 'active') {
+    // 잠금 없음 또는 잠금 기간 만료
+    where['OR_status'] = undefined; // clear
+    where['AND'] = [
+      {
+        OR: [
+          { lockedUntil: null },
+          { lockedUntil: { lt: now } },
+        ],
+      },
+    ];
+  } else if (status === 'inactive') {
+    // 영구 비활성화 (소프트 삭제)
+    where['lockedUntil'] = PERMANENT_LOCK;
+  } else if (status === 'locked') {
+    // 임시 잠금 (영구잠금 제외)
+    where['lockedUntil'] = { gt: now };
+    where['NOT'] = { lockedUntil: PERMANENT_LOCK };
+  }
+
+  // 정렬 (기본: createdAt desc)
+  const validSortBy: SortField = VALID_SORT_FIELDS.includes(sortBy as SortField)
+    ? (sortBy as SortField)
+    : 'createdAt';
+  const validSortOrder: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
@@ -66,12 +134,13 @@ export async function listUsersHandler(
         role: true,
         mfaEnabled: true,
         lastLoginAt: true,
+        lockedUntil: true,
         createdAt: true,
         tenantId: true,
       },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { [validSortBy]: validSortOrder },
     }),
     prisma.user.count({ where }),
   ]);

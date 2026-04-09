@@ -1,0 +1,1120 @@
+# k3s 공공 SaaS 메인 모니터링 대시보드 (한국어 + 도움말)
+# 도움말: 각 Row에 📖 가이드 패널 포함 (기준치, 조치방법, CSAP 기준)
+# CSAP: D-06 (침해사고 관리), D-08 (접근 통제)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k3s-korean-main-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "k3s 공공 SaaS"
+data:
+  k3s-korean-main.json: |
+    {
+      "uid": "k3s-korean-main",
+      "title": "k3s 공공 SaaS — 메인 모니터링",
+      "description": "k3s 클러스터 전체 현황 모니터링 대시보드 (한국어)",
+      "tags": [
+        "k3s",
+        "public-saas",
+        "korean",
+        "main"
+      ],
+      "timezone": "Asia/Seoul",
+      "refresh": "30s",
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "schemaVersion": 38,
+      "panels": [
+        {
+          "id": 1,
+          "type": "text",
+          "title": "📋 대시보드 사용 안내",
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 4
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "## k3s 공공 SaaS 메인 모니터링 대시보드\n\n이 대시보드는 **k3s 단일 노드 클러스터**의 핵심 자원을 실시간으로 모니터링합니다.\n\n| 영역 | 기준치 (경고) | 기준치 (위험) | 측정 주기 |\n|------|-------------|-------------|-------|\n| CPU 사용률 | **70%** 이상 | **85%** 이상 | 15초 |\n| 메모리 사용률 | **80%** 이상 | **90%** 이상 | 15초 |\n| 디스크 사용률 | **75%** 이상 | **85%** 이상 | 1분 |\n| 서비스 가용성 | 1개 이상 다운 | 2개 이상 다운 | 15초 |\n\n> **색상 안내**: 🟢 정상 · 🟡 경고 (조치 권장) · 🔴 위험 (즉시 조치)"
+          }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "🖥️ CPU 사용률",
+          "description": "CPU 사용률\n기준: 70% 경고/85% 위험",
+          "gridPos": {
+            "x": 0,
+            "y": 4,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "100 - (avg(rate(node_cpu_seconds_total{mode='idle'}[5m])) * 100)",
+              "refId": "A",
+              "legendFormat": ""
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "area"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 70
+                  },
+                  {
+                    "color": "red",
+                    "value": 85
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "💾 메모리 사용률",
+          "description": "메모리 사용률\n기준: 80% 경고/90% 위험",
+          "gridPos": {
+            "x": 6,
+            "y": 4,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+              "refId": "A",
+              "legendFormat": ""
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "area"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 80
+                  },
+                  {
+                    "color": "red",
+                    "value": 90
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "💿 디스크 사용률",
+          "description": "루트 파티션 사용률\n기준: 75% 경고/85% 위험",
+          "gridPos": {
+            "x": 12,
+            "y": 4,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}) * 100",
+              "refId": "A",
+              "legendFormat": ""
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "area"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 75
+                  },
+                  {
+                    "color": "red",
+                    "value": 85
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "✅ 가용 서비스",
+          "description": "Prometheus 스크랩 정상 서비스 수",
+          "gridPos": {
+            "x": 18,
+            "y": 4,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "count(up == 1)",
+              "refId": "A",
+              "legendFormat": ""
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "area"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 4
+                  },
+                  {
+                    "color": "green",
+                    "value": 6
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 6,
+          "type": "row",
+          "title": "🖥️ CPU 모니터링",
+          "gridPos": {
+            "x": 0,
+            "y": 8,
+            "w": 24,
+            "h": 1
+          },
+          "collapsed": false
+        },
+        {
+          "id": 7,
+          "type": "text",
+          "title": "📖 CPU 모니터링 가이드",
+          "gridPos": {
+            "x": 0,
+            "y": 9,
+            "w": 7,
+            "h": 10
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "### CPU 모니터링 가이드\n\n**기준치**\n- 🟢 정상: **0 ~ 70%**\n- 🟡 경고: **70 ~ 85%** → 워크로드 분산 검토\n- 🔴 위험: **85%+** → 즉시 조치\n\n**주요 확인 항목**\n1. `idle` 모드 감소 추이 확인\n2. `user` vs `system` 비율 분석\n3. 특정 시간대 급등 패턴 파악\n\n**조치 방법**\n```\nkubectl top pods -A --sort-by=cpu\n```\n\n**CSAP 기준**: D-06-03"
+          }
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "CPU 사용률 추이 (%)",
+          "description": "5분 평균 CPU 사용률. 70% 이상 지속 시 경고.",
+          "gridPos": {
+            "x": 7,
+            "y": 9,
+            "w": 17,
+            "h": 10
+          },
+          "targets": [
+            {
+              "expr": "100 - (avg(rate(node_cpu_seconds_total{mode='idle'}[5m])) * 100)",
+              "refId": "A",
+              "legendFormat": "전체 CPU 사용률"
+            },
+            {
+              "expr": "avg(rate(node_cpu_seconds_total{mode='user'}[5m])) * 100",
+              "refId": "B",
+              "legendFormat": "사용자(User)"
+            },
+            {
+              "expr": "avg(rate(node_cpu_seconds_total{mode='system'}[5m])) * 100",
+              "refId": "C",
+              "legendFormat": "시스템(System)"
+            },
+            {
+              "expr": "avg(rate(node_cpu_seconds_total{mode='iowait'}[5m])) * 100",
+              "refId": "D",
+              "legendFormat": "I/O 대기"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 70
+                  },
+                  {
+                    "color": "red",
+                    "value": 85
+                  }
+                ]
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 10
+              }
+            }
+          }
+        },
+        {
+          "id": 9,
+          "type": "timeseries",
+          "title": "CPU 부하 평균 (Load Average)",
+          "description": "시스템 부하 평균. vCPU 코어 수와 비교하여 판단합니다.",
+          "gridPos": {
+            "x": 0,
+            "y": 19,
+            "w": 12,
+            "h": 7
+          },
+          "targets": [
+            {
+              "expr": "node_load1",
+              "refId": "A",
+              "legendFormat": "1분 평균"
+            },
+            {
+              "expr": "node_load5",
+              "refId": "B",
+              "legendFormat": "5분 평균"
+            },
+            {
+              "expr": "node_load15",
+              "refId": "C",
+              "legendFormat": "15분 평균"
+            },
+            {
+              "expr": "count(node_cpu_seconds_total{mode='idle'}) by (instance)",
+              "refId": "D",
+              "legendFormat": "vCPU 수 (기준선)"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 5
+              }
+            }
+          }
+        },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "CPU 코어별 사용률",
+          "description": "코어별 사용률. 특정 코어만 높으면 단일 스레드 병목 가능.",
+          "gridPos": {
+            "x": 12,
+            "y": 19,
+            "w": 12,
+            "h": 7
+          },
+          "targets": [
+            {
+              "expr": "100 - (rate(node_cpu_seconds_total{mode='idle'}[5m]) * 100)",
+              "refId": "A",
+              "legendFormat": "CPU {{cpu}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "custom": {
+                "lineWidth": 1,
+                "fillOpacity": 5
+              }
+            }
+          }
+        },
+        {
+          "id": 11,
+          "type": "row",
+          "title": "💾 메모리 모니터링",
+          "gridPos": {
+            "x": 0,
+            "y": 26,
+            "w": 24,
+            "h": 1
+          },
+          "collapsed": false
+        },
+        {
+          "id": 12,
+          "type": "text",
+          "title": "📖 메모리 모니터링 가이드",
+          "gridPos": {
+            "x": 0,
+            "y": 27,
+            "w": 7,
+            "h": 10
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "### 메모리 모니터링 가이드\n\n**기준치**\n- 🟢 정상: **0 ~ 80%**\n- 🟡 경고: **80 ~ 90%** → 메모리 누수 점검\n- 🔴 위험: **90%+** → OOM Killer 발동 위험\n\n**메모리 구성**\n| 항목 | 설명 |\n|------|------|\n| `used` | 실제 사용 중 |\n| `cached` | 파일 캐시 (회수 가능) |\n| `available` | 실제 사용 가능 |\n\n**조치 방법**\n```\nkubectl top pods -A --sort-by=memory\n```\n\n**CSAP 기준**: D-06-03"
+          }
+        },
+        {
+          "id": 13,
+          "type": "timeseries",
+          "title": "메모리 사용률 추이",
+          "description": "메모리 사용률 시계열. 80% 이상 지속 시 경고.",
+          "gridPos": {
+            "x": 7,
+            "y": 27,
+            "w": 17,
+            "h": 10
+          },
+          "targets": [
+            {
+              "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+              "refId": "A",
+              "legendFormat": "메모리 사용률 (%)"
+            },
+            {
+              "expr": "node_memory_MemAvailable_bytes",
+              "refId": "B",
+              "legendFormat": "가용 메모리"
+            },
+            {
+              "expr": "node_memory_Cached_bytes + node_memory_Buffers_bytes",
+              "refId": "C",
+              "legendFormat": "캐시+버퍼"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 10
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "메모리 사용률 (%)"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": 14,
+          "type": "gauge",
+          "title": "메모리 사용률 게이지",
+          "gridPos": {
+            "x": 0,
+            "y": 37,
+            "w": 8,
+            "h": 6
+          },
+          "targets": [
+            {
+              "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+              "refId": "A",
+              "legendFormat": "메모리 사용률"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 80
+                  },
+                  {
+                    "color": "red",
+                    "value": 90
+                  }
+                ]
+              }
+            }
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          }
+        },
+        {
+          "id": 15,
+          "type": "timeseries",
+          "title": "스왑 메모리 사용",
+          "description": "스왑 사용 증가 = 실제 메모리 부족 신호.",
+          "gridPos": {
+            "x": 8,
+            "y": 37,
+            "w": 16,
+            "h": 6
+          },
+          "targets": [
+            {
+              "expr": "node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes",
+              "refId": "A",
+              "legendFormat": "스왑 사용"
+            },
+            {
+              "expr": "node_memory_SwapTotal_bytes",
+              "refId": "B",
+              "legendFormat": "스왑 전체"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 10
+              }
+            }
+          }
+        },
+        {
+          "id": 16,
+          "type": "row",
+          "title": "💿 디스크 모니터링",
+          "gridPos": {
+            "x": 0,
+            "y": 43,
+            "w": 24,
+            "h": 1
+          },
+          "collapsed": false
+        },
+        {
+          "id": 17,
+          "type": "text",
+          "title": "📖 디스크 모니터링 가이드",
+          "gridPos": {
+            "x": 0,
+            "y": 44,
+            "w": 7,
+            "h": 10
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "### 디스크 모니터링 가이드\n\n**기준치**\n- 🟢 정상: **0 ~ 75%**\n- 🟡 경고: **75 ~ 85%** → 불필요 데이터 정리\n- 🔴 위험: **85%+** → 즉시 조치\n\n**디스크 I/O 기준**\n| 지표 | 경고 기준 |\n|------|----------|\n| 읽기 처리량 | > 200 MB/s |\n| 쓰기 처리량 | > 150 MB/s |\n\n**조치 방법**\n```bash\n# 공간 확보\nkubectl delete pods \\\n  --field-selector status.phase=Failed -A\n\n# PV 사용량 확인\nkubectl get pvc -A\n```\n\n**CSAP 기준**: D-06-03"
+          }
+        },
+        {
+          "id": 18,
+          "type": "bargauge",
+          "title": "파티션별 디스크 사용률",
+          "description": "마운트 포인트별 사용률. 85% 초과 시 즉시 조치.",
+          "gridPos": {
+            "x": 7,
+            "y": 44,
+            "w": 17,
+            "h": 10
+          },
+          "targets": [
+            {
+              "expr": "(1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs\"}) * 100",
+              "refId": "A",
+              "legendFormat": "{{mountpoint}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 75
+                  },
+                  {
+                    "color": "red",
+                    "value": 85
+                  }
+                ]
+              }
+            }
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "orientation": "horizontal",
+            "displayMode": "gradient"
+          }
+        },
+        {
+          "id": 19,
+          "type": "timeseries",
+          "title": "디스크 I/O 처리량",
+          "description": "초당 읽기/쓰기 바이트. 지속적 고부하는 I/O 병목 신호.",
+          "gridPos": {
+            "x": 0,
+            "y": 54,
+            "w": 12,
+            "h": 7
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(node_disk_read_bytes_total[5m]))",
+              "refId": "A",
+              "legendFormat": "읽기 처리량"
+            },
+            {
+              "expr": "sum(rate(node_disk_written_bytes_total[5m]))",
+              "refId": "B",
+              "legendFormat": "쓰기 처리량"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 10
+              }
+            }
+          }
+        },
+        {
+          "id": 20,
+          "type": "timeseries",
+          "title": "디스크 IOPS",
+          "description": "초당 I/O 요청 수. 높을수록 디스크 부하 높음.",
+          "gridPos": {
+            "x": 12,
+            "y": 54,
+            "w": 12,
+            "h": 7
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(node_disk_reads_completed_total[5m]))",
+              "refId": "A",
+              "legendFormat": "읽기 IOPS"
+            },
+            {
+              "expr": "sum(rate(node_disk_writes_completed_total[5m]))",
+              "refId": "B",
+              "legendFormat": "쓰기 IOPS"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "iops",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 10
+              }
+            }
+          }
+        },
+        {
+          "id": 21,
+          "type": "row",
+          "title": "🌐 네트워크 모니터링",
+          "gridPos": {
+            "x": 0,
+            "y": 61,
+            "w": 24,
+            "h": 1
+          },
+          "collapsed": false
+        },
+        {
+          "id": 22,
+          "type": "text",
+          "title": "📖 네트워크 모니터링 가이드",
+          "gridPos": {
+            "x": 0,
+            "y": 62,
+            "w": 7,
+            "h": 10
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "### 네트워크 모니터링 가이드\n\n**기준치**\n| 지표 | 경고 | 위험 |\n|------|------|------|\n| 수신 트래픽 | > 800Mbps | > 950Mbps |\n| 송신 트래픽 | > 800Mbps | > 950Mbps |\n| 패킷 손실 | > 0.1% | > 1% |\n\n**주요 인터페이스**\n- `eth0`: 외부 네트워크\n- `cni0` / `flannel.1`: 파드 내부\n- `lo`: 루프백 (무시)\n\n**CSAP 기준**: D-08-05 (네트워크 접근통제)"
+          }
+        },
+        {
+          "id": 23,
+          "type": "timeseries",
+          "title": "네트워크 수신/송신 트래픽",
+          "description": "외부 인터페이스 트래픽 처리량.",
+          "gridPos": {
+            "x": 7,
+            "y": 62,
+            "w": 17,
+            "h": 10
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(node_network_receive_bytes_total{device!~\"lo|flannel.*|cni.*|veth.*\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "수신 (받기)"
+            },
+            {
+              "expr": "sum(rate(node_network_transmit_bytes_total{device!~\"lo|flannel.*|cni.*|veth.*\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "송신 (보내기)"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 10
+              }
+            }
+          }
+        },
+        {
+          "id": 24,
+          "type": "timeseries",
+          "title": "네트워크 에러 & 패킷 드롭",
+          "description": "0 이상이면 네트워크 품질 저하 신호.",
+          "gridPos": {
+            "x": 0,
+            "y": 72,
+            "w": 12,
+            "h": 6
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(node_network_receive_errs_total{device!~\"lo\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "수신 에러"
+            },
+            {
+              "expr": "sum(rate(node_network_transmit_errs_total{device!~\"lo\"}[5m]))",
+              "refId": "B",
+              "legendFormat": "송신 에러"
+            },
+            {
+              "expr": "sum(rate(node_network_receive_drop_total{device!~\"lo\"}[5m]))",
+              "refId": "C",
+              "legendFormat": "수신 드롭"
+            },
+            {
+              "expr": "sum(rate(node_network_transmit_drop_total{device!~\"lo\"}[5m]))",
+              "refId": "D",
+              "legendFormat": "송신 드롭"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "pps",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 5
+              }
+            }
+          }
+        },
+        {
+          "id": 25,
+          "type": "row",
+          "title": "🔍 서비스 가용성",
+          "gridPos": {
+            "x": 0,
+            "y": 78,
+            "w": 24,
+            "h": 1
+          },
+          "collapsed": false
+        },
+        {
+          "id": 26,
+          "type": "text",
+          "title": "📖 서비스 가용성 가이드",
+          "gridPos": {
+            "x": 0,
+            "y": 79,
+            "w": 7,
+            "h": 12
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "### 서비스 가용성 가이드\n\n**up 메트릭 해석**\n- `up = 1`: Prometheus 스크랩 정상\n- `up = 0`: 스크랩 실패 (서비스 다운)\n\n**핵심 서비스 목록**\n| 서비스 | 최소 가용성 |\n|--------|------------|\n| Prometheus | 99.9% |\n| Alertmanager | 99.5% |\n| Grafana | 99% |\n| Loki | 99% |\n| Node Exporter | 99.9% |\n\n**다운 시 조치**\n```bash\nkubectl get pods -n monitoring\nkubectl rollout restart deploy \\\n  -n monitoring [이름]\n```\n\n**CSAP 기준**: D-06-04"
+          }
+        },
+        {
+          "id": 27,
+          "type": "table",
+          "title": "서비스 스크랩 대상 상태 목록",
+          "description": "Prometheus 스크랩 대상 전체 목록과 상태.",
+          "gridPos": {
+            "x": 7,
+            "y": 79,
+            "w": 17,
+            "h": 12
+          },
+          "targets": [
+            {
+              "expr": "up",
+              "refId": "A",
+              "legendFormat": "",
+              "instant": true,
+              "format": "table"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "job": "서비스명",
+                  "instance": "인스턴스",
+                  "Value": "상태",
+                  "namespace": "네임스페이스"
+                }
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "상태"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "options": {
+                          "0": {
+                            "text": "🔴 다운",
+                            "color": "red"
+                          },
+                          "1": {
+                            "text": "🟢 정상",
+                            "color": "green"
+                          }
+                        },
+                        "type": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-background"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": 28,
+          "type": "row",
+          "title": "🚨 알림 & 이벤트 현황",
+          "gridPos": {
+            "x": 0,
+            "y": 91,
+            "w": 24,
+            "h": 1
+          },
+          "collapsed": false
+        },
+        {
+          "id": 29,
+          "type": "text",
+          "title": "📖 알림 현황 가이드",
+          "gridPos": {
+            "x": 0,
+            "y": 92,
+            "w": 7,
+            "h": 8
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "### 알림 현황 가이드\n\n**심각도 분류**\n| 등급 | 의미 | 대응 시간 |\n|------|------|----------|\n| 🔴 critical | 즉각 서비스 영향 | **15분 이내** |\n| 🟡 warning | 잠재적 위험 | **2시간 이내** |\n| ℹ️ info | 참고 정보 | 다음 근무일 |\n\n**알림 채널**: Alertmanager → Slack/이메일\n\n**CSAP 기준**: D-06-01 (보안 이벤트 모니터링)"
+          }
+        },
+        {
+          "id": 30,
+          "type": "stat",
+          "title": "🚨 현재 발령 알림 수",
+          "gridPos": {
+            "x": 7,
+            "y": 92,
+            "w": 8,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "count(ALERTS{alertstate='firing',severity!='none'}) or vector(0)",
+              "refId": "A",
+              "legendFormat": "발령 알림"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1
+                  },
+                  {
+                    "color": "red",
+                    "value": 3
+                  }
+                ]
+              }
+            }
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background"
+          }
+        },
+        {
+          "id": 31,
+          "type": "stat",
+          "title": "✅ Alertmanager 상태",
+          "gridPos": {
+            "x": 15,
+            "y": 92,
+            "w": 9,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "up{job='kube-prometheus-stack-alertmanager'}",
+              "refId": "A",
+              "legendFormat": "Alertmanager"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "text": "🔴 다운"
+                    },
+                    "1": {
+                      "text": "🟢 정상"
+                    }
+                  },
+                  "type": "value"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              }
+            }
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background"
+          }
+        },
+        {
+          "id": 32,
+          "type": "timeseries",
+          "title": "알림 발령 타임라인 (심각도별)",
+          "description": "시간대별 알림 발령 수. 급증 시 시스템 이상 신호.",
+          "gridPos": {
+            "x": 7,
+            "y": 96,
+            "w": 17,
+            "h": 7
+          },
+          "targets": [
+            {
+              "expr": "count(ALERTS{alertstate='firing',severity='critical'}) or vector(0)",
+              "refId": "A",
+              "legendFormat": "🔴 위험(critical)"
+            },
+            {
+              "expr": "count(ALERTS{alertstate='firing',severity='warning'}) or vector(0)",
+              "refId": "B",
+              "legendFormat": "🟡 경고(warning)"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 20
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "🔴 위험(critical)"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "🟡 경고(warning)"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }

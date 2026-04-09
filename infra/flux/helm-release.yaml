@@ -1,0 +1,231 @@
+# Flux HelmRelease — 공공기관 SaaS 플랫폼 자동 배포
+# Design Ref: MTU-N35 §3.2
+# Plan SC: FR-N35.2
+# CSAP: D-11(가상화 보안), D-12(시스템 개발 보안)
+#
+# Flux가 Gitea 레포의 Helm 차트 변경을 감지하여 자동 배포합니다.
+# 롤백: 배포 실패 시 이전 버전으로 자동 복구 (remediation)
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: saas-platform
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/name: saas-platform
+    app.kubernetes.io/part-of: public-saas
+  annotations:
+    csap.ref/d11: "가상화보안 — Helm 기반 컨테이너 오케스트레이션"
+    csap.ref/d12: "개발보안 — GitOps 자동 배포"
+spec:
+  # ---------------------------------------------------------------------------
+  # 동기화 주기: 5분마다 차트 변경 확인
+  # ---------------------------------------------------------------------------
+  interval: 5m
+
+  # ---------------------------------------------------------------------------
+  # Helm 차트 소스
+  # ---------------------------------------------------------------------------
+  chart:
+    spec:
+      chart: ./helm/saas-platform
+      sourceRef:
+        kind: GitRepository
+        name: fleet-infra
+        namespace: flux-system
+      interval: 5m
+      reconcileStrategy: ChartVersion
+
+  # ---------------------------------------------------------------------------
+  # 배포 대상 네임스페이스
+  # ---------------------------------------------------------------------------
+  targetNamespace: saas-platform
+
+  # ---------------------------------------------------------------------------
+  # 릴리스 이름
+  # ---------------------------------------------------------------------------
+  releaseName: saas-platform
+
+  # ---------------------------------------------------------------------------
+  # Values 오버라이드 (기본값 — 환경별 오버라이드는 Kustomization에서)
+  # ---------------------------------------------------------------------------
+  values:
+    global:
+      imageRegistry: localhost:8080
+      imageProject: public-saas
+      environment: staging
+
+    # 리소스 제한 (WSL2 환경 최적화)
+    resources:
+      api-gateway:
+        requests: { cpu: 100m, memory: 256Mi }
+        limits: { cpu: 500m, memory: 512Mi }
+      default:
+        requests: { cpu: 50m, memory: 128Mi }
+        limits: { cpu: 250m, memory: 256Mi }
+
+    # PostgreSQL 연결 (Secret 참조)
+    database:
+      host: postgres.saas-platform.svc.cluster.local
+      port: 5432
+      name: saas_platform
+
+    # Redis 연결
+    redis:
+      host: redis.saas-platform.svc.cluster.local
+      port: 6379
+
+    # 모니터링 (ServiceMonitor 생성)
+    monitoring:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+        labels:
+          release: kube-prometheus-stack
+
+    # OpenTelemetry 연동
+    observability:
+      otelCollectorEndpoint: http://saas-otel-collector.monitoring.svc.cluster.local:4317
+      tracingEnabled: true
+      metricsEnabled: true
+
+  # ---------------------------------------------------------------------------
+  # 배포 전략: 롤링 업데이트 + 자동 롤백
+  # ---------------------------------------------------------------------------
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+    cleanupOnFail: true
+    # Helm diff 확인 (변경 사항이 있을 때만 배포)
+    force: false
+
+  # ---------------------------------------------------------------------------
+  # 롤백 설정
+  # ---------------------------------------------------------------------------
+  rollback:
+    timeout: 5m
+    recreate: false
+    cleanupOnFail: true
+
+  # ---------------------------------------------------------------------------
+  # 타임아웃
+  # ---------------------------------------------------------------------------
+  timeout: 10m
+
+  # ---------------------------------------------------------------------------
+  # 의존 관계 (DB, Redis가 먼저 준비되어야 함)
+  # ---------------------------------------------------------------------------
+  dependsOn:
+    - name: saas-postgres
+      namespace: flux-system
+    - name: saas-redis
+      namespace: flux-system
+
+---
+# PostgreSQL HelmRelease
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: saas-postgres
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: public-saas
+spec:
+  interval: 10m
+  chart:
+    spec:
+      chart: postgresql
+      version: "16.x"
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: flux-system
+      interval: 10m
+  targetNamespace: saas-platform
+  releaseName: saas-postgres
+  values:
+    auth:
+      existingSecret: postgres-credentials
+      database: saas_platform
+    primary:
+      persistence:
+        enabled: true
+        storageClass: local-path
+        size: 20Gi
+      resources:
+        requests: { cpu: 100m, memory: 256Mi }
+        limits: { cpu: 500m, memory: 512Mi }
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+        labels:
+          release: kube-prometheus-stack
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+---
+# Redis HelmRelease
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: saas-redis
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/part-of: public-saas
+spec:
+  interval: 10m
+  chart:
+    spec:
+      chart: redis
+      version: "20.x"
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: flux-system
+      interval: 10m
+  targetNamespace: saas-platform
+  releaseName: saas-redis
+  values:
+    auth:
+      existingSecret: redis-credentials
+    architecture: standalone
+    master:
+      persistence:
+        enabled: true
+        storageClass: local-path
+        size: 5Gi
+      resources:
+        requests: { cpu: 50m, memory: 128Mi }
+        limits: { cpu: 250m, memory: 256Mi }
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+        labels:
+          release: kube-prometheus-stack
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+
+---
+# Bitnami Helm Repository
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: bitnami
+  namespace: flux-system
+spec:
+  interval: 30m
+  url: https://charts.bitnami.com/bitnami

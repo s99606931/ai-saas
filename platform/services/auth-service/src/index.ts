@@ -1,7 +1,13 @@
 // 인증 서비스 진입점
-// Design Ref: MTU-P01 DESIGN-MTU-P01
-// Plan SC: FR-P01.1~FR-P01.12
+// Design Ref: MTU-P01 DESIGN-MTU-P01, SVC-AUTH-R1 DESIGN
+// Plan SC: FR-P01.1~FR-P01.12, FR-AUTH.1~FR-AUTH.7
 // CSAP: D-08 접근 통제
+
+import { initTelemetry, shutdownTelemetry } from './lib/telemetry.js';
+
+// OpenTelemetry 초기화 (모든 import 전에 실행 — 자동 계측 hook 등록)
+// Plan SC: FR-AUTH.6
+initTelemetry();
 
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
@@ -77,6 +83,7 @@ async function main(): Promise<void> {
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`${signal} 수신, graceful shutdown 시작`);
     await app.close();
+    await shutdownTelemetry(); // Plan SC: FR-AUTH.6 — OTel 종료
     process.exit(0);
   };
   process.on('SIGTERM', () => void shutdown('SIGTERM'));

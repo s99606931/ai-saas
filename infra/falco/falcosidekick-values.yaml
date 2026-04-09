@@ -1,0 +1,89 @@
+# =============================================================================
+# Falcosidekick Helm Values — 알림 통합 포워더
+# Design Ref: MTU-N45 Design §아키텍처
+# Plan SC: FR-N45.2
+#
+# 설치: helm install falcosidekick falcosecurity/falcosidekick \
+#       -n falco-system -f falcosidekick-values.yaml
+# =============================================================================
+
+# --- 출력 설정 ---
+config:
+  # Webhook 출력 (일반 알림)
+  webhook:
+    address: ""
+    # 실제 운영 시 알림 수신 엔드포인트 설정
+    minimumpriority: "warning"
+    customHeaders: ""
+
+  # Prometheus 메트릭 출력
+  prometheus:
+    extralabels: ""
+
+  # AlertManager 연동
+  alertmanager:
+    # kube-prometheus-stack AlertManager
+    hostport: "http://kube-prometheus-stack-alertmanager.monitoring.svc.cluster.local:9093"
+    minimumpriority: "warning"
+    endpoint: "/api/v2/alerts"
+    expiresafter: "5m"
+
+# --- 웹 UI 활성화 ---
+webui:
+  enabled: true
+  replicaCount: 1
+  image:
+    registry: docker.io
+    repository: falcosecurity/falcosidekick-ui
+    tag: "2.3.0"
+  service:
+    type: ClusterIP
+    port: 2802
+
+  # Redis 백엔드 (이벤트 저장)
+  redis:
+    enabled: true
+    storageEnabled: false
+    image:
+      registry: docker.io
+      repository: redis
+      tag: "7-alpine"
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+# --- 리소스 제한 ---
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# --- 서비스 모니터 ---
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
+  interval: 30s
+
+# --- 리플리카 ---
+replicaCount: 1
+
+# --- 네임스페이스 ---
+namespaceOverride: "falco-system"
+
+# --- Pod 라벨 ---
+podLabels:
+  app.kubernetes.io/part-of: falco-runtime-security
+  csap.compliance/domain: "D-06"
+
+# --- 서비스 포트 ---
+service:
+  type: ClusterIP
+  port: 2801

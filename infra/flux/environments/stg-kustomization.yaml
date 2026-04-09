@@ -1,0 +1,29 @@
+# =============================================================================
+# Flux Kustomization -- Staging 환경
+# Design Ref: MTU-N41 Design S3
+# Plan SC: FR-N41.4
+# =============================================================================
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: saas-stg
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./deploy/envs/stg
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: saas-platform
+  targetNamespace: saas-staging
+  wait: true
+  timeout: 10m
+  # Staging: stg 브랜치에서만 동기화
+  # Dev에서 검증 완료 후 수동 승격
+  dependsOn:
+    - name: saas-dev
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: api-gateway
+      namespace: saas-staging

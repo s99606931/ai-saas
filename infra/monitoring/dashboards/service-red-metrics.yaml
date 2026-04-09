@@ -1,0 +1,170 @@
+# 서비스 RED 메트릭 대시보드 ConfigMap
+# Design Ref: MTU-N36 §2.3
+# Plan SC: FR-N36.5
+# RED = Rate(요청률), Error(에러율), Duration(지연시간)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: saas-service-red-metrics
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/part-of: public-saas
+  annotations:
+    grafana_folder: "Public SaaS"
+data:
+  saas-service-red-metrics.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 2,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "title": "서비스별 요청률 (Rate)",
+          "description": "초당 요청 수 — Tempo Service Graph 기반",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "targets": [
+            {
+              "expr": "sum by (client) (rate(traces_service_graph_request_total[5m]))",
+              "legendFormat": "{{client}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 15
+              }
+            }
+          }
+        },
+        {
+          "title": "서비스별 에러율 (Error %)",
+          "description": "5분 이동 평균 에러율",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "targets": [
+            {
+              "expr": "sum by (client) (rate(traces_service_graph_request_failed_total[5m])) / sum by (client) (rate(traces_service_graph_request_total[5m])) * 100",
+              "legendFormat": "{{client}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "max": 100,
+              "thresholds": {
+                "steps": [
+                  {"value": 0, "color": "green"},
+                  {"value": 1, "color": "yellow"},
+                  {"value": 5, "color": "red"}
+                ]
+              },
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 15
+              }
+            }
+          }
+        },
+        {
+          "title": "서비스별 P50 / P95 / P99 레이턴시 (Duration)",
+          "description": "응답 시간 분포 — 백분위수",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8},
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum by (client, le) (rate(traces_service_graph_request_duration_seconds_bucket[5m])))",
+              "legendFormat": "{{client}} P50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum by (client, le) (rate(traces_service_graph_request_duration_seconds_bucket[5m])))",
+              "legendFormat": "{{client}} P95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum by (client, le) (rate(traces_service_graph_request_duration_seconds_bucket[5m])))",
+              "legendFormat": "{{client}} P99"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 10
+              }
+            }
+          }
+        },
+        {
+          "title": "서비스 가용성 (Blackbox)",
+          "description": "외부 서비스 프로브 결과",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 24, "x": 0, "y": 16},
+          "targets": [
+            {
+              "expr": "probe_success",
+              "legendFormat": "{{target}}",
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {"type": "value", "options": {"1": {"text": "UP", "color": "green"}, "0": {"text": "DOWN", "color": "red"}}}
+              ]
+            }
+          }
+        },
+        {
+          "title": "서비스 응답 시간 (Blackbox)",
+          "description": "외부 프로브 응답 시간",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20},
+          "targets": [
+            {
+              "expr": "probe_duration_seconds",
+              "legendFormat": "{{target}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "thresholds": {
+                "steps": [
+                  {"value": 0, "color": "green"},
+                  {"value": 1, "color": "yellow"},
+                  {"value": 5, "color": "red"}
+                ]
+              }
+            }
+          }
+        },
+        {
+          "title": "서비스 맵 (Service Graph)",
+          "description": "Tempo Service Graph — 서비스 간 호출 관계 시각화",
+          "type": "nodeGraph",
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 28},
+          "targets": [
+            {
+              "datasource": {"type": "tempo", "uid": "tempo"},
+              "queryType": "serviceMap"
+            }
+          ]
+        }
+      ],
+      "schemaVersion": 39,
+      "tags": ["red-metrics", "service", "public-saas"],
+      "templating": {"list": []},
+      "time": {"from": "now-1h", "to": "now"},
+      "title": "Public SaaS - 서비스 RED 메트릭",
+      "uid": "saas-service-red"
+    }

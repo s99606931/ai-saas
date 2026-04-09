@@ -1,0 +1,37 @@
+# ConstraintTemplate: 비루트 사용자 실행 강제
+# Design Ref: MTU-N53 Section 3.2.7
+# Plan SC: FR-N53.4 (보안 강화 확장)
+# CSAP: D-08 접근 통제
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequirenonrootuser
+  annotations:
+    description: "컨테이너가 루트 사용자로 실행되는 것을 차단합니다 (CSAP D-08)"
+    csap.compliance/control: "D-08"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequireNonRootUser
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequirenonrootuser
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not has_field(container, "securityContext")
+          msg := sprintf("[CSAP D-08] securityContext 미설정: %v (runAsNonRoot 필수)", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          has_field(container, "securityContext")
+          not container.securityContext.runAsNonRoot
+          msg := sprintf("[CSAP D-08] runAsNonRoot=true 필수: %v", [container.name])
+        }
+
+        has_field(obj, field) {
+          obj[field]
+        }

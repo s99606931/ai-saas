@@ -1,12 +1,14 @@
 // 사용자 관리 라우트
-// Design Ref: DESIGN-MTU-P02, DESIGN-MTU-Q3
-// Plan SC: FR-P02.1~FR-P02.10
+// Design Ref: DESIGN-MTU-P02, DESIGN-MTU-Q3, SVC-USER-R1 DESIGN
+// Plan SC: FR-P02.1~FR-P02.10, FR-USR.1~FR-USR.6
 
 import type { FastifyInstance } from 'fastify';
 import { listUsersHandler, getUserHandler, createUserHandler, updateUserHandler, deleteUserHandler, reactivateUserHandler } from './handlers/user.handler.js';
 import { changeRoleHandler } from './handlers/role.handler.js';
 import { changePasswordHandler } from './handlers/password.handler.js';
 import { requestPasswordResetHandler, confirmPasswordResetHandler } from './handlers/password-reset.handler.js';
+import { listInactiveUsersHandler } from './handlers/inactive.handler.js';
+import { createRateLimiter } from './middleware/rate-limit.middleware.js';
 
 export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
   // 서비스 수준 내부 인증 (CSAP D-08: 심층 방어)
@@ -17,6 +19,8 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
   }
   if (internalKey) {
     app.addHook('onRequest', async (request, reply) => {
+      // 헬스체크 경로 제외 (Kubernetes readinessProbe/livenessProbe 허용)
+      if (request.url === '/health' || request.url === '/ready') return;
       const provided = request.headers['x-internal-service-key'];
       if (provided !== internalKey) {
         await reply.status(401).send({
@@ -27,29 +31,42 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
     });
   }
 
-  // Plan SC: FR-P02.2
-  app.get('/users', listUsersHandler);
-  app.get('/users/:id', getUserHandler);
+  // FR-USR.3: Rate Limiting 미들웨어 (Design Ref: SVC-USER-R1 DESIGN §3)
+  const readLimiter = createRateLimiter(100, 60, 'rl:user:read');
+  const createLimiter = createRateLimiter(10, 60, 'rl:user:create');
+  const updateLimiter = createRateLimiter(30, 60, 'rl:user:update');
+  const deleteLimiter = createRateLimiter(5, 300, 'rl:user:delete');
+  const passwordLimiter = createRateLimiter(5, 300, 'rl:user:password');
+  const resetLimiter = createRateLimiter(5, 300, 'rl:user:reset');
+
+  // Plan SC: FR-P02.2, FR-USR.1 (검색/필터링 지원)
+  app.get('/users', { preHandler: readLimiter }, listUsersHandler as never);
+
+  // Plan SC: FR-USR.2 (비활성 계정 감지)
+  // NOTE: /users/inactive는 /users/:id보다 먼저 등록 (Fastify 라우트 우선순위)
+  app.get('/users/inactive', { preHandler: readLimiter }, listInactiveUsersHandler as never);
+
+  app.get('/users/:id', { preHandler: readLimiter }, getUserHandler as never);
 
   // Plan SC: FR-P02.1
-  app.post('/users', createUserHandler);
+  app.post('/users', { preHandler: createLimiter }, createUserHandler as never);
 
   // Plan SC: FR-P02.3
-  app.put('/users/:id', updateUserHandler);
+  app.put('/users/:id', { preHandler: updateLimiter }, updateUserHandler as never);
 
   // Plan SC: FR-P02.4 (소프트 삭제 개선)
-  app.delete('/users/:id', deleteUserHandler);
+  app.delete('/users/:id', { preHandler: deleteLimiter }, deleteUserHandler as never);
 
   // Plan SC: FR-P02.4 (복원)
-  app.put('/users/:id/reactivate', reactivateUserHandler);
+  app.put('/users/:id/reactivate', { preHandler: updateLimiter }, reactivateUserHandler as never);
 
   // Plan SC: FR-P02.5
-  app.put('/users/:id/role', changeRoleHandler);
+  app.put('/users/:id/role', { preHandler: updateLimiter }, changeRoleHandler as never);
 
   // Plan SC: FR-P02.6
-  app.put('/users/:id/password', changePasswordHandler);
+  app.put('/users/:id/password', { preHandler: passwordLimiter }, changePasswordHandler as never);
 
   // Plan SC: FR-P02.7 (비밀번호 재설정)
-  app.post('/users/password-reset/request', requestPasswordResetHandler);
-  app.post('/users/password-reset/confirm', confirmPasswordResetHandler);
+  app.post('/users/password-reset/request', { preHandler: resetLimiter }, requestPasswordResetHandler as never);
+  app.post('/users/password-reset/confirm', { preHandler: resetLimiter }, confirmPasswordResetHandler as never);
 }

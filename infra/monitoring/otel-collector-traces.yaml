@@ -1,0 +1,213 @@
+# =============================================================================
+# OpenTelemetry Collector — 트레이스 파이프라인 고도화
+# Design Ref: MTU-N48 Design §OTel Collector 파이프라인
+# Plan SC: FR-N48.2, FR-N48.5, FR-N48.6
+#
+# 기능:
+#   - OTLP 수신 → 배치 처리 → PII 필터링 → Tempo 전송
+#   - Span Metrics: trace→metric 자동 변환 (Prometheus)
+#   - Trace-to-Log: traceID를 Loki 로그에 주입
+# =============================================================================
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-traces-collector
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: observability-stack
+    csap.compliance/domain: "D-06"
+spec:
+  mode: deployment
+  replicas: 1
+
+  # --- 리소스 제한 ---
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  config:
+    # =========================================================================
+    # 수신기 (Receivers)
+    # =========================================================================
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+            cors:
+              allowed_origins:
+                - "http://localhost:*"
+                - "https://portal.local"
+
+    # =========================================================================
+    # 프로세서 (Processors)
+    # =========================================================================
+    processors:
+      # --- 배치 처리 (성능 최적화) ---
+      batch:
+        timeout: 5s
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+
+      # --- 메모리 제한 ---
+      memory_limiter:
+        check_interval: 5s
+        limit_mib: 400
+        spike_limit_mib: 100
+
+      # --- PII 필터링 (N2SF 준수 — FR-N48.6) ---
+      attributes/pii_filter:
+        actions:
+          # 주민등록번호 패턴 마스킹
+          - key: "user.ssn"
+            action: delete
+          - key: "user.password"
+            action: delete
+          - key: "user.email"
+            action: hash
+          - key: "user.phone"
+            action: hash
+          - key: "user.name"
+            action: hash
+          # 인증 토큰 제거
+          - key: "http.request.header.authorization"
+            action: delete
+          - key: "http.request.header.cookie"
+            action: delete
+          # API 키 마스킹
+          - key: "api.key"
+            action: delete
+
+      # --- 리소스 어트리뷰트 추가 ---
+      resource:
+        attributes:
+          - key: "deployment.environment"
+            value: "${DEPLOYMENT_ENV:-development}"
+            action: upsert
+          - key: "service.namespace"
+            value: "saas-platform"
+            action: upsert
+
+      # --- Span Metrics 변환 (trace→metric) ---
+      # Prometheus로 RED 메트릭 자동 생성
+      spanmetrics:
+        metrics_exporter: prometheus
+        latency_histogram_buckets: [5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2.5s, 5s, 10s]
+        dimensions:
+          - name: http.method
+          - name: http.status_code
+          - name: http.route
+          - name: service.name
+        dimensions_cache_size: 1000
+        aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
+
+      # --- Tail-based 샘플링 (에러/슬로우 100%, 정상 10%) ---
+      tail_sampling:
+        decision_wait: 10s
+        num_traces: 100000
+        expected_new_traces_per_sec: 100
+        policies:
+          # 에러 트레이스는 100% 보존
+          - name: error-policy
+            type: status_code
+            status_code: {status_codes: [ERROR]}
+          # 5초 이상 슬로우 요청 100% 보존
+          - name: latency-policy
+            type: latency
+            latency: {threshold_ms: 5000}
+          # 정상 트레이스 10% 샘플링
+          - name: probabilistic-policy
+            type: probabilistic
+            probabilistic: {sampling_percentage: 10}
+
+    # =========================================================================
+    # 내보내기 (Exporters)
+    # =========================================================================
+    exporters:
+      # --- Tempo 전송 (OTLP gRPC) ---
+      otlp/tempo:
+        endpoint: tempo.monitoring.svc.cluster.local:4317
+        tls:
+          insecure: true
+        sending_queue:
+          enabled: true
+          num_consumers: 4
+          queue_size: 1000
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 300s
+
+      # --- Prometheus 메트릭 (Span Metrics) ---
+      prometheus:
+        endpoint: 0.0.0.0:8889
+        namespace: "traces"
+        send_timestamps: true
+        metric_expiration: 5m
+        resource_to_telemetry_conversion:
+          enabled: true
+
+      # --- 디버그 로깅 (개발 환경만) ---
+      debug:
+        verbosity: basic
+        sampling_initial: 5
+        sampling_thereafter: 200
+
+    # =========================================================================
+    # 서비스 파이프라인
+    # =========================================================================
+    service:
+      telemetry:
+        logs:
+          level: info
+        metrics:
+          address: 0.0.0.0:8888
+
+      pipelines:
+        # --- 메인 트레이스 파이프라인 ---
+        traces:
+          receivers: [otlp]
+          processors:
+            - memory_limiter
+            - attributes/pii_filter
+            - resource
+            - tail_sampling
+            - batch
+          exporters: [otlp/tempo]
+
+        # --- Span Metrics 파이프라인 ---
+        metrics/spanmetrics:
+          receivers: [otlp]
+          processors:
+            - memory_limiter
+            - spanmetrics
+          exporters: [prometheus]
+
+      extensions: []
+---
+# =============================================================================
+# ServiceMonitor — OTel Collector 메트릭 수집
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: otel-traces-collector
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-traces-collector
+  endpoints:
+    - port: metrics
+      interval: 15s
+    - port: spanmetrics
+      interval: 15s

@@ -1,0 +1,388 @@
+# OpenTelemetry Collector CRD
+# Design Ref: MTU-N24 §FR-N24.2 — OTLP 파이프라인 (로그+트레이스+메트릭)
+# Plan SC: FR-N24.2, FR-N24.5
+# CSAP 준수: D-06(감사로그 수집), D-12(PII 마스킹 — transform processor)
+#
+# 파이프라인 구성:
+#   receivers: otlp (grpc+http), k8s_events
+#   processors: memory_limiter → batch → k8sattributes → resource → transform(PII 마스킹)
+#   exporters:
+#     - logs   → loki (로그)
+#     - traces → otlp/tempo (트레이스)
+#     - metrics → prometheus (메트릭)
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: saas-otel-collector
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    # CSAP D-12: 시스템 개발 보안 — 입력 검증 및 PII 마스킹
+    csap.ref/d12: "개발보안 — PII 마스킹 transform processor 적용"
+    # CSAP D-06: 침해사고 관리 — 감사 로그 전수 수집
+    csap.ref/d06: "침해사고관리 — 모든 서비스 로그/트레이스 수집"
+spec:
+  # ---------------------------------------------------------------------------
+  # 배포 모드: Deployment (단일 중앙 Collector)
+  # WSL2 단일 노드 환경 — Sidecar 대신 중앙 집중식 선택
+  # ---------------------------------------------------------------------------
+  mode: deployment
+  replicas: 1
+
+  # ---------------------------------------------------------------------------
+  # 서비스 어카운트 (k8s 메타데이터 접근) — CSAP D-08: 최소 권한
+  # ---------------------------------------------------------------------------
+  serviceAccount: opentelemetry-collector
+
+  # ---------------------------------------------------------------------------
+  # 리소스 제한 — WSL2 메모리 보호 (NFR-N24.4)
+  # ---------------------------------------------------------------------------
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # ---------------------------------------------------------------------------
+  # Collector 설정
+  # ---------------------------------------------------------------------------
+  config:
+    # -------------------------------------------------------------------------
+    # Receivers — 데이터 수신
+    # -------------------------------------------------------------------------
+    receivers:
+      # OTLP gRPC (4317) + HTTP (4318) — 애플리케이션 계측 데이터
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+            max_recv_msg_size_mib: 32
+          http:
+            endpoint: 0.0.0.0:4318
+            cors:
+              allowed_origins:
+                - "http://*"
+                - "https://*"
+
+      # k8s 이벤트 수집 (배포/스케일링/장애 이벤트 — CSAP D-06)
+      k8s_events:
+        namespaces:
+          - default
+          - monitoring
+          - gitea
+          - harbor
+          - flux-system
+
+      # Prometheus 메트릭 스크랩 (self-monitoring)
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: otel-collector
+              scrape_interval: 15s
+              static_configs:
+                - targets: ["0.0.0.0:8888"]
+
+    # -------------------------------------------------------------------------
+    # Processors — 데이터 처리 (순서 중요: memory_limiter 최우선)
+    # -------------------------------------------------------------------------
+    processors:
+      # 1. 메모리 제한 (OOM 방지 — WSL2 환경 필수)
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80      # RAM의 80% 초과 시 데이터 드롭
+        spike_limit_percentage: 25
+
+      # 2. Batch 처리 (전송 효율 최적화)
+      batch:
+        timeout: 5s
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+
+      # 3. k8s 메타데이터 자동 주입 (서비스명, 네임스페이스, 파드명)
+      k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        extract:
+          metadata:
+            - k8s.namespace.name
+            - k8s.pod.name
+            - k8s.pod.uid
+            - k8s.deployment.name
+            - k8s.statefulset.name
+            - k8s.daemonset.name
+            - k8s.cronjob.name
+            - k8s.job.name
+            - k8s.node.name
+            - k8s.container.name
+          labels:
+            - tag_name: app
+              key: app
+              from: pod
+            - tag_name: app.kubernetes.io/name
+              key: app.kubernetes.io/name
+              from: pod
+            - tag_name: version
+              key: app.kubernetes.io/version
+              from: pod
+        pod_association:
+          - sources:
+              - from: resource_attribute
+                name: k8s.pod.ip
+          - sources:
+              - from: resource_attribute
+                name: k8s.pod.uid
+          - sources:
+              - from: connection
+
+      # 4. 리소스 속성 표준화 (서비스명 자동 태깅)
+      resource:
+        attributes:
+          # 클러스터 식별 태그
+          - key: k8s.cluster.name
+            value: wsl-k3s-dev
+            action: upsert
+          # 환경 태그
+          - key: deployment.environment
+            value: development
+            action: upsert
+          # 빈 서비스명 기본값 설정
+          - key: service.name
+            value: unknown-service
+            action: insert
+
+      # 5. Tail Sampling — G-6 수정: 에러/슬로우 트레이스 100% 보존 (FR-N24.2)
+      # Head-based 10%에서 누락된 에러/슬로우 트레이스를 후처리로 보완
+      tail_sampling:
+        decision_wait: 10s         # 10초 버퍼에서 트레이스 완성 대기
+        num_traces: 5000           # 버퍼 트레이스 수
+        expected_new_traces_per_sec: 100
+        policies:
+          # 에러 트레이스 100% 보존 (status=error)
+          - name: error-traces
+            type: status_code
+            status_code:
+              status_codes: [ERROR]
+          # 슬로우 트레이스 100% 보존 (500ms 초과)
+          - name: slow-traces
+            type: latency
+            latency:
+              threshold_ms: 500
+          # 나머지: 10% 샘플링
+          - name: probabilistic-sampling
+            type: probabilistic
+            probabilistic:
+              sampling_percentage: 10
+
+      # 6. PII 마스킹 — CSAP D-12: 개인정보 자동 마스킹
+      # 로그 본문 및 span 속성에서 민감 정보 제거
+      transform/pii_masking:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            statements:
+              # 주민등록번호 마스킹 (로그 본문)
+              - replace_pattern(body, "\\d{6}-[1-4]\\d{6}", "######-#######")
+              # 이메일 마스킹 (로그 본문)
+              - replace_pattern(body, "[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}", "***@***.***")
+              # 내부 IP 마스킹 (로그 본문)
+              - replace_pattern(body, "10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}", "10.*.*.*")
+              - replace_pattern(body, "192\\.168\\.\\d{1,3}\\.\\d{1,3}", "192.168.*.*")
+              # JWT Bearer 토큰 마스킹
+              - replace_pattern(body, "Bearer\\s+[A-Za-z0-9\\-_]+\\.[A-Za-z0-9\\-_]+\\.[A-Za-z0-9\\-_]+", "Bearer [REDACTED]")
+              # SQL 쿼리의 문자열 리터럴 마스킹 (민감 데이터가 WHERE절에 포함될 수 있음)
+              - replace_pattern(attributes["db.statement"], "'[^']{8,}'", "'[MASKED]'")
+        trace_statements:
+          - context: span
+            statements:
+              # HTTP 헤더의 인증 토큰 마스킹
+              - replace_pattern(attributes["http.request.header.authorization"], "Bearer\\s+\\S+", "Bearer [REDACTED]")
+              # DB 쿼리 파라미터 마스킹 (CSAP D-12: SQL 보안)
+              - replace_pattern(attributes["db.statement"], "'[^']{8,}'", "'[MASKED]'")
+              # 이메일 속성 마스킹
+              - replace_pattern(attributes["user.email"], "[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}", "***@***.***")
+
+    # -------------------------------------------------------------------------
+    # Exporters — 데이터 전송
+    # -------------------------------------------------------------------------
+    exporters:
+      # 로그 → Loki
+      loki:
+        endpoint: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
+        tls:
+          insecure: true  # 클러스터 내부 통신 (TLS는 Ingress 레벨에서 적용)
+        default_labels_enabled:
+          exporter: false
+          job: true
+          instance: true
+          level: true
+        headers:
+          X-Scope-OrgID: fake  # 단일 테넌트
+
+      # 트레이스 → Tempo (OTLP gRPC)
+      otlp/tempo:
+        endpoint: http://tempo.monitoring.svc.cluster.local:4317
+        tls:
+          insecure: true
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 300s
+
+      # 메트릭 → Prometheus (Remote Write)
+      prometheusremotewrite:
+        endpoint: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+        tls:
+          insecure: true
+        add_metric_suffixes: true
+        resource_to_telemetry_conversion:
+          enabled: true
+
+      # 디버그 출력 (개발 환경 — 프로덕션 전환 시 제거)
+      # NOTE: 미사용 시 제거 예정. 현재 개발 환경 디버깅 목적.
+      debug:
+        verbosity: basic
+        sampling_initial: 5
+        sampling_thereafter: 100
+
+    # -------------------------------------------------------------------------
+    # 파이프라인 연결 정의
+    # -------------------------------------------------------------------------
+    service:
+      # Collector 자체 텔레메트리
+      telemetry:
+        logs:
+          level: info
+        metrics:
+          level: detailed
+          address: 0.0.0.0:8888
+
+      extensions:
+        - health_check
+        - pprof
+        - zpages
+
+      pipelines:
+        # 로그 파이프라인: OTLP → PII 마스킹 → Loki
+        logs:
+          receivers:
+            - otlp
+            - k8s_events
+          processors:
+            - memory_limiter
+            - batch
+            - k8sattributes
+            - resource
+            - transform/pii_masking
+          exporters:
+            - loki
+
+        # 트레이스 파이프라인: OTLP → tail_sampling → PII 마스킹 → Tempo
+        # G-6 수정: tail_sampling 추가 (에러/슬로우 100% 보존)
+        traces:
+          receivers:
+            - otlp
+          processors:
+            - memory_limiter
+            - tail_sampling
+            - k8sattributes
+            - resource
+            - transform/pii_masking
+          exporters:
+            - otlp/tempo
+
+        # 메트릭 파이프라인: OTLP + Prometheus → Prometheus Remote Write
+        metrics:
+          receivers:
+            - otlp
+            - prometheus
+          processors:
+            - memory_limiter
+            - batch
+            - k8sattributes
+            - resource
+          exporters:
+            - prometheusremotewrite
+
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+      pprof:
+        endpoint: 0.0.0.0:1777
+      zpages:
+        endpoint: 0.0.0.0:55679
+
+  # ---------------------------------------------------------------------------
+  # 서비스 포트 노출
+  # ---------------------------------------------------------------------------
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+    - name: metrics
+      port: 8888
+      protocol: TCP
+      targetPort: 8888
+    - name: health
+      port: 13133
+      protocol: TCP
+      targetPort: 13133
+
+---
+# RBAC — CSAP D-08: 최소 권한 원칙
+# k8s 이벤트 수집 및 파드 메타데이터 접근 권한
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: opentelemetry-collector
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/part-of: observability-stack
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: opentelemetry-collector
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/part-of: observability-stack
+rules:
+  # 파드 메타데이터 조회 (k8sattributes processor)
+  - apiGroups: [""]
+    resources: ["pods", "namespaces", "nodes"]
+    verbs: ["get", "watch", "list"]
+  # k8s 이벤트 수집 (k8s_events receiver)
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "watch", "list"]
+  # ReplicaSet 조회 (Deployment 매핑)
+  - apiGroups: ["apps"]
+    resources: ["replicasets", "deployments", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: opentelemetry-collector
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/part-of: observability-stack
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: opentelemetry-collector
+subjects:
+  - kind: ServiceAccount
+    name: opentelemetry-collector
+    namespace: monitoring

@@ -1,0 +1,44 @@
+# =============================================================================
+# Tenant Service SLO 정의
+# Design Ref: MTU-N49 Design §SLO 정의
+# Plan SC: FR-N49.1, FR-N49.2
+# =============================================================================
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: tenant-service-slo
+  namespace: production
+  labels:
+    app.kubernetes.io/name: tenant-service
+    app.kubernetes.io/part-of: saas-platform
+    team: platform
+spec:
+  service: "tenant-service"
+  labels:
+    owner: "platform-team"
+    tier: "high"
+
+  slos:
+    - name: "crud-success"
+      objective: 99.9
+      description: "테넌트 CRUD 작업 성공률"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_requests_total{job="tenant-service",code=~"5.."}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_requests_total{job="tenant-service"}[{{.window}}]))
+      alerting:
+        name: TenantServiceSLOBreach
+        labels:
+          category: "availability"
+          severity: "warning"
+        annotations:
+          summary: "Tenant Service SLO 위반"
+          description: "테넌트 서비스 CRUD 성공률이 99.9% SLO 미달입니다."
+        pageAlert:
+          labels:
+            severity: "critical"
+        ticketAlert:
+          labels:
+            severity: "warning"

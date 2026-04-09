@@ -1,0 +1,20 @@
+# Constraint: 특권 컨테이너 차단 (Enforce)
+# Design Ref: MTU-N53 Section 3.2.1
+# Plan SC: FR-N53.4
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sBlockPrivilegedContainers
+metadata:
+  name: block-privileged-containers
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    excludedNamespaces:
+      - kube-system
+      - gatekeeper-system
+      - falco          # Falco는 privileged 필요
+      - monitoring     # node-exporter 등

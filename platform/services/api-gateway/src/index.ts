@@ -12,11 +12,17 @@ import { checkServicesHealth } from './plugins/health-check.js';
 import auditLoggerPlugin from './plugins/audit-logger.js';
 import correlationIdPlugin from './plugins/correlation-id.js';
 import swaggerPlugin from './plugins/swagger.js';
+import securityHeadersPlugin from './plugins/security-headers.js';
+import { ipFilterMiddleware } from './middleware/ip-filter.middleware.js';
+import { circuitBreaker } from './lib/circuit-breaker.js';
 
 const PORT = parseInt(process.env['API_GATEWAY_PORT'] ?? '3000', 10);
 const HOST = process.env['API_GATEWAY_HOST'] ?? '0.0.0.0';
 
 async function main(): Promise<void> {
+  // FR-GW.2: 요청 페이로드 크기 제한 (기본 10MB, CSAP D-10 DoS 방어)
+  const bodyLimit = parseInt(process.env['BODY_LIMIT_BYTES'] ?? '10485760', 10);
+
   const app = Fastify({
     logger: {
       level: process.env['LOG_LEVEL'] ?? 'info',
@@ -25,6 +31,7 @@ async function main(): Promise<void> {
           ? { target: 'pino-pretty' }
           : undefined,
     },
+    bodyLimit,
   });
 
   // CORS (Plan SC: FR-P04.8)
@@ -35,6 +42,12 @@ async function main(): Promise<void> {
     allowedHeaders: ['Authorization', 'Content-Type', 'X-Tenant-Id', 'X-Request-ID'],
     exposedHeaders: ['X-Request-ID'],
   });
+
+  // FR-GW.1: IP 접근 제어 (CSAP D-10 네트워크 보안)
+  app.addHook('onRequest', ipFilterMiddleware);
+
+  // FR-GW.4: 보안 응답 헤더 (CSAP D-10)
+  await app.register(securityHeadersPlugin);
 
   // Correlation ID — 분산 추적 (Plan SC: FR-P04.9 보완, CSAP D-06)
   await app.register(correlationIdPlugin);
@@ -87,6 +100,22 @@ async function main(): Promise<void> {
       status: allReady ? 'ready' : 'not_ready',
       service: 'api-gateway',
       services: results,
+    });
+  });
+
+  // FR-GW.3: Circuit Breaker 모니터링 엔드포인트 (CSAP D-07 가용성)
+  app.get('/admin/circuits', async () => ({
+    success: true,
+    data: circuitBreaker.getAllStatus(),
+    timestamp: new Date().toISOString(),
+  }));
+
+  app.post('/admin/circuits/:serviceId/reset', async (request, reply) => {
+    const { serviceId } = request.params as { serviceId: string };
+    circuitBreaker.reset(serviceId);
+    await reply.send({
+      success: true,
+      message: `Circuit breaker '${serviceId}' 리셋 완료`,
     });
   });
 

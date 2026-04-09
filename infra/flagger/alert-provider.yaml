@@ -1,0 +1,17 @@
+# =============================================================================
+# Flagger Alert Provider -- Prometheus Alertmanager 연동
+# Design Ref: MTU-N40 Design S3.2
+# Plan SC: FR-N40.5
+# CSAP: D-06 (침해사고 관리 -- 배포 이상 감지 알림)
+# =============================================================================
+apiVersion: flagger.app/v1beta1
+kind: AlertProvider
+metadata:
+  name: prometheus-alert
+  namespace: saas-platform
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+spec:
+  type: prometheus
+  # Prometheus Alertmanager 주소
+  address: http://prometheus-kube-prometheus-alertmanager.monitoring:9093

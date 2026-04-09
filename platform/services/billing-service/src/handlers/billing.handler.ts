@@ -195,20 +195,44 @@ export async function payInvoiceHandler(
     return;
   }
 
-  const payment = await prisma.payment.create({
-    data: {
-      invoiceId: request.params.id,
-      amount: parseResult.data.amount,
-      method: parseResult.data.method,
-      status: 'completed',
-      paidAt: new Date(),
-    },
+  // H-02 수정 (TOCTOU 경쟁조건): 트랜잭션으로 원자적 처리
+  // - invoiceCheck 조회~payment 생성 사이 중복 결제 요청이 들어올 수 있음
+  // - $transaction 내에서 최신 상태 재확인 후 처리
+  const paidAt = new Date();
+  const payment = await prisma.$transaction(async (tx) => {
+    const latestInvoice = await tx.invoice.findUnique({
+      where: { id: request.params.id },
+      select: { status: true },
+    });
+    if (!latestInvoice || latestInvoice.status === 'paid') {
+      return null;
+    }
+
+    const created = await tx.payment.create({
+      data: {
+        invoiceId: request.params.id,
+        amount: parseResult.data.amount,
+        method: parseResult.data.method,
+        status: 'completed',
+        paidAt,
+      },
+    });
+
+    await tx.invoice.update({
+      where: { id: request.params.id },
+      data: { status: 'paid', paidAt },
+    });
+
+    return created;
   });
 
-  await prisma.invoice.update({
-    where: { id: request.params.id },
-    data: { status: 'paid', paidAt: new Date() },
-  });
+  if (!payment) {
+    await reply.status(409).send({
+      success: false,
+      error: { code: 'ALREADY_PAID', message: '이미 결제된 인보이스입니다' },
+    });
+    return;
+  }
 
   // 감사 로그 (FR-P08.5, CSAP D-06)
   const paymentActor = (request.headers['x-user-id'] as string) || 'system';

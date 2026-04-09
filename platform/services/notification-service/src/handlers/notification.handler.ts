@@ -273,21 +273,120 @@ export async function markReadHandler(
   await reply.send({ success: true, data: notification });
 }
 
+/**
+ * 읽지 않은 알림 카운트
+ * Design Ref: SVC-NOTIF-R1 DESIGN §2
+ * Plan SC: FR-NOTIF.2
+ * CSAP D-08-05: 본인 알림만 조회 가능 (관리자 예외)
+ */
+export async function unreadCountHandler(
+  request: FastifyRequest<{ Params: { userId: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const callerId = request.headers['x-user-id'] as string | undefined;
+  const callerRole = request.headers['x-user-role'] as string | undefined;
+  const isAdmin = callerRole === 'SUPER_ADMIN' || callerRole === 'TENANT_ADMIN';
+
+  if (!callerId) {
+    await reply.status(401).send({
+      success: false,
+      error: { code: 'UNAUTHORIZED', message: '인증이 필요합니다' },
+    });
+    return;
+  }
+
+  if (!isAdmin && callerId !== request.params.userId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '본인의 알림만 조회할 수 있습니다' },
+    });
+    return;
+  }
+
+  const count = await prisma.notification.count({
+    where: {
+      userId: request.params.userId,
+      status: { not: 'read' },
+    },
+  });
+
+  await reply.send({ success: true, data: { unreadCount: count } });
+}
+
+/**
+ * 일괄 읽음 처리
+ * Design Ref: SVC-NOTIF-R1 DESIGN §3
+ * Plan SC: FR-NOTIF.3
+ * CSAP D-08-05: 본인 알림만 일괄 처리 가능
+ */
+export async function markAllReadHandler(
+  request: FastifyRequest<{ Params: { userId: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const callerId = request.headers['x-user-id'] as string | undefined;
+  const callerRole = request.headers['x-user-role'] as string | undefined;
+  const isAdmin = callerRole === 'SUPER_ADMIN' || callerRole === 'TENANT_ADMIN';
+
+  if (!callerId) {
+    await reply.status(401).send({
+      success: false,
+      error: { code: 'UNAUTHORIZED', message: '인증이 필요합니다' },
+    });
+    return;
+  }
+
+  if (!isAdmin && callerId !== request.params.userId) {
+    await reply.status(403).send({
+      success: false,
+      error: { code: 'FORBIDDEN', message: '본인의 알림만 읽음 처리할 수 있습니다' },
+    });
+    return;
+  }
+
+  const result = await prisma.notification.updateMany({
+    where: {
+      userId: request.params.userId,
+      status: { not: 'read' },
+    },
+    data: { status: 'read' },
+  });
+
+  // 감사 로그 (CSAP D-06)
+  const actor = callerId;
+  const tenantId = (request.headers['x-user-tenant-id'] as string) || 'platform';
+  await logNotificationEvent(
+    'NOTIFICATIONS_BULK_READ',
+    actor,
+    request.params.userId,
+    tenantId,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { markedCount: result.count },
+  );
+
+  await reply.send({
+    success: true,
+    data: { markedAsRead: result.count },
+  });
+}
+
 // 발송 이력 조회 쿼리 파라미터 검증 스키마 (CSAP D-12: 입력 검증)
 const historyQuerySchema = z.object({
   channel: z.enum(['email', 'in-app', 'sms', 'webhook']).optional(),
   status: z.enum(['sent', 'failed', 'read', 'pending']).optional(),
+  tenantId: z.string().optional(),
   page: z.string().regex(/^\d+$/).optional(),
   pageSize: z.string().regex(/^\d+$/).optional(),
 });
 
 /**
  * 발송 이력 조회
- * Plan SC: FR-P11.5
+ * Plan SC: FR-P11.5, FR-NOTIF.4
  * CSAP D-12: channel, status 쿼리 파라미터 Zod enum 검증
+ * CSAP D-08-05: 테넌트 격리 강화 (Design Ref: SVC-NOTIF-R1 DESIGN §4)
  */
 export async function listHistoryHandler(
-  request: FastifyRequest<{ Querystring: { channel?: string; status?: string; page?: string; pageSize?: string } }>,
+  request: FastifyRequest<{ Querystring: { channel?: string; status?: string; tenantId?: string; page?: string; pageSize?: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
   const queryResult = historyQuerySchema.safeParse(request.query);
@@ -302,6 +401,20 @@ export async function listHistoryHandler(
   const page = parseInt(queryResult.data.page ?? '1', 10);
   const pageSize = Math.min(parseInt(queryResult.data.pageSize ?? '20', 10), 100);
   const where: Record<string, unknown> = {};
+
+  // FR-NOTIF.4: 테넌트 격리 강화 (CSAP D-08-05)
+  const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const jwtRole = request.headers['x-user-role'] as string | undefined;
+
+  // SUPER_ADMIN만 전체 이력 조회 가능, 그 외는 본인 테넌트로 강제
+  if (jwtRole === 'SUPER_ADMIN') {
+    if (queryResult.data.tenantId) {
+      where['tenantId'] = queryResult.data.tenantId;
+    }
+  } else if (jwtTenantId) {
+    where['tenantId'] = jwtTenantId;
+  }
+
   if (queryResult.data.channel) where['channel'] = queryResult.data.channel;
   if (queryResult.data.status) where['status'] = queryResult.data.status;
 

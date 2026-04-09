@@ -1,25 +1,14 @@
 {
   "version": "1.0",
-  "enabled": true,
+  "enabled": false,
   "teamName": "",
   "feature": "public-saas-framework",
   "pdcaPhase": "archived",
   "orchestrationPattern": "leader",
   "ctoAgent": "opus",
   "startedAt": "2026-04-09T22:06:21.923Z",
-  "lastUpdated": "2026-04-09T22:06:21.924Z",
-  "teammates": [
-    {
-      "name": "a82dc805d88fef377",
-      "role": "pm-lead",
-      "model": "sonnet",
-      "status": "spawning",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-09T22:06:21.924Z",
-      "lastActivityAt": "2026-04-09T22:06:21.924Z"
-    }
-  ],
+  "lastUpdated": "2026-04-09T22:08:47.445Z",
+  "teammates": [],
   "progress": {
     "totalTasks": 0,
     "completedTasks": 0,

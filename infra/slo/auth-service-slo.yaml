@@ -1,0 +1,48 @@
+# =============================================================================
+# Auth Service SLO 정의
+# Design Ref: MTU-N49 Design §SLO 정의
+# Plan SC: FR-N49.1, FR-N49.2
+# =============================================================================
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: auth-service-slo
+  namespace: production
+  labels:
+    app.kubernetes.io/name: auth-service
+    app.kubernetes.io/part-of: saas-platform
+    csap.compliance/domain: "D-08"
+    team: platform
+spec:
+  service: "auth-service"
+  labels:
+    owner: "platform-team"
+    tier: "critical"
+
+  slos:
+    - name: "authentication-success"
+      objective: 99.95
+      description: "인증 요청 성공률 (CSAP D-08 접근 통제)"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_requests_total{job="auth-service",code=~"5.."}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_requests_total{job="auth-service"}[{{.window}}]))
+      alerting:
+        name: AuthServiceSLOBreach
+        labels:
+          category: "availability"
+          severity: "critical"
+          csap_domain: "D-08"
+        annotations:
+          summary: "Auth Service SLO 위반 — 인증 실패율 증가"
+          description: >
+            인증 서비스 성공률이 99.95% SLO 미달입니다.
+            CSAP D-08 접근 통제 관련 보안 사고 가능성을 확인하십시오.
+        pageAlert:
+          labels:
+            severity: "critical"
+        ticketAlert:
+          labels:
+            severity: "warning"

@@ -1,0 +1,44 @@
+# =============================================================================
+# Grype 취약점 스캐너 설정
+# Design Ref: MTU-N37 Design S3.2
+# Plan SC: FR-N37.2, FR-N37.3
+# CSAP: D-12-03 (소프트웨어 구성 분석 자동화)
+#
+# Trivy 공급망 공격(2026-03) 대응으로 Grype 채택
+# Anchore 오픈소스 -- 폐쇄망 오프라인 DB 지원
+# =============================================================================
+
+# 차단 기준: High 이상 발견 시 파이프라인 실패
+fail-on-severity: high
+
+# 출력 형식
+output:
+  - json
+  - table
+
+# DB 설정
+db:
+  auto-update: true
+  validate-age: true
+  # 최대 허용 DB 나이: 5일 (폐쇄망에서는 수동 갱신 주기에 맞춤)
+  max-allowed-built-age: 120h
+
+# 무시 목록 (명시적 사유 필수)
+# 폐쇄망 환경에서 네트워크 접근 불가 등 합리적 사유가 있는 CVE만 등록
+ignore: []
+  # 예시:
+  # - vulnerability: CVE-2024-XXXXX
+  #   reason: "폐쇄망 환경에서 네트워크 접근 불가하여 익스플로잇 불가"
+  #   expires: "2026-07-01"
+
+# 매칭 설정
+match:
+  java:
+    using-cpes: true
+  python:
+    using-cpes: true
+  javascript:
+    using-cpes: true
+  golang:
+    using-cpes: true
+    always-use-cpe-for-stdlib: true

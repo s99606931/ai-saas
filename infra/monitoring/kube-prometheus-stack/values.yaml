@@ -1,0 +1,342 @@
+# =============================================================================
+# kube-prometheus-stack Helm Values — 공공기관 SaaS 플랫폼
+# Design Ref: MTU-N36 §2.1
+# Plan SC: FR-N36.1
+# CSAP: D-06(감사 로그 수집), D-08(접근 통제 모니터링)
+#
+# 배포: helm upgrade --install kube-prometheus-stack prometheus/kube-prometheus-stack \
+#         --namespace monitoring -f infra/monitoring/kube-prometheus-stack/values.yaml
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# 전역 설정
+# ---------------------------------------------------------------------------
+fullnameOverride: ""
+nameOverride: ""
+
+defaultRules:
+  create: true
+  rules:
+    alertmanager: true
+    etcd: false                    # k3s 내장 SQLite 사용 (etcd 미사용)
+    configReloaders: true
+    general: true
+    k8s: true
+    kubeApiserver: true
+    kubeApiserverAvailability: true
+    kubeApiserverBurnrate: true
+    kubeApiserverHistogram: true
+    kubeApiserverSlos: true
+    kubelet: true
+    kubeProxy: false               # k3s는 kube-proxy 미사용 (내장)
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubeSchedulerAlerting: false   # k3s 내장 컴포넌트 (오탐 방지)
+    kubeSchedulerRecording: false  # k3s 내장 컴포넌트
+    kubeControllerManager: false   # k3s 내장 컴포넌트 (오탐 방지)
+    kubeStateMetrics: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
+
+  # k3s 환경 오탐 알림 억제 (AlertmanagerClusterCrashlooping)
+  disabled:
+    AlertmanagerClusterCrashlooping: true  # 단일 인스턴스 환경 오탐
+
+# ---------------------------------------------------------------------------
+# Prometheus 설정
+# ---------------------------------------------------------------------------
+prometheus:
+  prometheusSpec:
+    # 데이터 보존 기간 (CSAP D-06: 최소 30일)
+    retention: 30d
+    retentionSize: 15GB
+
+    # 리소스 제한 (WSL2 환경)
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+
+    # 스토리지 설정
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 30Gi
+
+    # ServiceMonitor 전역 수집 허용
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+
+    # 스크랩 주기
+    scrapeInterval: 15s
+    evaluationInterval: 15s
+
+    # Remote Write (Tempo metrics_generator 수신)
+    enableRemoteWriteReceiver: true
+
+    # 추가 스크랩 설정 (수동 타겟)
+    additionalScrapeConfigs:
+      # Gitea 메트릭 수집
+      - job_name: "gitea"
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["172.18.120.97:3000"]
+            labels:
+              service: gitea
+              environment: development
+
+  service:
+    type: NodePort
+    nodePort: 30090
+
+# ---------------------------------------------------------------------------
+# Grafana 설정
+# ---------------------------------------------------------------------------
+grafana:
+  # 관리자 비밀번호 (Secret 참조 권장)
+  adminPassword: ""  # grafana-admin-secret에서 자동 로드
+  admin:
+    existingSecret: grafana-admin-secret
+    userKey: admin-user
+    passwordKey: admin-password
+
+  # 서비스 설정
+  service:
+    type: NodePort
+    nodePort: 30300
+
+  # 리소스 제한
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # 영속 스토리지
+  persistence:
+    enabled: true
+    storageClassName: local-path
+    size: 5Gi
+
+  # 기본 대시보드 프로바이더
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: "default"
+          orgId: 1
+          folder: ""
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+        - name: "public-saas"
+          orgId: 1
+          folder: "Public SaaS"
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/public-saas
+
+  # 사이드카 (ConfigMap에서 대시보드 자동 로드)
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: monitoring
+      folderAnnotation: grafana_folder
+      provider:
+        foldersFromFilesStructure: true
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      labelValue: "1"
+      searchNamespace: monitoring
+
+  # Grafana 플러그인
+  plugins:
+    - grafana-clock-panel
+    - grafana-piechart-panel
+
+  # Grafana 설정
+  grafana.ini:
+    server:
+      root_url: "%(protocol)s://%(domain)s:%(http_port)s/"
+    auth:
+      disable_login_form: false
+    auth.anonymous:
+      enabled: false
+    security:
+      # CSAP D-08: 세션 관리
+      cookie_secure: false  # WSL2 HTTP 환경 (프로덕션에서 true)
+      cookie_samesite: lax
+      login_maximum_inactive_lifetime_duration: 30m
+      login_maximum_lifetime_duration: 8h
+    log:
+      mode: console
+      level: info
+    # 한국어 설정
+    date_formats:
+      default_timezone: Asia/Seoul
+    users:
+      default_theme: light
+
+# ---------------------------------------------------------------------------
+# AlertManager 설정
+# ---------------------------------------------------------------------------
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+
+  service:
+    type: NodePort
+    nodePort: 30093
+
+  # 알림 라우팅 설정
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ["alertname", "namespace"]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      receiver: "default"
+      routes:
+        # 심각도 critical → 즉시 알림
+        - match:
+            severity: critical
+          receiver: "critical"
+          group_wait: 10s
+          repeat_interval: 1h
+        # DBA 팀 알림
+        - match:
+            team: dba
+          receiver: "dba-team"
+    receivers:
+      - name: "default"
+        webhook_configs: []
+      - name: "critical"
+        webhook_configs: []
+      - name: "dba-team"
+        webhook_configs: []
+
+# ---------------------------------------------------------------------------
+# Node Exporter 설정
+# ---------------------------------------------------------------------------
+nodeExporter:
+  enabled: true
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  prometheus:
+    monitor:
+      enabled: true
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_node_name]
+          targetLabel: instance
+
+# ---------------------------------------------------------------------------
+# kube-state-metrics 설정
+# ---------------------------------------------------------------------------
+kubeStateMetrics:
+  enabled: true
+
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# ---------------------------------------------------------------------------
+# 불필요한 컴포넌트 비활성화 (k3s 환경)
+# ---------------------------------------------------------------------------
+kubeEtcd:
+  enabled: false    # k3s는 etcd 대신 SQLite 사용
+kubeProxy:
+  enabled: false    # k3s는 자체 프록시 사용
+kubeControllerManager:
+  enabled: false    # k3s 내장
+kubeScheduler:
+  enabled: false    # k3s 내장
+
+# ---------------------------------------------------------------------------
+# 추가 PrometheusRule (커스텀 알림)
+# ---------------------------------------------------------------------------
+additionalPrometheusRulesMap:
+  saas-custom-rules:
+    groups:
+      # 디스크 사용량 알림
+      - name: saas-disk-alerts
+        rules:
+          - alert: DiskSpaceRunningLow
+            expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "디스크 여유 공간 15% 미만"
+              description: "마운트포인트 {{ $labels.mountpoint }}의 여유 공간이 {{ $value | printf \"%.1f\" }}%입니다."
+
+          - alert: DiskSpaceCritical
+            expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 5
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "디스크 여유 공간 5% 미만 (긴급)"
+              description: "마운트포인트 {{ $labels.mountpoint }}의 여유 공간이 {{ $value | printf \"%.1f\" }}%입니다. 즉시 조치 필요."
+
+      # k3s 특화 알림
+      - name: saas-k3s-alerts
+        rules:
+          - alert: K3sServiceDown
+            expr: up{job=~".*k3s.*"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "k3s 관련 서비스 다운"
+              description: "{{ $labels.job }} 서비스가 2분 이상 응답하지 않습니다."

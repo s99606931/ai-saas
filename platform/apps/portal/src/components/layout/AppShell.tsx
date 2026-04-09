@@ -53,6 +53,7 @@ export function AppShell({ children }: AppShellProps) {
           <FloatingSidebar
             serviceId={activeService}
             pinned={sidebarPinned}
+            railExpanded={railExpanded}
             onTogglePin={() => setSidebarPinned((v) => !v)}
             onClose={() => setActiveService(null)}
           />

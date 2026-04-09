@@ -1,0 +1,14 @@
+# Design Ref: MTU-N32 Design -- Helm Chart 구조
+# Plan SC: FR-N32.1
+apiVersion: v2
+name: api-gateway
+description: 공공기관 SaaS API Gateway Helm Chart
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+maintainers:
+  - name: SaaS Platform Team
+keywords:
+  - api-gateway
+  - saas
+  - csap

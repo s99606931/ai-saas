@@ -1,0 +1,16 @@
+# Flux GitRepository — Gitea 연동
+# Design Ref: MTU-N24 §2
+# Plan SC: FR-N24.1
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: fleet-infra
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: http://172.18.120.97:3000/saas-admin/fleet-infra.git
+  ref:
+    branch: main
+  secretRef:
+    name: gitea-credentials
+  timeout: 3m

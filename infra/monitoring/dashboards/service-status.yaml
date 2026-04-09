@@ -1,0 +1,83 @@
+# 서비스 상태 대시보드 ConfigMap
+# Design Ref: MTU-N25 §2
+# Plan SC: FR-N25.2
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: saas-service-status
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/part-of: public-saas
+data:
+  saas-service-status.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "panels": [
+        {
+          "title": "Running Pods",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "targets": [{"expr": "count(kube_pod_status_phase{phase=\"Running\"})", "legendFormat": "Running"}],
+          "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "green"}}}
+        },
+        {
+          "title": "Pending Pods",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+          "targets": [{"expr": "count(kube_pod_status_phase{phase=\"Pending\"}) or vector(0)", "legendFormat": "Pending"}],
+          "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "yellow"}}}
+        },
+        {
+          "title": "Failed Pods",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+          "targets": [{"expr": "count(kube_pod_status_phase{phase=\"Failed\"}) or vector(0)", "legendFormat": "Failed"}],
+          "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "red"}}}
+        },
+        {
+          "title": "컨테이너 재시작 횟수",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+          "targets": [{"expr": "sum(kube_pod_container_status_restarts_total)", "legendFormat": "Total Restarts"}],
+          "fieldConfig": {"defaults": {"thresholds": {"steps": [{"value": 0, "color": "green"}, {"value": 10, "color": "yellow"}, {"value": 50, "color": "red"}]}}}
+        },
+        {
+          "title": "네임스페이스별 Pod 목록",
+          "type": "table",
+          "gridPos": {"h": 10, "w": 24, "x": 0, "y": 4},
+          "targets": [{"expr": "kube_pod_info{namespace=~\"$namespace\"}", "legendFormat": "", "format": "table", "instant": true}],
+          "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "container": true, "endpoint": true, "instance": true, "job": true, "service": true, "uid": true, "prometheus": true, "prometheus_replica": true}, "renameByName": {"namespace": "Namespace", "pod": "Pod", "node": "Node", "host_ip": "Host IP", "pod_ip": "Pod IP", "created_by_kind": "Owner Kind", "created_by_name": "Owner Name"}}}]
+        },
+        {
+          "title": "컨테이너 재시작 Top 10",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+          "targets": [{"expr": "topk(10, sum by (namespace, pod) (kube_pod_container_status_restarts_total))", "legendFormat": "{{namespace}}/{{pod}}"}]
+        },
+        {
+          "title": "OOMKilled 이벤트",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+          "targets": [{"expr": "kube_pod_container_status_last_terminated_reason{reason=\"OOMKilled\"}", "legendFormat": "{{namespace}}/{{pod}}/{{container}}"}]
+        }
+      ],
+      "schemaVersion": 39,
+      "tags": ["k3s", "services", "public-saas"],
+      "templating": {
+        "list": [
+          {
+            "name": "namespace",
+            "type": "query",
+            "query": "label_values(kube_pod_info, namespace)",
+            "multi": true,
+            "includeAll": true,
+            "current": {"text": "All", "value": "$__all"}
+          }
+        ]
+      },
+      "time": {"from": "now-1h", "to": "now"},
+      "title": "Public SaaS - 서비스 상태",
+      "uid": "saas-service-status"
+    }

@@ -9,6 +9,9 @@ import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
 
 const ALGORITHM = AUTH_CONSTANTS.JWT_ALGORITHM;
 
+/** JWT 키 ID — 키 회전 지원 (Design Ref: SVC-AUTH-R1 DESIGN §5) */
+const KEY_ID = process.env['JWT_KEY_ID'] ?? 'key-1';
+
 let cachedPrivateKey: KeyLike | null = null;
 let cachedPublicKey: KeyLike | null = null;
 
@@ -51,12 +54,13 @@ export async function signAccessToken(
 ): Promise<string> {
   const privateKey = await getPrivateKey();
 
+  // Plan SC: FR-AUTH.5 — kid 헤더 포함 (키 회전 지원)
   return new SignJWT({
     tenantId: payload.tenantId,
     role: payload.role,
     permissions: payload.permissions,
   })
-    .setProtectedHeader({ alg: ALGORITHM, typ: 'JWT' })
+    .setProtectedHeader({ alg: ALGORITHM, typ: 'JWT', kid: KEY_ID })
     .setSubject(payload.sub)
     .setIssuedAt()
     .setExpirationTime(`${AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRES_SECONDS}s`)
@@ -76,8 +80,9 @@ export async function signRefreshToken(
 ): Promise<string> {
   const privateKey = await getPrivateKey();
 
+  // Plan SC: FR-AUTH.5 — kid 헤더 포함 (키 회전 지원)
   return new SignJWT({ tenantId, type: 'refresh' })
-    .setProtectedHeader({ alg: ALGORITHM, typ: 'JWT' })
+    .setProtectedHeader({ alg: ALGORITHM, typ: 'JWT', kid: KEY_ID })
     .setSubject(userId)
     .setIssuedAt()
     .setExpirationTime(`${AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRES_SECONDS}s`)

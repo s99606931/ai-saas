@@ -5,6 +5,7 @@
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import crypto from 'node:crypto';
 import { logTenantEvent } from '../lib/audit.js';
 import { prisma } from '../lib/prisma.js';
 
@@ -229,10 +230,221 @@ export async function updateTenantStatusHandler(
     { newStatus: parseResult.data.status, reason: parseResult.data.reason },
   );
 
-  // NOTE: SUSPENDED 시 테넌트 내 모든 세션 무효화는 auth-service Redis 연동 필요 (Phase P4)
+  // FR-TENANT.2: SUSPENDED 시 테넌트 내 모든 사용자 세션 무효화
+  // Design Ref: SVC-TENANT-R1 DESIGN §2
+  if (parseResult.data.status === 'SUSPENDED') {
+    await invalidateTenantSessions(request.params.id, request.ip);
+  }
 
   await reply.send({
     success: true,
     data: { ...tenant, maxStorage: tenant.maxStorage.toString() },
   });
+}
+
+/**
+ * 테넌트 소프트 삭제
+ * Design Ref: SVC-TENANT-R1 DESIGN §3
+ * Plan SC: FR-TENANT.3
+ *
+ * DELETE /tenants/:id → status=ARCHIVED + archivedAt 설정
+ */
+export async function deleteTenantHandler(
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const tenantId = request.params.id;
+
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+  });
+
+  if (!tenant) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'TENANT_NOT_FOUND', message: '테넌트를 찾을 수 없습니다' },
+    });
+    return;
+  }
+
+  if (tenant.status === 'ARCHIVED') {
+    await reply.status(409).send({
+      success: false,
+      error: { code: 'TENANT_ALREADY_ARCHIVED', message: '이미 아카이브된 테넌트입니다' },
+    });
+    return;
+  }
+
+  // 소프트 삭제: ARCHIVED 상태로 변경
+  const updated = await prisma.tenant.update({
+    where: { id: tenantId },
+    data: {
+      status: 'ARCHIVED',
+    },
+  });
+
+  // 세션 무효화
+  await invalidateTenantSessions(tenantId, request.ip);
+
+  const deleteActor = (request.headers['x-user-id'] as string) || 'system';
+  await logTenantEvent(
+    'TENANT_ARCHIVED',
+    deleteActor,
+    tenantId,
+    tenantId,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { previousStatus: tenant.status },
+  );
+
+  await reply.send({
+    success: true,
+    data: { ...updated, maxStorage: updated.maxStorage.toString() },
+    message: '테넌트가 아카이브되었습니다. 90일 후 자동 삭제됩니다.',
+  });
+}
+
+/**
+ * 테넌트 설정 조회
+ * Design Ref: SVC-TENANT-R1 DESIGN §4
+ * Plan SC: FR-TENANT.4
+ */
+export async function getTenantConfigHandler(
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: request.params.id },
+    select: { id: true, name: true, config: true, theme: true },
+  });
+
+  if (!tenant) {
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'TENANT_NOT_FOUND', message: '테넌트를 찾을 수 없습니다' },
+    });
+    return;
+  }
+
+  await reply.send({
+    success: true,
+    data: {
+      tenantId: tenant.id,
+      tenantName: tenant.name,
+      config: tenant.config ?? {},
+      theme: tenant.theme ?? {},
+    },
+  });
+}
+
+/**
+ * 테넌트 설정 수정
+ * Design Ref: SVC-TENANT-R1 DESIGN §4
+ * Plan SC: FR-TENANT.4
+ */
+export async function updateTenantConfigHandler(
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const configSchema = z.object({
+    config: z.record(z.unknown()).optional(),
+    theme: z.object({
+      primaryColor: z.string().optional(),
+      logoUrl: z.string().url().optional(),
+      faviconUrl: z.string().url().optional(),
+      sidebarVariant: z.enum(['default', 'compact', 'floating']).optional(),
+    }).optional(),
+  });
+
+  const parseResult = configSchema.safeParse(request.body);
+  if (!parseResult.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parseResult.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+
+  const updateData: Record<string, unknown> = {};
+  if (parseResult.data.config) updateData['config'] = parseResult.data.config;
+  if (parseResult.data.theme) updateData['theme'] = parseResult.data.theme;
+
+  const tenant = await prisma.tenant.update({
+    where: { id: request.params.id },
+    data: updateData as Parameters<typeof prisma.tenant.update>[0]['data'],
+    select: { id: true, name: true, config: true, theme: true },
+  });
+
+  const configActor = (request.headers['x-user-id'] as string) || 'system';
+  await logTenantEvent(
+    'TENANT_CONFIG_UPDATED',
+    configActor,
+    request.params.id,
+    request.params.id,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { updatedFields: Object.keys(parseResult.data) },
+  );
+
+  await reply.send({
+    success: true,
+    data: {
+      tenantId: tenant.id,
+      config: tenant.config ?? {},
+      theme: tenant.theme ?? {},
+    },
+  });
+}
+
+/**
+ * 테넌트 내 모든 사용자 세션 무효화
+ * Design Ref: SVC-TENANT-R1 DESIGN §2
+ * Plan SC: FR-TENANT.2
+ *
+ * auth-service의 /auth/sessions/invalidate 엔드포인트를 호출하여
+ * 해당 테넌트의 모든 사용자 세션을 무효화합니다.
+ */
+async function invalidateTenantSessions(
+  tenantId: string,
+  _callerIp: string,
+): Promise<void> {
+  const authServiceUrl = process.env['AUTH_SVC_URL'] ?? 'http://auth-service:3001';
+  const serviceKey = process.env['INTERNAL_SERVICE_KEY'];
+
+  if (!serviceKey) {
+    // 서비스 키 미설정 시 건너뜀 (개발 환경)
+    return;
+  }
+
+  // 테넌트 내 모든 사용자 조회
+  const users = await prisma.user.findMany({
+    where: { tenantId },
+    select: { id: true },
+  });
+
+  // 각 사용자의 세션 무효화 (HMAC 서비스 토큰 사용)
+  for (const user of users) {
+    try {
+      const timestamp = Math.floor(Date.now() / 1000);
+      const path = '/auth/sessions/invalidate';
+      const message = `tenant-service:${timestamp}:${path}`;
+      const hmac = crypto.createHmac('sha256', serviceKey).update(message).digest('hex');
+      const serviceToken = `tenant-service:${timestamp}:${hmac}`;
+
+      await fetch(`${authServiceUrl}${path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Service-Token': serviceToken,
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          tenantId,
+          reason: 'ACCOUNT_LOCKED',
+        }),
+      });
+    } catch {
+      // 개별 사용자 세션 무효화 실패 시 건너뜀 (전체 중단 방지)
+    }
+  }
 }

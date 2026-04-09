@@ -7,6 +7,8 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { validateDataGrade, DataGradeViolationError } from '../lib/grade-check.js';
 import { maskPII } from '../lib/pii-masking.js';
+import { checkPromptInjection } from '../lib/prompt-guard.js';
+import { checkUsageLimit } from '../lib/usage-limit.js';
 import { logAiEvent } from '../lib/audit.js';
 import { prisma } from '../lib/prisma.js';
 import type { DataGrade } from '@public-saas/types';
@@ -158,6 +160,57 @@ export async function chatHandler(
     throw error;
   }
 
+  // FR-AI.1: 프롬프트 인젝션 방어 (Design Ref: SVC-AI-R1 DESIGN §1)
+  const guardResult = checkPromptInjection(message);
+  if (guardResult.blocked) {
+    await logAiEvent(
+      'AI_PROMPT_INJECTION_BLOCKED',
+      chatActor,
+      modelId,
+      tenantId,
+      request.ip,
+      request.headers['user-agent'] ?? 'unknown',
+      {
+        totalSeverity: guardResult.totalSeverity,
+        detections: guardResult.detections.map((d) => d.description),
+      },
+    );
+
+    await reply.status(400).send({
+      success: false,
+      error: {
+        code: 'PROMPT_INJECTION_DETECTED',
+        message: '안전하지 않은 프롬프트가 감지되었습니다. 요청이 차단되었습니다.',
+      },
+    });
+    return;
+  }
+
+  // FR-AI.3: 테넌트별 일일 사용량 제한 (Design Ref: SVC-AI-R1 DESIGN §3)
+  const usageLimit = await checkUsageLimit(tenantId);
+  if (!usageLimit.allowed) {
+    await logAiEvent(
+      'AI_USAGE_LIMIT_EXCEEDED',
+      chatActor,
+      modelId,
+      tenantId,
+      request.ip,
+      request.headers['user-agent'] ?? 'unknown',
+      { usedToday: usageLimit.usedToday, dailyLimit: usageLimit.dailyLimit },
+    );
+
+    await reply.status(429).send({
+      success: false,
+      error: {
+        code: 'AI_USAGE_LIMIT_EXCEEDED',
+        message: `일일 AI 사용량 한도를 초과했습니다 (${usageLimit.usedToday}/${usageLimit.dailyLimit} 토큰)`,
+        usedToday: usageLimit.usedToday,
+        dailyLimit: usageLimit.dailyLimit,
+      },
+    });
+    return;
+  }
+
   // O등급: PII 마스킹
   const maskedMessage = maskPII(message);
 
@@ -172,7 +225,11 @@ export async function chatHandler(
 
   // AI API 호출 (실제 연동은 LM Studio / 외부 API 설정 시)
   // NOTE: 현재는 에코 응답. MTU-A1 (AI 게이트웨이) 구현 시 실제 API 호출로 교체
-  const responseText = `[AI 응답] 마스킹된 메시지 수신 완료 (${maskedMessage.length}자)`;
+  const rawResponse = `[AI 응답] 마스킹된 메시지 수신 완료 (${maskedMessage.length}자)`;
+
+  // FR-AI.2: 응답 PII 필터링 (Design Ref: SVC-AI-R1 DESIGN §2)
+  // AI 응답에서 PII가 재출현하는 것을 방지
+  const responseText = maskPII(rawResponse);
   const tokensUsed = Math.ceil(maskedMessage.length / 4);
 
   // 사용량 기록 (FR-P10.4)

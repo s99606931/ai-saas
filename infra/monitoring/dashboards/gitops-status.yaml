@@ -1,0 +1,66 @@
+# Flux GitOps 현황 대시보드 ConfigMap
+# Design Ref: MTU-N25 §3
+# Plan SC: FR-N25.3
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: saas-gitops-status
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/part-of: public-saas
+data:
+  saas-gitops-status.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "panels": [
+        {
+          "title": "Flux 컨트롤러 상태",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 8, "x": 0, "y": 0},
+          "targets": [{"expr": "count(kube_pod_status_phase{namespace=\"flux-system\",phase=\"Running\"})", "legendFormat": "Running Controllers"}],
+          "fieldConfig": {"defaults": {"color": {"mode": "fixed", "fixedColor": "green"}}}
+        },
+        {
+          "title": "GitRepository 소스 수",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 8, "x": 8, "y": 0},
+          "targets": [{"expr": "count(gotk_resource_info{kind=\"GitRepository\"}) or vector(0)", "legendFormat": "GitRepositories"}]
+        },
+        {
+          "title": "Kustomization 수",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 8, "x": 16, "y": 0},
+          "targets": [{"expr": "count(gotk_resource_info{kind=\"Kustomization\"}) or vector(0)", "legendFormat": "Kustomizations"}]
+        },
+        {
+          "title": "Flux 컨트롤러 Pod 목록",
+          "type": "table",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+          "targets": [{"expr": "kube_pod_info{namespace=\"flux-system\"}", "format": "table", "instant": true}],
+          "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "container": true, "endpoint": true, "instance": true, "job": true, "service": true, "uid": true, "prometheus": true, "prometheus_replica": true, "namespace": true, "host_ip": true}, "renameByName": {"pod": "Pod", "node": "Node", "pod_ip": "Pod IP", "created_by_kind": "Kind", "created_by_name": "Deployment"}}}]
+        },
+        {
+          "title": "Flux Reconcile 지속 시간",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+          "targets": [{"expr": "gotk_reconcile_duration_seconds_sum{kind=~\"GitRepository|Kustomization\"}", "legendFormat": "{{kind}}/{{name}}"}]
+        },
+        {
+          "title": "Flux 이벤트 로그",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+          "targets": [
+            {"expr": "gotk_reconcile_condition{type=\"Ready\",status=\"True\"}", "legendFormat": "Ready: {{kind}}/{{name}}"},
+            {"expr": "gotk_reconcile_condition{type=\"Ready\",status=\"False\"}", "legendFormat": "NotReady: {{kind}}/{{name}}"}
+          ]
+        }
+      ],
+      "schemaVersion": 39,
+      "tags": ["flux", "gitops", "public-saas"],
+      "templating": {"list": []},
+      "time": {"from": "now-1h", "to": "now"},
+      "title": "Public SaaS - GitOps 현황",
+      "uid": "saas-gitops-status"
+    }

@@ -24,7 +24,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "${GITEA_DB_PORT:-5434}:5432"
     networks:
       - saas-cicd
     healthcheck:
@@ -73,7 +73,7 @@ services:
     networks:
       - saas-cicd
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/version"]
+      test: ["CMD-SHELL", "curl -sfo /dev/null -w '%{http_code}' http://localhost:3000/ | grep -qE '200|302|303'"]
       interval: 15s
       timeout: 5s
       retries: 10

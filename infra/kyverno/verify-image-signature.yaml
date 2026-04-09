@@ -3,7 +3,7 @@
 # Plan SC: FR-N27.4
 # CSAP: D-05-03, D-08, D-12-08
 #
-# 초기 Audit 모드로 배포 → 검증 완료 후 Enforce 전환
+# Enforce 모드: 미서명 이미지 배포 차단 (2026-04-08 전환)
 # 적용 대상: saas-platform 네임스페이스의 모든 Pod
 # 검증 대상: localhost:8080/public-saas/* 이미지
 
@@ -23,9 +23,9 @@ metadata:
     csap.control: "D-05-03,D-12-08"
     n2sf.domain: "N-05"
 spec:
-  # 초기 Audit 모드: 위반 시 경고만 표시 (차단하지 않음)
-  # 검증 완료 후 Enforce로 변경
-  validationFailureAction: Audit
+  # Enforce 모드: 미서명 이미지 배포 차단
+  # 2026-04-08 Audit -> Enforce 전환 완료
+  validationFailureAction: Enforce
   background: true
   webhookTimeoutSeconds: 30
   rules:
@@ -49,5 +49,5 @@ spec:
                       2ZWQ8HuGYGPoMfUZ93MwVtq+/2PCKCaUYnTxlZGmQVzSrbpKadxiN6EHbA==
                       -----END PUBLIC KEY-----
                     signatureAlgorithm: sha256
-          # 서명이 없는 이미지에 대한 메시지
+          mutateDigest: false
           required: true

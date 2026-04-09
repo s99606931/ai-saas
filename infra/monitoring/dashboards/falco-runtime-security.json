@@ -1,0 +1,234 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "annotations": { "list": [] },
+  "description": "Falco 런타임 보안 모니터링 대시보드 (CSAP D-06/D-08/D-12)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "런타임 보안 현황",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "title": "Critical 이벤트 (즉시 대응)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(increase(falcosidekick_outputs_total{priority=\"Critical\"}[24h])) or vector(0)",
+          "legendFormat": "Critical"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 1, "color": "red" }
+            ]
+          },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "title": "Warning 이벤트",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(increase(falcosidekick_outputs_total{priority=\"Warning\"}[24h])) or vector(0)",
+          "legendFormat": "Warning"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 5, "color": "yellow" },
+              { "value": 20, "color": "orange" }
+            ]
+          },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "title": "Falco 엔진 상태",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "count(up{job=\"falco\"} == 1) or vector(0)",
+          "legendFormat": "Active Nodes"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 1, "color": "green" }
+            ]
+          },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "title": "이벤트 발생율 (분당)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(rate(falcosidekick_outputs_total[5m])) * 60 or vector(0)",
+          "legendFormat": "Events/min"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 10, "color": "yellow" },
+              { "value": 50, "color": "red" }
+            ]
+          },
+          "unit": "short",
+          "decimals": 1
+        }
+      }
+    },
+    {
+      "title": "이벤트 추이 (시간별)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 5 },
+      "targets": [
+        {
+          "expr": "sum(rate(falcosidekick_outputs_total[5m])) by (rule)",
+          "legendFormat": "{{rule}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 20
+          },
+          "unit": "ops"
+        }
+      }
+    },
+    {
+      "title": "심각도별 분포",
+      "type": "piechart",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 5 },
+      "targets": [
+        {
+          "expr": "sum(increase(falcosidekick_outputs_total[24h])) by (priority)",
+          "legendFormat": "{{priority}}"
+        }
+      ],
+      "fieldConfig": {
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Critical" }, "properties": [{ "id": "color", "value": { "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "Warning" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "Notice" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue" } }] },
+          { "matcher": { "id": "byName", "options": "Informational" }, "properties": [{ "id": "color", "value": { "fixedColor": "green" } }] }
+        ]
+      }
+    },
+    {
+      "title": "Top 10 규칙별 이벤트",
+      "type": "barchart",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "targets": [
+        {
+          "expr": "topk(10, sum(increase(falcosidekick_outputs_total[24h])) by (rule))",
+          "legendFormat": "{{rule}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short" }
+      }
+    },
+    {
+      "title": "네임스페이스별 이벤트",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "targets": [
+        {
+          "expr": "sum(increase(falcosidekick_outputs_total[24h])) by (k8s_ns_name)",
+          "legendFormat": "{{k8s_ns_name}}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "k8s_ns_name": "네임스페이스",
+              "Value": "이벤트 수"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "CSAP 보안 도메인별 이벤트",
+      "type": "barchart",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 21 },
+      "targets": [
+        {
+          "expr": "sum(increase(falcosidekick_outputs_total{rule=~\".*D-06.*\"}[24h]))",
+          "legendFormat": "D-06 감사"
+        },
+        {
+          "expr": "sum(increase(falcosidekick_outputs_total{rule=~\".*D-08.*\"}[24h]))",
+          "legendFormat": "D-08 접근통제"
+        },
+        {
+          "expr": "sum(increase(falcosidekick_outputs_total{rule=~\".*D-09.*\"}[24h]))",
+          "legendFormat": "D-09 네트워크"
+        },
+        {
+          "expr": "sum(increase(falcosidekick_outputs_total{rule=~\".*D-12.*\"}[24h]))",
+          "legendFormat": "D-12 개발보안"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["falco", "runtime-security", "csap", "saas"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "Falco 런타임 보안",
+  "uid": "falco-runtime-security",
+  "version": 1
+}

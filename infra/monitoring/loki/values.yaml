@@ -1,0 +1,120 @@
+# Loki 3.x Helm Values — SingleBinary 모드 (WSL2 로컬 개발 환경)
+# Design Ref: MTU-N24 §FR-N24.1 — 로그 집계
+# Plan SC: FR-N24.1
+# CSAP 준수: D-06(로그 30일 보존), D-12(PII 마스킹 파이프라인)
+#
+# 배포 모드: SingleBinary (WSL2 단일 노드 — 오브젝트 스토리지 불필요)
+# NFR-N24.4: 메모리 limit 1.5GB 이내
+
+deploymentMode: SingleBinary
+
+loki:
+  auth_enabled: false
+
+  commonConfig:
+    replication_factor: 1
+
+  storage:
+    type: filesystem
+
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+
+  limits_config:
+    retention_period: 720h
+    ingestion_rate_mb: 16
+    ingestion_burst_size_mb: 32
+    max_query_series: 500
+    max_entries_limit_per_query: 50000
+    max_query_length: 721h
+
+  compactor:
+    retention_enabled: true
+    delete_request_store: filesystem
+
+  rulerConfig:
+    storage:
+      type: local
+      local:
+        directory: /var/loki/rules
+    rule_path: /tmp/rules
+
+# SimpleScalable 컴포넌트 비활성화 (SingleBinary 모드 전환 필수)
+write:
+  replicas: 0
+read:
+  replicas: 0
+backend:
+  replicas: 0
+
+singleBinary:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1.5Gi
+  persistence:
+    enabled: true
+    storageClass: local-path
+    size: 20Gi
+
+monitoring:
+  selfMonitoring:
+    enabled: false
+    grafanaAgent:
+      installOperator: false
+  lokiCanary:
+    enabled: false
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
+
+gateway:
+  enabled: true
+  service:
+    type: ClusterIP
+
+test:
+  enabled: false
+
+# k8s API 사이드카 비활성화 (WSL2 ClusterIP 접근 불가 이슈 우회)
+sidecar:
+  rules:
+    enabled: false
+
+extraObjects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: loki-datasource
+      namespace: monitoring
+      labels:
+        grafana_datasource: "1"
+    data:
+      datasource.yaml: |
+        apiVersion: 1
+        datasources:
+          - name: Loki
+            type: loki
+            uid: loki
+            url: http://loki.monitoring.svc.cluster.local:3100
+            access: proxy
+            isDefault: false
+            jsonData:
+              derivedFields:
+                - datasourceUid: tempo
+                  matcherRegex: '"traceId":"([^"]+)"'
+                  name: TraceID
+                  url: '$${__value.raw}'
+                  urlDisplayLabel: "Tempo에서 추적 보기"

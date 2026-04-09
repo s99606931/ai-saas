@@ -1,0 +1,85 @@
+# =============================================================================
+# LitmusChaos Helm Values
+# Design Ref: MTU-N50 Design §Design Anchor
+# Plan SC: FR-N50.1
+#
+# 설치: helm install litmus litmuschaos/litmus -n litmus -f litmus-values.yaml
+# =============================================================================
+
+# --- Portal 설정 ---
+portal:
+  server:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  frontend:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+# --- MongoDB (내장) ---
+mongodb:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  persistence:
+    enabled: true
+    storageClassName: ""
+    accessMode: ReadWriteOnce
+    size: 5Gi
+
+# --- 인증 설정 ---
+portal:
+  server:
+    authConfig:
+      adminUsername: admin
+      # 비밀번호는 Sealed Secret으로 관리
+      # adminPassword: 환경변수에서 주입
+
+# --- 네임스페이스 격리 ---
+# 카오스 실험은 staging 네임스페이스만 허용
+namespacedScope:
+  enabled: true
+  allowedNamespaces:
+    - staging
+    - stg
+    - chaos-test
+
+# --- 서비스 타입 ---
+service:
+  type: ClusterIP
+
+# --- RBAC ---
+# 최소 권한 원칙 적용 (CSAP D-08)
+rbac:
+  create: true
+
+# --- 보안 컨텍스트 ---
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# --- 모니터링 ---
+monitoring:
+  enabled: true
+  prometheus:
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: kube-prometheus-stack

@@ -1,0 +1,513 @@
+# k3s 파드 & 워크로드 모니터링 대시보드 (한국어 + 도움말)
+# kube-state-metrics 기반 파드/Deployment 현황
+# CSAP: D-06-04 (가용성 모니터링)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k3s-korean-workload-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "k3s 공공 SaaS"
+data:
+  k3s-korean-workload.json: |
+    {
+      "uid": "k3s-korean-workload",
+      "title": "k3s 공공 SaaS — 파드 & 워크로드 현황",
+      "tags": [
+        "k3s",
+        "public-saas",
+        "korean",
+        "workload"
+      ],
+      "timezone": "Asia/Seoul",
+      "refresh": "30s",
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "schemaVersion": 38,
+      "panels": [
+        {
+          "id": 1,
+          "type": "text",
+          "title": "📋 파드 모니터링 안내",
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 3
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "## 파드 & 워크로드 현황 대시보드\n\nkube-state-metrics 기반 파드/Deployment/네임스페이스 리소스를 모니터링합니다.\n\n> **참고**: kube-state-metrics가 정상화되면 모든 패널에 데이터가 표시됩니다. 데이터가 없을 경우 `kubectl rollout restart deploy -n monitoring kube-prometheus-stack-kube-state-metrics`를 실행하세요."
+          }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "🟢 실행 중 파드",
+          "description": "Running 상태 파드 수",
+          "gridPos": {
+            "x": 0,
+            "y": 3,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "sum(kube_pod_status_phase{phase='Running'}) or vector(0)",
+              "refId": "A",
+              "legendFormat": ""
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1
+                  },
+                  {
+                    "color": "green",
+                    "value": 3
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "🔴 실패 파드",
+          "description": "Failed 상태 파드 수. 0이어야 정상.",
+          "gridPos": {
+            "x": 6,
+            "y": 3,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "sum(kube_pod_status_phase{phase='Failed'}) or vector(0)",
+              "refId": "A",
+              "legendFormat": ""
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1
+                  },
+                  {
+                    "color": "red",
+                    "value": 3
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "🟡 대기 중 파드",
+          "description": "Pending 파드 수. 장기 Pending은 리소스 부족 신호.",
+          "gridPos": {
+            "x": 12,
+            "y": 3,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "sum(kube_pod_status_phase{phase='Pending'}) or vector(0)",
+              "refId": "A",
+              "legendFormat": ""
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "🔁 재시작 횟수 (1시간)",
+          "description": "최근 1시간 파드 재시작 횟수. 높으면 CrashLoop 의심.",
+          "gridPos": {
+            "x": 18,
+            "y": 3,
+            "w": 6,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(kube_pod_container_status_restarts_total[1h])) or vector(0)",
+              "refId": "A",
+              "legendFormat": ""
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 5
+                  },
+                  {
+                    "color": "red",
+                    "value": 15
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 6,
+          "type": "row",
+          "title": "📦 파드 상태 현황",
+          "gridPos": {
+            "x": 0,
+            "y": 7,
+            "w": 24,
+            "h": 1
+          },
+          "collapsed": false
+        },
+        {
+          "id": 7,
+          "type": "text",
+          "title": "📖 파드 모니터링 가이드",
+          "gridPos": {
+            "x": 0,
+            "y": 8,
+            "w": 6,
+            "h": 14
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "### 파드 모니터링 가이드\n\n**파드 상태 의미**\n| 상태 | 의미 | 조치 |\n|------|------|------|\n| Running | 정상 실행 중 | 없음 |\n| Pending | 스케줄링 대기 | 리소스 확인 |\n| Failed | 실행 실패 | 로그 확인 |\n| CrashLoopBackOff | 반복 재시작 | 코드/설정 확인 |\n| OOMKilled | 메모리 초과 | 메모리 한도 증가 |\n\n**CrashLoop 조사 방법**\n```bash\n# 로그 확인\nkubectl logs [파드명] \\\n  -n [네임스페이스] --previous\n\n# 이벤트 확인\nkubectl describe pod [파드명]\n\n# 리소스 사용량 확인\nkubectl top pod [파드명]\n```\n\n**재시작 횟수 기준**\n- 🟢 정상: 0~5회 (운영 기간 중)\n- 🟡 경고: 5~15회\n- 🔴 위험: 15회 이상\n\n**CSAP 기준**: D-06-04 (가용성)"
+          }
+        },
+        {
+          "id": 8,
+          "type": "table",
+          "title": "네임스페이스별 파드 현황",
+          "description": "네임스페이스별 파드 상태 요약.",
+          "gridPos": {
+            "x": 6,
+            "y": 8,
+            "w": 18,
+            "h": 14
+          },
+          "targets": [
+            {
+              "expr": "sum by (namespace, phase) (kube_pod_status_phase) or vector(0)",
+              "refId": "A",
+              "instant": true,
+              "format": "table",
+              "legendFormat": ""
+            }
+          ],
+          "transformations": [
+            {
+              "id": "groupBy",
+              "options": {
+                "fields": {
+                  "namespace": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  },
+                  "phase": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  },
+                  "Value": {
+                    "aggregations": [
+                      "sum"
+                    ],
+                    "operation": "aggregate"
+                  }
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "namespace": "네임스페이스",
+                  "phase": "상태",
+                  "Value (sum)": "파드 수"
+                }
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "상태"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "options": {
+                          "Running": {
+                            "text": "🟢 Running"
+                          },
+                          "Failed": {
+                            "text": "🔴 Failed"
+                          },
+                          "Pending": {
+                            "text": "🟡 Pending"
+                          },
+                          "Succeeded": {
+                            "text": "✅ Succeeded"
+                          }
+                        },
+                        "type": "value"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": 9,
+          "type": "row",
+          "title": "🚀 Deployment 현황",
+          "gridPos": {
+            "x": 0,
+            "y": 22,
+            "w": 24,
+            "h": 1
+          },
+          "collapsed": false
+        },
+        {
+          "id": 10,
+          "type": "text",
+          "title": "📖 Deployment 모니터링 가이드",
+          "gridPos": {
+            "x": 0,
+            "y": 23,
+            "w": 6,
+            "h": 12
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "### Deployment 모니터링 가이드\n\n**핵심 지표**\n| 지표 | 의미 |\n|------|------|\n| `desired` | 목표 레플리카 수 |\n| `ready` | Ready 상태 수 |\n| `unavailable` | 사용 불가 수 |\n\n**롤아웃 모니터링**\n```bash\n# 롤아웃 상태 확인\nkubectl rollout status \\\n  deploy/[이름] -n [ns]\n\n# 롤백\nkubectl rollout undo \\\n  deploy/[이름] -n [ns]\n\n# 배포 이력 확인\nkubectl rollout history \\\n  deploy/[이름]\n```\n\n**CSAP 기준**: D-12-08 (변경 관리)"
+          }
+        },
+        {
+          "id": 11,
+          "type": "table",
+          "title": "Deployment 레플리카 현황",
+          "description": "Deployment별 목표/준비 레플리카 수. unavailable > 0 이면 문제.",
+          "gridPos": {
+            "x": 6,
+            "y": 23,
+            "w": 18,
+            "h": 12
+          },
+          "targets": [
+            {
+              "expr": "kube_deployment_spec_replicas or vector(0)",
+              "refId": "A",
+              "instant": true,
+              "format": "table",
+              "legendFormat": "목표"
+            },
+            {
+              "expr": "kube_deployment_status_replicas_ready or vector(0)",
+              "refId": "B",
+              "instant": true,
+              "format": "table",
+              "legendFormat": "준비됨"
+            },
+            {
+              "expr": "kube_deployment_status_replicas_unavailable or vector(0)",
+              "refId": "C",
+              "instant": true,
+              "format": "table",
+              "legendFormat": "사용불가"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "deployment": "Deployment명",
+                  "namespace": "네임스페이스",
+                  "Value #A": "목표 레플리카",
+                  "Value #B": "준비된 레플리카",
+                  "Value #C": "사용 불가"
+                }
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "사용 불가"
+                },
+                "properties": [
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "red",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-background"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": 12,
+          "type": "row",
+          "title": "🔁 파드 재시작 & 에러",
+          "gridPos": {
+            "x": 0,
+            "y": 35,
+            "w": 24,
+            "h": 1
+          },
+          "collapsed": false
+        },
+        {
+          "id": 13,
+          "type": "timeseries",
+          "title": "파드 재시작 횟수 추이 (상위 10개)",
+          "description": "재시작이 잦은 파드. 급증 시 CrashLoopBackOff 의심.",
+          "gridPos": {
+            "x": 0,
+            "y": 36,
+            "w": 24,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "topk(10, increase(kube_pod_container_status_restarts_total[5m])) or vector(0)",
+              "refId": "A",
+              "legendFormat": "{{namespace}}/{{pod}} ({{container}})"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 5
+              }
+            }
+          }
+        }
+      ]
+    }

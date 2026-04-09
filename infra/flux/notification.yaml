@@ -1,0 +1,28 @@
+# Flux 알림 — Gitea 커밋 상태 업데이트
+# Design Ref: MTU-N24 §4
+# Plan SC: FR-N24.4
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: gitea-provider
+  namespace: flux-system
+spec:
+  type: gitea
+  address: http://172.18.120.97:3000
+  secretRef:
+    name: gitea-credentials
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: flux-alerts
+  namespace: flux-system
+spec:
+  providerRef:
+    name: gitea-provider
+  eventSeverity: info
+  eventSources:
+    - kind: GitRepository
+      name: '*'
+    - kind: Kustomization
+      name: '*'

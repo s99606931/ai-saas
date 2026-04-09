@@ -1,0 +1,22 @@
+# =============================================================================
+# Sealed Secrets Flux Kustomization
+# Design Ref: MTU-N39 Design S3.4
+# Plan SC: FR-N39.4
+#
+# Flux GitOps와 연동하여 SealedSecret 자동 배포
+# Git에 커밋된 SealedSecret → Flux 감지 → k3s 자동 적용
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: saas-platform
+
+resources:
+  # 플랫폼 서비스 시크릿
+  - templates/db-credentials.yaml
+  - templates/harbor-credentials.yaml
+  - templates/jwt-secret.yaml
+  - templates/cosign-keys.yaml
+  - templates/redis-credentials.yaml
+  # Kyverno 보안 정책
+  - templates/sealed-secret-policy.yaml

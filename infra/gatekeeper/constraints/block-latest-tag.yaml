@@ -1,0 +1,18 @@
+# Constraint: latest 태그 차단 (Enforce)
+# Design Ref: MTU-N53 Section 3.2.5
+# Plan SC: FR-N53.8
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sBlockLatestTag
+metadata:
+  name: block-latest-tag
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    excludedNamespaces:
+      - kube-system
+      - gatekeeper-system

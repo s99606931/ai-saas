@@ -39,12 +39,42 @@ spec:
             command: ["pg_isready", "-U", "saas"]
           initialDelaySeconds: 5
           periodSeconds: 5
+        # 인프라 안티패턴 수정: livenessProbe 추가 (데드락/행 감지)
+        livenessProbe:
+          exec:
+            command: ["pg_isready", "-U", "saas"]
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          failureThreshold: 3
+        # 인프라 안티패턴 수정: 리소스 제한 추가 (노드 과부하 방지)
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: "1"
+            memory: 1Gi
         volumeMounts:
         - name: postgres-data
           mountPath: /var/lib/postgresql/data
       volumes:
       - name: postgres-data
-        emptyDir: {}
+        # 인프라 안티패턴 수정: emptyDir → PVC (Pod 재시작 시 데이터 손실 방지)
+        persistentVolumeClaim:
+          claimName: postgres-data-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data-pvc
+  namespace: saas-platform
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 50Gi
 ---
 apiVersion: v1
 kind: Service

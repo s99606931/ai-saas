@@ -1,0 +1,33 @@
+# =============================================================================
+# Flux Kustomization -- Production 환경
+# Design Ref: MTU-N41 Design S3
+# Plan SC: FR-N41.4
+# CSAP: D-12 (개발 보안 -- 배포 통제)
+# N2SF: S/C 등급 -- 최대 보안 적용
+# =============================================================================
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: saas-prod
+  namespace: flux-system
+spec:
+  interval: 30m
+  path: ./deploy/envs/prod
+  prune: false   # Production: 자동 삭제 비활성화 (안전)
+  sourceRef:
+    kind: GitRepository
+    name: saas-platform
+    # Production: main 브랜치 + 릴리스 태그만
+  targetNamespace: saas-production
+  wait: true
+  timeout: 15m
+  # Production: Staging 검증 완료 후에만 배포
+  dependsOn:
+    - name: saas-stg
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: api-gateway
+      namespace: saas-production
+  # 수동 승인 게이트 (Flux notification 연동)
+  # suspend: true  # 수동 승인 시 활성화

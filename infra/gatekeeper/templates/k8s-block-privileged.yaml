@@ -1,0 +1,44 @@
+# ConstraintTemplate: 특권 컨테이너 및 권한 상승 차단
+# Design Ref: MTU-N53 Section 3.2.1
+# Plan SC: FR-N53.4
+# CSAP: D-08 접근 통제
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sblockprivilegedcontainers
+  annotations:
+    description: "특권 컨테이너 및 권한 상승을 차단합니다 (CSAP D-08)"
+    csap.compliance/control: "D-08"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sBlockPrivilegedContainers
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sblockprivilegedcontainers
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          container.securityContext.privileged == true
+          msg := sprintf("[CSAP D-08] 특권 컨테이너 금지: %v", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.initContainers[_]
+          container.securityContext.privileged == true
+          msg := sprintf("[CSAP D-08] 특권 initContainer 금지: %v", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          container.securityContext.allowPrivilegeEscalation == true
+          msg := sprintf("[CSAP D-08] 권한 상승 금지: %v", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.initContainers[_]
+          container.securityContext.allowPrivilegeEscalation == true
+          msg := sprintf("[CSAP D-08] initContainer 권한 상승 금지: %v", [container.name])
+        }

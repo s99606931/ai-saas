@@ -1,0 +1,42 @@
+# =============================================================================
+# Flux HelmRelease Drift Detection — Staging 환경
+# Design Ref: MTU-N47 Design §Drift Detection 모드
+# Plan SC: FR-N47.1, FR-N47.6
+#
+# 모드: warn — 탐지만 (교정 안 함, 이벤트/로그 기록)
+# =============================================================================
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: drift-detection-stg-patch
+  namespace: flux-system
+spec:
+  patches:
+    - target:
+        kind: HelmRelease
+        namespace: staging
+      patch: |
+        apiVersion: helm.toolkit.fluxcd.io/v2
+        kind: HelmRelease
+        metadata:
+          name: placeholder
+        spec:
+          driftDetection:
+            mode: warn
+            ignore:
+              - paths:
+                  - "/spec/replicas"
+                target:
+                  kind: Deployment
+          interval: 10m
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: staging-apps
+  namespace: flux-system
+spec:
+  force: false
+  interval: 10m
+  prune: true
+  timeout: 5m

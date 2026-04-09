@@ -32,7 +32,7 @@ spec:
           annotations:
             summary: "CPU 사용률 80% 초과 ({{ $labels.pod }})"
             description: "파드 {{ $labels.pod }}의 CPU 사용률이 {{ $value | printf \"%.1f\" }}%입니다. 5분 이상 지속됩니다."
-            runbook: "docs/framework/07-infra/runbook/high-cpu.md"
+            runbook: "docs/framework/08-infra/runbook/high-cpu.md"
 
         - alert: CriticalCpuUsage
           expr: |
@@ -277,7 +277,7 @@ spec:
           annotations:
             summary: "SLO 응답시간 위반 — Fast Burn (1시간 창)"
             description: "API P95 응답시간이 200ms SLO 목표를 1시간 이상 초과하고 있습니다. 현재 P95: {{ $value | printf \"%.3f\" }}초. 에러 버짓 급속 소진 중."
-            runbook: "docs/framework/07-infra/runbook/slo-latency.md"
+            runbook: "docs/framework/08-infra/runbook/slo-latency.md"
 
         - alert: SLOLatencyBurnSlow
           expr: |

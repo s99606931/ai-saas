@@ -1,0 +1,92 @@
+# =============================================================================
+# Grafana 대시보드: CI/CD 파이프라인 메트릭
+# Design Ref: MTU-N43 Design
+# Plan SC: FR-N43.2
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-pipeline-metrics
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/part-of: saas-platform
+data:
+  pipeline-metrics.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "title": "CI/CD 파이프라인 메트릭",
+      "uid": "pipeline-metrics-001",
+      "version": 1,
+      "panels": [
+        {
+          "title": "파이프라인 실행 시간 추이",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "expr": "gitea_actions_workflow_duration_seconds{workflow=\"CI/CD Pipeline\"}",
+              "legendFormat": "{{ job_name }}"
+            }
+          ]
+        },
+        {
+          "title": "단계별 실행 시간",
+          "type": "bargauge",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "targets": [
+            {
+              "expr": "gitea_actions_job_duration_seconds{workflow=\"CI/CD Pipeline\"}",
+              "legendFormat": "{{ job }}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": 0 },
+                  { "color": "yellow", "value": 300 },
+                  { "color": "red", "value": 600 }
+                ]
+              },
+              "unit": "s"
+            }
+          }
+        },
+        {
+          "title": "빌드 성공률",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 6, "x": 12, "y": 8 },
+          "targets": [
+            {
+              "expr": "sum(rate(gitea_actions_workflow_total{status=\"success\"}[24h])) / sum(rate(gitea_actions_workflow_total[24h])) * 100",
+              "legendFormat": "성공률"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "steps": [
+                  { "color": "red", "value": 0 },
+                  { "color": "yellow", "value": 90 },
+                  { "color": "green", "value": 95 }
+                ]
+              },
+              "unit": "percent"
+            }
+          }
+        },
+        {
+          "title": "SLA 준수 현황",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 6, "x": 18, "y": 8 },
+          "targets": [
+            {
+              "expr": "sum(gitea_actions_workflow_duration_seconds{workflow=\"CI/CD Pipeline\"} < 1200) / count(gitea_actions_workflow_duration_seconds{workflow=\"CI/CD Pipeline\"}) * 100",
+              "legendFormat": "SLA 준수율 (<20분)"
+            }
+          ]
+        }
+      ]
+    }

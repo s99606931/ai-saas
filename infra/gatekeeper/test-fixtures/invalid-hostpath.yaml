@@ -1,0 +1,29 @@
+# 테스트 Fixture: hostPath 볼륨 (차단 대상)
+# Design Ref: MTU-N53 TC-05
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-hostpath-pod
+  namespace: default
+spec:
+  containers:
+    - name: hostpath-user
+      image: harbor.local/library/nginx:1.25.4
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+      securityContext:
+        runAsNonRoot: true
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+      volumeMounts:
+        - name: host-vol
+          mountPath: /host-data
+  volumes:
+    - name: host-vol
+      hostPath:
+        path: /etc/secrets

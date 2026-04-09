@@ -1,0 +1,49 @@
+# Design Ref: MTU-N32 Design -- Helm values 설계
+# Plan SC: FR-N32.1
+
+replicaCount: 1
+
+image:
+  repository: api-gateway
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+service:
+  type: NodePort
+  port: 3000
+  targetPort: 3000
+  nodePort: 32277
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+healthCheck:
+  enabled: true
+  path: /health
+  port: 3000
+  initialDelaySeconds: 10
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+env:
+  NODE_ENV: production
+  PORT: "3000"
+  LOG_LEVEL: info
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

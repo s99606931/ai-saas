@@ -12,6 +12,8 @@ import { logAuthEvent } from '../lib/audit.js';
 import { prisma } from '../lib/prisma.js';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
 import { getUserPermissions } from '../lib/permissions.js';
+import { verifyTotp } from '../lib/totp.js';
+import { decryptMfaSecret } from '../lib/mfa-crypto.js';
 
 /**
  * 로그인 핸들러
@@ -120,7 +122,42 @@ export async function loginHandler(
     return;
   }
 
-  // 7. JWT 발급
+  // 7. MFA 검증 (CSAP D-08-08: 다중 인증)
+  // Design Ref: SVC-AUTH-R1 DESIGN §1.1
+  if (user.mfaEnabled && user.mfaSecret) {
+    const { mfaCode } = parseResult.data;
+
+    if (!mfaCode) {
+      // MFA 활성 사용자가 코드를 제공하지 않은 경우
+      await logAuthEvent('LOGIN_MFA_REQUIRED', user.id, tenant.id, ip, userAgent);
+      await reply.status(403).send({
+        success: false,
+        error: {
+          code: 'MFA_REQUIRED',
+          message: 'MFA 인증 코드가 필요합니다',
+        },
+      });
+      return;
+    }
+
+    // 저장된 암호화 시크릿 복호화 후 TOTP 검증
+    const decryptedSecret = decryptMfaSecret(user.mfaSecret);
+    const isMfaValid = verifyTotp(decryptedSecret, mfaCode);
+
+    if (!isMfaValid) {
+      await logAuthEvent('LOGIN_FAIL_MFA_INVALID', user.id, tenant.id, ip, userAgent);
+      await reply.status(401).send({
+        success: false,
+        error: {
+          code: 'MFA_INVALID_CODE',
+          message: 'MFA 인증 코드가 올바르지 않습니다',
+        },
+      });
+      return;
+    }
+  }
+
+  // 8. JWT 발급
   const permissions = await getUserPermissions(user.role);
 
   const accessToken = await signAccessToken({
@@ -132,7 +169,7 @@ export async function loginHandler(
 
   const refreshToken = await signRefreshToken(user.id, tenant.id);
 
-  // 8. 세션 생성 (CSAP D-08-04: 최대 3개)
+  // 9. 세션 생성 (CSAP D-08-04: 최대 3개)
   await createSession(user.id, {
     token: accessToken,
     refreshToken,
@@ -151,7 +188,7 @@ export async function loginHandler(
     },
   });
 
-  // 9. 감사 로그
+  // 10. 감사 로그
   await logAuthEvent('LOGIN_SUCCESS', user.id, tenant.id, ip, userAgent);
 
   await reply.status(200).send({

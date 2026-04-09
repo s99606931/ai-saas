@@ -1,0 +1,28 @@
+# Constraint: 허용 레지스트리 제한 (Enforce)
+# Design Ref: MTU-N53 Section 3.2.3
+# Plan SC: FR-N53.6
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sAllowedRegistries
+metadata:
+  name: allowed-registries
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    excludedNamespaces:
+      - kube-system
+      - gatekeeper-system
+      - flux-system
+      - monitoring
+      - kyverno
+  parameters:
+    registries:
+      - "harbor.local/"
+      - "registry.k8s.io/"
+      - "docker.io/library/"
+      - "ghcr.io/"
+      - "quay.io/"

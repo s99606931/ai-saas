@@ -1,0 +1,46 @@
+# =============================================================================
+# AI Gateway SLO 정의
+# Design Ref: MTU-N49 Design §SLO 정의
+# Plan SC: FR-N49.1, FR-N49.2
+# =============================================================================
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: ai-gateway-slo
+  namespace: production
+  labels:
+    app.kubernetes.io/name: ai-gateway
+    app.kubernetes.io/part-of: saas-platform
+    team: ai
+spec:
+  service: "ai-gateway"
+  labels:
+    owner: "ai-team"
+    tier: "high"
+
+  slos:
+    - name: "response-success"
+      objective: 99.5
+      description: "AI Gateway 응답 성공률 (외부 LLM 의존)"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_requests_total{job="ai-gateway",code=~"5.."}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_requests_total{job="ai-gateway"}[{{.window}}]))
+      alerting:
+        name: AIGatewaySLOBreach
+        labels:
+          category: "availability"
+          severity: "warning"
+        annotations:
+          summary: "AI Gateway SLO 위반"
+          description: >
+            AI Gateway 응답 성공률이 99.5% SLO 미달입니다.
+            외부 LLM API 연결 상태를 확인하십시오.
+        pageAlert:
+          labels:
+            severity: "critical"
+        ticketAlert:
+          labels:
+            severity: "warning"

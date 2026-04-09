@@ -1,0 +1,11 @@
+# CI/CD 네임스페이스 -- Gitea + Harbor + Act Runner
+# Design Ref: MTU-N28 SS1 | Plan SC: FR-N28.1
+# CSAP: D-10 (네트워크 격리)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cicd
+  labels:
+    app.kubernetes.io/name: cicd
+    app.kubernetes.io/part-of: saas-platform
+    environment: development

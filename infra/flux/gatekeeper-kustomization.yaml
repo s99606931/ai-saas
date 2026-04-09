@@ -1,0 +1,23 @@
+# Flux Kustomization: OPA Gatekeeper 정책 자동 배포
+# Design Ref: MTU-N53 Section 3.5
+# Plan SC: FR-N53.10
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gatekeeper-policies
+  namespace: flux-system
+spec:
+  interval: 5m
+  path: ./infra/gatekeeper
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: ai-saas
+  healthChecks:
+    - apiVersion: templates.gatekeeper.sh/v1
+      kind: ConstraintTemplate
+      name: k8sblockprivilegedcontainers
+    - apiVersion: templates.gatekeeper.sh/v1
+      kind: ConstraintTemplate
+      name: k8srequireresourcelimits
+  timeout: 5m

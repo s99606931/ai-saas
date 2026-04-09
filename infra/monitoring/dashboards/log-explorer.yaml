@@ -1,0 +1,404 @@
+# 로그 탐색기 대시보드 ConfigMap
+# Design Ref: MTU-N24 §FR-N24.1 — 로그 집계 및 조회
+# Plan SC: FR-N24.1, FR-N24.2
+# CSAP 준수: D-06(로그 보존 및 조회 — 침해사고 대응), D-12(PII 마스킹됨 로그 표시)
+#
+# 포함 패널:
+#   - 서비스별 로그 스트림 (LogQL)
+#   - 에러 로그 하이라이트
+#   - 로그 레벨별 분포 그래프
+#   - 로그-트레이스 상관관계 링크 (traceID → Tempo)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: saas-log-explorer-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/part-of: observability-stack
+data:
+  saas-log-explorer.json: |
+    {
+      "annotations": {"list": []},
+      "description": "서비스별 로그 탐색기 — 에러 하이라이트, 로그-트레이스 상관관계, PII 마스킹 적용",
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["logs", "loki", "tracing", "correlation", "csap-d06"],
+      "time": {"from": "now-1h", "to": "now"},
+      "timepicker": {},
+      "timezone": "Asia/Seoul",
+      "title": "로그 탐색기",
+      "uid": "saas-log-explorer",
+      "version": 1,
+      "templating": {
+        "list": [
+          {
+            "current": {},
+            "datasource": {"type": "loki", "uid": "loki"},
+            "definition": "label_values(namespace)",
+            "hide": 0,
+            "includeAll": true,
+            "multi": false,
+            "name": "namespace",
+            "options": [],
+            "query": "label_values(namespace)",
+            "refresh": 2,
+            "sort": 1,
+            "label": "네임스페이스",
+            "type": "query"
+          },
+          {
+            "current": {},
+            "datasource": {"type": "loki", "uid": "loki"},
+            "definition": "label_values({namespace=~\"$namespace\"}, app)",
+            "hide": 0,
+            "includeAll": true,
+            "multi": true,
+            "name": "app",
+            "options": [],
+            "query": "label_values({namespace=~\"$namespace\"}, app)",
+            "refresh": 2,
+            "sort": 1,
+            "label": "서비스(앱)",
+            "type": "query"
+          },
+          {
+            "current": {
+              "selected": false,
+              "text": "All",
+              "value": "$__all"
+            },
+            "hide": 0,
+            "includeAll": true,
+            "multi": true,
+            "name": "level",
+            "options": [
+              {"selected": true, "text": "All", "value": "$__all"},
+              {"selected": false, "text": "error", "value": "error"},
+              {"selected": false, "text": "warn", "value": "warn"},
+              {"selected": false, "text": "info", "value": "info"},
+              {"selected": false, "text": "debug", "value": "debug"}
+            ],
+            "query": "error,warn,info,debug",
+            "label": "로그 레벨",
+            "type": "custom"
+          },
+          {
+            "current": {},
+            "hide": 0,
+            "name": "search",
+            "options": [{"selected": true, "text": "", "value": ""}],
+            "query": "",
+            "label": "검색어",
+            "type": "textbox"
+          }
+        ]
+      },
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+          "id": 1,
+          "title": "로그 볼륨 분포",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "description": "시간대별 로그 볼륨 (에러 비율 시각화) — 스파이크 발생 시 장애 징후",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "unit": "short",
+              "custom": {
+                "fillOpacity": 70,
+                "lineWidth": 0,
+                "drawStyle": "bars",
+                "stacking": {"group": "A", "mode": "normal"}
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "{level=\"error\"}"},
+                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "{level=\"warn\"}"},
+                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "{level=\"info\"}"},
+                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}]
+              }
+            ]
+          },
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 1},
+          "id": 2,
+          "options": {
+            "legend": {"calcs": ["sum"], "displayMode": "table", "placement": "right"},
+            "tooltip": {"mode": "multi"}
+          },
+          "targets": [
+            {
+              "expr": "sum by (level) (count_over_time({namespace=~\"$namespace\", app=~\"$app\", level=~\"error\"}[1m]))",
+              "legendFormat": "error",
+              "refId": "A"
+            },
+            {
+              "expr": "sum by (level) (count_over_time({namespace=~\"$namespace\", app=~\"$app\", level=~\"warn\"}[1m]))",
+              "legendFormat": "warn",
+              "refId": "B"
+            },
+            {
+              "expr": "sum by (level) (count_over_time({namespace=~\"$namespace\", app=~\"$app\", level=~\"info\"}[1m]))",
+              "legendFormat": "info",
+              "refId": "C"
+            }
+          ],
+          "title": "로그 볼륨 (레벨별, 1분 버킷)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 10},
+                  {"color": "red", "value": 50}
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 9},
+          "id": 3,
+          "options": {"colorMode": "background", "graphMode": "area", "reduceOptions": {"calcs": ["sum"]}},
+          "targets": [
+            {
+              "expr": "sum(count_over_time({namespace=~\"$namespace\", app=~\"$app\"} |= \"error\" [$__range]))",
+              "legendFormat": "에러 로그 수"
+            }
+          ],
+          "title": "조회 기간 에러 로그 수",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 100},
+                  {"color": "red", "value": 500}
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 4, "y": 9},
+          "id": 4,
+          "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["sum"]}},
+          "targets": [
+            {
+              "expr": "sum(count_over_time({namespace=~\"$namespace\", app=~\"$app\"}[$__range]))",
+              "legendFormat": "전체 로그 수"
+            }
+          ],
+          "title": "조회 기간 전체 로그 수",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "red", "value": 0.01}
+                ]
+              },
+              "unit": "percentunit",
+              "max": 1,
+              "min": 0
+            }
+          },
+          "gridPos": {"h": 4, "w": 4, "x": 8, "y": 9},
+          "id": 5,
+          "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"]}},
+          "targets": [
+            {
+              "expr": "sum(count_over_time({namespace=~\"$namespace\", app=~\"$app\"} |= \"error\" [$__range])) / sum(count_over_time({namespace=~\"$namespace\", app=~\"$app\"}[$__range]))",
+              "legendFormat": "에러 비율"
+            }
+          ],
+          "title": "에러 로그 비율 (1% 임계값)",
+          "type": "stat"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 13},
+          "id": 10,
+          "title": "에러 로그 상세 (하이라이트) — 로그-트레이스 상관관계 링크 포함",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "description": "에러 로그 하이라이트 — traceID 클릭 시 Tempo 트레이스로 이동 (상관관계)\nPII 마스킹 적용: 주민번호, 이메일, 내부 IP 마스킹됨",
+          "gridPos": {"h": 12, "w": 24, "x": 0, "y": 14},
+          "id": 11,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": true,
+            "showCommonLabels": false,
+            "showLabels": true,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": false
+          },
+          "targets": [
+            {
+              "expr": "{namespace=~\"$namespace\", app=~\"$app\", level=~\"$level\"} |~ \"(?i)($search)\" | json | line_format \"[{{.level}}] {{.app}} — {{.msg}}\"",
+              "legendFormat": "",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "서비스별 로그 스트림 (PII 마스킹 완료 — CSAP D-12)",
+          "type": "logs"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 26},
+          "id": 20,
+          "title": "에러 로그만 — 즉시 대응 필요",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "description": "에러 레벨 로그만 필터링 — 장애 대응 시 우선 확인\ntraceID 컬럼 클릭 → Tempo Explore로 분산 추적 조회 가능",
+          "gridPos": {"h": 12, "w": 24, "x": 0, "y": 27},
+          "id": 21,
+          "options": {
+            "dedupStrategy": "signature",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": true,
+            "showLabels": true,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "targets": [
+            {
+              "expr": "{namespace=~\"$namespace\", app=~\"$app\"} | json | level=~\"error|ERROR|Error|FATAL|fatal\" |~ \"(?i)($search)\"",
+              "legendFormat": "",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "에러/치명적 로그 전용 스트림 (traceID 클릭 → Tempo 트레이스 이동)",
+          "type": "logs"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 39},
+          "id": 30,
+          "title": "서비스별 로그 볼륨 순위",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "description": "서비스별 에러 로그 발생 순위 — 가장 문제가 많은 서비스 식별",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "unit": "short",
+              "custom": {
+                "align": "left",
+                "displayMode": "color-background-gradient"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 10},
+                  {"color": "red", "value": 50}
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "app"},
+                "properties": [
+                  {"id": "displayName", "value": "서비스명"},
+                  {"id": "custom.width", "value": 200}
+                ]
+              },
+              {
+                "matcher": {"id": "byName", "options": "Value"},
+                "properties": [
+                  {"id": "displayName", "value": "에러 로그 수"}
+                ]
+              }
+            ]
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 40},
+          "id": 31,
+          "options": {
+            "showHeader": true,
+            "sortBy": [{"displayName": "에러 로그 수", "desc": true}]
+          },
+          "targets": [
+            {
+              "expr": "topk(10, sum by (app) (count_over_time({namespace=~\"$namespace\"} |= \"error\" [$__range])))",
+              "legendFormat": "{{app}}",
+              "format": "table",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "title": "에러 로그 발생 서비스 TOP 10",
+          "type": "table"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "unit": "short"
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40},
+          "id": 32,
+          "options": {
+            "legend": {"displayMode": "table", "placement": "right"},
+            "pieType": "pie",
+            "tooltip": {"mode": "single"}
+          },
+          "targets": [
+            {
+              "expr": "sum by (app) (count_over_time({namespace=~\"$namespace\", app=~\"$app\"}[$__range]))",
+              "legendFormat": "{{app}}",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "title": "서비스별 전체 로그 비율",
+          "type": "piechart"
+        }
+      ]
+    }

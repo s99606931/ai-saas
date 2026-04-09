@@ -1,0 +1,69 @@
+# =============================================================================
+# Flagger MetricTemplates -- Prometheus 기반 카나리 분석 메트릭
+# Design Ref: MTU-N40 Design S3.2
+# Plan SC: FR-N40.3, FR-N40.4
+# CSAP: D-12 (개발 보안 -- 배포 검증 자동화)
+# =============================================================================
+
+---
+# 메트릭 1: 요청 성공률 (HTTP 2xx/3xx 비율)
+# 임계값: 99% 이상이어야 카나리 승격
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: request-success-rate
+  namespace: saas-platform
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+  annotations:
+    # Design Ref: MTU-N40 Design S3.2
+    description: "HTTP 요청 성공률 -- 2xx/3xx 응답 비율"
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus-kube-prometheus-prometheus.monitoring:9090
+  query: |
+    sum(
+      rate(
+        traefik_service_requests_total{
+          service=~"{{ namespace }}-{{ target }}-canary.*",
+          code=~"2..|3.."
+        }[{{ interval }}]
+      )
+    )
+    /
+    sum(
+      rate(
+        traefik_service_requests_total{
+          service=~"{{ namespace }}-{{ target }}-canary.*"
+        }[{{ interval }}]
+      )
+    ) * 100
+
+---
+# 메트릭 2: 요청 지연시간 (p99 percentile)
+# 임계값: 500ms 이하여야 카나리 승격
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: request-duration-p99
+  namespace: saas-platform
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+  annotations:
+    description: "HTTP 요청 지연시간 p99 percentile"
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus-kube-prometheus-prometheus.monitoring:9090
+  query: |
+    histogram_quantile(
+      0.99,
+      sum(
+        rate(
+          traefik_service_request_duration_seconds_bucket{
+            service=~"{{ namespace }}-{{ target }}-canary.*"
+          }[{{ interval }}]
+        )
+      ) by (le)
+    ) * 1000

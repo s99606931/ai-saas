@@ -1,0 +1,192 @@
+# Redis Exporter 1.66 Helm Values
+# Design Ref: MTU-N24 §FR-N24.4 — Redis 모니터링
+# Plan SC: FR-N24.4
+# CSAP 준수: D-08(Secret 참조 — Redis 비밀번호 하드코딩 금지)
+
+# ---------------------------------------------------------------------------
+# Redis 연결 설정 — CSAP D-08: 시크릿 반드시 Secret 참조
+# 사전에 아래 Secret 생성 필요:
+#   kubectl create secret generic redis-exporter-secret \
+#     --from-literal=REDIS_PASSWORD="your-redis-password" \
+#     -n monitoring
+# ---------------------------------------------------------------------------
+redisAddress: redis://redis-master.default.svc.cluster.local:6379
+
+# Redis 비밀번호 — Secret 참조 (하드코딩 절대 금지)
+env:
+  - name: REDIS_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: redis-exporter-secret
+        key: REDIS_PASSWORD
+
+# ---------------------------------------------------------------------------
+# 수집 메트릭 설정 — FR-N24.4
+# ---------------------------------------------------------------------------
+extraArgs:
+  # 메모리 메트릭 수집 활성화
+  - --include-system-metrics
+  # Keyspace 메트릭 수집 활성화 (TTL 모니터링)
+  - --redis.password-file=""
+  # 연결 타임아웃
+  - --connection-timeout=5s
+  # 스크랩 타임아웃
+  - --timeout=5s
+  # 슬로우로그 수집 (슬로우 명령어 추적)
+  - --slowlog-max-len=32
+
+# ---------------------------------------------------------------------------
+# 커스텀 메트릭 (ConfigMap으로 쿼리 정의)
+# ---------------------------------------------------------------------------
+extraVolumes:
+  - name: redis-script
+    configMap:
+      name: redis-exporter-script
+
+extraVolumeMounts:
+  - name: redis-script
+    mountPath: /scripts
+
+# Redis 스크립트 기반 메트릭 수집
+extraObjects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: redis-exporter-script
+      namespace: monitoring
+      labels:
+        app.kubernetes.io/part-of: observability-stack
+    data:
+      # Keyspace 통계 수집 스크립트 (TTL 만료 메트릭)
+      keyspace-metrics.lua: |
+        -- Keyspace 별 TTL 통계 수집
+        -- FR-N24.4: Keyspace 별 TTL 모니터링
+        local stats = {}
+        local keyspaces = redis.call('INFO', 'keyspace')
+        return keyspaces
+
+# ---------------------------------------------------------------------------
+# 리소스 제한 — WSL2 메모리 보호 (NFR-N24.4)
+# ---------------------------------------------------------------------------
+resources:
+  requests:
+    cpu: 30m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+# ---------------------------------------------------------------------------
+# ServiceMonitor 자동 생성 (kube-prometheus-stack 연동)
+# ---------------------------------------------------------------------------
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack  # kube-prometheus-stack이 감지하는 레이블
+  interval: 15s   # NFR-N24.1: 15초 수집 주기
+  scrapeTimeout: 10s
+  honorLabels: true
+  # 수집 메트릭 필터 (카디널리티 관리)
+  metricRelabelings:
+    # 불필요한 고카디널리티 레이블 제거
+    - sourceLabels: [__name__]
+      regex: "redis_command_duration_seconds_bucket"
+      action: drop
+  # 대상 레이블 재지정
+  relabelings:
+    - sourceLabels: [__meta_kubernetes_service_label_app_kubernetes_io_instance]
+      targetLabel: instance
+    - sourceLabels: [__meta_kubernetes_namespace]
+      targetLabel: namespace
+
+# ---------------------------------------------------------------------------
+# 알림 규칙 (PrometheusRule)
+# FR-N24.4, FR-N24.6: Redis 메모리 90% 초과 알림
+# ---------------------------------------------------------------------------
+prometheusRule:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
+  rules:
+    # Redis 메모리 사용량 90% 초과 알림 — FR-N24.6
+    - alert: RedisMemoryHigh
+      expr: >
+        redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90
+      for: 5m
+      labels:
+        severity: critical
+        team: devops
+        csap_ref: D-06-03
+      annotations:
+        summary: "Redis 메모리 사용률 90% 초과"
+        description: >
+          Redis 인스턴스 {{ $labels.instance }}의 메모리 사용률이
+          {{ $value | printf "%.1f" }}%입니다.
+          Eviction 위험 — 즉시 조치 필요.
+
+    # Redis Eviction 발생 알림 — FR-N24.4
+    - alert: RedisEvictedKeys
+      expr: >
+        increase(redis_evicted_keys_total[5m]) > 0
+      for: 1m
+      labels:
+        severity: warning
+        team: devops
+        csap_ref: D-06-03
+      annotations:
+        summary: "Redis 키 Eviction 발생"
+        description: >
+          Redis {{ $labels.instance }}에서 5분간
+          {{ $value }}개 키가 eviction되었습니다.
+          메모리 부족 신호 — maxmemory 정책 검토 필요.
+
+    # Redis 연결 수 과다 알림
+    - alert: RedisTooManyConnections
+      expr: >
+        redis_connected_clients > 100
+      for: 5m
+      labels:
+        severity: warning
+        team: devops
+      annotations:
+        summary: "Redis 연결 수 과다"
+        description: >
+          Redis {{ $labels.instance }}의 연결 수가
+          {{ $value }}개입니다. (임계값: 100)
+
+    # Redis 히트율 저하 알림 (캐시 효율 저하)
+    - alert: RedisLowHitRate
+      expr: >
+        redis_keyspace_hits_total /
+        (redis_keyspace_hits_total + redis_keyspace_misses_total) * 100 < 50
+      for: 15m
+      labels:
+        severity: warning
+        team: devops
+      annotations:
+        summary: "Redis 캐시 히트율 50% 미만"
+        description: >
+          Redis {{ $labels.instance }}의 캐시 히트율이
+          {{ $value | printf "%.1f" }}%로 낮습니다.
+          캐시 키 전략 검토 필요.
+
+# ---------------------------------------------------------------------------
+# 공통 레이블
+# ---------------------------------------------------------------------------
+commonLabels:
+  app.kubernetes.io/part-of: observability-stack
+
+# 파드 어노테이션
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9121"
+
+# 보안 컨텍스트 — CSAP D-08: 최소 권한
+securityContext:
+  runAsUser: 59000
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL

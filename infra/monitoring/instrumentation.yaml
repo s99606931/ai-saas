@@ -1,0 +1,155 @@
+# OpenTelemetry Auto-Instrumentation CR
+# Design Ref: MTU-N24 §FR-N24.2 — Zero-code 자동 계측 (nodejs, python, java)
+# Plan SC: FR-N24.2
+# CSAP 준수: D-08(환경변수 주입 — Secret 참조), D-12(하드코딩 금지)
+#
+# 사용법:
+#   파드/Deployment에 어노테이션 추가:
+#     instrumentation.opentelemetry.io/inject-nodejs: "true"
+#     instrumentation.opentelemetry.io/inject-python: "true"
+#     instrumentation.opentelemetry.io/inject-java: "true"
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: saas-instrumentation
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: saas-instrumentation
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    # CSAP D-12: 자동 계측 환경변수 주입 — 하드코딩 금지
+    csap.ref/d12: "개발보안 — 환경변수 자동 주입, 시크릿 참조"
+spec:
+  # ---------------------------------------------------------------------------
+  # OTel Collector 엔드포인트 — 계측 데이터 전송 대상
+  # Design Ref: MTU-N24 §OTel 파이프라인
+  # ---------------------------------------------------------------------------
+  exporter:
+    endpoint: http://saas-otel-collector-collector.monitoring.svc.cluster.local:4317
+
+  # ---------------------------------------------------------------------------
+  # 전역 전파 설정 (분산 추적 컨텍스트 전달 방식)
+  # ---------------------------------------------------------------------------
+  propagators:
+    - tracecontext   # W3C Trace Context (표준)
+    - baggage        # W3C Baggage (메타데이터 전파)
+    - b3             # Zipkin B3 (레거시 호환)
+
+  # ---------------------------------------------------------------------------
+  # 샘플링 설정 — FR-N24.2: Head-based 10% + Tail-based 에러 100%
+  # ---------------------------------------------------------------------------
+  sampler:
+    # ParentBased: 부모 span의 샘플링 결정을 따름
+    # TraceIdRatioBased: 10% 기본 샘플링
+    type: parentbased_traceidratio
+    argument: "0.1"  # 10% 샘플링 (에러/슬로우는 OTel Collector에서 100% 처리)
+
+  # ---------------------------------------------------------------------------
+  # 환경변수 자동 주입 (모든 언어 공통)
+  # CSAP D-08: 시크릿은 반드시 secretKeyRef 사용
+  # ---------------------------------------------------------------------------
+  env:
+    # 서비스 메시 식별 (k8s 다운워드 API)
+    - name: OTEL_K8S_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: OTEL_K8S_POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: OTEL_K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    # 리소스 속성 (Grafana 서비스 토폴로지 — FR-N24.5)
+    - name: OTEL_RESOURCE_ATTRIBUTES
+      value: >-
+        k8s.namespace.name=$(OTEL_K8S_NAMESPACE),
+        k8s.pod.name=$(OTEL_K8S_POD_NAME),
+        k8s.node.name=$(OTEL_K8S_NODE_NAME),
+        deployment.environment=development,
+        k8s.cluster.name=wsl-k3s-dev
+    # 로그 레벨 (Collector에서 처리)
+    - name: OTEL_LOG_LEVEL
+      value: "info"
+    # 메트릭 내보내기 활성화
+    - name: OTEL_METRICS_EXPORTER
+      value: "otlp"
+    # 로그 내보내기 활성화 (SDK 로그)
+    - name: OTEL_LOGS_EXPORTER
+      value: "otlp"
+
+  # ---------------------------------------------------------------------------
+  # Node.js 자동 계측 설정
+  # 대상 런타임: Express, Fastify, NestJS, Next.js
+  # ---------------------------------------------------------------------------
+  nodejs:
+    env:
+      # Node.js OTel SDK 버전 고정 (안정성)
+      - name: NODE_OPTIONS
+        value: "--require @opentelemetry/auto-instrumentations-node/register"
+      # HTTP 계측 설정
+      - name: OTEL_NODE_ENABLED_INSTRUMENTATIONS
+        value: >-
+          http,https,express,fastify,nestjs-core,
+          pg,redis,mysql2,mongodb,grpc,graphql,
+          ioredis,dns,net
+      # HTTP 민감 헤더 제외 (CSAP D-12: PII 보호)
+      - name: OTEL_NODE_EXCLUDE_URLS
+        value: "/health,/ready,/metrics"
+    resourceRequirements:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+  # ---------------------------------------------------------------------------
+  # Python 자동 계측 설정
+  # 대상 프레임워크: FastAPI, Django, Flask
+  # ---------------------------------------------------------------------------
+  python:
+    env:
+      # Python OTel 자동 계측 활성화
+      - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+        value: "true"
+      # 민감 URL 제외 (헬스체크 엔드포인트)
+      - name: OTEL_PYTHON_EXCLUDED_URLS
+        value: "/health,/ready,/metrics,/favicon.ico"
+      # Django 설정 모듈 경로 (프로젝트에 맞게 수정)
+      - name: DJANGO_SETTINGS_MODULE
+        value: ""  # 배포 시 파드 환경변수로 오버라이드
+    resourceRequirements:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+  # ---------------------------------------------------------------------------
+  # Java 자동 계측 설정
+  # 대상 프레임워크: Spring Boot, Quarkus, Micronaut
+  # ---------------------------------------------------------------------------
+  java:
+    env:
+      # Java Agent 옵션 (-javaagent는 Operator가 자동 주입)
+      - name: OTEL_JAVAAGENT_DEBUG
+        value: "false"
+      # Spring Boot 추가 계측
+      - name: OTEL_INSTRUMENTATION_SPRING_BOOT_ACTUATOR_AUTOCONFIGURE_ENABLED
+        value: "true"
+      # 데이터베이스 쿼리 파라미터 캡처 여부 — CSAP D-12: SQL 보안
+      # false로 설정하여 쿼리 파라미터 미수집 (PII 포함 가능)
+      - name: OTEL_INSTRUMENTATION_JDBC_STATEMENT_SANITIZATION_ENABLED
+        value: "true"  # SQL 파라미터 새니타이징 활성화
+    resourceRequirements:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi

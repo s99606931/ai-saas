@@ -1,7 +1,7 @@
 // 비밀번호 변경 핸들러
-// Design Ref: DESIGN-MTU-P02
-// Plan SC: FR-P02.6
-// CSAP: D-08-07 비밀번호 정책
+// Design Ref: DESIGN-MTU-P02, SVC-USER-R1 DESIGN §4, §5
+// Plan SC: FR-P02.6, FR-USR.4, FR-USR.5
+// CSAP: D-08-07 비밀번호 정책, D-08-07 비밀번호 재사용 방지
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import bcrypt from 'bcryptjs';
@@ -9,6 +9,8 @@ import { z } from 'zod';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
 import { logUserEvent } from '../lib/audit.js';
 import { prisma } from '../lib/prisma.js';
+import { generateServiceToken } from '../lib/service-auth.js';
+import { isPasswordReused, addPasswordHistory } from '../lib/password-history.js';
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, '현재 비밀번호를 입력하세요'),
@@ -92,12 +94,28 @@ export async function changePasswordHandler(
     return;
   }
 
+  // FR-USR.5: 비밀번호 재사용 방지 (Design Ref: SVC-USER-R1 DESIGN §5)
+  const reused = await isPasswordReused(request.params.id, newPassword);
+  if (reused) {
+    await reply.status(400).send({
+      success: false,
+      error: {
+        code: 'PASSWORD_REUSED',
+        message: '최근 사용한 비밀번호는 재사용할 수 없습니다 (CSAP D-08-07)',
+      },
+    });
+    return;
+  }
+
   const newHash = await bcrypt.hash(newPassword, AUTH_CONSTANTS.BCRYPT_SALT_ROUNDS);
 
   await prisma.user.update({
     where: { id: request.params.id },
     data: { passwordHash: newHash },
   });
+
+  // FR-USR.5: 비밀번호 이력 추가 (Design Ref: SVC-USER-R1 DESIGN §5)
+  addPasswordHistory(request.params.id, newHash);
 
   // 감사 로그 기록 (FR-P02.10, CSAP D-06)
   const actor = jwtUserId ?? request.params.id;
@@ -111,12 +129,16 @@ export async function changePasswordHandler(
   );
 
   // CSAP D-08-03: 비밀번호 변경 후 기존 세션 전체 무효화
-  // auth-service 내부 API 호출 (fire-and-forget, 실패해도 비밀번호 변경은 성공 처리)
+  // FR-USR.4: HMAC-SHA256 서비스 인증 토큰 첨부 (Design Ref: SVC-USER-R1 DESIGN §4)
   const authServiceUrl = process.env['AUTH_SERVICE_URL'] ?? 'http://localhost:3001';
   try {
+    const serviceToken = generateServiceToken('user-service');
     await fetch(`${authServiceUrl}/auth/sessions/invalidate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(serviceToken ? { 'X-Service-Token': serviceToken } : {}),
+      },
       body: JSON.stringify({
         userId: request.params.id,
         tenantId: user.tenantId,

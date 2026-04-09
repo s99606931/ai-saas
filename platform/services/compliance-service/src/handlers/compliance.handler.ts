@@ -175,3 +175,114 @@ export async function metricsHandler(
     timestamp: new Date().toISOString(),
   });
 }
+
+// ── SVC-COMP-R1 고도화 핸들러 ──
+
+/** 준수율 스냅샷 이력 저장소 */
+interface ComplianceSnapshot {
+  id: number;
+  csapRate: number;
+  n2sfRate: number;
+  readinessScore: number;
+  timestamp: string;
+}
+
+const snapshotHistory: ComplianceSnapshot[] = [];
+let snapshotIdCounter = 1;
+
+/** 미준수 항목 정보 */
+interface ComplianceGap {
+  domainId: string;
+  domainName: string;
+  totalItems: number;
+  implementedItems: number;
+  gapCount: number;
+  recommendation: string;
+}
+
+/**
+ * FR-COMP.2: CSAP 미준수 항목 상세
+ * GET /compliance/csap/gaps
+ * Design Ref: SVC-COMP-R1 DESIGN
+ */
+export async function csapGapsHandler(
+  _request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  const gaps: ComplianceGap[] = CSAP_DOMAINS
+    .filter((d) => d.implementedItems < d.items)
+    .map((d) => ({
+      domainId: d.id,
+      domainName: d.name,
+      totalItems: d.items,
+      implementedItems: d.implementedItems,
+      gapCount: d.items - d.implementedItems,
+      recommendation: getGapRecommendation(d.id),
+    }));
+
+  const totalGaps = gaps.reduce((sum, g) => sum + g.gapCount, 0);
+
+  await reply.send({
+    success: true,
+    data: {
+      gaps,
+      totalGaps,
+      totalItems: 79,
+      complianceRate: Math.round(((79 - totalGaps) / 79) * 100),
+    },
+  });
+}
+
+/** 분야별 조치 권고 */
+function getGapRecommendation(domainId: string): string {
+  const recommendations: Record<string, string> = {
+    'D-05': '물리적 보안: 운영 환경(서버실/IDC) 물리 보안 장비 설치 필요',
+    'D-07': '서비스 연속성: DR(재해복구) 사이트 및 백업 정책 수립 필요',
+    'D-10': '네트워크 보안: 방화벽/IDS/IPS 인프라 구성 필요',
+    'D-11': '시스템 보안: OS 수준 보안 설정(CIS Benchmark) 적용 필요',
+  };
+  return recommendations[domainId] ?? '상세 평가 후 조치 계획 수립 필요';
+}
+
+/**
+ * FR-COMP.3: 준수율 스냅샷 이력
+ * GET /compliance/history
+ * Design Ref: SVC-COMP-R1 DESIGN
+ */
+export async function complianceHistoryHandler(
+  _request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  // 현재 스냅샷 자동 생성
+  const csapTotalPass = CSAP_DOMAINS.reduce((sum, d) => sum + d.implementedItems, 0);
+  const csapRate = Math.round((csapTotalPass / 79) * 100);
+
+  const n2sfTotalItems = N2SF_DOMAINS.reduce((sum, d) => sum + d.items, 0);
+  const n2sfTotalPass = N2SF_DOMAINS.reduce((sum, d) => sum + d.implementedItems, 0);
+  const n2sfRate = Math.round((n2sfTotalPass / n2sfTotalItems) * 100);
+
+  const readinessScore = Math.round(csapRate * 0.4 + n2sfRate * 0.3 + 100 * 0.3);
+
+  const snapshot: ComplianceSnapshot = {
+    id: snapshotIdCounter++,
+    csapRate,
+    n2sfRate,
+    readinessScore,
+    timestamp: new Date().toISOString(),
+  };
+  snapshotHistory.push(snapshot);
+
+  // 최대 100개 유지
+  if (snapshotHistory.length > 100) {
+    snapshotHistory.shift();
+  }
+
+  await reply.send({
+    success: true,
+    data: {
+      snapshots: snapshotHistory.slice(-20), // 최근 20개
+      total: snapshotHistory.length,
+      latest: snapshot,
+    },
+  });
+}

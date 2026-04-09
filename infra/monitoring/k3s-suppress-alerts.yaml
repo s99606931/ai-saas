@@ -1,0 +1,51 @@
+# k3s 환경 오탐 알림 억제 규칙
+# k3s는 kube-controller-manager, kube-scheduler, kube-proxy가 내장되어
+# 별도 메트릭을 노출하지 않으므로 해당 알림을 억제합니다.
+# CSAP: D-06 (침해사고 관리)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: k3s-suppress-false-alerts
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: k3s.suppress
+      rules:
+        # k3s 내장 컴포넌트 — 별도 메트릭 노출 없음 (정상)
+        - alert: KubeControllerManagerDown
+          expr: "vector(0)"
+          labels:
+            severity: none
+          annotations:
+            summary: "억제됨: k3s는 kube-controller-manager를 내장으로 실행"
+            description: "k3s 환경에서는 kube-controller-manager가 k3s 프로세스에 내장되어 별도 메트릭을 노출하지 않습니다."
+
+        - alert: KubeSchedulerDown
+          expr: "vector(0)"
+          labels:
+            severity: none
+          annotations:
+            summary: "억제됨: k3s는 kube-scheduler를 내장으로 실행"
+            description: "k3s 환경에서는 kube-scheduler가 k3s 프로세스에 내장되어 별도 메트릭을 노출하지 않습니다."
+
+        - alert: KubeProxyDown
+          expr: "vector(0)"
+          labels:
+            severity: none
+          annotations:
+            summary: "억제됨: k3s는 kube-proxy를 내장으로 실행"
+            description: "k3s 환경에서는 kube-proxy 기능이 k3s 내장 네트워킹으로 처리됩니다."
+
+    - name: k3s.alertmanager
+      rules:
+        # Alertmanager 단일 인스턴스 — 클러스터 모드 오탐 억제
+        - alert: AlertmanagerClusterCrashlooping
+          expr: "vector(0)"
+          labels:
+            severity: none
+          annotations:
+            summary: "억제됨: 단일 인스턴스 k3s 환경에서 Alertmanager 클러스터 모드 불필요"
+            description: "단일 노드 k3s 환경에서는 Alertmanager 클러스터링이 필요 없습니다."

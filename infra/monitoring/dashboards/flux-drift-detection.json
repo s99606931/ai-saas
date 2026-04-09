@@ -1,0 +1,166 @@
+{
+  "annotations": { "list": [] },
+  "description": "Flux GitOps 드리프트 탐지 + 자동 교정 대시보드 (CSAP D-06)",
+  "editable": true,
+  "panels": [
+    {
+      "title": "GitOps 드리프트 현황",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "title": "현재 드리프트 수",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "count(gotk_reconcile_condition{type=\"Ready\",status=\"False\"}) or vector(0)",
+          "legendFormat": "Drift"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 1, "color": "yellow" },
+              { "value": 5, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "자동 교정 횟수 (24h)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(increase(gotk_reconcile_duration_seconds_count[24h])) or vector(0)",
+          "legendFormat": "Remediation"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 10, "color": "yellow" },
+              { "value": 50, "color": "orange" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "일시 중단된 리소스",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "count(gotk_suspend_status == 1) or vector(0)",
+          "legendFormat": "Suspended"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 1, "color": "orange" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Flux Controller 상태",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "targets": [
+        {
+          "expr": "count(up{job=~\".*flux.*\"} == 1) or vector(0)",
+          "legendFormat": "Active"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 1, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Reconcile 소요 시간",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "targets": [
+        {
+          "expr": "rate(gotk_reconcile_duration_seconds_sum[5m]) / rate(gotk_reconcile_duration_seconds_count[5m])",
+          "legendFormat": "{{ kind }}/{{ name }}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "리소스별 상태",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "targets": [
+        {
+          "expr": "gotk_reconcile_condition{type=\"Ready\"}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "kind": "종류",
+              "name": "이름",
+              "namespace": "네임스페이스",
+              "status": "상태"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "드리프트 이벤트 추이",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 13 },
+      "targets": [
+        {
+          "expr": "sum(rate(gotk_reconcile_duration_seconds_count{kind=\"HelmRelease\"}[5m])) by (name)",
+          "legendFormat": "HR/{{ name }}"
+        },
+        {
+          "expr": "sum(rate(gotk_reconcile_duration_seconds_count{kind=\"Kustomization\"}[5m])) by (name)",
+          "legendFormat": "KS/{{ name }}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "drawStyle": "bars" } } }
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["flux", "gitops", "drift-detection", "csap"],
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "Flux 드리프트 탐지",
+  "uid": "flux-drift-detection",
+  "version": 1
+}

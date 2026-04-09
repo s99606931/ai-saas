@@ -1,0 +1,85 @@
+# =============================================================================
+# Flagger Canary -- API Gateway 카나리 배포 설정
+# Design Ref: MTU-N40 Design S3.2
+# Plan SC: FR-N40.2
+# CSAP: D-12 (시스템 개발 보안 -- 점진적 배포)
+#
+# 배포 흐름:
+#   이미지 변경 감지 → Canary Pod 생성 → 10% 트래픽
+#   → 메트릭 분석(30s) → 30% → 분석 → 60% → 분석 → 100%
+#   → 성공 시: Primary 교체
+#   → 실패 시: 즉시 롤백 + Alert
+# =============================================================================
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: api-gateway
+  namespace: saas-platform
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: api-gateway
+spec:
+  # 대상 Deployment
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-gateway
+
+  # Traefik IngressRoute 참조 (k3s 기본)
+  provider: traefik
+
+  # 서비스 포트 매핑
+  service:
+    port: 3000
+    targetPort: 3000
+
+  # 카나리 분석 설정
+  analysis:
+    # 분석 간격: 30초마다 메트릭 확인
+    interval: 30s
+    # 승격 임계값: 5회 연속 성공
+    threshold: 5
+    # 최대 트래픽 비율
+    maxWeight: 60
+    # 단계별 트래픽 증가량
+    stepWeight: 10
+    # 자동 롤백 설정 (실패 횟수)
+    stepWeightPromotion: 10
+
+    # Prometheus 메트릭 기반 분석
+    metrics:
+      # 메트릭 1: 요청 성공률 >= 99%
+      - name: request-success-rate
+        templateRef:
+          name: request-success-rate
+          namespace: saas-platform
+        thresholdRange:
+          min: 99
+        interval: 30s
+
+      # 메트릭 2: p99 지연시간 <= 500ms
+      - name: request-duration-p99
+        templateRef:
+          name: request-duration-p99
+          namespace: saas-platform
+        thresholdRange:
+          max: 500
+        interval: 30s
+
+    # 웹훅: 사전 검증 (선택적)
+    # webhooks:
+    #   - name: smoke-test
+    #     type: pre-rollout
+    #     url: http://flagger-loadtester.flagger-system/
+    #     timeout: 15s
+    #     metadata:
+    #       type: bash
+    #       cmd: "curl -sf http://api-gateway-canary.saas-platform:3000/health"
+
+    # Alert Provider 참조
+    alerts:
+      - name: "on-call"
+        severity: error
+        providerRef:
+          name: prometheus-alert
+          namespace: saas-platform

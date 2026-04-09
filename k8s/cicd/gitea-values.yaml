@@ -1,0 +1,104 @@
+# Gitea Helm Values -- k3s 배포용
+# Design Ref: MTU-N28 SS2 | Plan SC: FR-N28.2, FR-N28.3, FR-N28.4, FR-N28.5
+# CSAP: D-08 (접근통제), D-09 (시크릿 관리), D-10 (네트워크 격리)
+#
+# 차트: gitea-charts/gitea v12.5.0 (appVersion 1.25.4)
+# 사용법:
+#   helm install gitea gitea-charts/gitea -n cicd -f k8s/cicd/gitea-values.yaml
+
+# -- Gitea admin 초기 계정 (FR-N28.5)
+# CRITICAL 수정: 하드코딩 비밀번호 제거 → Kubernetes Secret 참조
+# 배포 전 사전 생성 필수:
+#   kubectl create secret generic gitea-admin-secret -n cicd \
+#     --from-literal=username=saas-admin \
+#     --from-literal=password=$(openssl rand -hex 16) \
+#     --from-literal=email=admin@public-saas.local
+gitea:
+  admin:
+    existingSecret: gitea-admin-secret
+  config:
+    server:
+      ROOT_URL: "http://localhost:30300"
+      DOMAIN: localhost
+      SSH_DOMAIN: localhost
+      SSH_PORT: "30222"
+      SSH_LISTEN_PORT: "22"
+      LFS_START_SERVER: "true"
+    database:
+      DB_TYPE: postgres
+    actions:
+      ENABLED: "true"
+      DEFAULT_ACTIONS_URL: "https://github.com"
+    service:
+      DISABLE_REGISTRATION: "true"
+      REQUIRE_SIGNIN_VIEW: "true"
+    log:
+      LEVEL: info
+
+# -- 서비스 노출 (FR-N28.4)
+service:
+  http:
+    type: NodePort
+    port: 3000
+    nodePort: 30300
+  ssh:
+    type: NodePort
+    port: 22
+    nodePort: 30222
+
+# -- 영속 볼륨 (FR-N28.14)
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: local-path
+
+# -- 단독 PostgreSQL 사용 (HA 불필요, 단일 노드 k3s)
+postgresql-ha:
+  enabled: false
+
+postgresql:
+  enabled: true
+  global:
+    postgresql:
+      auth:
+        # CRITICAL 수정: 하드코딩 비밀번호 제거 → Kubernetes Secret 참조
+        # 배포 전 사전 생성 필수:
+        #   kubectl create secret generic gitea-postgresql-secret -n cicd \
+        #     --from-literal=postgres-password=$(openssl rand -hex 16) \
+        #     --from-literal=password=$(openssl rand -hex 16)
+        existingSecret: gitea-postgresql-secret
+        database: gitea
+        username: gitea
+      service:
+        ports:
+          postgresql: 5432
+  primary:
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClass: local-path
+
+# -- 단독 Valkey (캐시, 클러스터 불필요)
+valkey-cluster:
+  enabled: false
+
+valkey:
+  enabled: true
+  architecture: standalone
+
+# -- 리소스 제한
+resources:
+  limits:
+    memory: 512Mi
+    cpu: "1"
+  requests:
+    memory: 256Mi
+    cpu: 250m
+
+# -- 테스트 비활성화
+test:
+  enabled: false
+
+# -- Ingress 비활성화 (NodePort 사용)
+ingress:
+  enabled: false

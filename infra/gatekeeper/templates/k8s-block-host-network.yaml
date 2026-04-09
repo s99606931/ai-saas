@@ -1,0 +1,35 @@
+# ConstraintTemplate: hostNetwork 사용 차단
+# Design Ref: MTU-N53 Section 3.2.6
+# Plan SC: FR-N53.4 (보안 강화 확장)
+# CSAP: D-08 접근 통제
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sblockhostnetwork
+  annotations:
+    description: "hostNetwork 사용을 차단합니다 (CSAP D-08)"
+    csap.compliance/control: "D-08"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sBlockHostNetwork
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sblockhostnetwork
+
+        violation[{"msg": msg}] {
+          input.review.object.spec.hostNetwork == true
+          msg := sprintf("[CSAP D-08] hostNetwork 사용 금지: %v/%v", [input.review.object.metadata.namespace, input.review.object.metadata.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.object.spec.hostPID == true
+          msg := sprintf("[CSAP D-08] hostPID 사용 금지: %v/%v", [input.review.object.metadata.namespace, input.review.object.metadata.name])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.object.spec.hostIPC == true
+          msg := sprintf("[CSAP D-08] hostIPC 사용 금지: %v/%v", [input.review.object.metadata.namespace, input.review.object.metadata.name])
+        }

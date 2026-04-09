@@ -11,6 +11,7 @@ import { prisma } from '../lib/prisma.js';
 import { redis } from '../lib/session.js';
 import { encryptMfaSecret, decryptMfaSecret } from '../lib/mfa-crypto.js';
 import crypto from 'node:crypto';
+import { base32Encode, verifyTotp } from '../lib/totp.js';
 
 // Redis 임시 시크릿 저장 키 (MFA setup 후 verify 전까지 유효)
 // CSAP D-08-08: MFA 시크릿은 서버 측에서 관리, 클라이언트 변조 방지
@@ -250,95 +251,5 @@ export async function mfaDisableHandler(
   });
 }
 
-// ── TOTP 유틸리티 ──────────────────────────────────────────────
-
-/**
- * Base32 인코딩 (RFC 4648)
- */
-function base32Encode(buffer: Buffer): string {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  let bits = 0;
-  let value = 0;
-  let result = '';
-
-  for (const byte of buffer) {
-    value = (value << 8) | byte;
-    bits += 8;
-    while (bits >= 5) {
-      bits -= 5;
-      result += alphabet[(value >>> bits) & 0x1f];
-    }
-  }
-
-  if (bits > 0) {
-    result += alphabet[(value << (5 - bits)) & 0x1f];
-  }
-
-  return result;
-}
-
-/**
- * TOTP 코드 검증 (RFC 6238)
- *
- * @param secret - Base32 인코딩된 시크릿
- * @param code - 6자리 TOTP 코드
- * @param window - 허용 시간 윈도우 (기본 1 = 전후 30초)
- * @returns 코드 유효 여부
- */
-function verifyTotp(secret: string, code: string, window = 1): boolean {
-  const time = Math.floor(Date.now() / 1000 / 30);
-  const secretBuffer = base32Decode(secret);
-
-  for (let i = -window; i <= window; i++) {
-    const counter = time + i;
-    const generated = generateTotp(secretBuffer, counter);
-    if (generated === code) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * TOTP 코드 생성 (HMAC-SHA1)
- */
-function generateTotp(secret: Buffer, counter: number): string {
-  const counterBuffer = Buffer.alloc(8);
-  counterBuffer.writeBigUInt64BE(BigInt(counter));
-
-  const hmac = crypto.createHmac('sha1', secret).update(counterBuffer).digest();
-
-  const offset = hmac[hmac.length - 1]! & 0x0f;
-  const code =
-    ((hmac[offset]! & 0x7f) << 24) |
-    ((hmac[offset + 1]! & 0xff) << 16) |
-    ((hmac[offset + 2]! & 0xff) << 8) |
-    (hmac[offset + 3]! & 0xff);
-
-  return (code % 1_000_000).toString().padStart(6, '0');
-}
-
-/**
- * Base32 디코딩
- */
-function base32Decode(input: string): Buffer {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  const cleanInput = input.replace(/=+$/, '').toUpperCase();
-  let bits = 0;
-  let value = 0;
-  const output: number[] = [];
-
-  for (const char of cleanInput) {
-    const idx = alphabet.indexOf(char);
-    if (idx === -1) continue;
-    value = (value << 5) | idx;
-    bits += 5;
-    if (bits >= 8) {
-      bits -= 8;
-      output.push((value >>> bits) & 0xff);
-    }
-  }
-
-  return Buffer.from(output);
-}
+// TOTP 유틸리티는 ../lib/totp.ts에서 import (중복 코드 제거)
+// Design Ref: SVC-AUTH-R1 DESIGN §1.2

@@ -1,0 +1,68 @@
+# =============================================================================
+# Flux HelmRelease Drift Detection — Production 환경
+# Design Ref: MTU-N47 Design §Drift Detection 모드
+# Plan SC: FR-N47.1, FR-N47.6
+#
+# 모드: enabled — 자동 교정 (Git 상태로 강제 복원)
+# CSAP D-06: 모든 drift 이벤트 감사 추적
+# =============================================================================
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: drift-detection-prod-patch
+  namespace: flux-system
+spec:
+  # 전체 HelmRelease에 대한 drift detection 패치
+  patches:
+    # --- 모든 HelmRelease에 drift detection 활성화 ---
+    - target:
+        kind: HelmRelease
+        namespace: production
+      patch: |
+        apiVersion: helm.toolkit.fluxcd.io/v2
+        kind: HelmRelease
+        metadata:
+          name: placeholder
+        spec:
+          driftDetection:
+            mode: enabled
+            ignore:
+              # 자동 스케일링에 의한 replica 변경은 무시
+              - paths:
+                  - "/spec/replicas"
+                target:
+                  kind: Deployment
+              # HPA 관련 변경 무시
+              - paths:
+                  - "/spec/minReplicas"
+                  - "/spec/maxReplicas"
+                target:
+                  kind: HorizontalPodAutoscaler
+          # 5분마다 reconciliation
+          interval: 5m
+          # 교정 실패 시 재시도
+          install:
+            remediation:
+              retries: 3
+          upgrade:
+            remediation:
+              retries: 3
+              remediateLastFailure: true
+---
+# =============================================================================
+# Production Kustomization Drift Detection
+# =============================================================================
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: production-apps
+  namespace: flux-system
+spec:
+  # Kustomization 강제 교정
+  force: true
+  # 5분 주기 reconciliation
+  interval: 5m
+  # Drift 시 자동 prune
+  prune: true
+  # 타임아웃
+  timeout: 3m

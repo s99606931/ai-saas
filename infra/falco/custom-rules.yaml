@@ -1,0 +1,210 @@
+# =============================================================================
+# Falco 커스텀 규칙 — 공공기관 SaaS 특화
+# Design Ref: MTU-N45 Design §커스텀 규칙 설계
+# Plan SC: FR-N45.3
+#
+# CSAP 매핑: D-06 (감사), D-08 (접근통제), D-09 (암호화/네트워크), D-12 (개발보안)
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: falco-custom-rules
+  namespace: falco-system
+  labels:
+    app.kubernetes.io/name: falco
+    app.kubernetes.io/component: custom-rules
+    csap.compliance/required: "true"
+data:
+  custom-rules.yaml: |
+    # =========================================================================
+    # 규칙 1: 민감 파일 접근 탐지 (CSAP D-08)
+    # =========================================================================
+    - rule: Sensitive File Access in Container
+      desc: >
+        컨테이너 내에서 /etc/shadow, /etc/passwd 등 민감 파일 접근 탐지.
+        CSAP D-08 접근 통제 위반 가능성.
+      condition: >
+        container and
+        open_read and
+        (fd.name startswith /etc/shadow or
+         fd.name startswith /etc/passwd or
+         fd.name startswith /etc/gshadow or
+         fd.name startswith /root/.ssh)
+      output: >
+        민감 파일 접근 탐지 (파일=%fd.name 사용자=%user.name 컨테이너=%container.name
+        이미지=%container.image.repository 네임스페이스=%k8s.ns.name 파드=%k8s.pod.name)
+      priority: WARNING
+      tags: [csap-d08, sensitive-file, access-control]
+
+    # =========================================================================
+    # 규칙 2: 컨테이너 셸 실행 탐지 (CSAP D-12)
+    # =========================================================================
+    - rule: Shell Spawned in Container
+      desc: >
+        컨테이너 내에서 대화형 셸이 실행됨.
+        CSAP D-12 시스템 개발 보안 위반 가능성.
+      condition: >
+        container and
+        proc.name in (bash, sh, zsh, dash, ash, ksh, csh, tcsh) and
+        spawned_process and
+        proc.tty != 0
+      output: >
+        컨테이너 셸 실행 (셸=%proc.name 사용자=%user.name 컨테이너=%container.name
+        이미지=%container.image.repository 네임스페이스=%k8s.ns.name 파드=%k8s.pod.name)
+      priority: WARNING
+      tags: [csap-d12, shell-spawn, container-security]
+
+    # =========================================================================
+    # 규칙 3: 권한 상승 탐지 (CSAP D-08)
+    # =========================================================================
+    - rule: Privilege Escalation Detected
+      desc: >
+        setuid/setgid 비트 변경 또는 권한 상승 시도 탐지.
+        CSAP D-08 접근 통제 최고 우선 위반.
+      condition: >
+        container and
+        (evt.type in (setuid, setgid, setresuid, setresgid) or
+         (evt.type = chmod and evt.arg.mode contains "S_ISUID"))
+      output: >
+        권한 상승 시도 (이벤트=%evt.type 사용자=%user.name→%user.loginname
+        컨테이너=%container.name 네임스페이스=%k8s.ns.name 파드=%k8s.pod.name)
+      priority: CRITICAL
+      tags: [csap-d08, privilege-escalation, critical]
+
+    # =========================================================================
+    # 규칙 4: 비정상 외부 네트워크 연결 (CSAP D-09)
+    # =========================================================================
+    - rule: Unexpected Outbound Connection
+      desc: >
+        컨테이너에서 허용되지 않은 외부 네트워크 연결 시도.
+        CSAP D-09 암호화 통신 및 네트워크 격리 위반 가능성.
+      condition: >
+        container and
+        outbound and
+        not (fd.sip.name in (cluster.local, svc.cluster.local)) and
+        not proc.name in (coredns, kubelet, kube-proxy, fluxcd) and
+        fd.sport != 53 and fd.sport != 443
+      output: >
+        비정상 외부 연결 (대상=%fd.sip:%fd.sport 프로세스=%proc.name
+        컨테이너=%container.name 네임스페이스=%k8s.ns.name 파드=%k8s.pod.name)
+      priority: WARNING
+      tags: [csap-d09, network, outbound-connection]
+
+    # =========================================================================
+    # 규칙 5: 호스트 경로 마운트 탐지 (CSAP D-12)
+    # =========================================================================
+    - rule: Sensitive Host Mount Detected
+      desc: >
+        컨테이너에서 민감한 호스트 경로 마운트 탐지.
+        호스트 파일시스템 접근은 CSAP D-12 위반.
+      condition: >
+        container and
+        (evt.type = mount or evt.type = umount) and
+        (fd.name startswith /host or
+         fd.name startswith /var/run/docker.sock or
+         fd.name startswith /var/run/containerd)
+      output: >
+        호스트 마운트 탐지 (경로=%fd.name 컨테이너=%container.name
+        이미지=%container.image.repository 네임스페이스=%k8s.ns.name)
+      priority: CRITICAL
+      tags: [csap-d12, host-mount, critical]
+
+    # =========================================================================
+    # 규칙 6: 암호화폐 채굴 프로세스 탐지 (CSAP D-12)
+    # =========================================================================
+    - rule: Crypto Mining Process Detected
+      desc: >
+        암호화폐 채굴 관련 프로세스 실행 탐지.
+        CSAP D-12 무단 리소스 사용.
+      condition: >
+        container and
+        spawned_process and
+        (proc.name in (xmrig, minerd, cpuminer, cgminer, bfgminer, ethminer,
+                       stratum, cryptonight, minergate) or
+         proc.cmdline contains "stratum+tcp" or
+         proc.cmdline contains "mining" or
+         proc.cmdline contains "cryptonight")
+      output: >
+        암호화폐 채굴 탐지 (프로세스=%proc.name 명령=%proc.cmdline
+        컨테이너=%container.name 네임스페이스=%k8s.ns.name 파드=%k8s.pod.name)
+      priority: CRITICAL
+      tags: [csap-d12, crypto-mining, critical]
+
+    # =========================================================================
+    # 규칙 7: 비정상 시크릿 접근 (CSAP D-08)
+    # =========================================================================
+    - rule: Kubernetes Secret Access Anomaly
+      desc: >
+        비정상적인 Kubernetes 시크릿 접근 탐지.
+        CSAP D-08 접근 통제 위반.
+      condition: >
+        container and
+        open_read and
+        fd.name startswith /var/run/secrets/kubernetes.io and
+        not proc.name in (kubelet, kube-proxy, coredns, node-exporter)
+      output: >
+        시크릿 접근 이상 (파일=%fd.name 프로세스=%proc.name
+        컨테이너=%container.name 네임스페이스=%k8s.ns.name 파드=%k8s.pod.name)
+      priority: WARNING
+      tags: [csap-d08, secret-access, access-control]
+
+    # =========================================================================
+    # 규칙 8: 감사 로그 변조 시도 (CSAP D-06)
+    # =========================================================================
+    - rule: Audit Log Tampering Attempt
+      desc: >
+        감사 로그 파일 삭제/수정/이동 시도 탐지.
+        CSAP D-06 침해사고 관리 최고 우선 위반.
+      condition: >
+        container and
+        (evt.type in (unlink, unlinkat, rename, renameat, truncate, ftruncate) or
+         (open_write and not evt.type = close)) and
+        (fd.name contains "/var/log/audit" or
+         fd.name contains "/var/log/falco" or
+         fd.name contains "audit.jsonl" or
+         fd.name contains "audit.log")
+      output: >
+        감사 로그 변조 시도 (작업=%evt.type 파일=%fd.name 프로세스=%proc.name
+        사용자=%user.name 컨테이너=%container.name 네임스페이스=%k8s.ns.name)
+      priority: CRITICAL
+      tags: [csap-d06, log-tampering, critical, audit]
+
+    # =========================================================================
+    # 규칙 9: 비인가 프로세스 실행 (CSAP D-12)
+    # =========================================================================
+    - rule: Unauthorized Process in Production Container
+      desc: >
+        프로덕션 컨테이너에서 허용되지 않은 프로세스 실행 탐지.
+        CSAP D-12 시스템 개발 보안.
+      condition: >
+        container and
+        spawned_process and
+        k8s.ns.name in (production, prod) and
+        not proc.name in (node, java, python, nginx, envoy, postgres, redis,
+                          tini, dumb-init, pause) and
+        not proc.pname in (node, java, python, nginx, envoy, tini, dumb-init)
+      output: >
+        비인가 프로세스 실행 (프로세스=%proc.name 부모=%proc.pname
+        컨테이너=%container.name 네임스페이스=%k8s.ns.name 파드=%k8s.pod.name)
+      priority: WARNING
+      tags: [csap-d12, unauthorized-process, production]
+
+    # =========================================================================
+    # 규칙 10: 대량 데이터 외부 전송 시도 (CSAP D-09)
+    # =========================================================================
+    - rule: Data Exfiltration Attempt
+      desc: >
+        컨테이너에서 비정상적으로 큰 데이터 외부 전송 탐지.
+        CSAP D-09 데이터 유출 방지.
+      condition: >
+        container and
+        outbound and
+        evt.type in (sendto, sendmsg, write) and
+        evt.rawres > 1048576 and
+        not fd.sip.name in (cluster.local, svc.cluster.local) and
+        not proc.name in (fluxcd, gitea, harbor)
+      output: >
+        대량 데이터 전송 (크기=%evt.rawres 대상=%fd.sip:%fd.sport 프로세스=%proc.name
+        컨테이너=%container.name 네임스페이스=%k8s.ns.name 파드=%k8s.pod.name)
+      priority: CRITICAL
+      tags: [csap-d09, data-exfiltration, critical]

@@ -1,0 +1,27 @@
+# 테스트 Fixture: 모든 정책을 통과하는 정상 Pod
+# Design Ref: MTU-N53 TC-12
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-valid-pod
+  namespace: default
+  labels:
+    app: test-valid
+spec:
+  containers:
+    - name: nginx
+      image: harbor.local/library/nginx:1.25.4
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+      securityContext:
+        runAsNonRoot: true
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        privileged: false
+      ports:
+        - containerPort: 8080

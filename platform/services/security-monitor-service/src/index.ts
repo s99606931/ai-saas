@@ -12,7 +12,7 @@
 
 import Fastify from 'fastify';
 
-const PORT = parseInt(process.env['SECURITY_MONITOR_SERVICE_PORT'] ?? '3015', 10);
+const PORT = parseInt(process.env['SECURITY_MONITOR_PORT'] ?? '3014', 10);
 const HOST = '0.0.0.0';
 
 async function main(): Promise<void> {

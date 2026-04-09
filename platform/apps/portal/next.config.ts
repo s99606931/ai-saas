@@ -20,7 +20,9 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Next.js 런타임 필수
+      // unsafe-eval 제거 (H-03 수정): Next.js 15 프로덕션 빌드는 eval() 불필요
+      // CSS-in-JS(Tailwind 인라인) 지원을 위해 unsafe-inline만 유지
+      "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'", // 인라인 스타일 (CSS-in-JS)
       "img-src 'self' data: blob:",
       "font-src 'self'",
@@ -46,10 +48,10 @@ const securityHeaders = [
     key: 'X-DNS-Prefetch-Control',
     value: 'off',
   },
-  {
-    key: 'Strict-Transport-Security',
-    value: 'max-age=63072000; includeSubDomains; preload',
-  },
+  // L-01 수정: HSTS는 프로덕션에서만 적용 (개발 환경 HTTP 충돌 방지)
+  ...(process.env.NODE_ENV === 'production'
+    ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }]
+    : []),
   {
     key: 'Permissions-Policy',
     value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
@@ -67,10 +69,9 @@ const nextConfig: NextConfig = {
   experimental: {
     typedRoutes: true,
   },
-  env: {
-    // 개발 환경 DB — 운영 환경은 .env.local 또는 플랫폼 환경 변수 사용
-    DATABASE_URL: process.env.DATABASE_URL ?? 'postgresql://saas:saas_dev_2026@localhost:5432/saas_platform',
-  },
+  // C-02 수정: DATABASE_URL은 서버 전용 환경변수. Next.js env 섹션에 두면
+  // 클라이언트 번들(window.__NEXT_DATA__)에 노출됨. process.env로 서버에서만 참조.
+  // .env.local 또는 플랫폼 환경변수로 DATABASE_URL을 설정할 것.
   // CSAP D-12: 보안 헤더 전역 적용
   async headers() {
     return [

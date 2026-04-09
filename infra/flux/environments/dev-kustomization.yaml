@@ -1,0 +1,27 @@
+# =============================================================================
+# Flux Kustomization -- Dev 환경
+# Design Ref: MTU-N41 Design S3
+# Plan SC: FR-N41.4
+# =============================================================================
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: saas-dev
+  namespace: flux-system
+spec:
+  interval: 5m
+  path: ./deploy/envs/dev
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: saas-platform
+  targetNamespace: saas-dev
+  # Dev: 자동 배포 (승인 불필요)
+  wait: true
+  timeout: 5m
+  # Health check
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: api-gateway
+      namespace: saas-dev

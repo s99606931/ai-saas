@@ -1,0 +1,160 @@
+# =============================================================================
+# Falco Prometheus 알림 규칙
+# Design Ref: MTU-N45 Design §Grafana 대시보드
+# Plan SC: FR-N45.6
+#
+# kube-prometheus-stack PrometheusRule 형식
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: falco-runtime-alerts
+  namespace: falco-system
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: falco-runtime-security
+    csap.compliance/domain: "D-06"
+spec:
+  groups:
+    # =========================================================================
+    # Critical 알림 (즉시 대응 필요)
+    # =========================================================================
+    - name: falco.critical
+      rules:
+        - alert: FalcoCriticalEvent
+          expr: |
+            sum(rate(falcosidekick_outputs_total{priority="Critical"}[5m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+            csap_domain: "D-06"
+            team: security
+          annotations:
+            summary: "Falco Critical 이벤트 탐지"
+            description: >
+              런타임 보안 Critical 이벤트가 탐지되었습니다.
+              즉시 보안 관제팀 대응이 필요합니다.
+              CSAP D-06 침해사고 관리 절차를 따라 처리하십시오.
+            runbook_url: "https://docs.internal/runbooks/falco-critical"
+
+        - alert: FalcoPrivilegeEscalation
+          expr: |
+            sum(rate(falcosidekick_outputs_total{rule=~".*Privilege Escalation.*"}[5m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+            csap_domain: "D-08"
+            team: security
+          annotations:
+            summary: "권한 상승 시도 탐지"
+            description: >
+              컨테이너 내 권한 상승 시도가 탐지되었습니다.
+              CSAP D-08 접근 통제 위반 가능성. 즉시 격리 조치 필요.
+
+        - alert: FalcoLogTampering
+          expr: |
+            sum(rate(falcosidekick_outputs_total{rule=~".*Log Tampering.*"}[5m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+            csap_domain: "D-06"
+            team: security
+          annotations:
+            summary: "감사 로그 변조 시도 탐지"
+            description: >
+              감사 로그 파일 삭제/수정 시도가 탐지되었습니다.
+              CSAP D-06 감사 추적 무결성 위반. 즉시 포렌식 조사 필요.
+
+        - alert: FalcoCryptoMining
+          expr: |
+            sum(rate(falcosidekick_outputs_total{rule=~".*Crypto Mining.*"}[5m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+            csap_domain: "D-12"
+            team: security
+          annotations:
+            summary: "암호화폐 채굴 프로세스 탐지"
+            description: >
+              컨테이너 내 암호화폐 채굴 관련 프로세스가 탐지되었습니다.
+              해당 파드를 즉시 격리하고 이미지 무결성을 확인하십시오.
+
+    # =========================================================================
+    # Warning 알림 (주의 필요)
+    # =========================================================================
+    - name: falco.warning
+      rules:
+        - alert: FalcoHighEventRate
+          expr: |
+            sum(rate(falcosidekick_outputs_total[5m])) > 10
+          for: 5m
+          labels:
+            severity: warning
+            csap_domain: "D-12"
+            team: devops
+          annotations:
+            summary: "Falco 이벤트 급증"
+            description: >
+              5분간 Falco 이벤트 발생율이 분당 10건을 초과합니다.
+              보안 사고 또는 설정 오류 가능성을 확인하십시오.
+
+        - alert: FalcoShellSpawn
+          expr: |
+            sum(rate(falcosidekick_outputs_total{rule=~".*Shell Spawned.*"}[15m])) > 3
+          for: 0m
+          labels:
+            severity: warning
+            csap_domain: "D-12"
+            team: security
+          annotations:
+            summary: "다수 컨테이너 셸 실행 탐지"
+            description: >
+              15분간 컨테이너 셸 실행이 3건 이상 탐지되었습니다.
+              무단 접근 시도 가능성을 확인하십시오.
+
+        - alert: FalcoSensitiveFileAccess
+          expr: |
+            sum(rate(falcosidekick_outputs_total{rule=~".*Sensitive File.*"}[15m])) > 5
+          for: 0m
+          labels:
+            severity: warning
+            csap_domain: "D-08"
+            team: security
+          annotations:
+            summary: "민감 파일 대량 접근 탐지"
+            description: >
+              15분간 민감 파일 접근이 5건 이상 탐지되었습니다.
+              CSAP D-08 접근 통제 위반 가능성 확인.
+
+    # =========================================================================
+    # Falco 상태 모니터링
+    # =========================================================================
+    - name: falco.health
+      rules:
+        - alert: FalcoDown
+          expr: |
+            up{job="falco"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            csap_domain: "D-12"
+            team: devops
+          annotations:
+            summary: "Falco 런타임 보안 다운"
+            description: >
+              Falco DaemonSet이 5분 이상 다운 상태입니다.
+              런타임 보안 모니터링이 중단되었으며, 즉시 복구가 필요합니다.
+
+        - alert: FalcoSidekickDown
+          expr: |
+            up{job="falcosidekick"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            csap_domain: "D-06"
+            team: devops
+          annotations:
+            summary: "Falcosidekick 알림 포워더 다운"
+            description: >
+              Falcosidekick이 5분 이상 다운 상태입니다.
+              보안 이벤트 알림이 전달되지 않고 있습니다.

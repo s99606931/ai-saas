@@ -1,0 +1,53 @@
+# =============================================================================
+# Audit Service SLO 정의 (최고 등급 — 99.99%)
+# Design Ref: MTU-N49 Design §SLO 정의
+# Plan SC: FR-N49.1, FR-N49.2
+#
+# CSAP D-06: 감사 로그는 절대 유실 불가
+# =============================================================================
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: audit-service-slo
+  namespace: production
+  labels:
+    app.kubernetes.io/name: audit-service
+    app.kubernetes.io/part-of: saas-platform
+    csap.compliance/domain: "D-06"
+    team: platform
+spec:
+  service: "audit-service"
+  labels:
+    owner: "platform-team"
+    tier: "critical"
+    compliance: "csap-d06"
+
+  slos:
+    - name: "log-recording-success"
+      objective: 99.99
+      description: "감사 로그 기록 성공률 (CSAP D-06 필수)"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_requests_total{job="audit-service",code=~"5.."}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_requests_total{job="audit-service"}[{{.window}}]))
+      alerting:
+        name: AuditServiceSLOBreach
+        labels:
+          category: "availability"
+          severity: "critical"
+          csap_domain: "D-06"
+          compliance: "mandatory"
+        annotations:
+          summary: "감사 서비스 SLO 위반 — CSAP D-06 위험"
+          description: >
+            감사 로그 기록 성공률이 99.99% SLO 미달입니다.
+            감사 추적 무결성 위험. 즉시 대응이 필요합니다.
+            CSAP D-06 침해사고 관리 절차에 따라 처리하십시오.
+        pageAlert:
+          labels:
+            severity: "critical"
+        ticketAlert:
+          labels:
+            severity: "critical"

@@ -1,0 +1,61 @@
+# =============================================================================
+# Bitnami Sealed Secrets -- Helm Values
+# Design Ref: MTU-N39 Design S3.2
+# Plan SC: FR-N39.1, FR-N39.6
+# CSAP: D-09 (암호화), CVE-2026-22728 대응
+#
+# 설치: helm install sealed-secrets sealed-secrets/sealed-secrets \
+#         --namespace kube-system -f infra/sealed-secrets/values.yaml
+# =============================================================================
+
+# 컨트롤러 설정
+commandArgs:
+  # 키 로테이션 주기: 30일 (720시간)
+  - "--key-renew-period=720h"
+  # 이전 키 영구 유지 (기존 SealedSecret 복호화 호환)
+  - "--key-cutoff-time=0"
+  # 상태 업데이트 활성화
+  - "--update-status"
+
+# =============================================================================
+# CVE-2026-22728 대응: strict scope 강제
+# 메타데이터 조작으로 namespace -> cluster-wide 확장 방지
+# Design Ref: MTU-N39 S3.5
+# =============================================================================
+
+# 리소스 제한 (k3s WSL2 환경 최적화)
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# 레플리카 (WSL2 단일 노드)
+replicas: 1
+
+# Prometheus 메트릭 수집
+metrics:
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    labels:
+      release: prometheus
+
+# 네트워크 정책
+networkPolicy:
+  enabled: false  # infra/network-policies/ 에서 별도 관리
+
+# Pod 보안 컨텍스트 (CSAP D-08)
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+containerSecurityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL

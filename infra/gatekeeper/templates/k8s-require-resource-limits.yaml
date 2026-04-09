@@ -1,0 +1,44 @@
+# ConstraintTemplate: CPU/메모리 리소스 제한 강제
+# Design Ref: MTU-N53 Section 3.2.2
+# Plan SC: FR-N53.5
+# CSAP: D-12 시스템 개발 보안
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequireresourcelimits
+  annotations:
+    description: "모든 컨테이너에 리소스 limits/requests를 강제합니다"
+    csap.compliance/control: "D-12"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequireResourceLimits
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequireresourcelimits
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.limits.memory
+          msg := sprintf("[CSAP D-12] 메모리 제한(limits.memory) 필수: %v", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.limits.cpu
+          msg := sprintf("[CSAP D-12] CPU 제한(limits.cpu) 필수: %v", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.requests.memory
+          msg := sprintf("[CSAP D-12] 메모리 요청(requests.memory) 필수: %v", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.requests.cpu
+          msg := sprintf("[CSAP D-12] CPU 요청(requests.cpu) 필수: %v", [container.name])
+        }

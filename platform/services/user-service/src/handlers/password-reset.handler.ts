@@ -1,7 +1,7 @@
 // 비밀번호 재설정 핸들러
-// Design Ref: DESIGN-MTU-Q3 §2 FR-P02.7
-// Plan SC: FR-P02.7
-// CSAP: D-08-07 비밀번호 재설정 정책
+// Design Ref: DESIGN-MTU-Q3 §2 FR-P02.7, SVC-USER-R1 DESIGN §4, §5
+// Plan SC: FR-P02.7, FR-USR.4, FR-USR.5
+// CSAP: D-08-07 비밀번호 재설정 정책, 비밀번호 재사용 방지
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import bcrypt from 'bcryptjs';
@@ -10,6 +10,8 @@ import { z } from 'zod';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
 import { logUserEvent } from '../lib/audit.js';
 import { prisma } from '../lib/prisma.js';
+import { generateServiceToken } from '../lib/service-auth.js';
+import { isPasswordReused, addPasswordHistory } from '../lib/password-history.js';
 
 /** 재설정 토큰 만료 시간: 30분 */
 const TOKEN_EXPIRY_MS = 30 * 60 * 1000;
@@ -175,12 +177,28 @@ export async function confirmPasswordResetHandler(
     return;
   }
 
+  // FR-USR.5: 비밀번호 재사용 방지 (Design Ref: SVC-USER-R1 DESIGN §5)
+  const reused = await isPasswordReused(entry.userId, newPassword);
+  if (reused) {
+    await reply.status(400).send({
+      success: false,
+      error: {
+        code: 'PASSWORD_REUSED',
+        message: '최근 사용한 비밀번호는 재사용할 수 없습니다 (CSAP D-08-07)',
+      },
+    });
+    return;
+  }
+
   // 비밀번호 변경
   const newHash = await bcrypt.hash(newPassword, AUTH_CONSTANTS.BCRYPT_SALT_ROUNDS);
   await prisma.user.update({
     where: { id: entry.userId },
     data: { passwordHash: newHash },
   });
+
+  // FR-USR.5: 비밀번호 이력 추가 (Design Ref: SVC-USER-R1 DESIGN §5)
+  addPasswordHistory(entry.userId, newHash);
 
   // 토큰 1회 사용 후 폐기
   resetTokenStore.delete(hashedToken);
@@ -203,11 +221,16 @@ export async function confirmPasswordResetHandler(
   );
 
   // CSAP D-08-03: 비밀번호 재설정 후 기존 세션 전체 무효화
+  // FR-USR.4: HMAC-SHA256 서비스 인증 토큰 첨부 (Design Ref: SVC-USER-R1 DESIGN §4)
   const authServiceUrl = process.env['AUTH_SERVICE_URL'] ?? 'http://localhost:3001';
   try {
+    const serviceToken = generateServiceToken('user-service');
     await fetch(`${authServiceUrl}/auth/sessions/invalidate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(serviceToken ? { 'X-Service-Token': serviceToken } : {}),
+      },
       body: JSON.stringify({
         userId: entry.userId,
         tenantId: resetUser?.tenantId ?? 'unknown',

@@ -1,0 +1,294 @@
+# 서비스 트래픽 대시보드 ConfigMap
+# Design Ref: MTU-N24 §FR-N24.5 — 트래픽 모니터링 (R.E.D 메트릭, 서비스 토폴로지)
+# Plan SC: FR-N24.5
+# CSAP 준수: D-06(서비스 이상 탐지), D-08(Grafana RBAC — 뷰어 접근)
+#
+# 포함 패널:
+#   - 서비스 토폴로지 (Node Graph Panel — Tempo service graph)
+#   - R.E.D 메트릭: Rate, Error, Duration per 서비스
+#   - Loki 로그 패널 연동 (에러 로그 실시간)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: saas-service-traffic-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/part-of: observability-stack
+data:
+  saas-service-traffic.json: |
+    {
+      "annotations": {"list": []},
+      "description": "서비스 간 트래픽 토폴로지 및 R.E.D 메트릭 (Rate/Error/Duration) — Tempo 서비스 그래프 기반",
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["traffic", "red-metrics", "topology", "service-graph", "csap-d10"],
+      "time": {"from": "now-1h", "to": "now"},
+      "timepicker": {},
+      "timezone": "Asia/Seoul",
+      "title": "서비스 트래픽 및 R.E.D 메트릭",
+      "uid": "saas-service-traffic",
+      "version": 1,
+      "templating": {
+        "list": [
+          {
+            "current": {},
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "definition": "label_values(traces_service_graph_request_total, client)",
+            "hide": 0,
+            "includeAll": true,
+            "multi": false,
+            "name": "service",
+            "options": [],
+            "query": {
+              "query": "label_values(traces_service_graph_request_total, client)",
+              "refId": "StandardVariableQuery"
+            },
+            "refresh": 2,
+            "sort": 1,
+            "label": "서비스",
+            "type": "query"
+          },
+          {
+            "current": {},
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "definition": "label_values(kube_namespace_labels, namespace)",
+            "hide": 0,
+            "includeAll": true,
+            "multi": false,
+            "name": "namespace",
+            "options": [],
+            "query": {
+              "query": "label_values(kube_namespace_labels, namespace)",
+              "refId": "StandardVariableQuery"
+            },
+            "refresh": 2,
+            "sort": 1,
+            "label": "네임스페이스",
+            "type": "query"
+          }
+        ]
+      },
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+          "id": 1,
+          "title": "서비스 토폴로지 — Tempo 서비스 그래프",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "tempo", "uid": "tempo"},
+          "description": "마이크로서비스 간 요청 흐름 시각화 (OpenTelemetry 분산 추적 기반)\nNode: 서비스, Edge: 요청 수 / 에러율",
+          "gridPos": {"h": 12, "w": 24, "x": 0, "y": 1},
+          "id": 2,
+          "options": {
+            "nodes": {
+              "mainStatUnit": "r/min"
+            },
+            "edges": {
+              "mainStatUnit": "r/min"
+            }
+          },
+          "targets": [
+            {
+              "queryType": "serviceMap",
+              "refId": "A"
+            }
+          ],
+          "title": "서비스 토폴로지 (Node Graph) — 분산 추적 기반",
+          "type": "nodeGraph"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 13},
+          "id": 10,
+          "title": "R.E.D 메트릭 — Rate / Error / Duration per 서비스",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "description": "서비스별 초당 요청 수 (Rate) — FR-N24.5",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "unit": "reqps",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 10
+              }
+            }
+          },
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 14},
+          "id": 11,
+          "options": {
+            "legend": {"calcs": ["mean", "max", "last"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi"}
+          },
+          "targets": [
+            {
+              "expr": "sum by (client) (rate(traces_service_graph_request_total[1m]))",
+              "legendFormat": "{{client}}"
+            }
+          ],
+          "title": "Rate — 서비스별 초당 요청 수",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "description": "서비스별 에러율 (Error) — 1% 초과 시 알림 (FR-N24.6)",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "unit": "percentunit",
+              "max": 1,
+              "min": 0,
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 10
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 0.01},
+                  {"color": "red", "value": 0.05}
+                ]
+              }
+            }
+          },
+          "gridPos": {"h": 8, "w": 8, "x": 8, "y": 14},
+          "id": 12,
+          "options": {
+            "legend": {"calcs": ["mean", "max", "last"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi"}
+          },
+          "targets": [
+            {
+              "expr": "sum by (client) (rate(traces_service_graph_request_failed_total[1m])) / sum by (client) (rate(traces_service_graph_request_total[1m]))",
+              "legendFormat": "{{client}} 에러율"
+            }
+          ],
+          "title": "Error — 서비스별 에러율 (1% 임계값)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "description": "서비스별 P95/P99 레이턴시 (Duration) — FR-N24.5",
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "unit": "s",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 10
+              }
+            }
+          },
+          "gridPos": {"h": 8, "w": 8, "x": 16, "y": 14},
+          "id": 13,
+          "options": {
+            "legend": {"calcs": ["mean", "max", "last"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi"}
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (client, le) (rate(traces_service_graph_request_duration_seconds_bucket[1m])))",
+              "legendFormat": "{{client}} P95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum by (client, le) (rate(traces_service_graph_request_duration_seconds_bucket[1m])))",
+              "legendFormat": "{{client}} P99"
+            }
+          ],
+          "title": "Duration — 서비스별 P95/P99 레이턴시",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 22},
+          "id": 20,
+          "title": "파드 리소스 현황 — kube-state-metrics",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "unit": "percentunit"
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 23},
+          "id": 21,
+          "options": {
+            "legend": {"calcs": ["mean", "max", "last"], "displayMode": "table", "placement": "bottom"}
+          },
+          "targets": [
+            {
+              "expr": "sum by (namespace, pod) (rate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", container!=\"\"}[1m])) / sum by (namespace, pod) (kube_pod_container_resource_limits{resource=\"cpu\", namespace=~\"$namespace\"})",
+              "legendFormat": "{{namespace}}/{{pod}}"
+            }
+          ],
+          "title": "파드 CPU 사용률 (Limit 대비)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "unit": "bytes"
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 23},
+          "id": 22,
+          "targets": [
+            {
+              "expr": "sum by (namespace, pod) (container_memory_working_set_bytes{namespace=~\"$namespace\", container!=\"\"})",
+              "legendFormat": "{{namespace}}/{{pod}}"
+            }
+          ],
+          "title": "파드 메모리 사용량",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 31},
+          "id": 30,
+          "title": "에러 로그 — Loki 연동 (실시간)",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "description": "에러 레벨 로그 실시간 스트림 — Loki 연동",
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 32},
+          "id": 31,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": true,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": false
+          },
+          "targets": [
+            {
+              "expr": "{namespace=~\"$namespace\"} |= \"error\" | json | level=~\"error|ERROR|Error\"",
+              "legendFormat": "",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "에러 로그 실시간 스트림 (네임스페이스: $namespace)",
+          "type": "logs"
+        }
+      ]
+    }

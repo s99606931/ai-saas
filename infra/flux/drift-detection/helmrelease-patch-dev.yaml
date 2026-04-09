@@ -1,0 +1,38 @@
+# =============================================================================
+# Flux HelmRelease Drift Detection — Dev 환경
+# Design Ref: MTU-N47 Design §Drift Detection 모드
+# Plan SC: FR-N47.1, FR-N47.6
+#
+# 모드: disabled — 개발 환경에서는 수동 변경 허용
+# =============================================================================
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: drift-detection-dev-patch
+  namespace: flux-system
+spec:
+  patches:
+    - target:
+        kind: HelmRelease
+        namespace: development
+      patch: |
+        apiVersion: helm.toolkit.fluxcd.io/v2
+        kind: HelmRelease
+        metadata:
+          name: placeholder
+        spec:
+          driftDetection:
+            mode: disabled
+          # 개발 환경은 30분 주기
+          interval: 30m
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dev-apps
+  namespace: flux-system
+spec:
+  force: false
+  interval: 30m
+  prune: false
+  timeout: 5m

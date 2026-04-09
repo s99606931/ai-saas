@@ -36,6 +36,24 @@ spec:
             - redis-cli -a $REDIS_PASSWORD ping
           initialDelaySeconds: 5
           periodSeconds: 5
+        # 인프라 안티패턴 수정: livenessProbe 추가 (행 감지)
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - redis-cli -a $REDIS_PASSWORD ping
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          failureThreshold: 3
+        # 인프라 안티패턴 수정: 리소스 제한 추가
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
 ---
 apiVersion: v1
 kind: Service

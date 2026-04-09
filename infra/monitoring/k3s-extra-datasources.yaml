@@ -1,0 +1,49 @@
+# Grafana 추가 데이터소스 — Loki + Tempo
+# Grafana sidecar가 grafana_datasource=1 레이블을 감지하여 자동 로드
+# CSAP: D-06 (로그 수집 및 추적)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k3s-extra-datasources
+  namespace: monitoring
+  labels:
+    grafana_datasource: "1"
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        uid: loki
+        url: http://loki-gateway.monitoring.svc.cluster.local:80
+        access: proxy
+        isDefault: false
+        jsonData:
+          derivedFields:
+            - datasourceUid: tempo
+              matcherRegex: '"traceId":"([^"]+)"'
+              name: TraceID
+              url: "$${__value.raw}"
+          maxLines: 1000
+          timeout: 60
+        version: 1
+
+      - name: Tempo
+        type: tempo
+        uid: tempo
+        url: http://tempo.monitoring.svc.cluster.local:3100
+        access: proxy
+        isDefault: false
+        jsonData:
+          httpMethod: GET
+          serviceMap:
+            datasourceUid: prometheus
+          tracesToLogs:
+            datasourceUid: loki
+            filterByTraceID: true
+            filterBySpanID: false
+          tracesToMetrics:
+            datasourceUid: prometheus
+          lokiSearch:
+            datasourceUid: loki
+        version: 1
