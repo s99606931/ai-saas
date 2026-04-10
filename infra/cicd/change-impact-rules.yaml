@@ -1,0 +1,124 @@
+# Design Ref: MTU-N238 SS1
+# Plan SC: FR-CIA.1, FR-CIA.3
+# 변경 영향 분석 규칙 정의
+
+version: "1.0"
+
+# 파일 패턴별 위험도 가중치
+categories:
+  security:
+    weight: 5
+    label: "보안"
+    patterns:
+      - "**/security/**"
+      - "**/auth/**"
+      - "**/rbac/**"
+      - "**/crypto/**"
+      - "**/*secret*"
+      - "**/*credential*"
+      - "**/policy/**"
+    requires:
+      - security-team-review
+      - full-regression-test
+
+  infrastructure:
+    weight: 4
+    label: "인프라"
+    patterns:
+      - "infra/**"
+      - "**/helm/**"
+      - "**/*.k8s.yaml"
+      - "**/Dockerfile"
+      - ".gitea/workflows/**"
+    requires:
+      - senior-review
+      - staging-verification
+
+  database:
+    weight: 4
+    label: "데이터베이스"
+    patterns:
+      - "**/migration/**"
+      - "**/schema/**"
+      - "**/seeds/**"
+    requires:
+      - dba-review
+      - backup-before-deploy
+
+  api:
+    weight: 3
+    label: "API"
+    patterns:
+      - "**/api/**"
+      - "**/routes/**"
+      - "**/controllers/**"
+      - "**/handlers/**"
+    requires:
+      - api-compatibility-check
+      - integration-test
+
+  business:
+    weight: 2
+    label: "비즈니스 로직"
+    patterns:
+      - "src/services/**"
+      - "packages/**"
+      - "src/lib/**"
+    requires:
+      - unit-test
+      - code-review
+
+  config:
+    weight: 2
+    label: "설정"
+    patterns:
+      - "*.yaml"
+      - "*.json"
+      - "*.toml"
+      - ".env.example"
+    excludes:
+      - "infra/**"
+      - "docs/**"
+
+  test:
+    weight: 1
+    label: "테스트"
+    patterns:
+      - "tests/**"
+      - "**/*.test.*"
+      - "**/*.spec.*"
+
+  documentation:
+    weight: 0
+    label: "문서"
+    patterns:
+      - "docs/**"
+      - "*.md"
+      - "*.txt"
+
+# 종합 위험도 판정 기준
+risk_levels:
+  low:
+    range: [0, 5]
+    action: "자동 배포 가능"
+    color: "green"
+  medium:
+    range: [6, 15]
+    action: "코드 리뷰 필수"
+    color: "yellow"
+  high:
+    range: [16, 30]
+    action: "시니어 리뷰 + 스테이징 검증 필수"
+    color: "orange"
+  critical:
+    range: [31, 999]
+    action: "보안팀 승인 + 전체 회귀 테스트 필수"
+    color: "red"
+
+# 특수 파일 (항상 Critical)
+critical_files:
+  - ".env"
+  - "secrets.*"
+  - "*credential*"
+  - "CLAUDE.md"
+  - ".claude/rules/**"

@@ -1,0 +1,14 @@
+# Design Ref: MTU-N234 SS2
+# Plan SC: FR-FF.1
+apiVersion: v2
+name: unleash-server
+description: Unleash Feature Flag 자체 호스팅 서버 (공공기관 SaaS)
+type: application
+version: 1.0.0
+appVersion: "6.4"
+keywords:
+  - feature-flags
+  - unleash
+  - progressive-delivery
+maintainers:
+  - name: Platform Team

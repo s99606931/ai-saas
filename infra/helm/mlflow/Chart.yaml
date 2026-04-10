@@ -1,0 +1,13 @@
+apiVersion: v2
+name: mlflow-registry
+description: MLflow 모델 레지스트리 + CI/CD 통합
+type: application
+version: 1.0.0
+appVersion: "2.16.0"
+keywords:
+  - mlflow
+  - mlops
+  - model-registry
+  - ai
+maintainers:
+  - name: Platform Team

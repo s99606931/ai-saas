@@ -1,0 +1,113 @@
+{
+  "description": "Cilium Hubble 네트워크 관측성 - MTU-N176",
+  "editable": true,
+  "panels": [
+    {
+      "title": "네트워크 흐름 Overview",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "title": "초당 네트워크 흐름 (Flow/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(rate(hubble_flows_processed_total[5m])) by (verdict)",
+          "legendFormat": "{{verdict}}"
+        }
+      ]
+    },
+    {
+      "title": "패킷 드롭 사유별 분류",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(rate(hubble_drop_total[1h])) by (reason)",
+          "legendFormat": "{{reason}}"
+        }
+      ]
+    },
+    {
+      "title": "DNS 관측성",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 }
+    },
+    {
+      "title": "DNS 쿼리 응답 시간 (P95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(hubble_dns_queries_total[5m])) by (le, query))",
+          "legendFormat": "{{query}} P95"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "DNS 응답 유형별 분포",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "targets": [
+        {
+          "expr": "sum(rate(hubble_dns_response_types_total[1h])) by (rcode)",
+          "legendFormat": "{{rcode}}"
+        }
+      ]
+    },
+    {
+      "title": "서비스 간 통신",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 }
+    },
+    {
+      "title": "HTTP 요청 지연 히트맵",
+      "description": "FR-HUB.6: 서비스 간 지연 시간",
+      "type": "heatmap",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 19 },
+      "targets": [
+        {
+          "expr": "sum(rate(hubble_http_requests_total[5m])) by (source_workload, destination_workload, le)",
+          "legendFormat": "{{source_workload}} → {{destination_workload}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "title": "NetworkPolicy 위반",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 29 }
+    },
+    {
+      "title": "Policy Denied 트래픽",
+      "description": "FR-HUB.5: NetworkPolicy 위반 탐지",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 30 },
+      "targets": [
+        {
+          "expr": "sum(increase(hubble_drop_total{reason=\"POLICY_DENIED\"}[1h])) by (source_namespace, source_workload, destination_namespace, destination_workload) > 0",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["hubble", "cilium", "network", "ebpf"],
+  "templating": {
+    "list": [
+      {
+        "name": "namespace",
+        "type": "query",
+        "query": "label_values(hubble_flows_processed_total, source_namespace)",
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Hubble Network Observability",
+  "uid": "hubble-network-v1"
+}

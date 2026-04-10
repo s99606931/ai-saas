@@ -1,0 +1,55 @@
+{
+  "_comment": "Design Ref: MTU-N236 / Plan SC: FR-MT.2",
+  "_description": "Keycloak Organization 기본 템플릿 (공공기관 표준)",
+  "template": {
+    "name": "${TENANT_NAME}",
+    "alias": "${TENANT_ALIAS}",
+    "enabled": true,
+    "description": "${TENANT_DESCRIPTION}",
+    "domains": [
+      {
+        "name": "${TENANT_DOMAIN}",
+        "verified": false
+      }
+    ],
+    "attributes": {
+      "tier": ["standard"],
+      "maxUsers": ["1000"],
+      "maxGroups": ["50"],
+      "dataRetentionDays": ["365"],
+      "provisionedAt": ["${TIMESTAMP}"],
+      "provisionedBy": ["auto-provisioning-script"]
+    }
+  },
+  "defaultGroups": [
+    {
+      "name": "${ALIAS}-admin",
+      "attributes": {
+        "description": ["기관 관리자 그룹"]
+      }
+    },
+    {
+      "name": "${ALIAS}-user",
+      "attributes": {
+        "description": ["일반 사용자 그룹"]
+      }
+    },
+    {
+      "name": "${ALIAS}-viewer",
+      "attributes": {
+        "description": ["읽기 전용 사용자 그룹"]
+      }
+    }
+  ],
+  "defaultClientScopes": [
+    "openid",
+    "profile",
+    "email",
+    "organization"
+  ],
+  "defaultRoleMappings": {
+    "${ALIAS}-admin": ["saas-admin", "manage-users"],
+    "${ALIAS}-user": ["saas-user"],
+    "${ALIAS}-viewer": ["saas-viewer"]
+  }
+}

@@ -1,0 +1,177 @@
+{
+  "realm": "public-saas",
+  "displayName": "공공기관 SaaS 프레임워크",
+  "enabled": true,
+  "sslRequired": "all",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername and passwordHistory(5)",
+  "accessTokenLifespan": 900,
+  "accessTokenLifespanForImplicitFlow": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "offlineSessionIdleTimeout": 2592000,
+  "offlineSessionMaxLifespan": 5184000,
+  "actionTokenGeneratedByAdminLifespan": 43200,
+  "actionTokenGeneratedByUserLifespan": 300,
+  "roles": {
+    "realm": [
+      {
+        "name": "saas-admin",
+        "description": "SaaS 플랫폼 관리자"
+      },
+      {
+        "name": "saas-operator",
+        "description": "SaaS 운영자"
+      },
+      {
+        "name": "saas-developer",
+        "description": "SaaS 개발자"
+      },
+      {
+        "name": "saas-viewer",
+        "description": "SaaS 조회 사용자"
+      },
+      {
+        "name": "tenant-admin",
+        "description": "테넌트 관리자"
+      },
+      {
+        "name": "tenant-user",
+        "description": "테넌트 일반 사용자"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "kc-cluster-admins",
+      "realmRoles": ["saas-admin"]
+    },
+    {
+      "name": "kc-operators",
+      "realmRoles": ["saas-operator"]
+    },
+    {
+      "name": "kc-developers",
+      "realmRoles": ["saas-developer"]
+    },
+    {
+      "name": "kc-viewers",
+      "realmRoles": ["saas-viewer"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "saas-web",
+      "name": "SaaS 웹 프론트엔드",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "redirectUris": [
+        "https://portal.example.go.kr/*"
+      ],
+      "webOrigins": [
+        "https://portal.example.go.kr"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "roles"
+      ]
+    },
+    {
+      "clientId": "saas-api",
+      "name": "SaaS API 게이트웨이",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "${SAAS_API_CLIENT_SECRET}",
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "roles"
+      ]
+    },
+    {
+      "clientId": "k8s-auth",
+      "name": "Kubernetes OIDC 인증",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "${K8S_AUTH_CLIENT_SECRET}",
+      "redirectUris": [
+        "http://localhost:8000",
+        "http://localhost:18000"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "groups"
+      ]
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "groups",
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "groups",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "eventsConfig": {
+    "eventsEnabled": true,
+    "eventsListeners": ["jboss-logging"],
+    "enabledEventTypes": [
+      "LOGIN", "LOGIN_ERROR", "LOGOUT", "LOGOUT_ERROR",
+      "REGISTER", "REGISTER_ERROR",
+      "CODE_TO_TOKEN", "CODE_TO_TOKEN_ERROR",
+      "CLIENT_LOGIN", "CLIENT_LOGIN_ERROR",
+      "REFRESH_TOKEN", "REFRESH_TOKEN_ERROR",
+      "VALIDATE_ACCESS_TOKEN",
+      "INTROSPECT_TOKEN",
+      "IMPERSONATE",
+      "CUSTOM_REQUIRED_ACTION",
+      "UPDATE_PROFILE", "UPDATE_PASSWORD",
+      "PERMISSION_TOKEN"
+    ],
+    "adminEventsEnabled": true,
+    "adminEventsDetailsEnabled": true,
+    "eventsExpiration": 31536000
+  }
+}

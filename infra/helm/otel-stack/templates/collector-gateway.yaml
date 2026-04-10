@@ -1,0 +1,65 @@
+# OpenTelemetry Gateway Collector
+# Design Ref: MTU-N175 §3.3
+# Plan SC: FR-OTEL.3, FR-OTEL.4, FR-OTEL.5, FR-OTEL.6
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-gateway
+  namespace: {{ .Release.Namespace }}
+spec:
+  mode: {{ .Values.gateway.mode }}
+  replicas: {{ .Values.gateway.replicas }}
+  resources:
+    {{- toYaml .Values.gateway.resources | nindent 4 }}
+  securityContext:
+    {{- toYaml .Values.podSecurityContext | nindent 4 }}
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: "0.0.0.0:4317"
+
+    processors:
+      batch:
+        timeout: 10s
+        send_batch_size: 2048
+      memory_limiter:
+        check_interval: 5s
+        limit_mib: 400
+        spike_limit_mib: 100
+
+    exporters:
+      # FR-OTEL.4: Tempo 분산 추적
+      otlp/tempo:
+        endpoint: {{ .Values.exporters.tempo.endpoint | quote }}
+        tls:
+          insecure: true
+
+      # FR-OTEL.5: Loki 로그
+      loki:
+        endpoint: {{ .Values.exporters.loki.endpoint | quote }}
+        default_labels_enabled:
+          exporter: true
+          job: true
+
+      # FR-OTEL.6: Prometheus 메트릭
+      prometheusremotewrite:
+        endpoint: {{ .Values.exporters.prometheus.endpoint | quote }}
+        resource_to_telemetry_conversion:
+          enabled: true
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlp/tempo]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [prometheusremotewrite]
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [loki]

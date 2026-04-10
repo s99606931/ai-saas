@@ -1,0 +1,101 @@
+# Policy Reporter 성능 모니터링 Recording Rules
+# Design Ref: MTU-N236 §3.4
+# Plan SC: FR-N236.6
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: policy-reporter-performance-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    monitoring.bkit.io/component: policy-reporter
+    monitoring.bkit.io/category: policy-engine
+spec:
+  groups:
+    # ── Policy Reporter 전송 성능 ──
+    - name: policy-reporter.performance
+      interval: 30s
+      rules:
+        # 보고 전송 p95 소요시간
+        - record: policy_reporter:send:p95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(policy_reporter_send_duration_seconds_bucket[5m])) by (le, target)
+            )
+          labels:
+            quantile: "0.95"
+            engine: policy-reporter
+
+        # 보고 전송 p99 소요시간
+        - record: policy_reporter:send:p99
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(policy_reporter_send_duration_seconds_bucket[5m])) by (le, target)
+            )
+          labels:
+            quantile: "0.99"
+            engine: policy-reporter
+
+        # 초당 전송 건수
+        - record: policy_reporter:send:rate5m
+          expr: |
+            sum(rate(policy_reporter_send_duration_seconds_count[5m])) by (target)
+          labels:
+            engine: policy-reporter
+
+        # 전송 오류율
+        - record: policy_reporter:send:error_ratio
+          expr: |
+            (
+              sum(rate(policy_reporter_send_duration_seconds_count{success="false"}[5m]))
+            /
+              clamp_min(sum(rate(policy_reporter_send_duration_seconds_count[5m])), 1)
+            )
+          labels:
+            engine: policy-reporter
+
+    # ── Policy Reporter 큐 상태 ──
+    - name: policy-reporter.queue
+      interval: 30s
+      rules:
+        # 보고 대기 큐 크기
+        - record: policy_reporter:queue:size
+          expr: |
+            policy_reporter_queue_size
+          labels:
+            engine: policy-reporter
+
+        # 큐 크기 변화율
+        - record: policy_reporter:queue:growth_rate5m
+          expr: |
+            deriv(policy_reporter_queue_size[5m])
+          labels:
+            engine: policy-reporter
+
+    # ── Policy Reporter 리소스 사용량 ──
+    - name: policy-reporter.resource
+      interval: 30s
+      rules:
+        # CPU 사용량
+        - record: policy_reporter:cpu:usage_cores
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{
+              namespace=~"policy-reporter|kyverno",
+              pod=~"policy-reporter.*",
+              container!="",
+              container!="POD"
+            }[5m])) by (pod, container)
+          labels:
+            engine: policy-reporter
+
+        # 메모리 사용량
+        - record: policy_reporter:memory:usage_bytes
+          expr: |
+            sum(container_memory_working_set_bytes{
+              namespace=~"policy-reporter|kyverno",
+              pod=~"policy-reporter.*",
+              container!="",
+              container!="POD"
+            }) by (pod, container)
+          labels:
+            engine: policy-reporter

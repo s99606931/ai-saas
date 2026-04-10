@@ -1,0 +1,359 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "annotations": { "list": [] },
+  "description": "Kyverno/Gatekeeper 정책 엔진 성능 모니터링 대시보드 (MTU-N236)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": ["policy-engine"],
+      "title": "관련 대시보드",
+      "type": "dashboards"
+    }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Kyverno Admission 성능",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Kyverno Admission Webhook 응답시간 (p50/p95/p99)",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisLabel": "응답시간 (초)",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "thresholdsStyle": { "mode": "dashed" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max", "mean"] } },
+      "title": "Kyverno Admission 응답시간",
+      "targets": [
+        {
+          "expr": "kyverno:admission_review:p50",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "kyverno:admission_review:p95",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "kyverno:admission_review:p99",
+          "legendFormat": "p99"
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Kyverno 정책 평가 결과 분포 (pass/fail/warn/error)",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "건수/초",
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": { "mode": "normal" }
+          },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "id": 2,
+      "title": "Kyverno 정책 결과 분포",
+      "targets": [
+        {
+          "expr": "sum(kyverno:policy_results:rate5m) by (rule_result)",
+          "legendFormat": "{{ rule_result }}"
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 101,
+      "title": "Gatekeeper Validation 성능",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Gatekeeper Validation Webhook 응답시간 (p50/p95/p99)",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "응답시간 (초)",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "thresholdsStyle": { "mode": "dashed" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "id": 3,
+      "title": "Gatekeeper Validation 응답시간",
+      "targets": [
+        {
+          "expr": "gatekeeper:validation:p50",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "gatekeeper:validation:p95",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "gatekeeper:validation:p99",
+          "legendFormat": "p99"
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Gatekeeper 제약조건별 위반 건수",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "continuous-reds" },
+          "custom": { "fillOpacity": 70 }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "id": 4,
+      "title": "Gatekeeper 위반 건수 (제약조건별)",
+      "targets": [
+        {
+          "expr": "gatekeeper:violations:by_constraint",
+          "legendFormat": "{{ constraint_kind }}/{{ constraint_name }}"
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Gatekeeper Audit 소요시간 추이",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisLabel": "소요시간 (초)", "drawStyle": "line", "fillOpacity": 20 },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "id": 5,
+      "title": "Gatekeeper Audit 소요시간",
+      "targets": [
+        {
+          "expr": "gatekeeper:audit:duration_seconds",
+          "legendFormat": "Audit 소요시간"
+        },
+        {
+          "expr": "gatekeeper:audit:staleness_seconds",
+          "legendFormat": "Audit 경과시간"
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
+      "id": 102,
+      "title": "리소스 사용량",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "정책 엔진 CPU 사용량",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisLabel": "CPU (코어)", "drawStyle": "line", "fillOpacity": 20 },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 1.0 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+      "id": 6,
+      "title": "정책 엔진 CPU 사용량",
+      "targets": [
+        {
+          "expr": "sum(kyverno:cpu:usage_cores) by (pod)",
+          "legendFormat": "Kyverno {{ pod }}"
+        },
+        {
+          "expr": "sum(gatekeeper:cpu:usage_cores) by (pod)",
+          "legendFormat": "Gatekeeper {{ pod }}"
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "정책 엔진 메모리 사용량",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisLabel": "메모리", "drawStyle": "line", "fillOpacity": 20 },
+          "unit": "bytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 268435456 },
+              { "color": "red", "value": 536870912 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+      "id": 7,
+      "title": "정책 엔진 메모리 사용량",
+      "targets": [
+        {
+          "expr": "sum(kyverno:memory:usage_bytes) by (pod)",
+          "legendFormat": "Kyverno {{ pod }}"
+        },
+        {
+          "expr": "sum(gatekeeper:memory:usage_bytes) by (pod)",
+          "legendFormat": "Gatekeeper {{ pod }}"
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 },
+      "id": 103,
+      "title": "Policy Reporter",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "Policy Reporter 큐 크기 및 전송 지연",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 20 }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
+      "id": 8,
+      "title": "Policy Reporter 큐 크기 및 전송 성능",
+      "targets": [
+        {
+          "expr": "policy_reporter:queue:size",
+          "legendFormat": "큐 크기"
+        },
+        {
+          "expr": "policy_reporter:send:p95",
+          "legendFormat": "전송 p95 (초)"
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "description": "통합 정책 엔진 오류율 (Kyverno + Gatekeeper)",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 30 },
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.02 },
+              { "color": "red", "value": 0.05 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
+      "id": 9,
+      "title": "통합 오류율 (Kyverno + Gatekeeper)",
+      "targets": [
+        {
+          "expr": "kyverno:policy_error:ratio",
+          "legendFormat": "Kyverno 오류율"
+        },
+        {
+          "expr": "gatekeeper:validation:error_ratio",
+          "legendFormat": "Gatekeeper 오류율"
+        }
+      ],
+      "type": "timeseries"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["policy-engine", "kyverno", "gatekeeper", "performance", "csap", "round25"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "Prometheus", "value": "Prometheus" },
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "정책 엔진 성능 모니터링 (Kyverno/Gatekeeper)",
+  "uid": "policy-engine-perf-n236",
+  "version": 1
+}

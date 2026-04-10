@@ -1,0 +1,13 @@
+apiVersion: v2
+name: dora-metrics
+description: DORA 4대 지표 자동화 대시보드 Helm 차트
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - dora
+  - devops
+  - metrics
+  - platform-engineering
+maintainers:
+  - name: Platform Team

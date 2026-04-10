@@ -1,0 +1,68 @@
+# Design Ref: MTU-N239 SS1
+# Plan SC: FR-KPI.4
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: business-kpi-alerts
+  namespace: monitoring
+  labels:
+    release: prometheus
+    category: business-kpi
+spec:
+  groups:
+    - name: business-kpi-alerts
+      rules:
+        - alert: PlatformAvailabilityLow
+          expr: saas:availability:ratio < 0.999
+          for: 5m
+          labels:
+            severity: critical
+            team: sre
+            category: kpi
+          annotations:
+            summary: "플랫폼 가용성 SLO 미달 (< 99.9%)"
+            description: "현재 가용성: {{ $value | humanizePercentage }}. SLO 목표: 99.9%"
+
+        - alert: APISuccessRateLow
+          expr: saas:api:success_ratio < 0.995
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            category: kpi
+          annotations:
+            summary: "API 성공률 SLO 미달 (< 99.5%)"
+            description: "현재 API 성공률: {{ $value | humanizePercentage }}"
+
+        - alert: APILatencyHigh
+          expr: saas:api:latency_p95 > 0.5
+          for: 10m
+          labels:
+            severity: warning
+            team: sre
+            category: kpi
+          annotations:
+            summary: "API P95 응답시간 초과 (> 500ms)"
+            description: "현재 P95 응답시간: {{ $value | humanizeDuration }}"
+
+        - alert: ErrorBudgetExhausted
+          expr: saas:error_budget:consumed_ratio > 0.8
+          for: 15m
+          labels:
+            severity: warning
+            team: sre
+            category: kpi
+          annotations:
+            summary: "에러 예산 80% 이상 소진"
+            description: "에러 예산 소진율: {{ $value | humanizePercentage }}"
+
+        - alert: DeploymentFailureRateHigh
+          expr: saas:deployment:failure_ratio > 0.05
+          for: 1h
+          labels:
+            severity: warning
+            team: platform
+            category: kpi
+          annotations:
+            summary: "배포 실패율 5% 초과"
+            description: "주간 배포 실패율: {{ $value | humanizePercentage }}"

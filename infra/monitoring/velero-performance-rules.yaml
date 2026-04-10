@@ -1,0 +1,200 @@
+# Velero 백업/복원 성능 모니터링 Recording Rules
+# Design Ref: MTU-N237 §3.1, §3.2, §3.3, §3.4
+# Plan SC: FR-N237.1 ~ FR-N237.6
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: velero-performance-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    monitoring.bkit.io/component: velero
+    monitoring.bkit.io/category: backup-restore
+spec:
+  groups:
+    # ── 백업 성능 메트릭 ──
+    - name: velero.backup.performance
+      interval: 30s
+      rules:
+        # 백업 성공 건수 (5분 증가량)
+        - record: velero:backup:success_count5m
+          expr: |
+            sum(increase(velero_backup_success_total[5m])) by (schedule)
+          labels:
+            component: velero
+
+        # 백업 실패 건수
+        - record: velero:backup:failure_count5m
+          expr: |
+            sum(increase(velero_backup_failure_total[5m])) by (schedule)
+          labels:
+            component: velero
+
+        # 백업 부분 실패 건수
+        - record: velero:backup:partial_failure_count5m
+          expr: |
+            sum(increase(velero_backup_partial_failure_total[5m])) by (schedule)
+          labels:
+            component: velero
+
+        # 백업 성공률
+        - record: velero:backup:success_ratio
+          expr: |
+            (
+              sum(velero_backup_success_total) by (schedule)
+            /
+              clamp_min(
+                sum(velero_backup_success_total) by (schedule)
+                + sum(velero_backup_failure_total) by (schedule)
+                + sum(velero_backup_partial_failure_total) by (schedule),
+                1
+              )
+            )
+          labels:
+            component: velero
+
+        # 백업 소요시간 p50
+        - record: velero:backup:duration:p50
+          expr: |
+            histogram_quantile(0.50,
+              sum(rate(velero_backup_duration_seconds_bucket[1h])) by (le, schedule)
+            )
+          labels:
+            quantile: "0.50"
+            component: velero
+
+        # 백업 소요시간 p95
+        - record: velero:backup:duration:p95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(velero_backup_duration_seconds_bucket[1h])) by (le, schedule)
+            )
+          labels:
+            quantile: "0.95"
+            component: velero
+
+        # 백업 소요시간 p99
+        - record: velero:backup:duration:p99
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(velero_backup_duration_seconds_bucket[1h])) by (le, schedule)
+            )
+          labels:
+            quantile: "0.99"
+            component: velero
+
+        # 백업 크기 (바이트)
+        - record: velero:backup:size_bytes
+          expr: |
+            velero_backup_tarball_size_bytes
+          labels:
+            component: velero
+
+        # 백업 항목 수
+        - record: velero:backup:items_total
+          expr: |
+            velero_backup_items_total
+          labels:
+            component: velero
+
+    # ── 복원 성능 메트릭 ──
+    - name: velero.restore.performance
+      interval: 30s
+      rules:
+        # 복원 성공 건수
+        - record: velero:restore:success_count5m
+          expr: |
+            sum(increase(velero_restore_success_total[5m])) by (schedule)
+          labels:
+            component: velero
+
+        # 복원 실패 건수
+        - record: velero:restore:failure_count5m
+          expr: |
+            sum(increase(velero_restore_failed_total[5m])) by (schedule)
+          labels:
+            component: velero
+
+        # 복원 소요시간 p50
+        - record: velero:restore:duration:p50
+          expr: |
+            histogram_quantile(0.50,
+              sum(rate(velero_restore_duration_seconds_bucket[1h])) by (le)
+            )
+          labels:
+            quantile: "0.50"
+            component: velero
+
+        # 복원 소요시간 p95
+        - record: velero:restore:duration:p95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(velero_restore_duration_seconds_bucket[1h])) by (le)
+            )
+          labels:
+            quantile: "0.95"
+            component: velero
+
+    # ── 스케줄 이행률 ──
+    - name: velero.schedule.compliance
+      interval: 60s
+      rules:
+        # 마지막 성공 백업 이후 경과시간 (초)
+        - record: velero:schedule:last_success_age_seconds
+          expr: |
+            time() - velero_backup_last_successful_timestamp
+          labels:
+            component: velero
+
+        # 스케줄 성공률 (전체 기간)
+        - record: velero:schedule:success_ratio
+          expr: |
+            (
+              velero_backup_success_total
+            /
+              clamp_min(
+                velero_backup_success_total
+                + velero_backup_failure_total
+                + velero_backup_partial_failure_total,
+                1
+              )
+            )
+          labels:
+            component: velero
+
+    # ── Velero 서버 리소스 사용량 ──
+    - name: velero.resource.usage
+      interval: 30s
+      rules:
+        # CPU 사용량
+        - record: velero:cpu:usage_cores
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{
+              namespace="velero",
+              container!="",
+              container!="POD"
+            }[5m])) by (pod, container)
+          labels:
+            component: velero
+
+        # 메모리 사용량
+        - record: velero:memory:usage_bytes
+          expr: |
+            sum(container_memory_working_set_bytes{
+              namespace="velero",
+              container!="",
+              container!="POD"
+            }) by (pod, container)
+          labels:
+            component: velero
+
+        # CPU 활용률
+        - record: velero:cpu:utilization_ratio
+          expr: |
+            (
+              sum(rate(container_cpu_usage_seconds_total{namespace="velero", container!="", container!="POD"}[5m])) by (pod)
+            /
+              sum(kube_pod_container_resource_requests{namespace="velero", resource="cpu"}) by (pod)
+            )
+          labels:
+            component: velero

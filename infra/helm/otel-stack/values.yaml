@@ -1,0 +1,106 @@
+# OpenTelemetry Auto-Instrumentation 설정
+# Design Ref: MTU-N175
+
+operator:
+  enabled: true
+  image:
+    repository: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+    tag: "0.100.0"
+
+# Auto-Instrumentation 설정
+autoInstrumentation:
+  nodejs:
+    enabled: true
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:0.51.0
+  python:
+    enabled: true
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.46b0
+
+# DaemonSet Agent Collector
+agent:
+  mode: daemonset
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: "0.0.0.0:4317"
+          http:
+            endpoint: "0.0.0.0:4318"
+    processors:
+      batch:
+        timeout: 5s
+        send_batch_size: 1024
+      memory_limiter:
+        check_interval: 5s
+        limit_mib: 200
+        spike_limit_mib: 50
+      # N2SF 준수: PII 마스킹 (FR-OTEL.8)
+      attributes/pii-mask:
+        actions:
+          - key: user.email
+            action: hash
+          - key: user.name
+            action: hash
+          - key: http.request.header.authorization
+            action: delete
+          - key: db.statement
+            action: hash
+
+# Gateway Collector
+gateway:
+  mode: deployment
+  replicas: 2
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# 환경별 샘플링 (FR-OTEL.7)
+sampling:
+  dev:
+    tracesSamplingRate: 1.0    # 100%
+    logsSamplingRate: 1.0
+  stg:
+    tracesSamplingRate: 0.5    # 50%
+    logsSamplingRate: 0.5
+  prod:
+    tracesSamplingRate: 0.1    # 10%
+    logsSamplingRate: 0.3
+
+# 백엔드 연동
+exporters:
+  tempo:
+    endpoint: "tempo-distributor.monitoring:4317"
+  loki:
+    endpoint: "http://loki-gateway.monitoring:3100/loki/api/v1/push"
+  prometheus:
+    endpoint: "http://prometheus-server.monitoring:9090/api/v1/write"
+
+# Pod Security (PSS Restricted)
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# 네트워크 정책
+networkPolicy:
+  enabled: true

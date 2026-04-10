@@ -1,0 +1,60 @@
+# OpenTelemetry Auto-Instrumentation CRD
+# Design Ref: MTU-N175 §3.2
+# Plan SC: FR-OTEL.2
+
+{{- if .Values.autoInstrumentation.nodejs.enabled }}
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: otel-nodejs
+  namespace: {{ .Release.Namespace }}
+spec:
+  exporter:
+    endpoint: http://otel-agent-collector:4317
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
+  sampler:
+    type: parentbased_traceidratio
+    argument: "{{ .Values.sampling.prod.tracesSamplingRate }}"
+  nodejs:
+    image: {{ .Values.autoInstrumentation.nodejs.image }}
+    env:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-agent-collector:4317"
+      - name: OTEL_SERVICE_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.labels['app.kubernetes.io/name']
+      - name: OTEL_RESOURCE_ATTRIBUTES
+        value: "k8s.namespace.name=$(OTEL_RESOURCE_ATTRIBUTES_K8S_NAMESPACE),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_K8S_POD_NAME)"
+  resource:
+    addK8sUIDAttributes: true
+{{- end }}
+
+{{- if .Values.autoInstrumentation.python.enabled }}
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: otel-python
+  namespace: {{ .Release.Namespace }}
+spec:
+  exporter:
+    endpoint: http://otel-agent-collector:4317
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: parentbased_traceidratio
+    argument: "{{ .Values.sampling.prod.tracesSamplingRate }}"
+  python:
+    image: {{ .Values.autoInstrumentation.python.image }}
+    env:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-agent-collector:4317"
+  resource:
+    addK8sUIDAttributes: true
+{{- end }}

@@ -1,0 +1,8 @@
+# Design Ref: MTU-N234 SS3
+# Plan SC: FR-FF.2
+apiVersion: v2
+name: unleash-edge
+description: Unleash Edge 프론트엔드 SDK 프록시 (공공기관 SaaS)
+type: application
+version: 1.0.0
+appVersion: "19.5"

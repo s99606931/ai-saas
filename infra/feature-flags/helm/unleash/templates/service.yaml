@@ -1,0 +1,20 @@
+# Design Ref: MTU-N234 SS2
+# Plan SC: FR-FF.1
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-unleash-server
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: unleash-server
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: unleash-server
+    app.kubernetes.io/instance: {{ .Release.Name }}

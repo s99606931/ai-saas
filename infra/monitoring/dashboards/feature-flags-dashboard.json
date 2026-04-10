@@ -1,0 +1,87 @@
+{
+  "__comment": "Design Ref: MTU-N234 SS5 / Plan SC: FR-FF.5",
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Feature Flag 활성 상태 개요",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "unleash_toggles_total{state='active'}",
+          "legendFormat": "활성 플래그"
+        }
+      ]
+    },
+    {
+      "title": "플래그 평가 횟수 (초당)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "rate(unleash_client_toggle_evaluation_total[5m])",
+          "legendFormat": "{{toggle_name}} - {{enabled}}"
+        }
+      ]
+    },
+    {
+      "title": "Unleash Server 응답 시간",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(unleash_http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95 응답시간"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(unleash_http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p99 응답시간"
+        }
+      ]
+    },
+    {
+      "title": "Edge 프록시 상태",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 8, "x": 8, "y": 0 },
+      "targets": [
+        {
+          "expr": "up{job='unleash-edge'}",
+          "legendFormat": "Edge 인스턴스"
+        }
+      ]
+    },
+    {
+      "title": "플래그별 활성화 비율",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "sum by (toggle_name) (unleash_client_toggle_evaluation_total{enabled='true'}) / sum by (toggle_name) (unleash_client_toggle_evaluation_total) * 100",
+          "legendFormat": "{{toggle_name}}"
+        }
+      ]
+    },
+    {
+      "title": "DB 연결 상태",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 8, "x": 16, "y": 0 },
+      "targets": [
+        {
+          "expr": "unleash_db_pool_active",
+          "legendFormat": "활성 DB 연결"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["feature-flags", "unleash", "saas-platform"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Feature Flag 플랫폼 모니터링",
+  "uid": "feature-flags-overview"
+}

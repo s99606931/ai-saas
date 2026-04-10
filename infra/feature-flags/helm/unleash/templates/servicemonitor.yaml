@@ -1,0 +1,24 @@
+# Design Ref: MTU-N234 SS5
+# Plan SC: FR-FF.5
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-unleash-server
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: unleash-server
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- range $key, $value := .Values.serviceMonitor.labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: unleash-server
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  endpoints:
+    - port: http
+      interval: {{ .Values.serviceMonitor.interval }}
+      path: {{ .Values.serviceMonitor.path }}
+{{- end }}

@@ -1,0 +1,98 @@
+# Design Ref: MTU-N240
+# Plan SC: FR-API.2, FR-API.3
+# 공공 API 표준 검증 규칙
+
+version: "1.0"
+name: "공공기관 SaaS API 표준 규칙"
+
+# 응답 형식 규칙
+response_format:
+  required_fields:
+    - name: resultCode
+      type: string
+      description: "응답 코드 (HTTP 상태 코드 문자열)"
+    - name: resultMsg
+      type: string
+      description: "응답 메시지"
+  pagination_fields:
+    - name: currentPage
+      type: integer
+      description: "현재 페이지 번호"
+    - name: totalCount
+      type: integer
+      description: "전체 결과 수"
+    - name: numOfRows
+      type: integer
+      description: "페이지당 행 수"
+  list_response:
+    data_field: "data"
+    type: array
+
+# 표준 에러 코드
+error_codes:
+  required:
+    - code: "400"
+      description: "잘못된 요청 (파라미터 오류)"
+    - code: "401"
+      description: "인증 실패"
+    - code: "403"
+      description: "권한 없음"
+    - code: "404"
+      description: "리소스 없음"
+    - code: "429"
+      description: "요청 제한 초과"
+    - code: "500"
+      description: "서버 내부 오류"
+
+# OpenAPI 스펙 규칙
+openapi_rules:
+  - id: OAS-001
+    severity: error
+    rule: "info.version 필수"
+    check: "$.info.version != null"
+  - id: OAS-002
+    severity: error
+    rule: "모든 엔드포인트에 description 필수"
+    check: "$.paths.*.*.description != null"
+  - id: OAS-003
+    severity: error
+    rule: "모든 응답에 schema 정의 필수"
+    check: "$.paths.*.*.responses.*.content != null"
+  - id: OAS-004
+    severity: warning
+    rule: "태그(tags) 사용 권장"
+    check: "$.paths.*.*.tags != null"
+  - id: OAS-005
+    severity: error
+    rule: "operationId 필수"
+    check: "$.paths.*.*.operationId != null"
+
+# 보안 규칙
+security_rules:
+  - id: SEC-001
+    severity: error
+    rule: "securitySchemes 정의 필수"
+    description: "Bearer Token 또는 API Key 인증 스킴 정의"
+  - id: SEC-002
+    severity: error
+    rule: "모든 엔드포인트에 security 적용 필수"
+    description: "인증 없는 공개 API 금지 (공개 헬스체크 제외)"
+  - id: SEC-003
+    severity: error
+    rule: "HTTPS only (servers[].url)"
+    description: "HTTP URL 사용 금지"
+  - id: SEC-004
+    severity: warning
+    rule: "Rate Limiting 헤더 문서화 권장"
+    description: "X-RateLimit-Limit, X-RateLimit-Remaining"
+
+# 버전 관리 규칙
+versioning_rules:
+  - id: VER-001
+    severity: error
+    rule: "API 버전 경로 포함 필수"
+    pattern: "/api/v{version}/"
+  - id: VER-002
+    severity: warning
+    rule: "Deprecation 헤더 지원 권장"
+    header: "Sunset"

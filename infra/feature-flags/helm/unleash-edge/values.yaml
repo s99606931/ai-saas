@@ -1,0 +1,60 @@
+# Design Ref: MTU-N234 SS3
+# Plan SC: FR-FF.2
+
+replicaCount: 2
+
+image:
+  repository: unleashorg/unleash-edge
+  tag: "19.5"
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+upstream:
+  url: "http://unleash-server:4242"
+
+edge:
+  port: 3063
+  # API 토큰은 SealedSecret에서 주입
+  tokenSecret: unleash-edge-tokens
+
+service:
+  type: ClusterIP
+  port: 3063
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3063
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 3063
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  path: /internal-backstage/prometheus

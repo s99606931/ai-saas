@@ -1,0 +1,13 @@
+apiVersion: v2
+name: otel-auto-instrumentation
+description: OpenTelemetry Auto-Instrumentation Operator + 2티어 Collector
+type: application
+version: 1.0.0
+appVersion: "0.100.0"
+keywords:
+  - opentelemetry
+  - auto-instrumentation
+  - observability
+  - tracing
+maintainers:
+  - name: Platform Team

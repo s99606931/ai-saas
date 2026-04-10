@@ -1,0 +1,24 @@
+# GitOps Base Kustomization
+# Design Ref: MTU-N172 §3.1
+# 공통 매니페스트 (모든 환경에서 상속)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: saas-platform-base
+
+resources:
+  - namespace.yaml
+  - api-gateway.yaml
+  - auth-service.yaml
+  - user-service.yaml
+  - tenant-service.yaml
+  - menu-service.yaml
+  - catalog-service.yaml
+  - audit-service.yaml
+  - notification-service.yaml
+  - ai-service.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: public-saas
+  app.kubernetes.io/managed-by: flux

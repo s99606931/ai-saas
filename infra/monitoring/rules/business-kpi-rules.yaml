@@ -1,0 +1,84 @@
+# Design Ref: MTU-N239 SS1
+# Plan SC: FR-KPI.1, FR-KPI.2
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: business-kpi-rules
+  namespace: monitoring
+  labels:
+    release: prometheus
+    category: business-kpi
+spec:
+  groups:
+    - name: business-kpi-core
+      interval: 60s
+      rules:
+        # 테넌트 KPI
+        - record: saas:tenants:active_total
+          expr: |
+            count(keycloak_organizations_total{state="active"}) or vector(0)
+
+        # MAU (월간 활성 사용자)
+        - record: saas:mau:total
+          expr: |
+            count(count by (user_id) (
+              http_requests_total{status=~"2.."} offset 0s
+              unless http_requests_total{status=~"2.."} offset 30d
+            )) or vector(0)
+
+        # DAU (일간 활성 사용자)
+        - record: saas:dau:total
+          expr: |
+            count(count by (user_id) (
+              increase(http_requests_total[24h]) > 0
+            )) or vector(0)
+
+        # 플랫폼 가용성 (SLI)
+        - record: saas:availability:ratio
+          expr: |
+            1 - (
+              sum(rate(http_requests_total{status=~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total[5m]))
+            )
+
+        # API 성공률
+        - record: saas:api:success_ratio
+          expr: |
+            sum(rate(http_requests_total{status=~"2.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+
+        # API P95 응답시간
+        - record: saas:api:latency_p95
+          expr: |
+            histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+
+        # 에러 예산 소진율
+        - record: saas:error_budget:consumed_ratio
+          expr: |
+            1 - (
+              (saas:availability:ratio - 0.999)
+              /
+              (1 - 0.999)
+            )
+
+    - name: business-kpi-dora
+      interval: 300s
+      rules:
+        # 배포 빈도 (주간)
+        - record: saas:deployment:frequency_weekly
+          expr: |
+            increase(flux_reconcile_condition{type="Ready",status="True"}[7d])
+
+        # 배포 실패율
+        - record: saas:deployment:failure_ratio
+          expr: |
+            sum(increase(flux_reconcile_condition{type="Ready",status="False"}[7d]))
+            /
+            sum(increase(flux_reconcile_condition{type="Ready"}[7d]))
+
+        # MTTR (평균 복구 시간)
+        - record: saas:mttr:seconds
+          expr: |
+            avg(alertmanager_notification_resolved_duration_seconds) or vector(0)

@@ -1,0 +1,89 @@
+# Flux Kustomization 정의 - 환경별 승격 게이트
+# Design Ref: MTU-N172 §3.2~3.4
+# Plan SC: FR-PROMO.2, FR-PROMO.3, FR-PROMO.4
+
+---
+# DEV 환경: 자동 동기화 (main 브랜치 push 즉시)
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: saas-dev
+  namespace: flux-system
+spec:
+  interval: 1m
+  path: ./infra/gitops/overlays/dev
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: saas-platform
+  targetNamespace: saas-dev
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: api-gateway
+      namespace: saas-dev
+  timeout: 5m
+  postBuild:
+    substitute:
+      ENVIRONMENT: dev
+  # dev는 자동 동기화 - 게이트 없음
+
+---
+# STG 환경: dev 스모크 테스트 통과 후 자동 승격
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: saas-stg
+  namespace: flux-system
+spec:
+  interval: 5m
+  path: ./infra/gitops/overlays/stg
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: saas-platform
+    # stg 브랜치 또는 promote/stg-* 브랜치
+  targetNamespace: saas-stg
+  dependsOn:
+    - name: saas-dev
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: api-gateway
+      namespace: saas-stg
+  timeout: 10m
+  postBuild:
+    substitute:
+      ENVIRONMENT: staging
+
+---
+# PROD 환경: 수동 승인 후 적용 (suspend 가능)
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: saas-prod
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./infra/gitops/overlays/prod
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: saas-platform
+  targetNamespace: saas-prod
+  dependsOn:
+    - name: saas-stg
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: api-gateway
+      namespace: saas-prod
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: auth-service
+      namespace: saas-prod
+  timeout: 15m
+  postBuild:
+    substitute:
+      ENVIRONMENT: production
+  # 프로덕션은 suspend: true 설정 가능 (수동 해제)

@@ -1,0 +1,32 @@
+# 개발 환경 오버레이
+# Design Ref: MTU-N172 §3.2
+# 자동 동기화: Flux GitSource → 즉시 적용
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: saas-platform-dev
+
+namespace: saas-dev
+
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+commonLabels:
+  environment: dev
+
+configMapGenerator:
+  - name: env-config
+    literals:
+      - ENVIRONMENT=dev
+      - LOG_LEVEL=debug
+      - ENABLE_SWAGGER=true
+      - RATE_LIMIT_ENABLED=false

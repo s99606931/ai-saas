@@ -1,0 +1,141 @@
+# Design Ref: MTU-N235 SS1, SS2
+# Plan SC: FR-LDAP.1, FR-LDAP.2
+# Keycloak LDAP Federation 설정 - 공공기관 AD/LDAP 연동
+#
+# 이 설정은 Keycloak Admin REST API 또는 realm-import로 적용합니다.
+# 실제 운영 시 환경 변수로 호스트/바인드 정보를 대체해야 합니다.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-ldap-federation-config
+  namespace: keycloak
+  labels:
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/component: ldap-federation
+data:
+  ldap-federation.json: |
+    {
+      "name": "공공기관-AD-Federation",
+      "providerId": "ldap",
+      "providerType": "org.keycloak.storage.UserStorageProvider",
+      "parentId": "${REALM_ID}",
+      "config": {
+        "enabled": ["true"],
+        "priority": ["0"],
+        "fullSyncPeriod": ["86400"],
+        "changedSyncPeriod": ["300"],
+        "cachePolicy": ["DEFAULT"],
+        "editMode": ["READ_ONLY"],
+        "importEnabled": ["true"],
+        "syncRegistrations": ["false"],
+        "vendor": ["ad"],
+        "connectionUrl": ["ldaps://${LDAP_HOST}:636"],
+        "startTls": ["false"],
+        "useTruststoreSpi": ["ldapsOnly"],
+        "connectionPooling": ["true"],
+        "connectionPoolingAuthentication": ["simple"],
+        "connectionPoolingDebug": ["off"],
+        "connectionPoolingInitSize": ["1"],
+        "connectionPoolingMaxSize": ["10"],
+        "connectionPoolingPrefSize": ["5"],
+        "connectionPoolingTimeout": ["300000"],
+        "connectionTimeout": ["5000"],
+        "readTimeout": ["10000"],
+        "authType": ["simple"],
+        "bindDn": ["${LDAP_BIND_DN}"],
+        "bindCredential": ["${LDAP_BIND_PASSWORD}"],
+        "usersDn": ["${LDAP_USERS_DN}"],
+        "usernameLDAPAttribute": ["sAMAccountName"],
+        "rdnLDAPAttribute": ["cn"],
+        "uuidLDAPAttribute": ["objectGUID"],
+        "userObjectClasses": ["person, organizationalPerson, user"],
+        "searchScope": ["2"],
+        "pagination": ["true"],
+        "batchSizeForSync": ["1000"],
+        "trustEmail": ["false"],
+        "validatePasswordPolicy": ["false"]
+      }
+    }
+
+  # 공공기관 표준 속성 매핑
+  ldap-attribute-mappers.json: |
+    [
+      {
+        "name": "부서 매핑",
+        "providerId": "user-attribute-ldap-mapper",
+        "config": {
+          "ldap.attribute": ["department"],
+          "user.model.attribute": ["department"],
+          "read.only": ["true"],
+          "always.read.value.from.ldap": ["true"],
+          "is.mandatory.in.ldap": ["false"]
+        }
+      },
+      {
+        "name": "직급 매핑",
+        "providerId": "user-attribute-ldap-mapper",
+        "config": {
+          "ldap.attribute": ["title"],
+          "user.model.attribute": ["jobTitle"],
+          "read.only": ["true"],
+          "always.read.value.from.ldap": ["true"],
+          "is.mandatory.in.ldap": ["false"]
+        }
+      },
+      {
+        "name": "직원번호 매핑",
+        "providerId": "user-attribute-ldap-mapper",
+        "config": {
+          "ldap.attribute": ["employeeNumber"],
+          "user.model.attribute": ["employeeNumber"],
+          "read.only": ["true"],
+          "always.read.value.from.ldap": ["true"],
+          "is.mandatory.in.ldap": ["false"]
+        }
+      },
+      {
+        "name": "이메일 매핑",
+        "providerId": "user-attribute-ldap-mapper",
+        "config": {
+          "ldap.attribute": ["mail"],
+          "user.model.attribute": ["email"],
+          "read.only": ["true"],
+          "always.read.value.from.ldap": ["true"],
+          "is.mandatory.in.ldap": ["true"]
+        }
+      },
+      {
+        "name": "성명 매핑",
+        "providerId": "user-attribute-ldap-mapper",
+        "config": {
+          "ldap.attribute": ["cn"],
+          "user.model.attribute": ["fullName"],
+          "read.only": ["true"],
+          "always.read.value.from.ldap": ["true"],
+          "is.mandatory.in.ldap": ["true"]
+        }
+      }
+    ]
+
+  # 그룹-역할 매핑 설정
+  ldap-group-mapper.json: |
+    {
+      "name": "AD-그룹-역할-매핑",
+      "providerId": "group-ldap-mapper",
+      "config": {
+        "groups.dn": ["${LDAP_GROUPS_DN}"],
+        "group.name.ldap.attribute": ["cn"],
+        "group.object.classes": ["group"],
+        "preserve.group.inheritance": ["true"],
+        "membership.ldap.attribute": ["member"],
+        "membership.attribute.type": ["DN"],
+        "membership.user.ldap.attribute": ["sAMAccountName"],
+        "groups.ldap.filter": [""],
+        "mode": ["READ_ONLY"],
+        "user.roles.retrieve.strategy": ["LOAD_GROUPS_BY_MEMBER_ATTRIBUTE"],
+        "mapped.group.attributes": [""],
+        "drop.non.existing.groups.during.sync": ["false"],
+        "groups.path": ["/"]
+      }
+    }

@@ -1,0 +1,80 @@
+{
+  "__comment": "Design Ref: MTU-N239 / Plan SC: FR-KPI.3",
+  "panels": [
+    {
+      "title": "활성 테넌트 수",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "targets": [{ "expr": "saas:tenants:active_total", "legendFormat": "테넌트" }],
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{"value": 0, "color": "blue"}] }}}
+    },
+    {
+      "title": "MAU (월간 활성 사용자)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "targets": [{ "expr": "saas:mau:total" }]
+    },
+    {
+      "title": "DAU (일간 활성 사용자)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "targets": [{ "expr": "saas:dau:total" }]
+    },
+    {
+      "title": "플랫폼 가용성",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "targets": [{ "expr": "saas:availability:ratio * 100" }],
+      "fieldConfig": { "defaults": { "min": 99, "max": 100, "thresholds": { "steps": [
+        {"value": 99, "color": "red"}, {"value": 99.5, "color": "yellow"}, {"value": 99.9, "color": "green"}
+      ]}}}
+    },
+    {
+      "title": "API 성공률",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "targets": [{ "expr": "saas:api:success_ratio * 100" }]
+    },
+    {
+      "title": "API P95 응답시간 추이",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        { "expr": "saas:api:latency_p95 * 1000", "legendFormat": "P95 (ms)" },
+        { "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "P99 (ms)" }
+      ]
+    },
+    {
+      "title": "에러 예산 소진율",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 4 },
+      "targets": [{ "expr": "saas:error_budget:consumed_ratio * 100" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 100, "thresholds": { "steps": [
+        {"value": 0, "color": "green"}, {"value": 50, "color": "yellow"}, {"value": 80, "color": "red"}
+      ]}}}
+    },
+    {
+      "title": "DORA 메트릭",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 4 },
+      "targets": [
+        { "expr": "saas:deployment:frequency_weekly", "legendFormat": "주간 배포 횟수" },
+        { "expr": "saas:deployment:failure_ratio * 100", "legendFormat": "배포 실패율 (%)" },
+        { "expr": "saas:mttr:seconds / 60", "legendFormat": "MTTR (분)" }
+      ]
+    },
+    {
+      "title": "테넌트별 활성 사용자 추이",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        { "expr": "saas:dau:total", "legendFormat": "전체 DAU" },
+        { "expr": "saas:mau:total", "legendFormat": "전체 MAU" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["business", "kpi", "executive"],
+  "title": "Executive KPI Dashboard - 공공기관 SaaS 플랫폼",
+  "uid": "business-kpi-executive"
+}

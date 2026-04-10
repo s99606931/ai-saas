@@ -1,0 +1,45 @@
+# 프로덕션 환경 오버레이
+# Design Ref: MTU-N172 §3.4
+# 승격 조건: stg 부하 테스트 통과 + 수동 PR 승인
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: saas-platform-prod
+
+namespace: saas-prod
+
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: add
+        path: /spec/template/spec/topologySpreadConstraints
+        value:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/part-of: public-saas
+
+commonLabels:
+  environment: production
+
+configMapGenerator:
+  - name: env-config
+    literals:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=warn
+      - ENABLE_SWAGGER=false
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_MAX=100

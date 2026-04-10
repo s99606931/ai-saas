@@ -1,0 +1,56 @@
+# Design Ref: MTU-N235 SS3
+# Plan SC: FR-LDAP.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ldap-sync-alerts
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: ldap-sync-alerts
+      rules:
+        - alert: LDAPSyncFailure
+          expr: |
+            time() - keycloak:ldap_sync:last_success_time > 7200
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "LDAP 동기화 2시간 이상 실패"
+            description: "Realm {{ $labels.realm }}에서 LDAP 동기화가 2시간 이상 수행되지 않았습니다."
+
+        - alert: LDAPConnectionPoolExhausted
+          expr: |
+            keycloak:ldap_connection:pool_active > 8
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "LDAP 연결 풀 포화 (>80%)"
+            description: "LDAP 연결 풀 활성 연결이 {{ $value }}개로 임계값(10개 중 8개)을 초과했습니다."
+
+        - alert: LDAPSyncDurationHigh
+          expr: |
+            keycloak:ldap_sync:duration_seconds > 300
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "LDAP 동기화 5분 이상 소요"
+            description: "Realm {{ $labels.realm }}의 LDAP 동기화 소요시간이 {{ $value }}초입니다."
+
+        - alert: LDAPBindFailure
+          expr: |
+            increase(keycloak_ldap_bind_failures_total[5m]) > 3
+          for: 1m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "LDAP 바인드 실패 3회 초과"
+            description: "5분 내 LDAP 바인드 실패가 {{ $value }}회 발생했습니다. 서비스 계정 확인 필요."

@@ -1,0 +1,11 @@
+apiVersion: v2
+name: hubble-observability
+description: Cilium Hubble 네트워크 관측성 대시보드
+type: application
+version: 1.0.0
+appVersion: "1.16.0"
+keywords:
+  - cilium
+  - hubble
+  - ebpf
+  - network-observability

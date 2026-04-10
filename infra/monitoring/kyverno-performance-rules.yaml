@@ -1,0 +1,162 @@
+# Kyverno 정책 엔진 성능 모니터링 Recording Rules
+# Design Ref: MTU-N236 §3.1
+# Plan SC: FR-N236.1, FR-N236.2, FR-N236.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kyverno-performance-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    monitoring.bkit.io/component: kyverno
+    monitoring.bkit.io/category: policy-engine
+spec:
+  groups:
+    # ── Kyverno Admission Webhook 응답시간 ──
+    - name: kyverno.admission.performance
+      interval: 30s
+      rules:
+        # p50 응답시간 (5분 윈도우)
+        - record: kyverno:admission_review:p50
+          expr: |
+            histogram_quantile(0.50,
+              sum(rate(kyverno_admission_review_duration_seconds_bucket[5m])) by (le, resource_kind)
+            )
+          labels:
+            quantile: "0.50"
+            engine: kyverno
+
+        # p95 응답시간
+        - record: kyverno:admission_review:p95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(kyverno_admission_review_duration_seconds_bucket[5m])) by (le, resource_kind)
+            )
+          labels:
+            quantile: "0.95"
+            engine: kyverno
+
+        # p99 응답시간
+        - record: kyverno:admission_review:p99
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(kyverno_admission_review_duration_seconds_bucket[5m])) by (le, resource_kind)
+            )
+          labels:
+            quantile: "0.99"
+            engine: kyverno
+
+        # 초당 Admission 요청 수
+        - record: kyverno:admission_review:rate5m
+          expr: |
+            sum(rate(kyverno_admission_review_duration_seconds_count[5m])) by (resource_kind, operation)
+          labels:
+            engine: kyverno
+
+    # ── Kyverno 정책 평가 결과 ──
+    - name: kyverno.policy.results
+      interval: 30s
+      rules:
+        # 정책 결과별 초당 비율
+        - record: kyverno:policy_results:rate5m
+          expr: |
+            sum(rate(kyverno_policy_results_total[5m])) by (policy_name, rule_name, resource_kind, rule_result)
+          labels:
+            engine: kyverno
+
+        # 전체 오류 비율
+        - record: kyverno:policy_error:ratio
+          expr: |
+            (
+              sum(rate(kyverno_policy_results_total{rule_result="error"}[5m]))
+            /
+              clamp_min(sum(rate(kyverno_policy_results_total[5m])), 1)
+            )
+          labels:
+            engine: kyverno
+
+        # 정책별 실패 건수 (5분 누적)
+        - record: kyverno:policy_fail:count5m
+          expr: |
+            sum(increase(kyverno_policy_results_total{rule_result="fail"}[5m])) by (policy_name, rule_name)
+          labels:
+            engine: kyverno
+
+    # ── Kyverno 정책 실행 소요시간 ──
+    - name: kyverno.policy.execution
+      interval: 30s
+      rules:
+        # 정책 실행 p95
+        - record: kyverno:policy_execution:p95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(kyverno_policy_execution_duration_seconds_bucket[5m])) by (le, policy_name)
+            )
+          labels:
+            quantile: "0.95"
+            engine: kyverno
+
+        # 정책 실행 p99
+        - record: kyverno:policy_execution:p99
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(kyverno_policy_execution_duration_seconds_bucket[5m])) by (le, policy_name)
+            )
+          labels:
+            quantile: "0.99"
+            engine: kyverno
+
+    # ── Kyverno 컨트롤러 리소스 사용량 ──
+    - name: kyverno.resource.usage
+      interval: 30s
+      rules:
+        # CPU 사용량 (코어)
+        - record: kyverno:cpu:usage_cores
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{
+              namespace="kyverno",
+              container!="",
+              container!="POD"
+            }[5m])) by (pod, container)
+          labels:
+            engine: kyverno
+
+        # 메모리 사용량 (바이트)
+        - record: kyverno:memory:usage_bytes
+          expr: |
+            sum(container_memory_working_set_bytes{
+              namespace="kyverno",
+              container!="",
+              container!="POD"
+            }) by (pod, container)
+          labels:
+            engine: kyverno
+
+        # CPU 요청 대비 실사용 비율
+        - record: kyverno:cpu:utilization_ratio
+          expr: |
+            (
+              sum(rate(container_cpu_usage_seconds_total{namespace="kyverno", container!="", container!="POD"}[5m])) by (pod)
+            /
+              sum(kube_pod_container_resource_requests{namespace="kyverno", resource="cpu"}) by (pod)
+            )
+          labels:
+            engine: kyverno
+
+        # 메모리 요청 대비 실사용 비율
+        - record: kyverno:memory:utilization_ratio
+          expr: |
+            (
+              sum(container_memory_working_set_bytes{namespace="kyverno", container!="", container!="POD"}) by (pod)
+            /
+              sum(kube_pod_container_resource_requests{namespace="kyverno", resource="memory"}) by (pod)
+            )
+          labels:
+            engine: kyverno
+
+        # 컨트롤러 재조정 비율
+        - record: kyverno:controller_reconcile:rate5m
+          expr: |
+            sum(rate(kyverno_controller_reconcile_total[5m])) by (controller)
+          labels:
+            engine: kyverno

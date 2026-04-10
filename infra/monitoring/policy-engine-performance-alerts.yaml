@@ -1,0 +1,139 @@
+# 정책 엔진 통합 성능 알림 규칙
+# Design Ref: MTU-N236 §3.5
+# Plan SC: FR-N236.7
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: policy-engine-performance-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    monitoring.bkit.io/component: policy-engine
+    monitoring.bkit.io/category: alerting
+spec:
+  groups:
+    - name: policy-engine.alerts
+      rules:
+        # ── 알림 1: Kyverno Admission 지연 경고 ──
+        - alert: KyvernoAdmissionLatencyHigh
+          expr: |
+            kyverno:admission_review:p99 > 2
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            component: kyverno
+            category: policy-engine
+            csap_control: "D-08"
+          annotations:
+            summary: "Kyverno Admission Webhook p99 응답시간 2초 초과"
+            description: |
+              Kyverno Admission Webhook p99 응답시간이 {{ $value | printf "%.2f" }}초로
+              임계값 2초를 5분간 초과하고 있습니다.
+              리소스 생성/수정 지연이 발생할 수 있습니다.
+            runbook: "https://docs.bkit.io/runbooks/kyverno-admission-latency"
+            impact: "클러스터 내 리소스 배포 지연 가능"
+            action: |
+              1. Kyverno 파드 리소스 사용량 확인 (CPU/메모리)
+              2. 정책 복잡도 검토 (복잡한 정책 최적화)
+              3. Kyverno 레플리카 수 증가 검토
+              4. Webhook 타임아웃 설정 확인
+
+        # ── 알림 2: Kyverno Admission 지연 위험 ──
+        - alert: KyvernoAdmissionLatencyCritical
+          expr: |
+            kyverno:admission_review:p99 > 5
+          for: 3m
+          labels:
+            severity: critical
+            team: sre
+            component: kyverno
+            category: policy-engine
+            csap_control: "D-08"
+          annotations:
+            summary: "Kyverno Admission Webhook p99 응답시간 5초 초과 (위험)"
+            description: |
+              Kyverno Admission Webhook p99 응답시간이 {{ $value | printf "%.2f" }}초로
+              위험 임계값 5초를 3분간 초과하고 있습니다.
+              Webhook 타임아웃으로 인한 리소스 배포 실패가 발생할 수 있습니다.
+            runbook: "https://docs.bkit.io/runbooks/kyverno-admission-latency-critical"
+            impact: "리소스 배포 실패 위험, 클러스터 운영 영향"
+            action: |
+              1. 즉시 Kyverno 파드 상태 확인 (kubectl get pods -n kyverno)
+              2. Kyverno 로그 확인 (에러 메시지 분석)
+              3. 최근 정책 변경 검토 (롤백 검토)
+              4. 필요 시 failurePolicy: Ignore 임시 적용 검토
+
+        # ── 알림 3: Gatekeeper Validation 지연 경고 ──
+        - alert: GatekeeperValidationLatencyHigh
+          expr: |
+            gatekeeper:validation:p99 > 3
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            component: gatekeeper
+            category: policy-engine
+            csap_control: "D-08"
+          annotations:
+            summary: "Gatekeeper Validation Webhook p99 응답시간 3초 초과"
+            description: |
+              Gatekeeper Validation Webhook p99 응답시간이 {{ $value | printf "%.2f" }}초로
+              임계값 3초를 5분간 초과하고 있습니다.
+            runbook: "https://docs.bkit.io/runbooks/gatekeeper-validation-latency"
+            impact: "리소스 배포 지연, Admission 병목"
+            action: |
+              1. Gatekeeper 파드 리소스 사용량 확인
+              2. ConstraintTemplate 복잡도 검토
+              3. Gatekeeper 레플리카 수 증가 검토
+              4. Audit 주기 설정 확인
+
+        # ── 알림 4: Gatekeeper Audit 지연 경고 ──
+        - alert: GatekeeperAuditStale
+          expr: |
+            gatekeeper:audit:staleness_seconds > 1800
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            component: gatekeeper
+            category: policy-engine
+            csap_control: "D-06"
+          annotations:
+            summary: "Gatekeeper Audit 30분 이상 미실행"
+            description: |
+              Gatekeeper 마지막 Audit 이후 {{ $value | printf "%.0f" }}초가 경과했습니다.
+              정상 Audit 주기는 15분입니다.
+            runbook: "https://docs.bkit.io/runbooks/gatekeeper-audit-stale"
+            impact: "정책 위반 감지 지연, 보안 가시성 저하"
+            action: |
+              1. Gatekeeper Audit 컨트롤러 상태 확인
+              2. gatekeeper-audit 파드 로그 확인
+              3. 리소스 부족 여부 확인
+              4. Audit 관련 설정 검토 (audit-interval)
+
+        # ── 알림 5: 정책 엔진 오류율 위험 ──
+        - alert: PolicyEngineErrorRateHigh
+          expr: |
+            kyverno:policy_error:ratio > 0.05
+            or
+            gatekeeper:validation:error_ratio > 0.05
+          for: 5m
+          labels:
+            severity: critical
+            team: sre
+            component: policy-engine
+            category: policy-engine
+            csap_control: "D-08"
+          annotations:
+            summary: "정책 엔진 오류율 5% 초과"
+            description: |
+              정책 엔진의 오류율이 {{ $value | printf "%.2f" }}으로 5% 임계값을 초과했습니다.
+              정책 평가 오류로 인해 보안 정책이 제대로 적용되지 않을 수 있습니다.
+            runbook: "https://docs.bkit.io/runbooks/policy-engine-error-rate"
+            impact: "보안 정책 미적용 위험, CSAP D-08 준수 영향"
+            action: |
+              1. 오류 발생 정책 식별 (로그 분석)
+              2. 최근 정책 변경 검토
+              3. 정책 문법 오류 확인
+              4. 정책 엔진 재시작 검토

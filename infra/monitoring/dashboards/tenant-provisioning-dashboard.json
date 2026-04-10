@@ -1,0 +1,36 @@
+{
+  "__comment": "Design Ref: MTU-N236 / Plan SC: FR-MT.5",
+  "panels": [
+    {
+      "title": "활성 테넌트(Organization) 수",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [{ "expr": "keycloak_organizations_total{state='active'}" }]
+    },
+    {
+      "title": "테넌트 프로비저닝 이벤트",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        { "expr": "increase(keycloak_organization_provision_total[1h])", "legendFormat": "프로비저닝" },
+        { "expr": "increase(keycloak_organization_deprovision_total[1h])", "legendFormat": "디프로비저닝" }
+      ]
+    },
+    {
+      "title": "테넌트별 사용자 수",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [{ "expr": "keycloak_organization_members_total", "legendFormat": "{{organization}}" }]
+    },
+    {
+      "title": "프로비저닝 실패율",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [{ "expr": "rate(keycloak_organization_provision_failures_total[1h])" }]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["keycloak", "multi-tenant", "provisioning"],
+  "title": "테넌트 프로비저닝 모니터링",
+  "uid": "tenant-provisioning"
+}

@@ -1,0 +1,35 @@
+# k6 스모크 테스트 CRD
+# Design Ref: MTU-N171 §3.3
+# Plan SC: FR-PERF.3
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: {{ .Release.Name }}-smoke
+  labels:
+    app.kubernetes.io/name: k6-perf-regression
+    test-type: smoke
+spec:
+  parallelism: {{ .Values.testRuns.smoke.parallelism }}
+  script:
+    configMap:
+      name: {{ .Release.Name }}-k6-scripts
+      file: smoke.js
+  arguments: >-
+    --out experimental-prometheus-rw
+    --tag testType=smoke
+    --tag runId={{ now | date "20060102-150405" }}
+  runner:
+    resources:
+      {{- toYaml .Values.resources | nindent 6 }}
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    env:
+      - name: BASE_URL
+        value: "http://api-gateway.default:8080"
+      - name: K6_PROMETHEUS_RW_SERVER_URL
+        value: {{ .Values.prometheus.remoteWrite.url | quote }}

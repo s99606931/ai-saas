@@ -1,0 +1,163 @@
+# Gatekeeper 정책 엔진 성능 모니터링 Recording Rules
+# Design Ref: MTU-N236 §3.2
+# Plan SC: FR-N236.3, FR-N236.4, FR-N236.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: gatekeeper-performance-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    monitoring.bkit.io/component: gatekeeper
+    monitoring.bkit.io/category: policy-engine
+spec:
+  groups:
+    # ── Gatekeeper Validation Webhook 응답시간 ──
+    - name: gatekeeper.validation.performance
+      interval: 30s
+      rules:
+        # p50 Webhook 응답시간
+        - record: gatekeeper:validation:p50
+          expr: |
+            histogram_quantile(0.50,
+              sum(rate(gatekeeper_validation_request_duration_seconds_bucket[5m])) by (le, admission_status)
+            )
+          labels:
+            quantile: "0.50"
+            engine: gatekeeper
+
+        # p95 Webhook 응답시간
+        - record: gatekeeper:validation:p95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(gatekeeper_validation_request_duration_seconds_bucket[5m])) by (le, admission_status)
+            )
+          labels:
+            quantile: "0.95"
+            engine: gatekeeper
+
+        # p99 Webhook 응답시간
+        - record: gatekeeper:validation:p99
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(gatekeeper_validation_request_duration_seconds_bucket[5m])) by (le, admission_status)
+            )
+          labels:
+            quantile: "0.99"
+            engine: gatekeeper
+
+        # 초당 Validation 요청 수
+        - record: gatekeeper:validation:rate5m
+          expr: |
+            sum(rate(gatekeeper_validation_request_duration_seconds_count[5m])) by (admission_status)
+          labels:
+            engine: gatekeeper
+
+        # Webhook 오류율
+        - record: gatekeeper:validation:error_ratio
+          expr: |
+            (
+              sum(rate(gatekeeper_validation_request_duration_seconds_count{admission_status="deny"}[5m]))
+            /
+              clamp_min(sum(rate(gatekeeper_validation_request_duration_seconds_count[5m])), 1)
+            )
+          labels:
+            engine: gatekeeper
+
+    # ── Gatekeeper 위반 건수 ──
+    - name: gatekeeper.violations
+      interval: 30s
+      rules:
+        # 제약조건별 위반 건수
+        - record: gatekeeper:violations:by_constraint
+          expr: |
+            sum(gatekeeper_violations) by (enforcement_action, constraint_kind, constraint_name)
+          labels:
+            engine: gatekeeper
+
+        # 전체 위반 건수 합계
+        - record: gatekeeper:violations:total
+          expr: |
+            sum(gatekeeper_violations)
+          labels:
+            engine: gatekeeper
+
+        # 위반 건수 변화율 (5분)
+        - record: gatekeeper:violations:change_rate5m
+          expr: |
+            sum(deriv(gatekeeper_violations[5m])) by (constraint_kind)
+          labels:
+            engine: gatekeeper
+
+    # ── Gatekeeper Audit 성능 ──
+    - name: gatekeeper.audit.performance
+      interval: 30s
+      rules:
+        # Audit 소요시간
+        - record: gatekeeper:audit:duration_seconds
+          expr: |
+            gatekeeper_audit_duration_seconds
+          labels:
+            engine: gatekeeper
+
+        # 마지막 Audit 이후 경과 시간 (초)
+        - record: gatekeeper:audit:staleness_seconds
+          expr: |
+            time() - gatekeeper_audit_last_run_end_time
+          labels:
+            engine: gatekeeper
+
+        # Audit 실행 주기 적정성
+        - record: gatekeeper:audit:run_interval
+          expr: |
+            changes(gatekeeper_audit_last_run_end_time[1h])
+          labels:
+            engine: gatekeeper
+
+    # ── Gatekeeper 리소스 사용량 ──
+    - name: gatekeeper.resource.usage
+      interval: 30s
+      rules:
+        # CPU 사용량
+        - record: gatekeeper:cpu:usage_cores
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{
+              namespace="gatekeeper-system",
+              container!="",
+              container!="POD"
+            }[5m])) by (pod, container)
+          labels:
+            engine: gatekeeper
+
+        # 메모리 사용량
+        - record: gatekeeper:memory:usage_bytes
+          expr: |
+            sum(container_memory_working_set_bytes{
+              namespace="gatekeeper-system",
+              container!="",
+              container!="POD"
+            }) by (pod, container)
+          labels:
+            engine: gatekeeper
+
+        # CPU 활용률
+        - record: gatekeeper:cpu:utilization_ratio
+          expr: |
+            (
+              sum(rate(container_cpu_usage_seconds_total{namespace="gatekeeper-system", container!="", container!="POD"}[5m])) by (pod)
+            /
+              sum(kube_pod_container_resource_requests{namespace="gatekeeper-system", resource="cpu"}) by (pod)
+            )
+          labels:
+            engine: gatekeeper
+
+        # 메모리 활용률
+        - record: gatekeeper:memory:utilization_ratio
+          expr: |
+            (
+              sum(container_memory_working_set_bytes{namespace="gatekeeper-system", container!="", container!="POD"}) by (pod)
+            /
+              sum(kube_pod_container_resource_requests{namespace="gatekeeper-system", resource="memory"}) by (pod)
+            )
+          labels:
+            engine: gatekeeper

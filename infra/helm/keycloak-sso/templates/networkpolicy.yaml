@@ -1,0 +1,46 @@
+# CSAP D-08: Keycloak SSO 네트워크 격리
+# Design Ref: MTU-N170 §3.7
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-keycloak
+  labels:
+    app.kubernetes.io/name: keycloak-sso
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Traefik Ingress에서만 접근 허용
+    - from:
+      {{- toYaml .Values.networkPolicy.ingressFrom | nindent 8 }}
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8443
+  egress:
+    # DNS
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+    # PostgreSQL
+    - to:
+      {{- toYaml .Values.networkPolicy.egressTo | nindent 8 }}
+    # LDAP/LDAPS
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 636
+        - protocol: TCP
+          port: 389

@@ -1,0 +1,82 @@
+# SLO 위반 에스컬레이션 AlertManager 설정
+# Design Ref: MTU-N178
+# Plan SC: FR-SLO.2, FR-SLO.3, FR-SLO.4
+
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: default
+  group_by: ['alertname', 'service', 'slo']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+  routes:
+    # SLO Warning (50~75% 소진)
+    - match:
+        severity: slo-warning
+      receiver: l1-oncall
+      continue: true
+
+    # SLO Danger (75~90% 소진)
+    - match:
+        severity: slo-danger
+      receiver: l1-l2-team
+      continue: true
+
+    # SLO Critical (90~100% 소진)
+    - match:
+        severity: slo-critical
+      receiver: l1-l2-l3-management
+      continue: true
+
+    # SLO Violated (100% 초과)
+    - match:
+        severity: slo-violated
+      receiver: executive-notification
+      continue: true
+
+receivers:
+  - name: default
+    webhook_configs:
+      - url: 'http://slo-escalation.monitoring:8080/webhook/alert'
+
+  - name: l1-oncall
+    webhook_configs:
+      - url: 'http://slo-escalation.monitoring:8080/webhook/alert'
+        send_resolved: true
+
+  - name: l1-l2-team
+    webhook_configs:
+      - url: 'http://slo-escalation.monitoring:8080/webhook/alert'
+        send_resolved: true
+
+  - name: l1-l2-l3-management
+    webhook_configs:
+      - url: 'http://slo-escalation.monitoring:8080/webhook/alert'
+        send_resolved: true
+
+  - name: executive-notification
+    webhook_configs:
+      - url: 'http://slo-escalation.monitoring:8080/webhook/alert'
+        send_resolved: true
+
+# 억제 규칙: 더 높은 단계 알림 시 낮은 단계 억제
+inhibit_rules:
+  - source_match:
+      severity: slo-violated
+    target_match:
+      severity: slo-critical
+    equal: ['service', 'slo']
+
+  - source_match:
+      severity: slo-critical
+    target_match:
+      severity: slo-danger
+    equal: ['service', 'slo']
+
+  - source_match:
+      severity: slo-danger
+    target_match:
+      severity: slo-warning
+    equal: ['service', 'slo']

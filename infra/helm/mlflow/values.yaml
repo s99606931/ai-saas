@@ -1,0 +1,84 @@
+# MLflow 모델 레지스트리 설정
+# Design Ref: MTU-N173 §3.1
+
+replicaCount: 2
+
+image:
+  repository: ghcr.io/mlflow/mlflow
+  tag: "v2.16.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 5000
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+# PostgreSQL 메타데이터 저장소
+postgresql:
+  host: cloudnativepg-mlflow-rw.database.svc
+  port: 5432
+  database: mlflow
+  existingSecret: mlflow-db-secret
+  secretKey: password
+
+# MinIO 아티팩트 저장소 (S3 호환)
+artifactStore:
+  type: s3
+  bucket: mlflow-artifacts
+  endpoint: http://minio.storage:9000
+  existingSecret: mlflow-minio-secret
+
+# Prometheus 모니터링
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  labels:
+    release: prometheus
+
+# Pod Security (PSS Restricted)
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+# 네트워크 정책 (CSAP D-08)
+networkPolicy:
+  enabled: true
+  ingressFrom:
+    - namespaceSelector:
+        matchLabels:
+          name: ml-pipelines
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+
+# KServe 통합
+kserve:
+  enabled: true
+  defaultRuntime: kserve-mlserver
+  namespace: ml-serving
+
+# 드리프트 감지
+driftDetection:
+  enabled: true
+  checkInterval: "1h"
+  thresholds:
+    psi: 0.2        # Population Stability Index
+    ks: 0.05        # Kolmogorov-Smirnov p-value

@@ -1,0 +1,118 @@
+# Design Ref: MTU-N234 SS2
+# Plan SC: FR-FF.1
+# Unleash Server Helm Values - 공공기관 SaaS Feature Flag 플랫폼
+
+replicaCount: 2
+
+image:
+  repository: unleashorg/unleash-server
+  tag: "6.4"
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# PostgreSQL 연결 (CloudNativePG 클러스터 사용)
+database:
+  host: unleash-pg-rw.feature-flags.svc.cluster.local
+  port: 5432
+  name: unleash
+  ssl: true
+  existingSecret: unleash-db-credentials
+  secretKeys:
+    username: username
+    password: password
+
+# 서비스 설정
+service:
+  type: ClusterIP
+  port: 4242
+
+# Ingress (Gateway API 연동)
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  hosts:
+    - host: feature-flags.internal.saas.go.kr
+      paths:
+        - path: /
+          pathType: Prefix
+
+# 보안 설정
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+# 프로브 설정
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 4242
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 4242
+  initialDelaySeconds: 15
+  periodSeconds: 5
+
+# ServiceMonitor (Prometheus 연동)
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  path: /internal-backstage/prometheus
+  labels:
+    release: prometheus
+
+# NetworkPolicy
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: feature-flags
+        - namespaceSelector:
+            matchLabels:
+              name: saas-apps
+      ports:
+        - port: 4242
+          protocol: TCP
+
+# PodDisruptionBudget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# 환경 변수
+extraEnv:
+  - name: LOG_LEVEL
+    value: "warn"
+  - name: UNLEASH_DEFAULT_ADMIN_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: unleash-admin-credentials
+        key: username
+  - name: UNLEASH_DEFAULT_ADMIN_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: unleash-admin-credentials
+        key: password

@@ -1,0 +1,44 @@
+# k6 성능 회귀 테스트 설정
+# Design Ref: MTU-N171
+
+k6Operator:
+  enabled: true
+  image:
+    repository: ghcr.io/grafana/k6-operator
+    tag: "0.0.16"
+
+# 테스트 실행 설정
+testRuns:
+  smoke:
+    parallelism: 1
+    script: tests/performance/scenarios/smoke.js
+    schedule: ""  # PR 트리거 (CI에서 호출)
+
+  load:
+    parallelism: 3
+    script: tests/performance/scenarios/load.js
+    schedule: ""  # 배포 후 트리거
+
+  soak:
+    parallelism: 2
+    script: tests/performance/scenarios/soak.js
+    schedule: "0 2 * * *"  # 매일 02:00 야간 실행
+
+# Prometheus 결과 출력
+prometheus:
+  remoteWrite:
+    enabled: true
+    url: "http://prometheus-server.monitoring:9090/api/v1/write"
+
+# 리소스 제한 (테스트 Pod)
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+# 네트워크 정책
+networkPolicy:
+  enabled: true

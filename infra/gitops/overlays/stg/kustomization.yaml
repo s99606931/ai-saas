@@ -1,0 +1,32 @@
+# 스테이징 환경 오버레이
+# Design Ref: MTU-N172 §3.3
+# 승격 조건: dev 스모크 테스트 통과 후 자동 PR
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: saas-platform-stg
+
+namespace: saas-stg
+
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+
+commonLabels:
+  environment: staging
+
+configMapGenerator:
+  - name: env-config
+    literals:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=info
+      - ENABLE_SWAGGER=false
+      - RATE_LIMIT_ENABLED=true

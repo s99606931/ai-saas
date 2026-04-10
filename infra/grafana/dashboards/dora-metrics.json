@@ -1,0 +1,187 @@
+{
+  "annotations": { "list": [] },
+  "description": "DORA 4대 지표 자동화 대시보드 - MTU-N169",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "DORA 4대 지표 Overview",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "title": "배포 빈도 (Deployment Frequency)",
+      "description": "FR-DORA.1: 일/주/월 단위 배포 횟수",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(rate(dora_deployment_total{team=~\"$team\", service=~\"$service\"}[1d])) by (team)",
+          "legendFormat": "{{team}} - 일 배포 횟수"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "ops"
+        }
+      }
+    },
+    {
+      "title": "변경 리드타임 (Lead Time)",
+      "description": "FR-DORA.2: 커밋에서 프로덕션 배포까지 시간",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(dora_lead_time_seconds_bucket{team=~\"$team\"}[7d])) by (le, team))",
+          "legendFormat": "{{team}} - P50 리드타임"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(dora_lead_time_seconds_bucket{team=~\"$team\"}[7d])) by (le, team))",
+          "legendFormat": "{{team}} - P95 리드타임"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "title": "변경 실패율 (Change Failure Rate)",
+      "description": "FR-DORA.3: 롤백/핫픽스 비율",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "targets": [
+        {
+          "expr": "dora_change_failure_rate{team=~\"$team\", service=~\"$service\"}",
+          "legendFormat": "{{team}}/{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.05 },
+              { "color": "orange", "value": 0.10 },
+              { "color": "red", "value": 0.15 }
+            ]
+          },
+          "max": 0.5
+        }
+      }
+    },
+    {
+      "title": "서비스 복구 시간 (MTTR)",
+      "description": "FR-DORA.4: 장애 발생~해결 시간",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(dora_mttr_seconds_bucket{team=~\"$team\"}[30d])) by (le, team))",
+          "legendFormat": "{{team}} - P50 MTTR"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(dora_mttr_seconds_bucket{team=~\"$team\"}[30d])) by (le, team))",
+          "legendFormat": "{{team}} - P95 MTTR"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "title": "DORA 등급",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 }
+    },
+    {
+      "title": "팀별 DORA 등급",
+      "description": "FR-DORA.8: 0=Low, 1=Medium, 2=High, 3=Elite",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 18 },
+      "targets": [
+        {
+          "expr": "dora_team_level{team=~\"$team\"}",
+          "legendFormat": "{{team}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "Low", "color": "red" } } },
+            { "type": "value", "options": { "1": { "text": "Medium", "color": "orange" } } },
+            { "type": "value", "options": { "2": { "text": "High", "color": "yellow" } } },
+            { "type": "value", "options": { "3": { "text": "Elite", "color": "green" } } }
+          ]
+        }
+      }
+    },
+    {
+      "title": "30일 트렌드",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 }
+    },
+    {
+      "title": "배포 빈도 트렌드 (30일)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 25 },
+      "targets": [
+        {
+          "expr": "sum(increase(dora_deployment_total{team=~\"$team\"}[1d])) by (team)",
+          "legendFormat": "{{team}}"
+        }
+      ]
+    },
+    {
+      "title": "MTTR 트렌드 (30일)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 25 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(dora_mttr_seconds_bucket{team=~\"$team\"}[1d])) by (le, team))",
+          "legendFormat": "{{team}} - P50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["dora", "devops", "platform-engineering"],
+  "templating": {
+    "list": [
+      {
+        "name": "team",
+        "type": "query",
+        "query": "label_values(dora_deployment_total, team)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true
+      },
+      {
+        "name": "service",
+        "type": "query",
+        "query": "label_values(dora_deployment_total{team=~\"$team\"}, service)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true
+      }
+    ]
+  },
+  "time": { "from": "now-30d", "to": "now" },
+  "title": "DORA 4 Metrics Dashboard",
+  "uid": "dora-metrics-v1"
+}

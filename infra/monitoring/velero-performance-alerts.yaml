@@ -1,0 +1,135 @@
+# Velero 백업/복원 성능 알림 규칙
+# Design Ref: MTU-N237 §3.5
+# Plan SC: FR-N237.7
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: velero-performance-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    monitoring.bkit.io/component: velero
+    monitoring.bkit.io/category: alerting
+spec:
+  groups:
+    - name: velero.alerts
+      rules:
+        # ── 알림 1: 백업 실패 ──
+        - alert: VeleroBackupFailed
+          expr: |
+            increase(velero_backup_failure_total[1h]) > 0
+          for: 1m
+          labels:
+            severity: critical
+            team: sre
+            component: velero
+            category: backup-restore
+            csap_control: "D-10"
+          annotations:
+            summary: "Velero 백업 실패 발생"
+            description: |
+              Velero 백업이 실패했습니다. 스케줄: {{ $labels.schedule }}.
+              최근 1시간 내 {{ $value | printf "%.0f" }}건의 백업 실패가 발생했습니다.
+              RPO 미달 위험이 있으므로 즉시 확인이 필요합니다.
+            runbook: "https://docs.bkit.io/runbooks/velero-backup-failed"
+            impact: "데이터 손실 위험, RPO 미달, CSAP D-10 준수 영향"
+            action: |
+              1. velero backup describe --details 로 실패 원인 확인
+              2. Velero 파드 로그 확인 (kubectl logs -n velero)
+              3. 스토리지 백엔드 접근성 확인
+              4. 수동 백업 실행 후 결과 확인
+
+        # ── 알림 2: 백업 부분 실패 ──
+        - alert: VeleroBackupPartialFailure
+          expr: |
+            increase(velero_backup_partial_failure_total[1h]) > 0
+          for: 1m
+          labels:
+            severity: warning
+            team: sre
+            component: velero
+            category: backup-restore
+            csap_control: "D-10"
+          annotations:
+            summary: "Velero 백업 부분 실패 발생"
+            description: |
+              Velero 백업이 부분 실패했습니다. 스케줄: {{ $labels.schedule }}.
+              일부 리소스가 백업에서 누락되었을 수 있습니다.
+            runbook: "https://docs.bkit.io/runbooks/velero-backup-partial"
+            impact: "일부 리소스 백업 누락 가능"
+            action: |
+              1. velero backup describe <name> --details 로 누락 항목 확인
+              2. 누락 리소스의 백업 가능 여부 확인
+              3. 제외 패턴 검토
+
+        # ── 알림 3: 스케줄 백업 미실행 ──
+        - alert: VeleroScheduleStale
+          expr: |
+            velero:schedule:last_success_age_seconds > 86400
+          for: 10m
+          labels:
+            severity: critical
+            team: sre
+            component: velero
+            category: backup-restore
+            csap_control: "D-10"
+          annotations:
+            summary: "Velero 스케줄 백업 24시간 이상 미실행"
+            description: |
+              마지막 성공 백업 이후 {{ $value | printf "%.0f" }}초가 경과했습니다.
+              일일 백업 스케줄이 24시간 이상 실행되지 않았습니다.
+            runbook: "https://docs.bkit.io/runbooks/velero-schedule-stale"
+            impact: "RPO 미달, 데이터 복구 시점 지연"
+            action: |
+              1. velero schedule get 으로 스케줄 상태 확인
+              2. Velero 서버 파드 상태 확인
+              3. CronJob 실행 이력 확인
+              4. 수동 백업 즉시 실행
+
+        # ── 알림 4: 복원 실패 ──
+        - alert: VeleroRestoreFailed
+          expr: |
+            increase(velero_restore_failed_total[1h]) > 0
+          for: 1m
+          labels:
+            severity: critical
+            team: sre
+            component: velero
+            category: backup-restore
+            csap_control: "D-10"
+          annotations:
+            summary: "Velero 복원 실패 발생"
+            description: |
+              Velero 복원 작업이 실패했습니다.
+              최근 1시간 내 {{ $value | printf "%.0f" }}건의 복원 실패가 발생했습니다.
+            runbook: "https://docs.bkit.io/runbooks/velero-restore-failed"
+            impact: "RTO 미달 위험, DR 역량 저하"
+            action: |
+              1. velero restore describe --details 로 실패 원인 확인
+              2. 백업 데이터 무결성 확인
+              3. 대상 네임스페이스 리소스 충돌 확인
+              4. 필요 시 대체 백업으로 복원 시도
+
+        # ── 알림 5: 백업 소요시간 초과 ──
+        - alert: VeleroBackupDurationHigh
+          expr: |
+            velero:backup:duration:p95 > 1800
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            component: velero
+            category: backup-restore
+            csap_control: "D-10"
+          annotations:
+            summary: "Velero 백업 소요시간 30분 초과 (p95)"
+            description: |
+              Velero 백업 p95 소요시간이 {{ $value | printf "%.0f" }}초로
+              30분 임계값을 초과했습니다.
+            runbook: "https://docs.bkit.io/runbooks/velero-backup-slow"
+            impact: "백업 윈도우 초과 위험, 백업 실패 가능성"
+            action: |
+              1. 백업 대상 리소스 크기 확인
+              2. 스토리지 백엔드 I/O 성능 확인
+              3. 네트워크 대역폭 확인
+              4. 백업 대상 범위 최적화 검토

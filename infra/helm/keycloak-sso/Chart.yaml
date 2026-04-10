@@ -1,0 +1,19 @@
+apiVersion: v2
+name: keycloak-sso
+description: Keycloak SSO/OIDC 통합 - 공공기관 LDAP 연동
+type: application
+version: 1.0.0
+appVersion: "26.0"
+dependencies:
+  - name: keycloak
+    version: "22.x"
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+    condition: keycloak.enabled
+keywords:
+  - keycloak
+  - sso
+  - oidc
+  - ldap
+  - authentication
+maintainers:
+  - name: Platform Team

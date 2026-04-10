@@ -1,0 +1,72 @@
+# Cilium Hubble 네트워크 관측성 설정
+# Design Ref: MTU-N176
+
+# Hubble 활성화 (Cilium Helm values overlay)
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+    replicas: 2
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  ui:
+    enabled: true
+    replicas: 1
+    ingress:
+      enabled: true
+      hosts:
+        - hubble.example.go.kr
+      tls:
+        - secretName: hubble-tls
+          hosts:
+            - hubble.example.go.kr
+  metrics:
+    enabled:
+      - dns
+      - drop
+      - tcp
+      - flow
+      - icmp
+      - httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: prometheus
+
+# Prometheus 알림 규칙 (FR-HUB.5)
+alertRules:
+  - alert: NetworkPolicyDrop
+    expr: rate(hubble_drop_total{reason="POLICY_DENIED"}[5m]) > 0
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "NetworkPolicy 위반 트래픽 탐지"
+      description: "{{ $labels.source_namespace }}/{{ $labels.source_workload }} → {{ $labels.destination_namespace }}/{{ $labels.destination_workload }} 트래픽 차단됨"
+
+  - alert: HighDNSLatency
+    expr: histogram_quantile(0.95, rate(hubble_dns_response_types_total[5m])) > 1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "DNS 응답 지연 감지"
+
+  - alert: HighDropRate
+    expr: rate(hubble_drop_total[5m]) > 10
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "높은 패킷 드롭률 감지"
+
+# Pod Security
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault

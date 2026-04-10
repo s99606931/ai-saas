@@ -1,0 +1,29 @@
+# Design Ref: MTU-N235 SS3
+# Plan SC: FR-LDAP.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ldap-sync-rules
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: ldap-sync
+      interval: 60s
+      rules:
+        - record: keycloak:ldap_sync:last_success_time
+          expr: |
+            max(keycloak_user_federation_sync_last_success_timestamp{provider="ldap"}) by (realm)
+
+        - record: keycloak:ldap_sync:duration_seconds
+          expr: |
+            max(keycloak_user_federation_sync_duration_seconds{provider="ldap"}) by (realm, sync_type)
+
+        - record: keycloak:ldap_sync:users_synced
+          expr: |
+            sum(keycloak_user_federation_sync_users_synced{provider="ldap"}) by (realm)
+
+        - record: keycloak:ldap_connection:pool_active
+          expr: |
+            sum(keycloak_ldap_connection_pool_active) by (realm)

@@ -1,0 +1,15 @@
+# Design Ref: MTU-N234 SS2
+# Plan SC: NFR-2
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-unleash-server
+  namespace: {{ .Release.Namespace }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: unleash-server
+      app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
