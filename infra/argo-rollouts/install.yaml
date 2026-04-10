@@ -1,0 +1,53 @@
+# Argo Rollouts 설치 Helm Values
+# Design Ref: MTU-N101 Design §아키텍처
+# Plan SC: FR-N101.1
+#
+# 설치: helm install argo-rollouts argo/argo-rollouts \
+#        -n argo-rollouts --create-namespace -f install.yaml
+
+controller:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring
+
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+dashboard:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - argo-rollouts.saas.go.kr
+    tls:
+      - secretName: argo-rollouts-tls
+        hosts:
+          - argo-rollouts.saas.go.kr
+
+notifications:
+  enabled: true

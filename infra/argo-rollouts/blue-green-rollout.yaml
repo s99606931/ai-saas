@@ -1,0 +1,106 @@
+# Blue/Green 배포 전략 예제
+# Design Ref: MTU-N101 Design §배포 전략
+# Plan SC: FR-N101.2
+
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: api-gateway-bg
+  namespace: production
+  labels:
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/part-of: public-saas-framework
+    deployment-strategy: blue-green
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api-gateway
+          image: harbor.saas.go.kr/services/api-gateway:v1.0.0
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+  strategy:
+    blueGreen:
+      activeService: api-gateway-active
+      previewService: api-gateway-preview
+      autoPromotionEnabled: false
+      scaleDownDelaySeconds: 30
+      prePromotionAnalysis:
+        templates:
+          - templateName: success-rate-analysis
+          - templateName: latency-p99-analysis
+        args:
+          - name: service-name
+            value: api-gateway-preview
+      postPromotionAnalysis:
+        templates:
+          - templateName: error-rate-analysis
+        args:
+          - name: service-name
+            value: api-gateway-active
+
+---
+# Active Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway-active
+  namespace: production
+spec:
+  selector:
+    app: api-gateway
+  ports:
+    - port: 80
+      targetPort: 3000
+
+---
+# Preview Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway-preview
+  namespace: production
+spec:
+  selector:
+    app: api-gateway
+  ports:
+    - port: 80
+      targetPort: 3000
