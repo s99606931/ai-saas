@@ -12,6 +12,7 @@ import {
   usageHandler,
   costHandler,
 } from './handlers/ai.handler.js';
+import { aiUsageTrendHandler, modelAnalyticsHandler } from './handlers/ai-analytics.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
@@ -45,4 +46,10 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.post('/ai/chat', { preHandler: chatLimiter }, chatHandler as never);
   app.get('/ai/usage', { preHandler: readLimiter }, usageHandler as never);
   app.get('/ai/cost', { preHandler: readLimiter }, costHandler as never);
+
+  // FR-AI.4: 일별 AI 사용량 추이
+  app.get('/ai/analytics/trend', { preHandler: readLimiter }, aiUsageTrendHandler as never);
+
+  // FR-AI.5: 모델별 사용 분석
+  app.get('/ai/analytics/models', { preHandler: readLimiter }, modelAnalyticsHandler as never);
 }
