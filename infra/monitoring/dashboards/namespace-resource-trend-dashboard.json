@@ -1,0 +1,13 @@
+{
+  "description": "MTU-N217: 네임스페이스 리소스 트렌드 대시보드",
+  "panels": [
+    {"title":"네임스페이스 CPU 사용량","type":"timeseries","gridPos":{"h":8,"w":12,"x":0,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"fieldConfig":{"defaults":{"unit":"short"}},"targets":[{"expr":"ns_trend:cpu_usage","legendFormat":"{{ namespace }}"}]},
+    {"title":"네임스페이스 메모리 사용량","type":"timeseries","gridPos":{"h":8,"w":12,"x":12,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"fieldConfig":{"defaults":{"unit":"bytes"}},"targets":[{"expr":"ns_trend:memory_usage","legendFormat":"{{ namespace }}"}]},
+    {"title":"CPU 증가율 (1시간)","type":"timeseries","gridPos":{"h":8,"w":12,"x":0,"y":8},"datasource":{"type":"prometheus","uid":"${datasource}"},"fieldConfig":{"defaults":{"unit":"percentunit"}},"targets":[{"expr":"ns_trend:cpu_growth_rate","legendFormat":"{{ namespace }}"}]},
+    {"title":"메모리 증가율 (1시간)","type":"timeseries","gridPos":{"h":8,"w":12,"x":12,"y":8},"datasource":{"type":"prometheus","uid":"${datasource}"},"fieldConfig":{"defaults":{"unit":"percentunit"}},"targets":[{"expr":"ns_trend:memory_growth_rate","legendFormat":"{{ namespace }}"}]},
+    {"title":"Pod 수","type":"timeseries","gridPos":{"h":8,"w":24,"x":0,"y":16},"datasource":{"type":"prometheus","uid":"${datasource}"},"targets":[{"expr":"ns_trend:pod_count","legendFormat":"{{ namespace }}"}]}
+  ],
+  "schemaVersion":38,"tags":["namespace","trend","mtu-n217","csap-d10"],
+  "templating":{"list":[{"name":"datasource","type":"datasource","query":"prometheus"}]},
+  "time":{"from":"now-24h","to":"now"},"title":"네임스페이스 리소스 트렌드","uid":"ns-trend-n217","version":1
+}

@@ -1,0 +1,32 @@
+# MTU-N212: 이미지 풀 레이턴시 Alerting Rules
+# Plan SC: FR-N212.2 | CSAP: D-10
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: image-pull-latency-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: image-pull-latency
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: image-pull-latency.alerts
+      rules:
+        - alert: ImagePullSlow
+          expr: img_pull:duration_p99 > 60
+          for: 5m
+          labels: { severity: warning, category: image-pull, csap: "D-10", mtu: "N212" }
+          annotations:
+            summary: "이미지 풀 레이턴시 높음 ({{ $labels.instance }})"
+            description: "이미지 풀 p99이 {{ $value | printf \"%.1f\" }}초로 SLO 60초 초과"
+            runbook_url: "https://wiki.internal/runbooks/image-pull-slow"
+        - alert: ImagePullFailing
+          expr: img_pull:failure_rate > 0.05
+          for: 5m
+          labels: { severity: critical, category: image-pull, csap: "D-10", mtu: "N212" }
+          annotations:
+            summary: "이미지 풀 실패율 높음"
+            description: "이미지 풀 실패율이 {{ $value | printf \"%.1f\" }}%로 5% 초과"
+            runbook_url: "https://wiki.internal/runbooks/image-pull-failing"

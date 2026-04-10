@@ -1,0 +1,31 @@
+# MTU-N216: Pod 스케줄링 대기 Alerting | CSAP: D-10
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: scheduling-wait-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: scheduling-wait
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: scheduling-wait.alerts
+      rules:
+        - alert: PodPendingTooLong
+          expr: sched_wait:long_pending_count > 0
+          for: 5m
+          labels: { severity: warning, category: scheduling-wait, csap: "D-10", mtu: "N216" }
+          annotations:
+            summary: "Pod 장기 대기 ({{ $labels.namespace }})"
+            description: "{{ $value | printf \"%.0f\" }}개 Pod가 5분 이상 Pending"
+            runbook_url: "https://wiki.internal/runbooks/pod-pending-long"
+        - alert: PodUnschedulableMultiple
+          expr: sum(sched_wait:unschedulable_by_reason) > 5
+          for: 5m
+          labels: { severity: critical, category: scheduling-wait, csap: "D-10", mtu: "N216" }
+          annotations:
+            summary: "Unschedulable Pod 다수"
+            description: "{{ $value | printf \"%.0f\" }}개 Pod가 스케줄 불가"
+            runbook_url: "https://wiki.internal/runbooks/pod-unschedulable"

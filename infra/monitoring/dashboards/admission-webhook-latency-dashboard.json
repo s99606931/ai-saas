@@ -1,0 +1,11 @@
+{
+  "description": "MTU-N214: Admission Webhook 레이턴시 대시보드",
+  "panels": [
+    {"title":"Webhook 레이턴시 (p50/p90/p99)","type":"timeseries","gridPos":{"h":8,"w":12,"x":0,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"fieldConfig":{"defaults":{"unit":"s"}},"targets":[{"expr":"adm_wh:latency_p50","legendFormat":"p50 {{ name }}"},{"expr":"adm_wh:latency_p90","legendFormat":"p90 {{ name }}"},{"expr":"adm_wh:latency_p99","legendFormat":"p99 {{ name }}"}]},
+    {"title":"Webhook 거부율","type":"stat","gridPos":{"h":8,"w":6,"x":12,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"fieldConfig":{"defaults":{"unit":"percentunit"}},"targets":[{"expr":"adm_wh:rejection_rate","legendFormat":"{{ name }}"}]},
+    {"title":"Webhook 요청율","type":"timeseries","gridPos":{"h":8,"w":6,"x":18,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"targets":[{"expr":"adm_wh:request_rate","legendFormat":"{{ name }}"}]}
+  ],
+  "schemaVersion":38,"tags":["admission-webhook","mtu-n214","csap-d10"],
+  "templating":{"list":[{"name":"datasource","type":"datasource","query":"prometheus"}]},
+  "time":{"from":"now-6h","to":"now"},"title":"Admission Webhook 레이턴시","uid":"adm-webhook-n214","version":1
+}

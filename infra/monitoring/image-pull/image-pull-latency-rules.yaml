@@ -1,0 +1,34 @@
+# MTU-N212: 이미지 풀 레이턴시 Recording Rules
+# Plan SC: FR-N212.1 | CSAP: D-10
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: image-pull-latency-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: image-pull-latency
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: image-pull-latency.recording
+      interval: 30s
+      rules:
+        - record: img_pull:duration_p50
+          expr: histogram_quantile(0.50, sum by (instance, le) (rate(kubelet_image_pull_duration_seconds_bucket[5m])))
+          labels: { quantile: "0.50", mtu: "N212" }
+        - record: img_pull:duration_p90
+          expr: histogram_quantile(0.90, sum by (instance, le) (rate(kubelet_image_pull_duration_seconds_bucket[5m])))
+          labels: { quantile: "0.90", mtu: "N212" }
+        - record: img_pull:duration_p99
+          expr: histogram_quantile(0.99, sum by (instance, le) (rate(kubelet_image_pull_duration_seconds_bucket[5m])))
+          labels: { quantile: "0.99", mtu: "N212" }
+        - record: img_pull:failure_rate
+          expr: |
+            sum(rate(kubelet_image_pull_duration_seconds_count{result="error"}[5m]))
+            / (sum(rate(kubelet_image_pull_duration_seconds_count[5m])) > 0)
+          labels: { mtu: "N212" }
+        - record: img_pull:pull_rate
+          expr: sum by (instance) (rate(kubelet_image_pull_duration_seconds_count[5m]))
+          labels: { mtu: "N212" }

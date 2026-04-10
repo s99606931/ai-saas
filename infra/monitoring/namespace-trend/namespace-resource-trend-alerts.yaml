@@ -1,0 +1,31 @@
+# MTU-N217: 네임스페이스 리소스 트렌드 Alerting | CSAP: D-10
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: namespace-resource-trend-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: namespace-trend
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: namespace-trend.alerts
+      rules:
+        - alert: NamespaceCPUSpike
+          expr: ns_trend:cpu_growth_rate > 0.5
+          for: 10m
+          labels: { severity: warning, category: namespace-trend, csap: "D-10", mtu: "N217" }
+          annotations:
+            summary: "네임스페이스 CPU 급등 ({{ $labels.namespace }})"
+            description: "{{ $labels.namespace }} CPU 1시간 대비 {{ $value | printf \"%.0f\" }}% 증가"
+            runbook_url: "https://wiki.internal/runbooks/namespace-cpu-spike"
+        - alert: NamespaceMemorySpike
+          expr: ns_trend:memory_growth_rate > 0.5
+          for: 10m
+          labels: { severity: warning, category: namespace-trend, csap: "D-10", mtu: "N217" }
+          annotations:
+            summary: "네임스페이스 메모리 급등 ({{ $labels.namespace }})"
+            description: "{{ $labels.namespace }} 메모리 1시간 대비 {{ $value | printf \"%.0f\" }}% 증가"
+            runbook_url: "https://wiki.internal/runbooks/namespace-memory-spike"

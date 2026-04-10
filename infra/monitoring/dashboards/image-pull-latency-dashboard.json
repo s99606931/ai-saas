@@ -1,0 +1,11 @@
+{
+  "description": "MTU-N212: 이미지 풀 레이턴시 대시보드",
+  "panels": [
+    {"title":"이미지 풀 레이턴시 (p50/p90/p99)","type":"timeseries","gridPos":{"h":8,"w":12,"x":0,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"fieldConfig":{"defaults":{"unit":"s"}},"targets":[{"expr":"img_pull:duration_p50","legendFormat":"p50"},{"expr":"img_pull:duration_p90","legendFormat":"p90"},{"expr":"img_pull:duration_p99","legendFormat":"p99"}]},
+    {"title":"이미지 풀 빈도","type":"timeseries","gridPos":{"h":8,"w":12,"x":12,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"targets":[{"expr":"img_pull:pull_rate","legendFormat":"{{ instance }}"}]},
+    {"title":"이미지 풀 실패율","type":"stat","gridPos":{"h":8,"w":12,"x":0,"y":8},"datasource":{"type":"prometheus","uid":"${datasource}"},"fieldConfig":{"defaults":{"unit":"percentunit"}},"targets":[{"expr":"img_pull:failure_rate","legendFormat":"실패율"}]}
+  ],
+  "schemaVersion":38,"tags":["image-pull","mtu-n212","csap-d10"],
+  "templating":{"list":[{"name":"datasource","type":"datasource","query":"prometheus"}]},
+  "time":{"from":"now-6h","to":"now"},"title":"이미지 풀 레이턴시","uid":"image-pull-n212","version":1
+}

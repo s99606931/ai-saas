@@ -1,0 +1,38 @@
+# MTU-N211: Init 컨테이너 성능 Recording Rules
+# Plan SC: FR-N211.1, FR-N211.2 | CSAP: D-10
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: init-container-perf-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: init-container-perf
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: init-container-perf.recording
+      interval: 30s
+      rules:
+        - record: init_ctr:waiting_count
+          expr: |
+            count by (namespace) (
+              kube_pod_init_container_status_waiting{reason!=""} == 1
+            )
+          labels:
+            mtu: "N211"
+        - record: init_ctr:restart_rate
+          expr: |
+            sum by (namespace, pod, container) (
+              rate(kube_pod_init_container_status_restarts_total[1h])
+            )
+          labels:
+            mtu: "N211"
+        - record: init_ctr:not_ready_count
+          expr: |
+            count by (namespace) (
+              kube_pod_init_container_status_ready == 0
+            )
+          labels:
+            mtu: "N211"

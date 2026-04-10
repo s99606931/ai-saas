@@ -1,0 +1,41 @@
+# MTU-N211: Init 컨테이너 성능 Alerting Rules
+# Plan SC: FR-N211.3 | CSAP: D-10
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: init-container-perf-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: init-container-perf
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: init-container-perf.alerts
+      rules:
+        - alert: InitContainerFailing
+          expr: init_ctr:restart_rate > 3
+          for: 5m
+          labels:
+            severity: warning
+            category: init-container
+            csap: "D-10"
+            mtu: "N211"
+          annotations:
+            summary: "Init 컨테이너 반복 실패 ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: "Init 컨테이너 {{ $labels.container }}가 시간당 {{ $value | printf \"%.0f\" }}회 재시작."
+            runbook_url: "https://wiki.internal/runbooks/init-container-failing"
+        - alert: InitContainerStuck
+          expr: |
+            (time() - kube_pod_init_container_status_waiting_reason{reason="CrashLoopBackOff"}) > 600
+          for: 5m
+          labels:
+            severity: critical
+            category: init-container
+            csap: "D-10"
+            mtu: "N211"
+          annotations:
+            summary: "Init 컨테이너 정체 ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: "Init 컨테이너가 10분 이상 대기 상태."
+            runbook_url: "https://wiki.internal/runbooks/init-container-stuck"

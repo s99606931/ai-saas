@@ -1,0 +1,31 @@
+# MTU-N215: CRD 컨트롤러 상태 Alerting | CSAP: D-10
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: crd-controller-status-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: crd-controller
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: crd-controller.alerts
+      rules:
+        - alert: CRDControllerReconcileErrors
+          expr: crd_ctrl:reconcile_errors_rate > 0.05
+          for: 5m
+          labels: { severity: warning, category: crd-controller, csap: "D-10", mtu: "N215" }
+          annotations:
+            summary: "CRD 컨트롤러 reconcile 에러 ({{ $labels.controller }})"
+            description: "에러율 {{ $value | printf \"%.1f\" }}%"
+            runbook_url: "https://wiki.internal/runbooks/crd-reconcile-errors"
+        - alert: CRDControllerReconcileSlow
+          expr: crd_ctrl:reconcile_duration_p99 > 30
+          for: 5m
+          labels: { severity: warning, category: crd-controller, csap: "D-10", mtu: "N215" }
+          annotations:
+            summary: "CRD 컨트롤러 reconcile 느림 ({{ $labels.controller }})"
+            description: "p99 {{ $value | printf \"%.1f\" }}초"
+            runbook_url: "https://wiki.internal/runbooks/crd-reconcile-slow"

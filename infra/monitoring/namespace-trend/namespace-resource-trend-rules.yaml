@@ -1,0 +1,35 @@
+# MTU-N217: 네임스페이스 리소스 트렌드 Recording Rules | CSAP: D-10
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: namespace-resource-trend-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: namespace-trend
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: namespace-trend.recording
+      interval: 60s
+      rules:
+        - record: ns_trend:cpu_usage
+          expr: sum by (namespace) (rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m]))
+          labels: { mtu: "N217" }
+        - record: ns_trend:memory_usage
+          expr: sum by (namespace) (container_memory_working_set_bytes{container!="",container!="POD"})
+          labels: { mtu: "N217" }
+        - record: ns_trend:cpu_growth_rate
+          expr: |
+            (ns_trend:cpu_usage - ns_trend:cpu_usage offset 1h)
+            / (ns_trend:cpu_usage offset 1h > 0)
+          labels: { mtu: "N217" }
+        - record: ns_trend:memory_growth_rate
+          expr: |
+            (ns_trend:memory_usage - ns_trend:memory_usage offset 1h)
+            / (ns_trend:memory_usage offset 1h > 0)
+          labels: { mtu: "N217" }
+        - record: ns_trend:pod_count
+          expr: count by (namespace) (kube_pod_status_phase{phase="Running"})
+          labels: { mtu: "N217" }

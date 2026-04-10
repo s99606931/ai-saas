@@ -1,0 +1,31 @@
+# MTU-N213: SA 토큰 만료 Alerting | CSAP: D-08
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sa-token-expiry-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: sa-token-expiry
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: sa-token-expiry.alerts
+      rules:
+        - alert: SATokenNearExpiry
+          expr: sa_token:near_expiry_count > 0
+          for: 5m
+          labels: { severity: warning, category: sa-token, csap: "D-08", mtu: "N213" }
+          annotations:
+            summary: "SA 토큰 만료 임박"
+            description: "{{ $value | printf \"%.0f\" }}개의 stale SA 토큰 감지"
+            runbook_url: "https://wiki.internal/runbooks/sa-token-near-expiry"
+        - alert: SATokenStaleHigh
+          expr: serviceaccount_stale_tokens_total > 10
+          for: 5m
+          labels: { severity: critical, category: sa-token, csap: "D-08", mtu: "N213" }
+          annotations:
+            summary: "Stale SA 토큰 다수 감지"
+            description: "Stale 토큰이 {{ $value | printf \"%.0f\" }}개로 즉시 갱신 필요"
+            runbook_url: "https://wiki.internal/runbooks/sa-token-stale"

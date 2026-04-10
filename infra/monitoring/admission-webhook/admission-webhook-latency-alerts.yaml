@@ -1,0 +1,31 @@
+# MTU-N214: Admission Webhook 레이턴시 Alerting | CSAP: D-10
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: admission-webhook-latency-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: admission-webhook
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: admission-webhook.alerts
+      rules:
+        - alert: AdmissionWebhookLatencyHigh
+          expr: adm_wh:latency_p99 > 1
+          for: 5m
+          labels: { severity: warning, category: admission-webhook, csap: "D-10", mtu: "N214" }
+          annotations:
+            summary: "Admission Webhook 레이턴시 높음 ({{ $labels.name }})"
+            description: "Webhook {{ $labels.name }} p99 {{ $value | printf \"%.2f\" }}초"
+            runbook_url: "https://wiki.internal/runbooks/admission-webhook-latency"
+        - alert: AdmissionWebhookRejectionHigh
+          expr: adm_wh:rejection_rate > 0.1
+          for: 5m
+          labels: { severity: critical, category: admission-webhook, csap: "D-10", mtu: "N214" }
+          annotations:
+            summary: "Admission Webhook 거부율 높음 ({{ $labels.name }})"
+            description: "Webhook {{ $labels.name }} 거부율 {{ $value | printf \"%.1f\" }}%"
+            runbook_url: "https://wiki.internal/runbooks/admission-webhook-rejection"

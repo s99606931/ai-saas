@@ -1,0 +1,11 @@
+{
+  "description": "MTU-N216: Pod 스케줄링 대기 대시보드",
+  "panels": [
+    {"title":"장기 대기 Pod 수","type":"stat","gridPos":{"h":8,"w":8,"x":0,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"targets":[{"expr":"sched_wait:long_pending_count","legendFormat":"{{ namespace }}"}]},
+    {"title":"Pending 총 시간","type":"timeseries","gridPos":{"h":8,"w":8,"x":8,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"fieldConfig":{"defaults":{"unit":"s"}},"targets":[{"expr":"sched_wait:pending_duration_by_ns","legendFormat":"{{ namespace }}"}]},
+    {"title":"Unschedulable Pod","type":"stat","gridPos":{"h":8,"w":8,"x":16,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"targets":[{"expr":"sched_wait:unschedulable_by_reason","legendFormat":"{{ namespace }}/{{ condition }}"}]}
+  ],
+  "schemaVersion":38,"tags":["scheduling","pending","mtu-n216","csap-d10"],
+  "templating":{"list":[{"name":"datasource","type":"datasource","query":"prometheus"}]},
+  "time":{"from":"now-6h","to":"now"},"title":"Pod 스케줄링 대기","uid":"sched-wait-n216","version":1
+}

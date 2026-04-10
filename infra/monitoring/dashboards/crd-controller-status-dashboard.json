@@ -1,0 +1,11 @@
+{
+  "description": "MTU-N215: CRD 컨트롤러 상태 대시보드",
+  "panels": [
+    {"title":"CRD 총 수","type":"stat","gridPos":{"h":6,"w":6,"x":0,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"targets":[{"expr":"crd_ctrl:crd_total","legendFormat":"CRD"}]},
+    {"title":"Reconcile 레이턴시 p99","type":"timeseries","gridPos":{"h":8,"w":12,"x":6,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"fieldConfig":{"defaults":{"unit":"s"}},"targets":[{"expr":"crd_ctrl:reconcile_duration_p99","legendFormat":"{{ controller }}"}]},
+    {"title":"Reconcile 에러율","type":"timeseries","gridPos":{"h":8,"w":6,"x":18,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"fieldConfig":{"defaults":{"unit":"percentunit"}},"targets":[{"expr":"crd_ctrl:reconcile_errors_rate","legendFormat":"{{ controller }}"}]}
+  ],
+  "schemaVersion":38,"tags":["crd","controller","mtu-n215","csap-d10"],
+  "templating":{"list":[{"name":"datasource","type":"datasource","query":"prometheus"}]},
+  "time":{"from":"now-6h","to":"now"},"title":"CRD 컨트롤러 상태","uid":"crd-ctrl-n215","version":1
+}

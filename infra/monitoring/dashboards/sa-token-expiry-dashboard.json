@@ -1,0 +1,11 @@
+{
+  "description": "MTU-N213: SA 토큰 만료 대시보드",
+  "panels": [
+    {"title":"Stale SA 토큰 수","type":"stat","gridPos":{"h":8,"w":8,"x":0,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"targets":[{"expr":"sa_token:near_expiry_count","legendFormat":"stale"}]},
+    {"title":"유효 SA 토큰 수","type":"stat","gridPos":{"h":8,"w":8,"x":8,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"targets":[{"expr":"sa_token:valid_tokens_total","legendFormat":"valid"}]},
+    {"title":"Stale 토큰 추이","type":"timeseries","gridPos":{"h":8,"w":8,"x":16,"y":0},"datasource":{"type":"prometheus","uid":"${datasource}"},"targets":[{"expr":"sa_token:expiry_seconds","legendFormat":"stale"}]}
+  ],
+  "schemaVersion":38,"tags":["sa-token","mtu-n213","csap-d08"],
+  "templating":{"list":[{"name":"datasource","type":"datasource","query":"prometheus"}]},
+  "time":{"from":"now-24h","to":"now"},"title":"SA 토큰 만료","uid":"sa-token-n213","version":1
+}

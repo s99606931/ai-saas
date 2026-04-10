@@ -1,0 +1,33 @@
+# MTU-N214: Admission Webhook 레이턴시 Recording Rules | CSAP: D-10
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: admission-webhook-latency-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: admission-webhook
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: admission-webhook.recording
+      interval: 30s
+      rules:
+        - record: adm_wh:latency_p50
+          expr: histogram_quantile(0.50, sum by (name, le) (rate(apiserver_admission_webhook_admission_duration_seconds_bucket[5m])))
+          labels: { quantile: "0.50", mtu: "N214" }
+        - record: adm_wh:latency_p90
+          expr: histogram_quantile(0.90, sum by (name, le) (rate(apiserver_admission_webhook_admission_duration_seconds_bucket[5m])))
+          labels: { quantile: "0.90", mtu: "N214" }
+        - record: adm_wh:latency_p99
+          expr: histogram_quantile(0.99, sum by (name, le) (rate(apiserver_admission_webhook_admission_duration_seconds_bucket[5m])))
+          labels: { quantile: "0.99", mtu: "N214" }
+        - record: adm_wh:rejection_rate
+          expr: |
+            sum by (name) (rate(apiserver_admission_webhook_admission_duration_seconds_count{rejected="true"}[5m]))
+            / (sum by (name) (rate(apiserver_admission_webhook_admission_duration_seconds_count[5m])) > 0)
+          labels: { mtu: "N214" }
+        - record: adm_wh:request_rate
+          expr: sum by (name) (rate(apiserver_admission_webhook_admission_duration_seconds_count[5m]))
+          labels: { mtu: "N214" }

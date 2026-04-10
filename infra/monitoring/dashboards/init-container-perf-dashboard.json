@@ -1,0 +1,34 @@
+{
+  "description": "MTU-N211: Init 컨테이너 성능 대시보드",
+  "editable": true,
+  "panels": [
+    {
+      "title": "Init 컨테이너 대기 수 (네임스페이스별)",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "init_ctr:waiting_count", "legendFormat": "{{ namespace }}" }]
+    },
+    {
+      "title": "Init 컨테이너 재시작율",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "topk(10, init_ctr:restart_rate)", "legendFormat": "{{ namespace }}/{{ pod }}" }]
+    },
+    {
+      "title": "Init 미준비 컨테이너 수",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [{ "expr": "init_ctr:not_ready_count", "legendFormat": "{{ namespace }}" }]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["init-container", "mtu-n211", "csap-d10"],
+  "templating": { "list": [{ "name": "datasource", "type": "datasource", "query": "prometheus" }] },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Init 컨테이너 성능",
+  "uid": "init-container-perf-n211",
+  "version": 1
+}

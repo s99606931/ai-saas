@@ -1,0 +1,36 @@
+# MTU-N216: Pod 스케줄링 대기 Recording Rules | CSAP: D-10
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: scheduling-wait-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: scheduling-wait
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: scheduling-wait.recording
+      interval: 30s
+      rules:
+        - record: sched_wait:pending_duration_by_ns
+          expr: |
+            sum by (namespace) (
+              (time() - kube_pod_created{}) * on(namespace,pod) group_left
+              kube_pod_status_phase{phase="Pending"}
+            )
+          labels: { mtu: "N216" }
+        - record: sched_wait:long_pending_count
+          expr: |
+            count by (namespace) (
+              (time() - kube_pod_created{}) * on(namespace,pod) group_left
+              kube_pod_status_phase{phase="Pending"} > 300
+            )
+          labels: { mtu: "N216" }
+        - record: sched_wait:unschedulable_by_reason
+          expr: |
+            sum by (namespace, condition) (
+              kube_pod_status_unschedulable
+            )
+          labels: { mtu: "N216" }

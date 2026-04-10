@@ -1,0 +1,30 @@
+# MTU-N215: CRD 컨트롤러 상태 Recording Rules | CSAP: D-10
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: crd-controller-status-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: crd-controller
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: crd-controller.recording
+      interval: 30s
+      rules:
+        - record: crd_ctrl:crd_total
+          expr: count(apiextensions_openapi_v3_regeneration_count)
+          labels: { mtu: "N215" }
+        - record: crd_ctrl:reconcile_duration_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (controller, le) (rate(controller_runtime_reconcile_time_seconds_bucket[5m]))
+            )
+          labels: { quantile: "0.99", mtu: "N215" }
+        - record: crd_ctrl:reconcile_errors_rate
+          expr: |
+            sum by (controller) (rate(controller_runtime_reconcile_errors_total[5m]))
+            / (sum by (controller) (rate(controller_runtime_reconcile_total[5m])) > 0)
+          labels: { mtu: "N215" }

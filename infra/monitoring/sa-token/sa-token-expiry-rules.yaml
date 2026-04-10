@@ -1,0 +1,28 @@
+# MTU-N213: SA 토큰 만료 Recording Rules | CSAP: D-08
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sa-token-expiry-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: sa-token-expiry
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: sa-token-expiry.recording
+      interval: 60s
+      rules:
+        - record: sa_token:expiry_seconds
+          expr: |
+            serviceaccount_stale_tokens_total
+          labels: { mtu: "N213" }
+        - record: sa_token:near_expiry_count
+          expr: |
+            count(serviceaccount_stale_tokens_total > 0)
+          labels: { mtu: "N213" }
+        - record: sa_token:valid_tokens_total
+          expr: |
+            serviceaccount_valid_tokens_total
+          labels: { mtu: "N213" }
