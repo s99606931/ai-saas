@@ -1,0 +1,72 @@
+{
+  "description": "CoreDNS 성능 모니터링 대시보드 (MTU-N202)",
+  "editable": true,
+  "tags": ["coredns", "dns", "performance", "mtu-n202"],
+  "title": "CoreDNS 성능 모니터링",
+  "uid": "coredns-perf-n202",
+  "panels": [
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 100, "title": "DNS 성능 현황", "type": "row" },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.05 }, { "color": "red", "value": 0.1 }] } } },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 }, "id": 1, "title": "DNS p99 레이턴시", "type": "stat",
+      "targets": [{ "expr": "coredns_perf:latency_p99", "legendFormat": "p99" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "gridPos": { "h": 5, "w": 4, "x": 6, "y": 1 }, "id": 2, "title": "요청률", "type": "stat",
+      "targets": [{ "expr": "coredns_perf:request_rate", "legendFormat": "req/s" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } } },
+      "gridPos": { "h": 5, "w": 4, "x": 10, "y": 1 }, "id": 3, "title": "SERVFAIL 비율", "type": "stat",
+      "targets": [{ "expr": "coredns_perf:servfail_rate", "legendFormat": "SERVFAIL" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 50 }, { "color": "green", "value": 80 }] } } },
+      "gridPos": { "h": 5, "w": 5, "x": 14, "y": 1 }, "id": 4, "title": "캐시 히트율", "type": "gauge",
+      "targets": [{ "expr": "coredns_perf:cache_hit_ratio", "legendFormat": "히트율" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent" } },
+      "gridPos": { "h": 5, "w": 5, "x": 19, "y": 1 }, "id": 5, "title": "NXDOMAIN 비율", "type": "stat",
+      "targets": [{ "expr": "coredns_perf:nxdomain_rate", "legendFormat": "NXDOMAIN" }]
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 }, "id": 101, "title": "레이턴시 추이", "type": "row" },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 }, "id": 6, "title": "DNS 레이턴시 추이 (p50/p90/p99)", "type": "timeseries",
+      "targets": [
+        { "expr": "coredns_perf:latency_p50", "legendFormat": "p50" },
+        { "expr": "coredns_perf:latency_p90", "legendFormat": "p90" },
+        { "expr": "coredns_perf:latency_p99", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 50 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 }, "id": 7, "title": "응답 코드 분포", "type": "timeseries",
+      "targets": [{ "expr": "coredns_perf:response_rate_by_rcode", "legendFormat": "{{ rcode }}" }]
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 }, "id": 102, "title": "캐시 및 요청", "type": "row" },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 }, "id": 8, "title": "유형별 요청 분포", "type": "piechart",
+      "targets": [{ "expr": "coredns_perf:request_rate_by_type", "legendFormat": "{{ type }}" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 }, "id": 9, "title": "캐시 크기", "type": "timeseries",
+      "targets": [{ "expr": "coredns_perf:cache_size", "legendFormat": "{{ type }}" }]
+    }
+  ],
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "version": 1
+}

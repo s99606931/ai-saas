@@ -1,0 +1,100 @@
+{
+  "description": "etcd 성능 상세 대시보드 (MTU-N201)",
+  "editable": true,
+  "tags": ["etcd", "performance", "control-plane", "mtu-n201"],
+  "title": "etcd 디스크 I/O 및 성능",
+  "uid": "etcd-perf-n201",
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "디스크 I/O 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.05 }, { "color": "red", "value": 0.1 }] } } },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "id": 1, "title": "WAL fsync p99", "type": "stat",
+      "targets": [{ "expr": "etcd_perf:wal_fsync_p99", "legendFormat": "p99" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.1 }, { "color": "red", "value": 0.25 }] } } },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 1 },
+      "id": 2, "title": "Backend commit p99", "type": "stat",
+      "targets": [{ "expr": "etcd_perf:backend_commit_p99", "legendFormat": "p99" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 4294967296 }, { "color": "red", "value": 6442450944 }] } } },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 1 },
+      "id": 3, "title": "DB 크기", "type": "stat",
+      "targets": [{ "expr": "etcd_perf:db_size_bytes", "legendFormat": "크기" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 30 }, { "color": "red", "value": 50 }] } } },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 1 },
+      "id": 4, "title": "DB 단편화율", "type": "gauge",
+      "targets": [{ "expr": "etcd_perf:db_fragmentation_percent", "legendFormat": "단편화" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "id": 101, "title": "레이턴시 추이", "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 },
+      "id": 5, "title": "WAL fsync 레이턴시 추이 (p50/p99)", "type": "timeseries",
+      "targets": [
+        { "expr": "etcd_perf:wal_fsync_p50", "legendFormat": "p50" },
+        { "expr": "etcd_perf:wal_fsync_p99", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "id": 6, "title": "Backend commit 레이턴시 추이 (p50/p99)", "type": "timeseries",
+      "targets": [
+        { "expr": "etcd_perf:backend_commit_p50", "legendFormat": "p50" },
+        { "expr": "etcd_perf:backend_commit_p99", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "id": 102, "title": "DB 현황", "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 7, "title": "DB 크기 추이", "type": "timeseries",
+      "targets": [
+        { "expr": "etcd_perf:db_size_bytes", "legendFormat": "전체" },
+        { "expr": "etcd_perf:db_size_in_use_bytes", "legendFormat": "사용중" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 16 },
+      "id": 8, "title": "키 수", "type": "stat",
+      "targets": [{ "expr": "etcd_perf:key_count", "legendFormat": "키" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 16 },
+      "id": 9, "title": "Watcher 수", "type": "stat",
+      "targets": [{ "expr": "etcd_perf:watcher_count", "legendFormat": "Watcher" }]
+    }
+  ],
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "version": 1
+}

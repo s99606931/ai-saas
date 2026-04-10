@@ -1,0 +1,113 @@
+# CoreDNS 성능 알림 규칙
+# Design Ref: MTU-N202.design.md
+# Plan SC: FR-N202.3, FR-N202.4
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: coredns-performance-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: dns-monitoring
+    mtu: N202
+spec:
+  groups:
+    - name: coredns.performance.alerts
+      rules:
+        # FR-N202.3: DNS 레이턴시 p99 > 100ms
+        - alert: CoreDNSLatencyHigh
+          expr: |
+            coredns_perf:latency_p99 > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-10
+            mtu: N202
+          annotations:
+            summary: "CoreDNS 레이턴시 경고: {{ $value | printf \"%.3f\" }}초"
+            description: |
+              CoreDNS p99 레이턴시가 {{ $value | printf "%.3f" }}초입니다.
+              100ms SLO를 초과했습니다. DNS 해석 성능을 확인하십시오.
+            runbook_url: "https://docs.saas.local/runbook/coredns-latency"
+
+        # FR-N202.3: DNS 레이턴시 p99 > 500ms (긴급)
+        - alert: CoreDNSLatencyCritical
+          expr: |
+            coredns_perf:latency_p99 > 0.5
+          for: 3m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-10
+            mtu: N202
+          annotations:
+            summary: "CoreDNS 레이턴시 긴급: {{ $value | printf \"%.3f\" }}초"
+            description: |
+              CoreDNS p99 레이턴시가 500ms를 초과했습니다.
+              서비스 간 통신에 심각한 영향이 있습니다.
+            runbook_url: "https://docs.saas.local/runbook/coredns-latency-critical"
+
+        # FR-N202.4: SERVFAIL 비율 > 5%
+        - alert: CoreDNSServfailSpike
+          expr: |
+            coredns_perf:servfail_rate > 5
+          for: 5m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-10
+            mtu: N202
+          annotations:
+            summary: "CoreDNS SERVFAIL 급등: {{ $value | printf \"%.1f\" }}%"
+            description: |
+              SERVFAIL 비율이 {{ $value | printf "%.1f" }}%입니다.
+              업스트림 DNS 서버 장애 또는 CoreDNS 설정 오류 가능성이 있습니다.
+            runbook_url: "https://docs.saas.local/runbook/coredns-servfail"
+
+        # NXDOMAIN 비율 > 20% (잘못된 DNS 쿼리 급등)
+        - alert: CoreDNSNxdomainHigh
+          expr: |
+            coredns_perf:nxdomain_rate > 20
+          for: 10m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N202
+          annotations:
+            summary: "CoreDNS NXDOMAIN 비율 경고: {{ $value | printf \"%.1f\" }}%"
+            description: |
+              NXDOMAIN 비율이 {{ $value | printf "%.1f" }}%입니다.
+              잘못된 서비스명 참조 또는 DNS 설정 오류를 확인하십시오.
+
+        # 캐시 히트율 < 50%
+        - alert: CoreDNSCacheHitLow
+          expr: |
+            coredns_perf:cache_hit_ratio < 50
+          for: 15m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N202
+          annotations:
+            summary: "CoreDNS 캐시 히트율 하락: {{ $value | printf \"%.1f\" }}%"
+            description: |
+              DNS 캐시 히트율이 {{ $value | printf "%.1f" }}%로 50% 미만입니다.
+              캐시 크기 조정 또는 TTL 설정을 검토하십시오.
+
+        # 요청률 급등
+        - alert: CoreDNSRequestRateSpike
+          expr: |
+            coredns_perf:request_rate > 3 * avg_over_time(coredns_perf:request_rate[1h])
+          for: 5m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-10
+            mtu: N202
+          annotations:
+            summary: "CoreDNS 요청률 급등: {{ $value | printf \"%.1f\" }} req/s"
+            description: |
+              DNS 요청률이 1시간 평균 대비 3배를 초과했습니다.
+              DNS 폭풍 또는 루프 가능성이 있습니다.

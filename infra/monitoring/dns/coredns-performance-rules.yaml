@@ -1,0 +1,131 @@
+# CoreDNS 성능 모니터링 Recording Rules
+# Design Ref: MTU-N202.design.md
+# Plan SC: FR-N202.1, FR-N202.2
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: coredns-performance-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: dns-monitoring
+    mtu: N202
+spec:
+  groups:
+    - name: coredns.performance.recording
+      interval: 30s
+      rules:
+        # FR-N202.1: DNS 레이턴시 p50
+        - record: coredns_perf:latency_p50
+          expr: |
+            histogram_quantile(0.50,
+              sum by (server, zone, le) (
+                rate(coredns_dns_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            component: dns-performance
+            mtu: N202
+
+        # FR-N202.1: DNS 레이턴시 p90
+        - record: coredns_perf:latency_p90
+          expr: |
+            histogram_quantile(0.90,
+              sum by (server, zone, le) (
+                rate(coredns_dns_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            component: dns-performance
+            mtu: N202
+
+        # FR-N202.1: DNS 레이턴시 p99
+        - record: coredns_perf:latency_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (server, zone, le) (
+                rate(coredns_dns_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            component: dns-performance
+            mtu: N202
+
+        # FR-N202.2: 응답 코드별 비율
+        - record: coredns_perf:response_rate_by_rcode
+          expr: |
+            sum by (rcode) (
+              rate(coredns_dns_responses_total[5m])
+            )
+          labels:
+            component: dns-performance
+            mtu: N202
+
+        # FR-N202.2: SERVFAIL 비율 (%)
+        - record: coredns_perf:servfail_rate
+          expr: |
+            (
+              sum(rate(coredns_dns_responses_total{rcode="SERVFAIL"}[5m]))
+              /
+              sum(rate(coredns_dns_responses_total[5m]))
+            ) * 100
+          labels:
+            component: dns-performance
+            mtu: N202
+
+        # FR-N202.2: NXDOMAIN 비율 (%)
+        - record: coredns_perf:nxdomain_rate
+          expr: |
+            (
+              sum(rate(coredns_dns_responses_total{rcode="NXDOMAIN"}[5m]))
+              /
+              sum(rate(coredns_dns_responses_total[5m]))
+            ) * 100
+          labels:
+            component: dns-performance
+            mtu: N202
+
+        # 총 요청률 (req/s)
+        - record: coredns_perf:request_rate
+          expr: |
+            sum(rate(coredns_dns_requests_total[5m]))
+          labels:
+            component: dns-performance
+            mtu: N202
+
+        # 유형별 요청률
+        - record: coredns_perf:request_rate_by_type
+          expr: |
+            sum by (type) (
+              rate(coredns_dns_requests_total[5m])
+            )
+          labels:
+            component: dns-performance
+            mtu: N202
+
+        # 캐시 히트율 (%)
+        - record: coredns_perf:cache_hit_ratio
+          expr: |
+            (
+              sum(rate(coredns_cache_hits_total[5m]))
+              /
+              (
+                sum(rate(coredns_cache_hits_total[5m]))
+                +
+                sum(rate(coredns_cache_misses_total[5m]))
+              )
+            ) * 100
+          labels:
+            component: dns-performance
+            mtu: N202
+
+        # 캐시 크기
+        - record: coredns_perf:cache_size
+          expr: |
+            sum by (type) (
+              coredns_cache_entries
+            )
+          labels:
+            component: dns-performance
+            mtu: N202

@@ -1,0 +1,127 @@
+# etcd 성능 상세 Recording Rules
+# Design Ref: MTU-N201.design.md §1
+# Plan SC: FR-N201.1, FR-N201.2
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: etcd-performance-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: etcd-performance
+    mtu: N201
+spec:
+  groups:
+    - name: etcd.performance.recording
+      interval: 30s
+      rules:
+        # FR-N201.1: WAL fsync 레이턴시 p99
+        - record: etcd_perf:wal_fsync_p99
+          expr: |
+            histogram_quantile(0.99,
+              rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m])
+            )
+          labels:
+            component: etcd-performance
+            mtu: N201
+
+        # FR-N201.1: WAL fsync 레이턴시 p50
+        - record: etcd_perf:wal_fsync_p50
+          expr: |
+            histogram_quantile(0.50,
+              rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m])
+            )
+          labels:
+            component: etcd-performance
+            mtu: N201
+
+        # FR-N201.1: Backend commit 레이턴시 p99
+        - record: etcd_perf:backend_commit_p99
+          expr: |
+            histogram_quantile(0.99,
+              rate(etcd_disk_backend_commit_duration_seconds_bucket[5m])
+            )
+          labels:
+            component: etcd-performance
+            mtu: N201
+
+        # FR-N201.1: Backend commit 레이턴시 p50
+        - record: etcd_perf:backend_commit_p50
+          expr: |
+            histogram_quantile(0.50,
+              rate(etcd_disk_backend_commit_duration_seconds_bucket[5m])
+            )
+          labels:
+            component: etcd-performance
+            mtu: N201
+
+        # FR-N201.2: etcd DB 크기 (bytes)
+        - record: etcd_perf:db_size_bytes
+          expr: |
+            etcd_mvcc_db_total_size_in_bytes
+          labels:
+            component: etcd-performance
+            mtu: N201
+
+        # FR-N201.2: DB 크기 증가율 (bytes/hour)
+        - record: etcd_perf:db_size_growth_rate_1h
+          expr: |
+            rate(etcd_mvcc_db_total_size_in_bytes[1h]) * 3600
+          labels:
+            component: etcd-performance
+            mtu: N201
+
+        # FR-N201.2: etcd DB 사용 크기 (in-use)
+        - record: etcd_perf:db_size_in_use_bytes
+          expr: |
+            etcd_mvcc_db_total_size_in_use_in_bytes
+          labels:
+            component: etcd-performance
+            mtu: N201
+
+        # FR-N201.2: DB 단편화율 (%)
+        - record: etcd_perf:db_fragmentation_percent
+          expr: |
+            (
+              1 - (
+                etcd_mvcc_db_total_size_in_use_in_bytes
+                /
+                (etcd_mvcc_db_total_size_in_bytes > 0)
+              )
+            ) * 100
+          labels:
+            component: etcd-performance
+            mtu: N201
+
+        # FR-N201.2: Compaction 소요 시간 (초당 처리)
+        - record: etcd_perf:compaction_pause_total
+          expr: |
+            rate(etcd_debugging_mvcc_db_compaction_pause_duration_milliseconds_sum[5m]) / 1000
+          labels:
+            component: etcd-performance
+            mtu: N201
+
+        # 스냅샷 저장 횟수률
+        - record: etcd_perf:snapshot_save_rate
+          expr: |
+            rate(etcd_debugging_snap_save_total_duration_seconds_count[5m])
+          labels:
+            component: etcd-performance
+            mtu: N201
+
+        # 키 총 수
+        - record: etcd_perf:key_count
+          expr: |
+            etcd_debugging_mvcc_keys_total
+          labels:
+            component: etcd-performance
+            mtu: N201
+
+        # Watcher 수
+        - record: etcd_perf:watcher_count
+          expr: |
+            etcd_debugging_mvcc_watcher_total
+          labels:
+            component: etcd-performance
+            mtu: N201
