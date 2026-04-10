@@ -1,0 +1,56 @@
+# 예제: Database Claim (개발자가 사용하는 인터페이스)
+# Design Ref: MTU-N99 Design §Claim
+# Plan SC: FR-N99.5
+#
+# 개발자는 이 Claim만 작성하면 CNPG 클러스터 + NetworkPolicy가 자동 생성됨
+# kubectl apply -f example-database.yaml
+
+apiVersion: platform.saas.go.kr/v1alpha1
+kind: Database
+metadata:
+  name: auth-db
+  namespace: auth-service
+spec:
+  parameters:
+    size: medium
+    version: "16"
+    instances: 2
+    n2sfGrade: "S"
+    backupEnabled: true
+    storageSize: "20Gi"
+  compositionRef:
+    name: database-cnpg
+
+---
+# 예제: Cache Claim
+apiVersion: platform.saas.go.kr/v1alpha1
+kind: Cache
+metadata:
+  name: session-cache
+  namespace: auth-service
+spec:
+  parameters:
+    size: medium
+    maxMemoryPolicy: allkeys-lru
+    persistenceEnabled: false
+    n2sfGrade: "S"
+  compositionRef:
+    name: cache-redis
+
+---
+# 예제: TenantNamespace Claim
+apiVersion: platform.saas.go.kr/v1alpha1
+kind: TenantNamespace
+metadata:
+  name: example-tenant
+  namespace: crossplane-system
+spec:
+  parameters:
+    tenantName: ministry-of-interior
+    n2sfGrade: "S"
+    cpuLimit: "8"
+    memoryLimit: "16Gi"
+    storageLimit: "100Gi"
+    networkIsolation: true
+  compositionRef:
+    name: tenant-namespace

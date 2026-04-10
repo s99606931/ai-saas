@@ -1,0 +1,44 @@
+# Crossplane 설치 Helm Values
+# Design Ref: MTU-N99 Design §아키텍처
+# Plan SC: FR-N99.1
+#
+# 설치: helm install crossplane crossplane-stable/crossplane \
+#        -n crossplane-system --create-namespace -f install.yaml
+
+replicaCount: 1
+
+provider:
+  packages: []
+
+args:
+  - --debug
+  - --enable-composition-revisions
+
+resourcesCrossplane:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+resourcesRBACManager:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+securityContextCrossplane:
+  runAsUser: 65532
+  runAsGroup: 65532
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+
+metrics:
+  enabled: true
+
+webhooks:
+  enabled: true

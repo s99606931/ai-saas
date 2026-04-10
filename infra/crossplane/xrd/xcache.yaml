@@ -1,0 +1,47 @@
+# XRD: XCache -- Redis 캐시 인스턴스 추상화
+# Design Ref: MTU-N99 Design §XRD
+# Plan SC: FR-N99.3
+
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xcaches.platform.saas.go.kr
+spec:
+  group: platform.saas.go.kr
+  names:
+    kind: XCache
+    plural: xcaches
+  claimNames:
+    kind: Cache
+    plural: caches
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  properties:
+                    size:
+                      type: string
+                      enum: ["small", "medium", "large"]
+                      description: "small: 128Mi, medium: 512Mi, large: 1Gi"
+                    maxMemoryPolicy:
+                      type: string
+                      default: "allkeys-lru"
+                      enum: ["allkeys-lru", "allkeys-lfu", "volatile-lru", "noeviction"]
+                    persistenceEnabled:
+                      type: boolean
+                      default: false
+                    n2sfGrade:
+                      type: string
+                      enum: ["C", "S", "O"]
+                      default: "O"
+                  required:
+                    - size

@@ -1,0 +1,141 @@
+# Composition: TenantNamespace
+# Design Ref: MTU-N99 Design §Composition
+# Plan SC: FR-N99.4
+
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: tenant-namespace
+  labels:
+    crossplane.io/xrd: xnamespaces.platform.saas.go.kr
+    provider: kubernetes
+spec:
+  compositeTypeRef:
+    apiVersion: platform.saas.go.kr/v1alpha1
+    kind: XNamespace
+  resources:
+    # 1. Namespace
+    - name: namespace
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha2
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: v1
+              kind: Namespace
+              metadata:
+                name: ""
+                labels:
+                  n2sf.grade: ""
+                  pod-security.kubernetes.io/enforce: restricted
+                  pod-security.kubernetes.io/audit: restricted
+                  pod-security.kubernetes.io/warn: restricted
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.tenantName
+          toFieldPath: spec.forProvider.manifest.metadata.name
+          transforms:
+            - type: string
+              string:
+                fmt: "tenant-%s"
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.n2sfGrade
+          toFieldPath: spec.forProvider.manifest.metadata.labels["n2sf.grade"]
+
+    # 2. ResourceQuota
+    - name: resource-quota
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha2
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: v1
+              kind: ResourceQuota
+              metadata:
+                name: tenant-quota
+              spec:
+                hard:
+                  requests.cpu: "2"
+                  requests.memory: "4Gi"
+                  limits.cpu: "4"
+                  limits.memory: "8Gi"
+                  persistentvolumeclaims: "10"
+                  requests.storage: "50Gi"
+                  pods: "20"
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.cpuLimit
+          toFieldPath: spec.forProvider.manifest.spec.hard["limits.cpu"]
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.memoryLimit
+          toFieldPath: spec.forProvider.manifest.spec.hard["limits.memory"]
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.storageLimit
+          toFieldPath: spec.forProvider.manifest.spec.hard["requests.storage"]
+
+    # 3. LimitRange
+    - name: limit-range
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha2
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: v1
+              kind: LimitRange
+              metadata:
+                name: tenant-limits
+              spec:
+                limits:
+                  - type: Container
+                    default:
+                      cpu: "500m"
+                      memory: "512Mi"
+                    defaultRequest:
+                      cpu: "100m"
+                      memory: "128Mi"
+                    max:
+                      cpu: "2"
+                      memory: "4Gi"
+                    min:
+                      cpu: "10m"
+                      memory: "16Mi"
+                  - type: Pod
+                    max:
+                      cpu: "4"
+                      memory: "8Gi"
+
+    # 4. NetworkPolicy (기본 격리)
+    - name: network-policy
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha2
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: networking.k8s.io/v1
+              kind: NetworkPolicy
+              metadata:
+                name: tenant-isolation
+              spec:
+                podSelector: {}
+                policyTypes:
+                  - Ingress
+                  - Egress
+                ingress:
+                  - from:
+                      - podSelector: {}
+                egress:
+                  - to:
+                      - podSelector: {}
+                  - to:
+                      - namespaceSelector:
+                          matchLabels:
+                            kubernetes.io/metadata.name: kube-system
+                    ports:
+                      - port: 53
+                        protocol: UDP
+                      - port: 53
+                        protocol: TCP

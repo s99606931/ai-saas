@@ -1,0 +1,56 @@
+# XRD: XDatabase -- PostgreSQL 데이터베이스 추상화
+# Design Ref: MTU-N99 Design §XRD
+# Plan SC: FR-N99.3
+
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xdatabases.platform.saas.go.kr
+spec:
+  group: platform.saas.go.kr
+  names:
+    kind: XDatabase
+    plural: xdatabases
+  claimNames:
+    kind: Database
+    plural: databases
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  properties:
+                    size:
+                      type: string
+                      enum: ["small", "medium", "large"]
+                      description: "small: 1CPU/1Gi, medium: 2CPU/4Gi, large: 4CPU/8Gi"
+                    version:
+                      type: string
+                      default: "16"
+                      description: "PostgreSQL 버전"
+                    instances:
+                      type: integer
+                      default: 1
+                      minimum: 1
+                      maximum: 3
+                    n2sfGrade:
+                      type: string
+                      enum: ["C", "S", "O"]
+                      default: "O"
+                      description: "N2SF 데이터 등급"
+                    backupEnabled:
+                      type: boolean
+                      default: true
+                    storageSize:
+                      type: string
+                      default: "10Gi"
+                  required:
+                    - size

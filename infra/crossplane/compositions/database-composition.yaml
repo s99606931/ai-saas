@@ -1,0 +1,96 @@
+# Composition: Database (CNPG PostgreSQL)
+# Design Ref: MTU-N99 Design §Composition
+# Plan SC: FR-N99.4
+
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: database-cnpg
+  labels:
+    crossplane.io/xrd: xdatabases.platform.saas.go.kr
+    provider: kubernetes
+spec:
+  compositeTypeRef:
+    apiVersion: platform.saas.go.kr/v1alpha1
+    kind: XDatabase
+  resources:
+    # 1. CNPG Cluster
+    - name: cnpg-cluster
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha2
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: postgresql.cnpg.io/v1
+              kind: Cluster
+              metadata:
+                name: ""  # 패치에서 설정
+              spec:
+                instances: 1
+                postgresql:
+                  parameters:
+                    shared_buffers: "256MB"
+                    effective_cache_size: "768MB"
+                storage:
+                  size: "10Gi"
+                  storageClass: sc-hot-nvme
+                backup:
+                  barmanObjectStore:
+                    destinationPath: "s3://cnpg-backups/"
+                    endpointURL: "http://minio.minio-system.svc:9000"
+                    s3Credentials:
+                      accessKeyId:
+                        name: minio-credentials
+                        key: access-key
+                      secretAccessKey:
+                        name: minio-credentials
+                        key: secret-key
+                  retentionPolicy: "30d"
+                monitoring:
+                  enablePodMonitor: true
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.name
+          toFieldPath: spec.forProvider.manifest.metadata.name
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.instances
+          toFieldPath: spec.forProvider.manifest.spec.instances
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.storageSize
+          toFieldPath: spec.forProvider.manifest.spec.storage.size
+
+    # 2. NetworkPolicy (DB 접근 제한)
+    - name: network-policy
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha2
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: networking.k8s.io/v1
+              kind: NetworkPolicy
+              metadata:
+                name: ""
+              spec:
+                podSelector:
+                  matchLabels:
+                    cnpg.io/cluster: ""
+                policyTypes:
+                  - Ingress
+                ingress:
+                  - from:
+                      - namespaceSelector:
+                          matchLabels:
+                            kubernetes.io/metadata.name: ""
+                    ports:
+                      - port: 5432
+                        protocol: TCP
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.name
+          toFieldPath: spec.forProvider.manifest.metadata.name
+          transforms:
+            - type: string
+              string:
+                fmt: "%s-db-policy"

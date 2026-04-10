@@ -1,0 +1,112 @@
+# Composition: Cache (Redis)
+# Design Ref: MTU-N99 Design §Composition
+# Plan SC: FR-N99.4
+
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: cache-redis
+  labels:
+    crossplane.io/xrd: xcaches.platform.saas.go.kr
+    provider: kubernetes
+spec:
+  compositeTypeRef:
+    apiVersion: platform.saas.go.kr/v1alpha1
+    kind: XCache
+  resources:
+    # 1. Redis Deployment
+    - name: redis-deployment
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha2
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: ""
+              spec:
+                replicas: 1
+                selector:
+                  matchLabels:
+                    app: ""
+                template:
+                  metadata:
+                    labels:
+                      app: ""
+                  spec:
+                    securityContext:
+                      runAsNonRoot: true
+                      runAsUser: 999
+                      fsGroup: 999
+                      seccompProfile:
+                        type: RuntimeDefault
+                    containers:
+                      - name: redis
+                        image: redis:7.2-alpine
+                        ports:
+                          - containerPort: 6379
+                        command: ["redis-server"]
+                        args:
+                          - "--maxmemory"
+                          - "128mb"
+                          - "--maxmemory-policy"
+                          - "allkeys-lru"
+                          - "--requirepass"
+                          - "$(REDIS_PASSWORD)"
+                        env:
+                          - name: REDIS_PASSWORD
+                            valueFrom:
+                              secretKeyRef:
+                                name: redis-credentials
+                                key: password
+                        resources:
+                          requests:
+                            cpu: 100m
+                            memory: 128Mi
+                          limits:
+                            cpu: 500m
+                            memory: 256Mi
+                        securityContext:
+                          allowPrivilegeEscalation: false
+                          readOnlyRootFilesystem: true
+                          capabilities:
+                            drop: ["ALL"]
+                        readinessProbe:
+                          exec:
+                            command: ["redis-cli", "ping"]
+                          initialDelaySeconds: 5
+                          periodSeconds: 10
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.name
+          toFieldPath: spec.forProvider.manifest.metadata.name
+
+    # 2. Redis Service
+    - name: redis-service
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha2
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: v1
+              kind: Service
+              metadata:
+                name: ""
+              spec:
+                selector:
+                  app: ""
+                ports:
+                  - port: 6379
+                    targetPort: 6379
+                    protocol: TCP
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.name
+          toFieldPath: spec.forProvider.manifest.metadata.name
+          transforms:
+            - type: string
+              string:
+                fmt: "%s-redis"

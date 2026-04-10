@@ -1,0 +1,54 @@
+# Crossplane Provider-Kubernetes 설정
+# Design Ref: MTU-N99 Design §Provider
+# Plan SC: FR-N99.2
+#
+# Provider-Kubernetes: 로컬 k3s 클러스터 리소스 관리
+
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-kubernetes
+spec:
+  package: xpkg.upbound.io/crossplane-contrib/provider-kubernetes:v0.14.1
+  controllerConfigRef:
+    name: provider-kubernetes-config
+
+---
+apiVersion: pkg.crossplane.io/v1alpha1
+kind: ControllerConfig
+metadata:
+  name: provider-kubernetes-config
+spec:
+  serviceAccountName: provider-kubernetes
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+---
+# Provider에 클러스터 접근 권한 부여
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: provider-kubernetes-admin
+subjects:
+  - kind: ServiceAccount
+    name: provider-kubernetes
+    namespace: crossplane-system
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# ProviderConfig: 로컬 k3s 클러스터 사용
+apiVersion: kubernetes.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  credentials:
+    source: InjectedIdentity

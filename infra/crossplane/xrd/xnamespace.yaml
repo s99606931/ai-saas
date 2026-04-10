@@ -1,0 +1,53 @@
+# XRD: XNamespace -- 테넌트 네임스페이스 추상화
+# Design Ref: MTU-N99 Design §XRD
+# Plan SC: FR-N99.3
+
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xnamespaces.platform.saas.go.kr
+spec:
+  group: platform.saas.go.kr
+  names:
+    kind: XNamespace
+    plural: xnamespaces
+  claimNames:
+    kind: TenantNamespace
+    plural: tenantnamespaces
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  properties:
+                    tenantName:
+                      type: string
+                      description: "테넌트 이름"
+                    n2sfGrade:
+                      type: string
+                      enum: ["C", "S", "O"]
+                      default: "O"
+                      description: "N2SF 데이터 등급"
+                    cpuLimit:
+                      type: string
+                      default: "4"
+                    memoryLimit:
+                      type: string
+                      default: "8Gi"
+                    storageLimit:
+                      type: string
+                      default: "50Gi"
+                    networkIsolation:
+                      type: boolean
+                      default: true
+                  required:
+                    - tenantName
+                    - n2sfGrade
