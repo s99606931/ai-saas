@@ -1,0 +1,282 @@
+{
+  "__meta": {
+    "design_ref": "MTU-N161 Section 3",
+    "plan_sc": "FR-N161.5",
+    "csap": "D-06"
+  },
+  "description": "자동 용량 권고 대시보드 - VPA/HPA 통합 리소스 권장사항 및 비용 절감 분석",
+  "editable": true,
+  "panels": [
+    {
+      "title": "용량 권고 요약",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "title": "총 월간 절감 잠재력 (KRW)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(capacity:total_savings_monthly_krw)",
+          "legendFormat": "월간 절감 가능"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyKRW",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 100000 },
+              { "color": "red", "value": 500000 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "과다 할당 워크로드 수",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 1 },
+      "targets": [
+        {
+          "expr": "count(capacity:cpu_overprovision_ratio > 1.5) + count(capacity:memory_overprovision_ratio > 1.5)",
+          "legendFormat": "과다 할당"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "과소 할당 워크로드 수 (위험)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "count(capacity:memory_overprovision_ratio < 1.0)",
+          "legendFormat": "OOM 위험"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "평균 리소스 효율",
+      "type": "gauge",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 },
+      "targets": [
+        {
+          "expr": "avg(1 / clamp_min(capacity:cpu_overprovision_ratio, 0.01)) * 100",
+          "legendFormat": "CPU 효율"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 40 },
+              { "color": "green", "value": 60 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "CPU 용량 분석",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "collapsed": false
+    },
+    {
+      "title": "CPU: 현재 requests vs 권장 requests",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(capacity:cpu_requests_current) by (namespace)",
+          "legendFormat": "현재 {{ namespace }}"
+        },
+        {
+          "expr": "sum(capacity:cpu_requests_recommended) by (namespace)",
+          "legendFormat": "권장 {{ namespace }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "title": "CPU 과다 할당 비율",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "capacity:cpu_overprovision_ratio",
+          "legendFormat": "{{ namespace }}/{{ container }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "lineWidth": 2 },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1.5 },
+              { "color": "red", "value": 2.0 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "메모리 용량 분석",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "collapsed": false
+    },
+    {
+      "title": "메모리: 현재 requests vs 권장 requests",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
+      "targets": [
+        {
+          "expr": "sum(capacity:memory_requests_current) by (namespace) / 1073741824",
+          "legendFormat": "현재 {{ namespace }} (GB)"
+        },
+        {
+          "expr": "sum(capacity:memory_requests_recommended) by (namespace) / 1073741824",
+          "legendFormat": "권장 {{ namespace }} (GB)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decgbytes",
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "title": "절감 잠재력 분석",
+      "type": "barchart",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 17 },
+      "targets": [
+        {
+          "expr": "topk(10, capacity:total_savings_monthly_krw)",
+          "legendFormat": "{{ namespace }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyKRW",
+          "custom": { "fillOpacity": 80 }
+        }
+      }
+    },
+    {
+      "title": "HPA 분석",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+      "collapsed": false
+    },
+    {
+      "title": "HPA 활용률",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
+      "targets": [
+        {
+          "expr": "capacity:hpa_utilization_ratio * 100",
+          "legendFormat": "{{ horizontalpodautoscaler }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "HPA 스케일 이벤트 빈도",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
+      "targets": [
+        {
+          "expr": "capacity:hpa_scale_events_per_hour",
+          "legendFormat": "{{ horizontalpodautoscaler }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["capacity", "vpa", "hpa", "finops", "recommendation"],
+  "templating": {
+    "list": [
+      {
+        "name": "namespace",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(capacity:cpu_requests_current, namespace)",
+        "includeAll": true
+      }
+    ]
+  },
+  "time": { "from": "now-7d", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "자동 용량 권고 대시보드",
+  "uid": "capacity-rec-N161",
+  "version": 1
+}

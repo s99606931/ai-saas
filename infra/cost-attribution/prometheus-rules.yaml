@@ -1,0 +1,200 @@
+# Design Ref: MTU-N160 Section 3.1
+# Plan SC: FR-N160.1, FR-N160.2, FR-N160.4
+# CSAP: D-06 침해사고관리 (비용 추적)
+#
+# 테넌트별 비용 귀속 Prometheus 레코딩 규칙 및 알림
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cost-attribution-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: finops
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    # === 비용 레코딩 규칙 ===
+    - name: cost-attribution.recording
+      interval: 60s
+      rules:
+        # 테넌트(네임스페이스)별 CPU 사용량 (vCore)
+        - record: tenant_resource:cpu_usage_cores
+          expr: |
+            sum(
+              rate(container_cpu_usage_seconds_total{
+                container!="",
+                container!="POD",
+                namespace=~"tenant-.*|public-saas"
+              }[5m])
+            ) by (namespace)
+
+        # 테넌트별 메모리 사용량 (GB)
+        - record: tenant_resource:memory_usage_gb
+          expr: |
+            sum(
+              container_memory_working_set_bytes{
+                container!="",
+                container!="POD",
+                namespace=~"tenant-.*|public-saas"
+              }
+            ) by (namespace) / 1073741824
+
+        # 테넌트별 PV 스토리지 사용량 (GB)
+        - record: tenant_resource:storage_usage_gb
+          expr: |
+            sum(
+              kubelet_volume_stats_used_bytes{
+                namespace=~"tenant-.*|public-saas"
+              }
+            ) by (namespace) / 1073741824
+
+        # 테넌트별 네트워크 전송량 (GB/h)
+        - record: tenant_resource:network_egress_gb_per_hour
+          expr: |
+            sum(
+              rate(container_network_transmit_bytes_total{
+                namespace=~"tenant-.*|public-saas"
+              }[1h])
+            ) by (namespace) * 3600 / 1073741824
+
+        # === 비용 계산 (KRW) ===
+        # CPU 시간당 비용
+        - record: tenant_cost:cpu_hourly_krw
+          expr: |
+            tenant_resource:cpu_usage_cores * 50
+
+        # 메모리 시간당 비용
+        - record: tenant_cost:memory_hourly_krw
+          expr: |
+            tenant_resource:memory_usage_gb * 10
+
+        # 스토리지 월간 비용 (시간당 환산)
+        - record: tenant_cost:storage_hourly_krw
+          expr: |
+            tenant_resource:storage_usage_gb * 100 / 720
+
+        # 네트워크 시간당 비용
+        - record: tenant_cost:network_hourly_krw
+          expr: |
+            tenant_resource:network_egress_gb_per_hour * 50
+
+        # 총 시간당 비용
+        - record: tenant_cost:total_hourly_krw
+          expr: |
+            tenant_cost:cpu_hourly_krw
+            + tenant_cost:memory_hourly_krw
+            + tenant_cost:storage_hourly_krw
+            + tenant_cost:network_hourly_krw
+
+        # 일간 비용 추정
+        - record: tenant_cost:daily_estimated_krw
+          expr: |
+            tenant_cost:total_hourly_krw * 24
+
+        # 월간 비용 추정
+        - record: tenant_cost:monthly_estimated_krw
+          expr: |
+            tenant_cost:total_hourly_krw * 720
+
+        # === 비용 효율 메트릭 ===
+        # CPU 할당 대비 실제 사용률
+        - record: tenant_efficiency:cpu_utilization_ratio
+          expr: |
+            tenant_resource:cpu_usage_cores
+            /
+            sum(
+              kube_pod_container_resource_requests{
+                resource="cpu",
+                namespace=~"tenant-.*|public-saas"
+              }
+            ) by (namespace)
+
+        # 메모리 할당 대비 실제 사용률
+        - record: tenant_efficiency:memory_utilization_ratio
+          expr: |
+            tenant_resource:memory_usage_gb
+            /
+            (sum(
+              kube_pod_container_resource_requests{
+                resource="memory",
+                namespace=~"tenant-.*|public-saas"
+              }
+            ) by (namespace) / 1073741824)
+
+    # === 비용 알림 규칙 ===
+    - name: cost-attribution.alerts
+      rules:
+        # 일간 비용 경고 임계값
+        - alert: TenantDailyCostWarning
+          expr: |
+            tenant_cost:daily_estimated_krw > 50000
+          for: 30m
+          labels:
+            severity: warning
+            team: finops
+          annotations:
+            summary: "테넌트 일간 비용 경고 ({{ $labels.namespace }})"
+            description: |
+              {{ $labels.namespace }} 테넌트의 예상 일간 비용이 50,000원을 초과합니다.
+              현재 예상 비용: {{ printf "%.0f" $value }}원/일
+            runbook: "비용 최적화 권장: 리소스 요청/제한 검토, 미사용 파드 정리"
+
+        # 일간 비용 위험 임계값
+        - alert: TenantDailyCostCritical
+          expr: |
+            tenant_cost:daily_estimated_krw > 100000
+          for: 15m
+          labels:
+            severity: critical
+            team: finops
+          annotations:
+            summary: "테넌트 일간 비용 위험 ({{ $labels.namespace }})"
+            description: |
+              {{ $labels.namespace }} 테넌트의 예상 일간 비용이 100,000원을 초과합니다.
+              현재 예상 비용: {{ printf "%.0f" $value }}원/일
+              즉시 리소스 사용 현황을 점검하십시오.
+
+        # 월간 비용 경고 임계값
+        - alert: TenantMonthlyCostWarning
+          expr: |
+            tenant_cost:monthly_estimated_krw > 1000000
+          for: 1h
+          labels:
+            severity: warning
+            team: finops
+          annotations:
+            summary: "테넌트 월간 비용 경고 ({{ $labels.namespace }})"
+            description: |
+              {{ $labels.namespace }} 테넌트의 예상 월간 비용이 1,000,000원을 초과합니다.
+              현재 예상 비용: {{ printf "%.0f" $value }}원/월
+
+        # CPU 리소스 비효율 (과다 할당)
+        - alert: TenantCpuOverProvisioned
+          expr: |
+            tenant_efficiency:cpu_utilization_ratio < 0.2
+          for: 1h
+          labels:
+            severity: info
+            team: finops
+          annotations:
+            summary: "CPU 과다 할당 ({{ $labels.namespace }})"
+            description: |
+              {{ $labels.namespace }} 테넌트의 CPU 실제 사용률이 20% 미만입니다.
+              비용 절감을 위해 리소스 요청량 축소를 권장합니다.
+
+        # 메모리 리소스 비효율
+        - alert: TenantMemoryOverProvisioned
+          expr: |
+            tenant_efficiency:memory_utilization_ratio < 0.2
+          for: 1h
+          labels:
+            severity: info
+            team: finops
+          annotations:
+            summary: "메모리 과다 할당 ({{ $labels.namespace }})"
+            description: |
+              {{ $labels.namespace }} 테넌트의 메모리 실제 사용률이 20% 미만입니다.
+              비용 절감을 위해 리소스 요청량 축소를 권장합니다.

@@ -1,0 +1,176 @@
+# Design Ref: MTU-N159 Section 3.5
+# Plan SC: FR-N159.4
+# CSAP: D-06 침해사고관리 (크로스존 트래픽 감사)
+#
+# 토폴로지 라우팅 Prometheus 모니터링 규칙
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: topology-routing-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    # === 레코딩 규칙 ===
+    - name: topology-routing.recording
+      interval: 30s
+      rules:
+        # 동일 존 라우팅 비율 계산
+        - record: topology_routing:same_zone_ratio
+          expr: |
+            sum(rate(
+              linkerd_tcp_open_connections{
+                peer_zone=~"zone-.*",
+                direction="outbound"
+              }[5m]
+            ) and on(pod) (
+              label_replace(
+                kube_pod_info{node!=""},
+                "pod_zone",
+                "$1",
+                "node",
+                "(.*)"
+              )
+            )) by (namespace, deployment)
+            /
+            sum(rate(
+              linkerd_tcp_open_connections{
+                direction="outbound"
+              }[5m]
+            )) by (namespace, deployment)
+
+        # 크로스존 트래픽 총량 (초당 바이트)
+        - record: topology_routing:cross_zone_bytes_per_second
+          expr: |
+            sum(rate(
+              linkerd_tcp_sent_bytes_total{
+                direction="outbound"
+              }[5m]
+            )) by (namespace, src_zone, dst_zone)
+
+        # 존별 가용 엔드포인트 수
+        - record: topology_routing:endpoints_per_zone
+          expr: |
+            count(
+              kube_endpoint_address_available
+            ) by (namespace, endpoint, topology_zone)
+
+        # 존별 엔드포인트 균형도 (표준편차/평균)
+        - record: topology_routing:endpoint_balance_ratio
+          expr: |
+            stddev(
+              topology_routing:endpoints_per_zone
+            ) by (namespace, endpoint)
+            /
+            avg(
+              topology_routing:endpoints_per_zone
+            ) by (namespace, endpoint)
+
+    # === 알림 규칙 ===
+    - name: topology-routing.alerts
+      rules:
+        # 크로스존 트래픽 비율 높음
+        - alert: TopologyRoutingCrossZoneHigh
+          expr: |
+            (1 - topology_routing:same_zone_ratio) > 0.3
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            csap: "D-08"
+          annotations:
+            summary: "크로스존 트래픽 비율 높음 ({{ $labels.namespace }}/{{ $labels.deployment }})"
+            description: |
+              {{ $labels.deployment }}의 크로스존 트래픽이 30%를 초과했습니다.
+              현재 동일 존 비율: {{ printf "%.1f" $value }}%
+              토폴로지 라우팅 설정을 확인하십시오.
+            runbook: "infra/topology-routing/RUNBOOK.md#cross-zone-high"
+
+        # 존 내 엔드포인트 부족
+        - alert: TopologyRoutingEndpointShortage
+          expr: |
+            topology_routing:endpoints_per_zone < 2
+          for: 2m
+          labels:
+            severity: warning
+            team: sre
+            csap: "D-08"
+          annotations:
+            summary: "존 내 엔드포인트 부족 ({{ $labels.topology_zone }})"
+            description: |
+              {{ $labels.topology_zone }} 존의 {{ $labels.endpoint }} 엔드포인트가 2개 미만입니다.
+              현재: {{ $value }}개. 페일오버가 발생할 수 있습니다.
+            runbook: "infra/topology-routing/RUNBOOK.md#endpoint-shortage"
+
+        # 존 내 엔드포인트 제로 (크리티컬)
+        - alert: TopologyRoutingEndpointZero
+          expr: |
+            topology_routing:endpoints_per_zone == 0
+          for: 1m
+          labels:
+            severity: critical
+            team: sre
+            csap: "D-08"
+          annotations:
+            summary: "존 내 엔드포인트 없음 - 크로스존 페일오버 활성화 ({{ $labels.topology_zone }})"
+            description: |
+              {{ $labels.topology_zone }} 존에 가용 엔드포인트가 없습니다.
+              크로스존 페일오버가 자동 활성화됩니다. 즉시 확인 필요합니다.
+            runbook: "infra/topology-routing/RUNBOOK.md#endpoint-zero"
+
+        # 엔드포인트 불균형
+        - alert: TopologyRoutingEndpointImbalance
+          expr: |
+            topology_routing:endpoint_balance_ratio > 0.3
+          for: 10m
+          labels:
+            severity: warning
+            team: sre
+          annotations:
+            summary: "존별 엔드포인트 불균형 ({{ $labels.endpoint }})"
+            description: |
+              {{ $labels.endpoint }}의 존별 엔드포인트 분포가 불균형합니다.
+              균형도: {{ printf "%.2f" $value }} (0.3 이상은 불균형)
+              Pod Topology Spread Constraints 설정을 확인하십시오.
+            runbook: "infra/topology-routing/RUNBOOK.md#endpoint-imbalance"
+
+        # 페일오버 빈발
+        - alert: TopologyRoutingFrequentFailover
+          expr: |
+            increase(
+              topology_routing_failover_total[1h]
+            ) > 5
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+          annotations:
+            summary: "토폴로지 페일오버 빈발"
+            description: |
+              최근 1시간 동안 5회 이상 페일오버가 발생했습니다.
+              인프라 안정성을 점검하십시오.
+            runbook: "infra/topology-routing/RUNBOOK.md#frequent-failover"
+
+        # TAR 힌트 비활성 상태
+        - alert: TopologyRoutingHintsDisabled
+          expr: |
+            kube_service_annotations{
+              annotation_service_kubernetes_io_topology_mode="Auto"
+            } unless on(service, namespace)
+            kube_endpoint_slice_info{
+              address_type="IPv4"
+            }
+          for: 15m
+          labels:
+            severity: info
+            team: sre
+          annotations:
+            summary: "TAR 힌트가 할당되지 않음 ({{ $labels.service }})"
+            description: |
+              {{ $labels.service }}에 topology-mode: Auto가 설정되었으나
+              EndpointSlice에 힌트가 할당되지 않았습니다.
+              엔드포인트 수가 존 수보다 적을 수 있습니다.

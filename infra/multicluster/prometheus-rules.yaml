@@ -1,0 +1,73 @@
+# Design Ref: MTU-N162
+# Plan SC: FR-N162.4
+# CSAP: D-06 침해사고관리
+#
+# 멀티클러스터 페더레이션 모니터링 규칙
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: multicluster-federation-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: multicluster-federation.recording
+      interval: 30s
+      rules:
+        # 클러스터 간 게이트웨이 레이턴시
+        - record: multicluster:gateway_latency_seconds
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(
+                linkerd_gateway_probe_latency_bucket[5m]
+              )) by (le, target_cluster)
+            )
+
+        # 미러링 서비스 상태
+        - record: multicluster:mirror_service_alive
+          expr: |
+            linkerd_gateway_alive
+
+        # 크로스 클러스터 트래픽량
+        - record: multicluster:cross_cluster_traffic_bytes
+          expr: |
+            sum(rate(
+              linkerd_tcp_sent_bytes_total{
+                direction="outbound",
+                dst_namespace="linkerd-multicluster"
+              }[5m]
+            )) by (src_namespace, target_cluster)
+
+    - name: multicluster-federation.alerts
+      rules:
+        # 클러스터 간 연결 단절
+        - alert: MulticlusterGatewayDown
+          expr: |
+            multicluster:mirror_service_alive == 0
+          for: 1m
+          labels:
+            severity: critical
+            team: sre
+          annotations:
+            summary: "멀티클러스터 게이트웨이 연결 단절 ({{ $labels.target_cluster }})"
+            description: |
+              {{ $labels.target_cluster }} 클러스터와의 연결이 단절되었습니다.
+              페일오버 준비 상태를 확인하십시오.
+
+        # 클러스터 간 레이턴시 높음
+        - alert: MulticlusterHighLatency
+          expr: |
+            multicluster:gateway_latency_seconds > 0.5
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+          annotations:
+            summary: "클러스터 간 레이턴시 높음 ({{ $labels.target_cluster }})"
+            description: |
+              {{ $labels.target_cluster }} 클러스터와의 P99 레이턴시가 500ms를 초과합니다.
+              네트워크 상태를 점검하십시오.

@@ -1,0 +1,66 @@
+# Design Ref: MTU-N163
+# Plan SC: FR-N163.4
+# CSAP: D-06
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: log-compaction-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: log-compaction.recording
+      interval: 60s
+      rules:
+        # 로그 등급별 일간 볼륨
+        - record: log_compaction:daily_volume_bytes
+          expr: |
+            sum(
+              increase(loki_ingester_bytes_received_total[24h])
+            ) by (tenant)
+
+        # 로그 압축 비율
+        - record: log_compaction:compression_ratio
+          expr: |
+            1 - (
+              sum(loki_compactor_compressed_bytes_total) by (tenant)
+              /
+              clamp_min(sum(loki_compactor_uncompressed_bytes_total) by (tenant), 1)
+            )
+
+        # 스토리지 사용량
+        - record: log_compaction:storage_used_bytes
+          expr: |
+            sum(loki_store_series_total) by (tenant)
+
+    - name: log-compaction.alerts
+      rules:
+        # 로그 볼륨 급증
+        - alert: LogVolumeSpike
+          expr: |
+            log_compaction:daily_volume_bytes > 1073741824
+          for: 1h
+          labels:
+            severity: warning
+            team: sre
+          annotations:
+            summary: "로그 볼륨 급증 ({{ $labels.tenant }})"
+            description: |
+              {{ $labels.tenant }}의 일간 로그 볼륨이 1GB를 초과했습니다.
+              로그 레벨 또는 샘플링 설정을 확인하십시오.
+
+        # 스토리지 용량 위험
+        - alert: LogStorageCapacityWarning
+          expr: |
+            sum(log_compaction:storage_used_bytes) / sum(node_filesystem_size_bytes{mountpoint="/loki"}) > 0.8
+          for: 30m
+          labels:
+            severity: critical
+            team: sre
+          annotations:
+            summary: "로그 스토리지 용량 80% 초과"
+            description: "Loki 로그 스토리지 사용량이 80%를 초과했습니다. 즉시 용량 확장 또는 보존 정책 조정이 필요합니다."

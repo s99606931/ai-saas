@@ -162,7 +162,11 @@ describe('E2E: API 게이트웨이 라우팅 (FR-N01.4, CSAP D-10)', () => {
 
     it('graceful shutdown 로직이 존재해야 한다', () => {
       expect(indexContent).toContain('graceful shutdown');
-      expect(indexContent).toContain('app.close');
+      // meshReadyPlugin 패턴: app.close는 플러그인 내부에서 자동 호출
+      // 또는 직접 호출 (레거시 패턴)
+      const hasAppClose = indexContent.includes('app.close');
+      const hasMeshShutdown = indexContent.includes('mesh.shutdown');
+      expect(hasAppClose || hasMeshShutdown).toBe(true);
     });
   });
 

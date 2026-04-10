@@ -1,0 +1,222 @@
+{
+  "__meta": {
+    "design_ref": "MTU-N160 Section 3.2",
+    "plan_sc": "FR-N160.3",
+    "csap": "D-06, D-08"
+  },
+  "annotations": { "list": [] },
+  "description": "테넌트별 인프라 비용 귀속 대시보드 - 리소스 사용량 기반 비용 추적 및 정산",
+  "editable": true,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "비용 현황 요약",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "title": "전체 예상 월간 비용 (KRW)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(tenant_cost:monthly_estimated_krw)",
+          "legendFormat": "월간 총 비용"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyKRW",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5000000 },
+              { "color": "red", "value": 10000000 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "전체 예상 일간 비용 (KRW)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(tenant_cost:daily_estimated_krw)",
+          "legendFormat": "일간 총 비용"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyKRW"
+        }
+      }
+    },
+    {
+      "title": "평균 CPU 효율",
+      "type": "gauge",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "avg(tenant_efficiency:cpu_utilization_ratio) * 100",
+          "legendFormat": "CPU 사용률"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "green", "value": 50 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "평균 메모리 효율",
+      "type": "gauge",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 },
+      "targets": [
+        {
+          "expr": "avg(tenant_efficiency:memory_utilization_ratio) * 100",
+          "legendFormat": "메모리 사용률"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "green", "value": 50 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "테넌트별 비용 분석",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "collapsed": false
+    },
+    {
+      "title": "테넌트별 월간 비용 순위 (Top 10)",
+      "type": "barchart",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "topk(10, tenant_cost:monthly_estimated_krw)",
+          "legendFormat": "{{ namespace }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyKRW",
+          "custom": { "fillOpacity": 80 }
+        }
+      }
+    },
+    {
+      "title": "리소스별 비용 구성",
+      "type": "piechart",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "sum(tenant_cost:cpu_hourly_krw) * 720", "legendFormat": "CPU" },
+        { "expr": "sum(tenant_cost:memory_hourly_krw) * 720", "legendFormat": "메모리" },
+        { "expr": "sum(tenant_cost:storage_hourly_krw) * 720", "legendFormat": "스토리지" },
+        { "expr": "sum(tenant_cost:network_hourly_krw) * 720", "legendFormat": "네트워크" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "currencyKRW" }
+      }
+    },
+    {
+      "title": "비용 추이",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "collapsed": false
+    },
+    {
+      "title": "테넌트별 일간 비용 추이",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 17 },
+      "targets": [
+        {
+          "expr": "tenant_cost:daily_estimated_krw",
+          "legendFormat": "{{ namespace }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyKRW",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "stacking": { "mode": "normal" }
+          }
+        }
+      }
+    },
+    {
+      "title": "테넌트별 상세",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+      "collapsed": false
+    },
+    {
+      "title": "테넌트별 리소스 사용량 및 비용 상세",
+      "type": "table",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 26 },
+      "targets": [
+        { "expr": "tenant_resource:cpu_usage_cores", "legendFormat": "CPU (cores)", "instant": true, "format": "table" },
+        { "expr": "tenant_resource:memory_usage_gb", "legendFormat": "Memory (GB)", "instant": true, "format": "table" },
+        { "expr": "tenant_resource:storage_usage_gb", "legendFormat": "Storage (GB)", "instant": true, "format": "table" },
+        { "expr": "tenant_cost:monthly_estimated_krw", "legendFormat": "Monthly (KRW)", "instant": true, "format": "table" },
+        { "expr": "tenant_efficiency:cpu_utilization_ratio * 100", "legendFormat": "CPU Efficiency (%)", "instant": true, "format": "table" }
+      ],
+      "transformations": [
+        { "id": "merge" },
+        { "id": "organize", "options": { "excludeByName": { "Time": true } } }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["finops", "cost", "tenant", "billing", "csap"],
+  "templating": {
+    "list": [
+      {
+        "name": "namespace",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(tenant_cost:total_hourly_krw, namespace)",
+        "includeAll": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "time": { "from": "now-7d", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "테넌트 비용 귀속 대시보드",
+  "uid": "cost-attribution-N160",
+  "version": 1
+}

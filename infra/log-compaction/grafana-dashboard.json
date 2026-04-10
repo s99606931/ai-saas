@@ -1,0 +1,71 @@
+{
+  "__meta": { "design_ref": "MTU-N163", "plan_sc": "FR-N163.5" },
+  "description": "지능형 로그 압축 모니터링 - 등급별 볼륨, 압축 효율, 스토리지 계층",
+  "panels": [
+    { "title": "로그 압축 현황", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 } },
+    {
+      "title": "일간 로그 볼륨 (등급별)",
+      "type": "barchart",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        { "expr": "log_compaction:daily_volume_bytes", "legendFormat": "{{ tenant }}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "title": "압축 효율",
+      "type": "gauge",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 1 },
+      "targets": [
+        { "expr": "avg(log_compaction:compression_ratio) * 100", "legendFormat": "압축률" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0, "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "green", "value": 50 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "스토리지 사용량",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 1 },
+      "targets": [
+        { "expr": "sum(log_compaction:storage_used_bytes)", "legendFormat": "총 사용량" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "title": "등급별 로그 볼륨 추이",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 9 },
+      "targets": [
+        { "expr": "log_compaction:daily_volume_bytes", "legendFormat": "{{ tenant }}" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "stacking": { "mode": "normal" } }
+        }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["logging", "compaction", "storage", "csap"],
+  "time": { "from": "now-7d", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "지능형 로그 압축 대시보드",
+  "uid": "log-compaction-N163",
+  "version": 1
+}

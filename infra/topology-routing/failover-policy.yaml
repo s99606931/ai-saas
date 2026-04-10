@@ -1,0 +1,117 @@
+# Design Ref: MTU-N159 Section 3.4
+# Plan SC: FR-N159.5
+# CSAP: D-08 네트워크 접근 통제
+#
+# 토폴로지 기반 페일오버 정책
+# 존 내 엔드포인트 부족 시 크로스존 허용 정책
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: topology-failover-policy
+  namespace: public-saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    topology-routing.saas.io/component: failover
+data:
+  failover-config.yaml: |
+    # 토폴로지 페일오버 정책 설정
+    # Design Ref: MTU-N159 Section 3.4
+
+    version: "1.0"
+    description: "토폴로지 인식 페일오버 정책"
+
+    # 존 내부 라우팅 설정
+    zoneRouting:
+      enabled: true
+      mode: "prefer-zone"  # prefer-zone | strict-zone | any
+      minEndpointsPerZone: 2
+
+    # 페일오버 임계값
+    failover:
+      # 존 내 가용 엔드포인트 임계값
+      thresholds:
+        healthy:
+          minEndpoints: 2
+          action: "zone-only"
+          alertLevel: "none"
+        degraded:
+          minEndpoints: 1
+          action: "zone-prefer"
+          alertLevel: "warning"
+        critical:
+          minEndpoints: 0
+          action: "cross-zone"
+          alertLevel: "critical"
+
+      # 페일오버 전환 설정
+      switchover:
+        # 존 내부 → 크로스존 전환 대기 시간
+        gracePeriodSeconds: 10
+        # 크로스존 → 존 내부 복귀 대기 시간
+        recoveryPeriodSeconds: 60
+        # 최대 크로스존 비율
+        maxCrossZoneRatio: 0.5
+
+    # 헬스체크 기반 판단
+    healthCheck:
+      enabled: true
+      interval: 10s
+      timeout: 5s
+      failureThreshold: 3
+      successThreshold: 2
+
+    # 알림 설정
+    alerting:
+      # 크로스존 트래픽 발생 시 알림
+      crossZoneAlert:
+        enabled: true
+        channels:
+          - type: "prometheus-alertmanager"
+            severity: "warning"
+          - type: "audit-log"
+            severity: "info"
+
+      # 페일오버 발생 시 알림
+      failoverAlert:
+        enabled: true
+        channels:
+          - type: "prometheus-alertmanager"
+            severity: "critical"
+          - type: "audit-log"
+            severity: "warning"
+
+    # 서비스별 예외 설정
+    serviceOverrides:
+      # API 게이트웨이: 항상 모든 존에 분배 (진입점)
+      - service: "api-gateway"
+        mode: "any"
+        reason: "클러스터 진입점, 모든 존에서 접근 필요"
+
+      # 감사 서비스: 존 우선이지만 가용성 최우선
+      - service: "audit-service"
+        mode: "prefer-zone"
+        failover:
+          gracePeriodSeconds: 5
+        reason: "CSAP D-06 감사 로그 무중단 필수"
+
+  # 존별 가중치 설정
+  zone-weights.yaml: |
+    # 존별 트래픽 가중치
+    zones:
+      zone-a:
+        weight: 100
+        priority: 1
+      zone-b:
+        weight: 100
+        priority: 2
+      zone-c:
+        weight: 100
+        priority: 3
+
+    # 장애 시 가중치 재분배 전략
+    rebalanceStrategy: "proportional"
+    # proportional: 남은 존에 비례 분배
+    # round-robin: 순환 분배
+    # priority: 우선순위 기반

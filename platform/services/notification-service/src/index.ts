@@ -1,50 +1,75 @@
 // 알림 서비스 진입점
-// Design Ref: DESIGN-MTU-P11, DESIGN-MTU-Q2, SVC-OTEL-R3 DESIGN, SVC-INTEGRATE-R11 Plan
-// Plan SC: MTU-P11, MTU-Q2, FR-OTEL.3, FR-INT.1
-// CSAP: D-06 감사 로그, D-07 가용성
+// Design Ref: DESIGN-MTU-P11, DESIGN-MTU-Q2, SVC-OTEL-R3 DESIGN, SVC-INTEGRATE-R11 Plan, SVC-INTEGRATE-R18 Plan
+// Plan SC: MTU-P11, MTU-Q2, FR-OTEL.3, FR-INT.1, FR-R18.1, FR-R18.3, FR-R18.4
+// CSAP: D-06 감사 로그, D-07 가용성, D-10 분산 추적
 
 import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
 
-initTelemetry({ serviceName: 'notification-service', serviceVersion: '0.1.0' });
+initTelemetry({ serviceName: 'notification-service', serviceVersion: '0.2.0' });
 
 import Fastify from 'fastify';
 import { responseTimePlugin } from '@public-saas/observability';
 import { healthPlugin, CommonCheckers } from '@public-saas/health';
 import { rbacPlugin } from '@public-saas/rbac';
-import { notificationEventBus } from './lib/event-bus.js';
-
-const PORT = parseInt(process.env['NOTIFICATION_SERVICE_PORT'] ?? '3010', 10);
-const HOST = '0.0.0.0';
+import { meshReadyPlugin } from '@public-saas/mesh-ready';
+import { configPlugin } from '@public-saas/config-vault';
+import { eventBusPlugin } from '@public-saas/event-bus';
 
 async function main(): Promise<void> {
   const app = Fastify({
     logger: { level: process.env['LOG_LEVEL'] ?? 'info' },
   });
 
+  // Plan SC: FR-R18.3 -- configPlugin 통합
+  await app.register(configPlugin, {
+    defaults: { port: 3010, host: '0.0.0.0' },
+    envMapping: { NOTIFICATION_SERVICE_PORT: 'port' },
+  });
+
+  const PORT = app.config.get<number>('port', 3010);
+  const HOST = app.config.get<string>('host', '0.0.0.0');
+
+  // Plan SC: FR-R18.1 -- meshReadyPlugin (SIGTERM + SIGINT graceful shutdown 내장) 통합
+  await app.register(meshReadyPlugin, {
+    service: { name: 'notification-service', version: '0.2.0' },
+    shutdown: {
+      cleanupHandlers: [async () => { await shutdownTelemetry(); }],
+    },
+  });
+
   await app.register(responseTimePlugin);
 
-  // Plan SC: FR-INT.1 -- healthPlugin 통합 (CSAP D-07 가용성)
   const { prisma } = await import('./lib/prisma.js');
   await app.register(healthPlugin, {
     serviceName: 'notification-service',
-    version: '0.1.0',
+    version: '0.2.0',
     checkers: [CommonCheckers.database(prisma)],
   });
 
-  // Plan SC: FR-INT.3 -- rbacPlugin 통합 (CSAP D-08 접근 통제, 심층 방어)
   await app.register(rbacPlugin, {});
 
-  // 이벤트 버스 기본 핸들러 등록 (FR-P11.4)
-  notificationEventBus.on('user.created', async (payload) => {
-    app.log.info({ event: 'user.created', ...payload }, '신규 사용자 알림 트리거');
+  // Plan SC: FR-R18.4 -- eventBusPlugin 통합 (CSAP D-06 이벤트 기반 알림)
+  await app.register(eventBusPlugin, {
+    maxRetries: 3,
+    retryBaseDelay: 1000,
+    maxDeadLetters: 100,
   });
 
-  notificationEventBus.on('security.account_locked', async (payload) => {
-    app.log.warn({ event: 'security.account_locked', ...payload }, '계정 잠금 보안 알림');
+  // 이벤트 핸들러 등록 (크로스 서비스 이벤트 기반 알림 트리거)
+  app.events.on('user.created', async (payload) => {
+    app.log.info({ event: 'user.created', payload }, '신규 사용자 알림 트리거');
   });
 
-  notificationEventBus.on('subscription.expiry_warning', async (payload) => {
-    app.log.info({ event: 'subscription.expiry_warning', ...payload }, '구독 만료 알림 트리거');
+  app.events.on('security.account_locked', async (payload) => {
+    app.log.warn({ event: 'security.account_locked', payload }, '계정 잠금 보안 알림');
+  });
+
+  app.events.on('subscription.expiry_warning', async (payload) => {
+    app.log.info({ event: 'subscription.expiry_warning', payload }, '구독 만료 알림 트리거');
+  });
+
+  app.events.on('auth.login_failed', async (payload) => {
+    app.log.warn({ event: 'auth.login_failed', payload }, '로그인 실패 보안 알림');
   });
 
   // 라우트 등록
@@ -52,25 +77,13 @@ async function main(): Promise<void> {
   await registerRoutes(app);
 
   await app.listen({ port: PORT, host: HOST });
-  // CSAP D-07: HTTP Keep-Alive 설정 (k8s 연결 재사용 최적화)
-  app.server.keepAliveTimeout = 65000; // ALB 기본 60초보다 길게
+  app.server.keepAliveTimeout = 65000;
   app.server.headersTimeout = 66000;
   app.log.info(`알림 서비스 기동: http://${HOST}:${PORT}`);
-  app.log.info(`이벤트 핸들러 등록: ${notificationEventBus.getHandlerCount()}개`);
 
-  const shutdown = async (signal: string): Promise<void> => {
-    app.log.info(`${signal} 수신, graceful shutdown 시작`);
-    await app.close();
-    await shutdownTelemetry();
-    process.exit(0);
-  };
-  process.on('SIGTERM', () => void shutdown('SIGTERM'));
-  process.on('SIGINT', () => void shutdown('SIGINT'));
-
-  // CSAP D-07: 예기치 못한 에러 안전 처리 (무응답 방지)
   process.on('uncaughtException', (err) => {
-    app.log.fatal({ err }, '치명적 예외 발생 — 서비스 종료');
-    void shutdown('uncaughtException');
+    app.log.fatal({ err }, '치명적 예외 발생 -- 서비스 종료');
+    void app.mesh.shutdown.shutdown(app).then(() => process.exit(1));
   });
   process.on('unhandledRejection', (reason) => {
     app.log.error({ reason }, '처리되지 않은 Promise rejection');

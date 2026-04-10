@@ -1,0 +1,78 @@
+{
+  "__meta": {
+    "design_ref": "MTU-N162",
+    "plan_sc": "FR-N162.5"
+  },
+  "description": "멀티클러스터 페더레이션 모니터링 대시보드",
+  "panels": [
+    {
+      "title": "페더레이션 현황",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "title": "클러스터 간 게이트웨이 상태",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "multicluster:mirror_service_alive",
+          "legendFormat": "{{ target_cluster }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "연결됨", "color": "green" } } },
+            { "type": "value", "options": { "0": { "text": "단절", "color": "red" } } }
+          ]
+        }
+      }
+    },
+    {
+      "title": "클러스터 간 P99 레이턴시",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 1 },
+      "targets": [
+        {
+          "expr": "multicluster:gateway_latency_seconds * 1000",
+          "legendFormat": "{{ target_cluster }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 200 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "크로스 클러스터 트래픽",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 1 },
+      "targets": [
+        {
+          "expr": "multicluster:cross_cluster_traffic_bytes",
+          "legendFormat": "{{ src_namespace }} -> {{ target_cluster }}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "Bps" } }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["multicluster", "federation", "linkerd"],
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "멀티클러스터 페더레이션 대시보드",
+  "uid": "multicluster-N162",
+  "version": 1
+}

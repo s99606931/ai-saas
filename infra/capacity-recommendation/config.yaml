@@ -1,0 +1,77 @@
+# Design Ref: MTU-N161 Section 2
+# Plan SC: FR-N161.1
+# CSAP: D-06 용량 변경 추적
+#
+# 자동 용량 권고 엔진 설정
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: capacity-recommendation-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: capacity-planning
+data:
+  config.yaml: |
+    # 자동 용량 권고 엔진 설정 v1.0
+    # Design Ref: MTU-N161 Section 2
+
+    version: "1.0"
+    description: "VPA/HPA 통합 용량 권고 엔진 설정"
+
+    # 분석 기간
+    analysis:
+      lookbackDays: 7
+      percentiles:
+        requests: 95
+        limits: 99
+      minDataPoints: 168  # 7일 * 24시간
+
+    # 안전 마진
+    safetyMargin:
+      cpu:
+        requestsMultiplier: 1.15   # P95 + 15%
+        limitsMultiplier: 1.30     # P99 + 30%
+      memory:
+        requestsMultiplier: 1.20   # P95 + 20% (OOM 방지)
+        limitsMultiplier: 1.50     # requests * 1.5
+
+    # HPA 최적화 설정
+    hpa:
+      defaultTargetUtilization: 70
+      minReplicasBuffer: 1
+      maxReplicasBuffer: 2
+
+    # 권고 등급 임계값
+    grading:
+      critical:
+        overProvisionRatio: 2.0    # 200% 이상 과다 할당
+        description: "즉시 축소 권장"
+      high:
+        overProvisionRatio: 1.5    # 150% 이상
+        description: "일주일 내 축소 권장"
+      medium:
+        overProvisionRatio: 1.2    # 120% 이상
+        description: "다음 정기 검토 시"
+      low:
+        underProvisionRatio: 1.0   # 실제 사용량 미만
+        description: "즉시 증설 필수"
+
+    # 대상 네임스페이스
+    targetNamespaces:
+      - "public-saas"
+      - "tenant-*"
+
+    # 제외 워크로드
+    excludeWorkloads:
+      - name: "prometheus-server"
+        reason: "모니터링 시스템은 별도 관리"
+      - name: "linkerd-*"
+        reason: "서비스 메시는 별도 관리"
+
+    # 보고서 설정
+    reporting:
+      dailyReport: true
+      weeklyReport: true
+      outputDir: "/data/ai-saas/docs/reports/capacity"

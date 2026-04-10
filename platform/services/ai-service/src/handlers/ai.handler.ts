@@ -11,6 +11,8 @@ import { checkPromptInjection } from '../lib/prompt-guard.js';
 import { checkUsageLimit } from '../lib/usage-limit.js';
 import { logAiEvent } from '../lib/audit.js';
 import { prisma } from '../lib/prisma.js';
+import { buildLLMConfig, createLLMProvider } from '../lib/llm-provider.js';
+import type { LLMMessage, LLMContentPart } from '../lib/llm-provider.js';
 import type { DataGrade } from '@public-saas/types';
 
 // 토큰당 비용 계수 (원/토큰, 운영 환경에서 환경 변수로 오버라이드 가능)
@@ -18,8 +20,8 @@ const TOKEN_COST_PER_UNIT = 0.0001;
 
 const createModelSchema = z.object({
   name: z.string().min(1, '모델명은 필수입니다').max(100),
-  provider: z.string().min(1),
-  endpoint: z.string().min(1),
+  provider: z.enum(['openai', 'ollama', 'vllm', 'lmstudio']),
+  endpoint: z.string().url('올바른 URL 형식이어야 합니다'),
   maxGrade: z.enum(['O', 'S', 'C']).default('O'),
   config: z.record(z.unknown()).optional(),
 });
@@ -27,8 +29,11 @@ const createModelSchema = z.object({
 const chatSchema = z.object({
   modelId: z.string().min(1),
   tenantId: z.string().min(1),
-  message: z.string().min(1),
+  message: z.string().min(1).max(8192),
   grade: z.enum(['O', 'S', 'C']),
+  // 멀티모달: base64 또는 data URL 형식 이미지 (N2SF O등급만 허용, PII 마스킹 불가 주의)
+  images: z.array(z.string().max(5 * 1024 * 1024)).max(5).optional(),
+  systemPrompt: z.string().max(2048).optional(),
 });
 
 /**
@@ -88,7 +93,7 @@ export async function updateModelHandler(
 ): Promise<void> {
   const schema = z.object({
     name: z.string().optional(),
-    endpoint: z.string().optional(),
+    endpoint: z.string().url().optional(),
     isActive: z.boolean().optional(),
     config: z.record(z.unknown()).optional(),
   });
@@ -111,9 +116,10 @@ export async function updateModelHandler(
 }
 
 /**
- * AI 채팅 (등급 검증 + PII 마스킹)
+ * AI 채팅 (등급 검증 + PII 마스킹 + 실제 LLM 호출)
  * Plan SC: FR-P10.2, FR-P10.3
  * CSAP: N2SF N-05 — C/S등급 전송 절대 금지
+ * 지원 제공자: openai | lmstudio | vllm | ollama (LLM_PROVIDER 환경 변수)
  */
 export async function chatHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = chatSchema.safeParse(request.body);
@@ -125,7 +131,7 @@ export async function chatHandler(request: FastifyRequest, reply: FastifyReply):
     return;
   }
 
-  const { modelId, tenantId, message, grade } = parseResult.data;
+  const { modelId, tenantId, message, grade, images, systemPrompt } = parseResult.data;
 
   // actor 추출: JWT 클레임 기반 (CSAP D-06: 행위자 추적)
   const chatActor = (request.headers['x-user-id'] as string) || 'system';
@@ -135,7 +141,6 @@ export async function chatHandler(request: FastifyRequest, reply: FastifyReply):
     validateDataGrade(grade as DataGrade);
   } catch (error) {
     if (error instanceof DataGradeViolationError) {
-      // 감사 로그: 등급 위반 시도 기록
       await logAiEvent(
         'AI_GRADE_VIOLATION',
         chatActor,
@@ -145,7 +150,6 @@ export async function chatHandler(request: FastifyRequest, reply: FastifyReply):
         request.headers['user-agent'] ?? 'unknown',
         { grade, blocked: true },
       );
-
       await reply.status(403).send({
         success: false,
         error: { code: error.code, message: error.message },
@@ -155,7 +159,7 @@ export async function chatHandler(request: FastifyRequest, reply: FastifyReply):
     throw error;
   }
 
-  // FR-AI.1: 프롬프트 인젝션 방어 (Design Ref: SVC-AI-R1 DESIGN §1)
+  // FR-AI.1: 프롬프트 인젝션 방어
   const guardResult = checkPromptInjection(message);
   if (guardResult.blocked) {
     await logAiEvent(
@@ -170,7 +174,6 @@ export async function chatHandler(request: FastifyRequest, reply: FastifyReply):
         detections: guardResult.detections.map((d) => d.description),
       },
     );
-
     await reply.status(400).send({
       success: false,
       error: {
@@ -181,7 +184,7 @@ export async function chatHandler(request: FastifyRequest, reply: FastifyReply):
     return;
   }
 
-  // FR-AI.3: 테넌트별 일일 사용량 제한 (Design Ref: SVC-AI-R1 DESIGN §3)
+  // FR-AI.3: 테넌트별 일일 사용량 제한
   const usageLimit = await checkUsageLimit(tenantId);
   if (!usageLimit.allowed) {
     await logAiEvent(
@@ -193,7 +196,6 @@ export async function chatHandler(request: FastifyRequest, reply: FastifyReply):
       request.headers['user-agent'] ?? 'unknown',
       { usedToday: usageLimit.usedToday, dailyLimit: usageLimit.dailyLimit },
     );
-
     await reply.status(429).send({
       success: false,
       error: {
@@ -206,8 +208,9 @@ export async function chatHandler(request: FastifyRequest, reply: FastifyReply):
     return;
   }
 
-  // O등급: PII 마스킹
+  // O등급: 텍스트 메시지 PII 마스킹 (이미지는 마스킹 불가 — 전송 전 확인 필요)
   const maskedMessage = maskPII(message);
+  const maskedSystemPrompt = systemPrompt ? maskPII(systemPrompt) : undefined;
 
   const model = await prisma.aiModel.findUnique({ where: { id: modelId } });
   if (!model || !model.isActive) {
@@ -218,14 +221,59 @@ export async function chatHandler(request: FastifyRequest, reply: FastifyReply):
     return;
   }
 
-  // AI API 호출 (실제 연동은 LM Studio / 외부 API 설정 시)
-  // NOTE: 현재는 에코 응답. MTU-A1 (AI 게이트웨이) 구현 시 실제 API 호출로 교체
-  const rawResponse = `[AI 응답] 마스킹된 메시지 수신 완료 (${maskedMessage.length}자)`;
+  // LLM 제공자 설정: DB 모델 정보 + 환경 변수 기본값
+  const llmConfig = buildLLMConfig({
+    provider: model.provider,
+    endpoint: model.endpoint,
+    name: model.name,
+    config: model.config,
+  });
+  const provider = await createLLMProvider(llmConfig);
 
-  // FR-AI.2: 응답 PII 필터링 (Design Ref: SVC-AI-R1 DESIGN §2)
-  // AI 응답에서 PII가 재출현하는 것을 방지
-  const responseText = maskPII(rawResponse);
-  const tokensUsed = Math.ceil(maskedMessage.length / 4);
+  // 메시지 구성 (멀티모달: 이미지가 있으면 content를 배열로 구성)
+  const userContent: string | LLMContentPart[] = images && images.length > 0 && provider.isMultimodal
+    ? [
+        { type: 'text' as const, text: maskedMessage },
+        ...images.map((img): LLMContentPart => ({
+          type: 'image_url' as const,
+          image_url: {
+            // data URL이 아닌 경우 base64 data URL 형식으로 변환
+            url: img.startsWith('data:') ? img : `data:image/jpeg;base64,${img}`,
+          },
+        })),
+      ]
+    : maskedMessage;
+
+  const messages: LLMMessage[] = [
+    ...(maskedSystemPrompt ? [{ role: 'system' as const, content: maskedSystemPrompt }] : []),
+    { role: 'user' as const, content: userContent },
+  ];
+
+  // 실제 LLM API 호출
+  let llmResponse: { text: string; tokensUsed: number; model: string };
+  try {
+    llmResponse = await provider.chat(messages);
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    await logAiEvent(
+      'AI_LLM_ERROR',
+      chatActor,
+      modelId,
+      tenantId,
+      request.ip,
+      request.headers['user-agent'] ?? 'unknown',
+      { provider: llmConfig.providerType, error: errorMessage.slice(0, 200) },
+    );
+    await reply.status(502).send({
+      success: false,
+      error: { code: 'LLM_UNAVAILABLE', message: 'AI 모델 서버와 통신 중 오류가 발생했습니다' },
+    });
+    return;
+  }
+
+  // FR-AI.2: 응답 PII 필터링 (AI 응답에서 PII 재출현 방지)
+  const responseText = maskPII(llmResponse.text);
+  const tokensUsed = llmResponse.tokensUsed;
 
   // 사용량 기록 (FR-P10.4)
   await prisma.aiUsage.create({
@@ -246,7 +294,14 @@ export async function chatHandler(request: FastifyRequest, reply: FastifyReply):
     tenantId,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
-    { grade, tokens: tokensUsed, piiMasked: message !== maskedMessage },
+    {
+      grade,
+      tokens: tokensUsed,
+      piiMasked: message !== maskedMessage,
+      provider: llmConfig.providerType,
+      model: llmResponse.model,
+      hasImages: (images?.length ?? 0) > 0,
+    },
   );
 
   await reply.send({
@@ -256,6 +311,8 @@ export async function chatHandler(request: FastifyRequest, reply: FastifyReply):
       tokens: tokensUsed,
       grade,
       piiMasked: message !== maskedMessage,
+      provider: llmConfig.providerType,
+      model: llmResponse.model,
     },
   });
 }

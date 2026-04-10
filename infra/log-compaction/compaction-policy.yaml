@@ -1,0 +1,85 @@
+# Design Ref: MTU-N163 Section 2
+# Plan SC: FR-N163.1, FR-N163.3
+# CSAP: D-06 침해사고관리 (로그 보존)
+#
+# 지능형 로그 압축 정책
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-compaction-policy
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: logging
+data:
+  compaction-policy.yaml: |
+    version: "1.0"
+    description: "지능형 로그 압축 및 보존 정책"
+
+    # 로그 등급 분류 규칙
+    classification:
+      audit:
+        labels:
+          log_type: "audit"
+        matchers:
+          - '{namespace="public-saas", container="audit-service"}'
+          - '{namespace=~"tenant-.*"} |= "AUDIT"'
+          - '{namespace="public-saas"} |= "auth_event"'
+          - '{namespace="public-saas"} |= "data_access"'
+        retention: "365d"
+        compressionChain: ["gzip", "snappy", "zstd"]
+        csap: "D-06"
+
+      security:
+        labels:
+          log_type: "security"
+        matchers:
+          - '{namespace="falco-system"}'
+          - '{namespace="public-saas"} |= "security_event"'
+          - '{namespace="public-saas"} |= "policy_violation"'
+          - '{namespace="kyverno"}'
+        retention: "180d"
+        compressionChain: ["gzip", "snappy", "zstd"]
+        csap: "D-06"
+
+      operation:
+        labels:
+          log_type: "operation"
+        matchers:
+          - '{namespace="flux-system"}'
+          - '{namespace="argo-rollouts"}'
+          - '{namespace="public-saas"} |= "deployment"'
+          - '{namespace="public-saas"} |= "scaling"'
+        retention: "30d"
+        compressionChain: ["gzip", "snappy"]
+
+      debug:
+        labels:
+          log_type: "debug"
+        matchers:
+          - '{namespace=~".+"} |= "DEBUG"'
+          - '{namespace=~".+"} |= "TRACE"'
+        retention: "7d"
+        compressionChain: ["gzip"]
+
+    # 스토리지 계층 전환 일정
+    tierTransitions:
+      hot:
+        maxAge: "7d"
+        compression: "gzip"
+        storageClass: "fast-ssd"
+      warm:
+        maxAge: "90d"
+        compression: "snappy"
+        storageClass: "standard"
+      cold:
+        maxAge: "365d"
+        compression: "zstd"
+        storageClass: "archive"
+
+    # 자동 정리 스케줄
+    cleanup:
+      schedule: "0 2 * * *"  # 매일 02:00
+      dryRun: false
+      notifyOnDelete: true

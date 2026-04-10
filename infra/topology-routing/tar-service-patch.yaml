@@ -1,0 +1,259 @@
+# Design Ref: MTU-N159 Section 3.2
+# Plan SC: FR-N159.1
+# CSAP: D-08 네트워크 접근 통제
+#
+# Topology Aware Routing (TAR) 서비스 패치
+# 모든 SaaS 플랫폼 서비스에 topology-mode: Auto 어노테이션 적용
+
+---
+# === 인증/인가 서비스 ===
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: public-saas
+  annotations:
+    service.kubernetes.io/topology-mode: Auto
+    meta.helm.sh/release-name: saas-platform
+  labels:
+    app.kubernetes.io/component: auth
+    topology-routing.saas.io/enabled: "true"
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+# === 사용자 서비스 ===
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: public-saas
+  annotations:
+    service.kubernetes.io/topology-mode: Auto
+  labels:
+    app.kubernetes.io/component: user
+    topology-routing.saas.io/enabled: "true"
+spec:
+  selector:
+    app: user-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+# === 테넌트 서비스 ===
+apiVersion: v1
+kind: Service
+metadata:
+  name: tenant-service
+  namespace: public-saas
+  annotations:
+    service.kubernetes.io/topology-mode: Auto
+  labels:
+    app.kubernetes.io/component: tenant
+    topology-routing.saas.io/enabled: "true"
+spec:
+  selector:
+    app: tenant-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+# === API 게이트웨이 ===
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: public-saas
+  annotations:
+    service.kubernetes.io/topology-mode: Auto
+  labels:
+    app.kubernetes.io/component: gateway
+    topology-routing.saas.io/enabled: "true"
+spec:
+  selector:
+    app: api-gateway
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+# === 카탈로그 서비스 ===
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-service
+  namespace: public-saas
+  annotations:
+    service.kubernetes.io/topology-mode: Auto
+  labels:
+    app.kubernetes.io/component: catalog
+    topology-routing.saas.io/enabled: "true"
+spec:
+  selector:
+    app: catalog-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+# === 구독 서비스 ===
+apiVersion: v1
+kind: Service
+metadata:
+  name: subscription-service
+  namespace: public-saas
+  annotations:
+    service.kubernetes.io/topology-mode: Auto
+  labels:
+    app.kubernetes.io/component: subscription
+    topology-routing.saas.io/enabled: "true"
+spec:
+  selector:
+    app: subscription-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+# === 빌링 서비스 ===
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-service
+  namespace: public-saas
+  annotations:
+    service.kubernetes.io/topology-mode: Auto
+  labels:
+    app.kubernetes.io/component: billing
+    topology-routing.saas.io/enabled: "true"
+spec:
+  selector:
+    app: billing-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+# === 감사 서비스 ===
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-service
+  namespace: public-saas
+  annotations:
+    service.kubernetes.io/topology-mode: Auto
+  labels:
+    app.kubernetes.io/component: audit
+    topology-routing.saas.io/enabled: "true"
+spec:
+  selector:
+    app: audit-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+# === 규정준수 서비스 ===
+apiVersion: v1
+kind: Service
+metadata:
+  name: compliance-service
+  namespace: public-saas
+  annotations:
+    service.kubernetes.io/topology-mode: Auto
+  labels:
+    app.kubernetes.io/component: compliance
+    topology-routing.saas.io/enabled: "true"
+spec:
+  selector:
+    app: compliance-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+# === 보안 서비스 ===
+apiVersion: v1
+kind: Service
+metadata:
+  name: security-service
+  namespace: public-saas
+  annotations:
+    service.kubernetes.io/topology-mode: Auto
+  labels:
+    app.kubernetes.io/component: security
+    topology-routing.saas.io/enabled: "true"
+spec:
+  selector:
+    app: security-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+# === 알림 서비스 ===
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: public-saas
+  annotations:
+    service.kubernetes.io/topology-mode: Auto
+  labels:
+    app.kubernetes.io/component: notification
+    topology-routing.saas.io/enabled: "true"
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+
+---
+# === 파일 서비스 ===
+apiVersion: v1
+kind: Service
+metadata:
+  name: file-service
+  namespace: public-saas
+  annotations:
+    service.kubernetes.io/topology-mode: Auto
+  labels:
+    app.kubernetes.io/component: file
+    topology-routing.saas.io/enabled: "true"
+spec:
+  selector:
+    app: file-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP

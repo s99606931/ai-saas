@@ -1,0 +1,74 @@
+# Design Ref: MTU-N162 Section 2
+# Plan SC: FR-N162.2
+# CSAP: D-08 접근 통제
+#
+# 멀티클러스터 서비스 디스커버리 설정
+# Linkerd multicluster를 활용한 클러스터 간 서비스 미러링
+
+---
+# === Linkerd 멀티클러스터 Link ===
+apiVersion: multicluster.linkerd.io/v1alpha1
+kind: Link
+metadata:
+  name: saas-secondary
+  namespace: linkerd-multicluster
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+spec:
+  targetClusterName: saas-secondary
+  targetClusterDomain: cluster.local
+  targetClusterLinkerdNamespace: linkerd
+  clusterCredentialsSecret: saas-secondary-credentials
+  gatewayAddress: gateway.saas-secondary.example.com
+  gatewayPort: 4143
+  gatewayIdentity: gateway.linkerd-multicluster.saas-secondary.identity.linkerd.cluster.local
+  selector:
+    matchExpressions:
+      - key: mirror.linkerd.io/exported
+        operator: Exists
+
+---
+# === 미러링 대상 서비스 레이블 ===
+# 원격 클러스터로 미러링할 서비스에 레이블 추가
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: service-mirror-config
+  namespace: linkerd-multicluster
+data:
+  mirror-config.yaml: |
+    # 서비스 미러링 설정
+    version: "1.0"
+
+    # 미러링 대상 서비스
+    mirroredServices:
+      - name: "auth-service"
+        namespace: "public-saas"
+        export: true
+        reason: "인증 서비스 고가용성"
+      - name: "api-gateway"
+        namespace: "public-saas"
+        export: true
+        reason: "API 게이트웨이 페일오버"
+      - name: "audit-service"
+        namespace: "public-saas"
+        export: true
+        reason: "감사 로그 무중단 (CSAP D-06)"
+      - name: "tenant-service"
+        namespace: "public-saas"
+        export: true
+        reason: "테넌트 관리 고가용성"
+
+    # 미러링 제외 서비스
+    excludedServices:
+      - name: "monitoring-*"
+        reason: "모니터링은 클러스터별 독립 운영"
+      - name: "linkerd-*"
+        reason: "서비스 메시 컴포넌트는 클러스터별 독립"
+
+    # 헬스체크 설정
+    healthCheck:
+      path: /health
+      port: 3000
+      intervalSeconds: 10
+      timeoutSeconds: 5

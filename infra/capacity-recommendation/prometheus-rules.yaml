@@ -1,0 +1,240 @@
+# Design Ref: MTU-N161 Section 3.1
+# Plan SC: FR-N161.1, FR-N161.2, FR-N161.6
+# CSAP: D-06 침해사고관리 (용량 변경 추적)
+#
+# VPA/HPA 통합 용량 권고 Prometheus 규칙
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: capacity-recommendation-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: capacity-planning
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    # === CPU 용량 분석 레코딩 규칙 ===
+    - name: capacity-recommendation.cpu
+      interval: 60s
+      rules:
+        # CPU P95 사용량 (7일)
+        - record: capacity:cpu_usage_p95
+          expr: |
+            quantile_over_time(0.95,
+              sum(rate(container_cpu_usage_seconds_total{
+                container!="",
+                container!="POD",
+                namespace=~"tenant-.*|public-saas"
+              }[5m])) by (namespace, pod, container)
+            [7d:5m])
+
+        # CPU P99 사용량 (7일)
+        - record: capacity:cpu_usage_p99
+          expr: |
+            quantile_over_time(0.99,
+              sum(rate(container_cpu_usage_seconds_total{
+                container!="",
+                container!="POD",
+                namespace=~"tenant-.*|public-saas"
+              }[5m])) by (namespace, pod, container)
+            [7d:5m])
+
+        # CPU 현재 requests
+        - record: capacity:cpu_requests_current
+          expr: |
+            sum(
+              kube_pod_container_resource_requests{
+                resource="cpu",
+                namespace=~"tenant-.*|public-saas"
+              }
+            ) by (namespace, pod, container)
+
+        # CPU 권장 requests (P95 * 1.15)
+        - record: capacity:cpu_requests_recommended
+          expr: |
+            capacity:cpu_usage_p95 * 1.15
+
+        # CPU 권장 limits (P99 * 1.30)
+        - record: capacity:cpu_limits_recommended
+          expr: |
+            capacity:cpu_usage_p99 * 1.30
+
+        # CPU 과다 할당 비율 (현재/권장)
+        - record: capacity:cpu_overprovision_ratio
+          expr: |
+            capacity:cpu_requests_current
+            /
+            clamp_min(capacity:cpu_requests_recommended, 0.001)
+
+    # === 메모리 용량 분석 레코딩 규칙 ===
+    - name: capacity-recommendation.memory
+      interval: 60s
+      rules:
+        # 메모리 P95 사용량 (7일)
+        - record: capacity:memory_usage_p95
+          expr: |
+            quantile_over_time(0.95,
+              sum(container_memory_working_set_bytes{
+                container!="",
+                container!="POD",
+                namespace=~"tenant-.*|public-saas"
+              }) by (namespace, pod, container)
+            [7d:5m])
+
+        # 메모리 P99 사용량 (7일)
+        - record: capacity:memory_usage_p99
+          expr: |
+            quantile_over_time(0.99,
+              sum(container_memory_working_set_bytes{
+                container!="",
+                container!="POD",
+                namespace=~"tenant-.*|public-saas"
+              }) by (namespace, pod, container)
+            [7d:5m])
+
+        # 메모리 현재 requests
+        - record: capacity:memory_requests_current
+          expr: |
+            sum(
+              kube_pod_container_resource_requests{
+                resource="memory",
+                namespace=~"tenant-.*|public-saas"
+              }
+            ) by (namespace, pod, container)
+
+        # 메모리 권장 requests (P95 * 1.20)
+        - record: capacity:memory_requests_recommended
+          expr: |
+            capacity:memory_usage_p95 * 1.20
+
+        # 메모리 권장 limits (권장 requests * 1.50)
+        - record: capacity:memory_limits_recommended
+          expr: |
+            capacity:memory_requests_recommended * 1.50
+
+        # 메모리 과다 할당 비율
+        - record: capacity:memory_overprovision_ratio
+          expr: |
+            capacity:memory_requests_current
+            /
+            clamp_min(capacity:memory_requests_recommended, 1024)
+
+    # === 비용 절감 잠재력 ===
+    - name: capacity-recommendation.savings
+      interval: 300s
+      rules:
+        # CPU 절감 잠재력 (KRW/월)
+        - record: capacity:cpu_savings_monthly_krw
+          expr: |
+            clamp_min(
+              (capacity:cpu_requests_current - capacity:cpu_requests_recommended) * 50 * 720,
+              0
+            )
+
+        # 메모리 절감 잠재력 (KRW/월)
+        - record: capacity:memory_savings_monthly_krw
+          expr: |
+            clamp_min(
+              (capacity:memory_requests_current - capacity:memory_requests_recommended) / 1073741824 * 10 * 720,
+              0
+            )
+
+        # 총 절감 잠재력
+        - record: capacity:total_savings_monthly_krw
+          expr: |
+            sum(capacity:cpu_savings_monthly_krw + capacity:memory_savings_monthly_krw) by (namespace)
+
+    # === HPA 분석 ===
+    - name: capacity-recommendation.hpa
+      interval: 60s
+      rules:
+        # HPA 현재 레플리카 대비 최대 레플리카 비율
+        - record: capacity:hpa_utilization_ratio
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas
+            /
+            kube_horizontalpodautoscaler_spec_max_replicas
+
+        # HPA 스케일 이벤트 빈도 (1시간)
+        - record: capacity:hpa_scale_events_per_hour
+          expr: |
+            increase(
+              kube_horizontalpodautoscaler_status_current_replicas[1h]
+            )
+
+    # === 알림 규칙 ===
+    - name: capacity-recommendation.alerts
+      rules:
+        # 심각한 과다 할당 (CPU)
+        - alert: CapacityCpuCriticalOverProvision
+          expr: |
+            capacity:cpu_overprovision_ratio > 2.0
+          for: 1h
+          labels:
+            severity: warning
+            team: finops
+          annotations:
+            summary: "CPU 심각한 과다 할당 ({{ $labels.namespace }}/{{ $labels.container }})"
+            description: |
+              {{ $labels.container }}의 CPU requests가 실제 P95 사용량의 200% 이상입니다.
+              현재/권장 비율: {{ printf "%.1f" $value }}x
+              즉시 리소스 축소를 권장합니다.
+
+        # 심각한 과다 할당 (메모리)
+        - alert: CapacityMemoryCriticalOverProvision
+          expr: |
+            capacity:memory_overprovision_ratio > 2.0
+          for: 1h
+          labels:
+            severity: warning
+            team: finops
+          annotations:
+            summary: "메모리 심각한 과다 할당 ({{ $labels.namespace }}/{{ $labels.container }})"
+            description: |
+              {{ $labels.container }}의 메모리 requests가 실제 P95 사용량의 200% 이상입니다.
+              즉시 리소스 축소를 권장합니다.
+
+        # 과소 할당 (OOM 위험)
+        - alert: CapacityMemoryUnderProvision
+          expr: |
+            capacity:memory_overprovision_ratio < 1.0
+          for: 30m
+          labels:
+            severity: critical
+            team: sre
+          annotations:
+            summary: "메모리 과소 할당 - OOM 위험 ({{ $labels.namespace }}/{{ $labels.container }})"
+            description: |
+              {{ $labels.container }}의 메모리 requests가 실제 P95 사용량보다 적습니다.
+              OOM Kill 위험이 있습니다. 즉시 메모리 증설을 권장합니다.
+
+        # 높은 절감 잠재력
+        - alert: CapacityHighSavingsPotential
+          expr: |
+            capacity:total_savings_monthly_krw > 100000
+          for: 24h
+          labels:
+            severity: info
+            team: finops
+          annotations:
+            summary: "높은 비용 절감 잠재력 ({{ $labels.namespace }})"
+            description: |
+              {{ $labels.namespace }}에서 월 {{ printf "%.0f" $value }}원 이상 절감 가능합니다.
+              용량 권고 보고서를 확인하십시오.
+
+        # HPA 빈번한 스케일링
+        - alert: CapacityHpaFrequentScaling
+          expr: |
+            capacity:hpa_scale_events_per_hour > 10
+          for: 1h
+          labels:
+            severity: warning
+            team: sre
+          annotations:
+            summary: "HPA 빈번한 스케일링 ({{ $labels.horizontalpodautoscaler }})"
+            description: |
+              {{ $labels.horizontalpodautoscaler }}가 시간당 10회 이상 스케일링하고 있습니다.
+              HPA targetUtilization 또는 behavior 설정 조정을 권장합니다.

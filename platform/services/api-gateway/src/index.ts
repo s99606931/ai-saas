@@ -1,11 +1,11 @@
 // API 게이트웨이 진입점
-// Design Ref: DESIGN-MTU-P04, DESIGN-MTU-Q1, SVC-OTEL-R3 DESIGN, SVC-INTEGRATE-R11 Plan
-// Plan SC: FR-P04.1~FR-P04.11, FR-OTEL.3, FR-INT.1, FR-INT.3, FR-INT.4
+// Design Ref: DESIGN-MTU-P04, DESIGN-MTU-Q1, SVC-OTEL-R3 DESIGN, SVC-INTEGRATE-R11 Plan, SVC-INTEGRATE-R18 Plan
+// Plan SC: FR-P04.1~FR-P04.11, FR-OTEL.3, FR-INT.1, FR-INT.3, FR-INT.4, FR-R18.1, FR-R18.3
 // CSAP: D-08 인증, D-10 네트워크 보안, D-06 감사 로그, D-12 API 문서, D-07 가용성
 
 import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
 
-initTelemetry({ serviceName: 'api-gateway', serviceVersion: '0.1.0' });
+initTelemetry({ serviceName: 'api-gateway', serviceVersion: '0.2.0' });
 
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
@@ -14,6 +14,8 @@ import { responseTimePlugin } from '@public-saas/observability';
 import { healthPlugin, CommonCheckers } from '@public-saas/health';
 import { rbacPlugin } from '@public-saas/rbac';
 import { versionPlugin } from '@public-saas/api-version';
+import { meshReadyPlugin } from '@public-saas/mesh-ready';
+import { configPlugin } from '@public-saas/config-vault';
 import { registerProxyRoutes } from './routes/proxy.js';
 import { SERVICE_REGISTRY } from './registry/service-registry.js';
 import { checkServicesHealth } from './plugins/health-check.js';
@@ -23,9 +25,6 @@ import swaggerPlugin from './plugins/swagger.js';
 import securityHeadersPlugin from './plugins/security-headers.js';
 import { ipFilterMiddleware } from './middleware/ip-filter.middleware.js';
 import { circuitBreaker } from './lib/circuit-breaker.js';
-
-const PORT = parseInt(process.env['API_GATEWAY_PORT'] ?? '3000', 10);
-const HOST = process.env['API_GATEWAY_HOST'] ?? '0.0.0.0';
 
 async function main(): Promise<void> {
   // FR-GW.2: 요청 페이로드 크기 제한 (기본 10MB, CSAP D-10 DoS 방어)
@@ -39,12 +38,41 @@ async function main(): Promise<void> {
     bodyLimit,
   });
 
+  // Plan SC: FR-R18.3 -- configPlugin 통합 (중앙 설정 관리)
+  await app.register(configPlugin, {
+    defaults: {
+      port: 3000,
+      host: '0.0.0.0',
+      corsOrigin: 'http://localhost:3100,http://localhost:3200',
+    },
+    envMapping: {
+      API_GATEWAY_PORT: 'port',
+      API_GATEWAY_HOST: 'host',
+      CORS_ORIGIN: 'corsOrigin',
+    },
+  });
+
+  const PORT = app.config.get<number>('port', 3000);
+  const HOST = app.config.get<string>('host', '0.0.0.0');
+
+  // Plan SC: FR-R18.1 -- meshReadyPlugin 통합 (분산 추적 + 그레이스풀 셧다운)
+  // Graceful Shutdown: SIGTERM + SIGINT 시그널 자동 핸들링 (meshReadyPlugin 내장)
+  await app.register(meshReadyPlugin, {
+    service: { name: 'api-gateway', version: '0.2.0' },
+    shutdown: {
+      cleanupHandlers: [
+        async () => { await shutdownTelemetry(); },
+      ],
+    },
+  });
+
   // X-Response-Time (Plan SC: FR-OTEL.2, CSAP D-10)
   await app.register(responseTimePlugin);
 
   // CORS (Plan SC: FR-P04.8)
+  const corsOrigin = app.config.get<string>('corsOrigin', 'http://localhost:3100,http://localhost:3200');
   await app.register(cors, {
-    origin: process.env['CORS_ORIGIN']?.split(',') ?? ['http://localhost:3100', 'http://localhost:3200'],
+    origin: corsOrigin.split(','),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Authorization', 'Content-Type', 'X-Tenant-Id', 'X-Request-ID'],
@@ -80,13 +108,13 @@ async function main(): Promise<void> {
   });
 
   // Plan SC: FR-INT.1 -- healthPlugin 통합 (CSAP D-07 가용성)
-  // 하위 서비스 헬스체커 등록
+  // 자동 등록 엔드포인트: /health (livenessProbe), /ready (readinessProbe)
   const serviceCheckers = Object.entries(SERVICE_REGISTRY).map(([name, config]) =>
     CommonCheckers.httpService(name, `${(config as { url: string }).url}/health`),
   );
   await app.register(healthPlugin, {
     serviceName: 'api-gateway',
-    version: '0.1.0',
+    version: '0.2.0',
     checkers: serviceCheckers,
   });
 
@@ -106,7 +134,7 @@ async function main(): Promise<void> {
     defaultVersion: 'v1',
   });
 
-  // 능동 서비스 헬스 확인 (FR-P04.9 보완 -- healthPlugin 외 추가 상세)
+  // 능동 서비스 헬스 확인 (FR-P04.9 보완)
   app.get('/health/services', async (_request, reply) => {
     const results = await checkServicesHealth(SERVICE_REGISTRY);
     const allHealthy = results.every((r) => r.status === 'healthy');
@@ -158,26 +186,16 @@ async function main(): Promise<void> {
   await registerProxyRoutes(app);
 
   await app.listen({ port: PORT, host: HOST });
-  // CSAP D-07: HTTP Keep-Alive 설정 (k8s 연결 재사용 최적화)
-  app.server.keepAliveTimeout = 65000; // ALB 기본 60초보다 길게
+  app.server.keepAliveTimeout = 65000;
   app.server.headersTimeout = 66000;
   app.log.info(`API 게이트웨이 기동: http://${HOST}:${PORT}`);
   app.log.info(`등록된 서비스: ${Object.keys(SERVICE_REGISTRY).join(', ')}`);
 
-  // Graceful Shutdown (CSAP D-07: k8s terminationGracePeriod 연동)
-  const shutdown = async (signal: string): Promise<void> => {
-    app.log.info(`${signal} 수신, graceful shutdown 시작`);
-    await app.close();
-    await shutdownTelemetry();
-    process.exit(0);
-  };
-  process.on('SIGTERM', () => void shutdown('SIGTERM'));
-  process.on('SIGINT', () => void shutdown('SIGINT'));
-
-  // CSAP D-07: 예기치 못한 에러 안전 처리 (무응답 방지)
+  // CSAP D-07: graceful shutdown (meshReadyPlugin이 app.close 자동 호출)
+  // 예기치 못한 에러 안전 처리 (무응답 방지)
   process.on('uncaughtException', (err) => {
-    app.log.fatal({ err }, '치명적 예외 발생 — 서비스 종료');
-    void shutdown('uncaughtException');
+    app.log.fatal({ err }, '치명적 예외 발생 -- 서비스 종료');
+    void app.mesh.shutdown.shutdown(app).then(() => process.exit(1));
   });
   process.on('unhandledRejection', (reason) => {
     app.log.error({ reason }, '처리되지 않은 Promise rejection');

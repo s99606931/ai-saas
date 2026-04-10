@@ -1,0 +1,110 @@
+# Design Ref: MTU-N162 Section 2
+# Plan SC: FR-N162.1
+# CSAP: D-08 접근 통제
+#
+# 멀티클러스터 페더레이션 정책
+
+---
+# === Kyverno 정책 복제 (Primary → Secondary) ===
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: replicate-network-policies
+  annotations:
+    description: "네트워크 정책을 모든 클러스터에 동기화"
+    policies.kyverno.io/title: "NetworkPolicy 복제"
+spec:
+  rules:
+    - name: sync-network-policies
+      match:
+        any:
+          - resources:
+              kinds:
+                - NetworkPolicy
+              namespaces:
+                - "public-saas"
+                - "tenant-*"
+      generate:
+        synchronize: true
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: "{{request.object.metadata.name}}"
+        namespace: "{{request.object.metadata.namespace}}"
+        data:
+          spec: "{{request.object.spec}}"
+
+---
+# === 페더레이션 정책 ConfigMap ===
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: federation-policy
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: multicluster
+data:
+  federation-config.yaml: |
+    # 멀티클러스터 페더레이션 정책
+    version: "1.0"
+
+    # 클러스터 토폴로지
+    clusters:
+      primary:
+        name: "saas-primary"
+        role: "primary"
+        region: "kr-central"
+        zone: "zone-a"
+      secondary:
+        name: "saas-secondary"
+        role: "secondary"
+        region: "kr-central"
+        zone: "zone-b"
+
+    # 정책 동기화 규칙
+    syncPolicy:
+      # 동기화 대상 리소스
+      resources:
+        - kind: NetworkPolicy
+          sync: true
+          direction: "primary-to-secondary"
+        - kind: ClusterPolicy
+          sync: true
+          direction: "primary-to-secondary"
+        - kind: ConfigMap
+          sync: true
+          namespaces: ["public-saas"]
+          labelSelector: "federation.saas.io/sync=true"
+
+      # 동기화 간격
+      interval: 30s
+      # 동기화 실패 시 재시도
+      retryPolicy:
+        maxRetries: 3
+        backoffSeconds: 10
+
+    # 워크로드 배치 정책
+    placement:
+      # 기본: Primary 클러스터
+      default: "primary"
+      # 재해복구: Secondary로 자동 전환
+      failover:
+        enabled: true
+        healthCheckInterval: 10s
+        failureThreshold: 3
+        rtoSeconds: 900   # 15분
+
+    # 트래픽 분배 정책
+    trafficPolicy:
+      # 기본: Primary에 100%
+      default:
+        primary: 100
+        secondary: 0
+      # Blue-Green 배포 시
+      blueGreen:
+        primary: 100
+        secondary: 0
+      # Canary 배포 시
+      canary:
+        primary: 90
+        secondary: 10

@@ -17,6 +17,8 @@
     "@public-saas/health": "workspace:*",
     "@public-saas/observability": "workspace:*",
     "@public-saas/rbac": "workspace:*",
+    "@public-saas/mesh-ready": "workspace:*",
+    "@public-saas/config-vault": "workspace:*",
     "@public-saas/types": "workspace:*",
     "fastify": "^5.0.0",
     "fastify-plugin": "^5.0.0",

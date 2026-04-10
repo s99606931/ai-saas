@@ -1,0 +1,164 @@
+# Design Ref: MTU-N159 Section 3.3
+# Plan SC: FR-N159.3
+# CSAP: D-09 암호화 (Linkerd mTLS 유지)
+#
+# Linkerd 존 인식 라우팅 설정
+# 서비스 메시 레벨에서 토폴로지 인식 트래픽 라우팅 적용
+
+---
+# === 존 친화성 트래픽 정책 ===
+apiVersion: policy.linkerd.io/v1beta3
+kind: Server
+metadata:
+  name: topology-aware-server
+  namespace: public-saas
+  labels:
+    topology-routing.saas.io/enabled: "true"
+spec:
+  podSelector:
+    matchLabels:
+      topology-routing.saas.io/enabled: "true"
+  port: http
+  proxyProtocol: HTTP/2
+
+---
+# === 서비스 간 존 우선 라우팅 AuthorizationPolicy ===
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: zone-aware-routing-policy
+  namespace: public-saas
+  annotations:
+    description: "동일 존 내 서비스 간 트래픽 우선 허용"
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: topology-aware-server
+  requiredAuthenticationRefs:
+    - name: public-saas-mesh-tls
+      kind: MeshTLSAuthentication
+      group: policy.linkerd.io
+
+---
+# === 메시 TLS 인증 ===
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: public-saas-mesh-tls
+  namespace: public-saas
+spec:
+  identityRefs:
+    - kind: Namespace
+      name: public-saas
+
+---
+# === auth-service 서비스 프로파일 (존 라우팅) ===
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: auth-service.public-saas.svc.cluster.local
+  namespace: public-saas
+  annotations:
+    topology-routing.saas.io/zone-preference: "same-zone-first"
+spec:
+  retryBudget:
+    retryRatio: 0.2
+    minRetriesPerSecond: 10
+    ttl: 120s
+  routes:
+    - name: health-check
+      condition:
+        method: GET
+        pathRegex: /health
+      timeout: 5s
+      isRetryable: true
+    - name: api-default
+      condition:
+        pathRegex: /.*
+      timeout: 30s
+      responseClasses:
+        - condition:
+            status:
+              min: 500
+              max: 599
+          isFailure: true
+
+---
+# === api-gateway 서비스 프로파일 (존 라우팅) ===
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: api-gateway.public-saas.svc.cluster.local
+  namespace: public-saas
+  annotations:
+    topology-routing.saas.io/zone-preference: "same-zone-first"
+spec:
+  retryBudget:
+    retryRatio: 0.2
+    minRetriesPerSecond: 10
+    ttl: 120s
+  routes:
+    - name: health-check
+      condition:
+        method: GET
+        pathRegex: /health
+      timeout: 5s
+      isRetryable: true
+    - name: api-default
+      condition:
+        pathRegex: /.*
+      timeout: 30s
+      responseClasses:
+        - condition:
+            status:
+              min: 500
+              max: 599
+          isFailure: true
+
+---
+# === tenant-service 서비스 프로파일 (존 라우팅) ===
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: tenant-service.public-saas.svc.cluster.local
+  namespace: public-saas
+  annotations:
+    topology-routing.saas.io/zone-preference: "same-zone-first"
+spec:
+  retryBudget:
+    retryRatio: 0.2
+    minRetriesPerSecond: 10
+    ttl: 120s
+  routes:
+    - name: health-check
+      condition:
+        method: GET
+        pathRegex: /health
+      timeout: 5s
+      isRetryable: true
+    - name: api-default
+      condition:
+        pathRegex: /.*
+      timeout: 30s
+      responseClasses:
+        - condition:
+            status:
+              min: 500
+              max: 599
+          isFailure: true
+
+---
+# === 트래픽 분할 (존 기반 가중치) ===
+apiVersion: split.smi-spec.io/v1alpha4
+kind: TrafficSplit
+metadata:
+  name: topology-traffic-split
+  namespace: public-saas
+  annotations:
+    description: "토폴로지 인식 트래픽 분할 (동일 존 우선)"
+spec:
+  service: api-gateway
+  backends:
+    - service: api-gateway
+      weight: 100

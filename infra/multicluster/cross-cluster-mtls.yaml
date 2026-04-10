@@ -1,0 +1,97 @@
+# Design Ref: MTU-N162 Section 2
+# Plan SC: FR-N162.3
+# CSAP: D-09 암호화 (클러스터 간 mTLS)
+#
+# 클러스터 간 mTLS 통신 설정
+# Linkerd trust anchor 공유를 통한 크로스 클러스터 암호화
+
+---
+# === 공유 Trust Anchor 설정 ===
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cross-cluster-mtls-config
+  namespace: linkerd-multicluster
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: security
+data:
+  mtls-config.yaml: |
+    # 크로스 클러스터 mTLS 설정
+    version: "1.0"
+
+    # Trust Anchor 관리
+    trustAnchor:
+      # 모든 클러스터가 동일한 Trust Anchor CA 사용
+      sharedCA: true
+      # CA 인증서 유효기간
+      validityPeriod: "87600h"  # 10년
+      # CA 갱신 알림 (만료 30일 전)
+      renewalWarningDays: 30
+      # CA 생성 방법
+      generationMethod: "step-cli"
+      # 생성 명령어 (참고용)
+      # step certificate create root.linkerd.cluster.local ca.crt ca.key \
+      #   --profile root-ca --no-password --insecure --not-after=87600h
+
+    # Issuer 인증서 관리
+    issuer:
+      # 각 클러스터별 독립 Issuer (동일 Trust Anchor 하위)
+      perCluster: true
+      validityPeriod: "8760h"  # 1년
+      autoRotation: true
+      rotationLeadTime: "720h"  # 30일 전 갱신
+
+    # 통신 정책
+    communicationPolicy:
+      # 클러스터 간 통신 프로토콜
+      protocol: "gRPC"
+      # 최소 TLS 버전
+      minTLSVersion: "1.3"
+      # 허용 암호화 스위트
+      cipherSuites:
+        - "TLS_AES_256_GCM_SHA384"
+        - "TLS_CHACHA20_POLY1305_SHA256"
+      # 인증서 검증 모드
+      verifyMode: "strict"
+
+    # 게이트웨이 설정
+    gateway:
+      port: 4143
+      probePort: 4191
+      probePath: /ready
+      # 게이트웨이 리소스 제한
+      resources:
+        cpu:
+          request: 100m
+          limit: 500m
+        memory:
+          request: 128Mi
+          limit: 256Mi
+
+---
+# === Linkerd 멀티클러스터 게이트웨이 ===
+apiVersion: v1
+kind: Service
+metadata:
+  name: linkerd-gateway
+  namespace: linkerd-multicluster
+  annotations:
+    mirror.linkerd.io/gateway-identity: gateway.linkerd-multicluster.identity.linkerd.cluster.local
+    mirror.linkerd.io/probe-path: /ready
+    mirror.linkerd.io/probe-period: "10"
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+spec:
+  type: LoadBalancer
+  selector:
+    app: linkerd-gateway
+  ports:
+    - name: mc-gateway
+      port: 4143
+      targetPort: 4143
+      protocol: TCP
+    - name: mc-probe
+      port: 4191
+      targetPort: 4191
+      protocol: TCP

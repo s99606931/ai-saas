@@ -108,20 +108,32 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     '/ai/chat',
     {
       schema: {
-        description: 'AI 채팅 (N2SF O등급 데이터만, PII 마스킹)',
+        description: 'AI 채팅 (N2SF O등급 데이터만, PII 마스킹, 멀티모달 이미지 지원)',
         tags: ['ai'],
         body: {
           type: 'object' as const,
-          required: ['message', 'dataGrade'] as const,
+          required: ['modelId', 'tenantId', 'message', 'grade'] as const,
           properties: {
-            message: { type: 'string' as const, maxLength: 4096 },
-            dataGrade: { type: 'string' as const, enum: ['O'] },
             modelId: { type: 'string' as const },
+            tenantId: { type: 'string' as const },
+            message: { type: 'string' as const, maxLength: 8192 },
+            grade: { type: 'string' as const, enum: ['O'] },
+            // 멀티모달: base64 또는 data URL 이미지 (최대 5개, 각 5MB)
+            images: {
+              type: 'array' as const,
+              items: { type: 'string' as const },
+              maxItems: 5,
+            },
+            systemPrompt: { type: 'string' as const, maxLength: 2048 },
           },
         },
         response: {
           200: modelResponse,
           403: {
+            type: 'object' as const,
+            properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } },
+          },
+          502: {
             type: 'object' as const,
             properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } },
           },
