@@ -1,0 +1,169 @@
+# =============================================================================
+# CSAP D-06 감사 로그 모니터링 규칙
+# Design Ref: MTU-N99 Design §2
+# Plan SC: FR-N99.1 ~ FR-N99.5
+# CSAP: D-06(침해사고 관리 — 감사 로그 전수 기록 + 무결성 + 보존)
+#
+# 적용: kubectl apply -f infra/monitoring/csap-audit-monitoring-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: csap-audit-monitoring-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 — 감사 로그 수집/무결성/보존 모니터링"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 감사 로그 메트릭 Recording Rules (FR-N99.1)
+    # =========================================================================
+    - name: csap:audit_log_metrics
+      interval: 30s
+      rules:
+        # K8s API 서버 감사 이벤트 비율
+        - record: csap:audit_events:rate5m
+          expr: |
+            sum(rate(apiserver_audit_event_total[5m])) or vector(0)
+          labels:
+            csap: d06
+
+        # 24시간 감사 이벤트 총 수
+        - record: csap:audit_events:total_24h
+          expr: |
+            sum(increase(apiserver_audit_event_total[24h])) or vector(0)
+          labels:
+            csap: d06
+
+        # 감사 레벨별 이벤트 수
+        - record: csap:audit_events_by_level:rate5m
+          expr: |
+            sum by (level) (rate(apiserver_audit_event_total[5m])) or vector(0)
+          labels:
+            csap: d06
+
+        # 인증 실패 비율
+        - record: csap:auth_failure:rate5m
+          expr: |
+            sum(rate(apiserver_authentication_attempts{result="failure"}[5m])) or vector(0)
+          labels:
+            csap: d08
+
+        # RBAC 권한 거부 비율
+        - record: csap:rbac_denial:rate5m
+          expr: |
+            sum(rate(apiserver_authorization_attempts{result="denied"}[5m])) or vector(0)
+          labels:
+            csap: d08
+
+    # =========================================================================
+    # 그룹 2: 감사 로그 무결성 알림 (FR-N99.2)
+    # =========================================================================
+    - name: csap:audit_integrity_alerts
+      rules:
+        # 감사 로그 쓰기 실패 감지
+        - alert: CsapAuditLogWriteFailure
+          expr: |
+            increase(apiserver_audit_error_total[5m]) > 0
+          for: 1m
+          labels:
+            severity: critical
+            csap_ref: "D-06"
+            category: security
+          annotations:
+            summary: "CSAP D-06 위반: 감사 로그 쓰기 실패 감지"
+            description: |
+              K8s API 서버 감사 로그 쓰기에 실패했습니다.
+              이는 CSAP D-06 (침해사고 관리) 위반이므로 즉시 조치 필요합니다.
+
+        # 감사 이벤트 급감 (로그 수집 중단 의심)
+        - alert: CsapAuditEventDrop
+          expr: |
+            (
+              sum(rate(apiserver_audit_event_total[5m]))
+              < 0.1 * sum(rate(apiserver_audit_event_total[1h]))
+            )
+            and sum(rate(apiserver_audit_event_total[1h])) > 0
+          for: 10m
+          labels:
+            severity: critical
+            csap_ref: "D-06"
+            category: security
+          annotations:
+            summary: "CSAP D-06: 감사 이벤트 90% 이상 급감"
+            description: |
+              감사 이벤트 수가 1시간 평균 대비 90% 이상 감소했습니다.
+              감사 로그 수집 중단 또는 백엔드 장애 의심.
+
+    # =========================================================================
+    # 그룹 3: 감사 로그 보존 기간 검증 (FR-N99.3)
+    # =========================================================================
+    - name: csap:audit_retention_alerts
+      rules:
+        # Prometheus 보존 기간 30일 미만 경고
+        - alert: CsapMetricRetentionInsufficient
+          expr: |
+            prometheus_tsdb_retention_limit_seconds < 2592000
+          for: 5m
+          labels:
+            severity: warning
+            csap_ref: "D-06"
+          annotations:
+            summary: "CSAP D-06: Prometheus 메트릭 보존 기간 30일 미만"
+            description: |
+              Prometheus의 메트릭 보존 기간이 CSAP D-06 요건(최소 30일)을 충족하지 않습니다.
+              VictoriaMetrics 장기 저장소로 365일 보존을 확인하십시오.
+
+    # =========================================================================
+    # 그룹 4: 감사 로그 누락 감지 (FR-N99.5)
+    # =========================================================================
+    - name: csap:audit_gap_alerts
+      rules:
+        # 인증 실패 급증 (비정상 접근 의심)
+        - alert: CsapAuthFailureSpike
+          expr: |
+            sum(rate(apiserver_authentication_attempts{result="failure"}[5m])) > 1
+          for: 5m
+          labels:
+            severity: warning
+            csap_ref: "D-08"
+            category: security
+          annotations:
+            summary: "CSAP D-08: 인증 실패 급증 감지"
+            description: |
+              분당 인증 실패가 급증하고 있습니다.
+              비정상 접근 시도 또는 브루트포스 공격 의심.
+
+        # RBAC 권한 거부 급증
+        - alert: CsapRBACDenialSpike
+          expr: |
+            sum(rate(apiserver_authorization_attempts{result="denied"}[5m])) > 1
+          for: 5m
+          labels:
+            severity: warning
+            csap_ref: "D-08"
+            category: security
+          annotations:
+            summary: "CSAP D-08: RBAC 권한 거부 급증"
+            description: |
+              RBAC 권한 거부가 급증하고 있습니다.
+              권한 설정 오류 또는 비인가 접근 시도 의심.
+
+        # 민감 작업 감사 누락 (24시간 이벤트 0)
+        - alert: CsapNoAuditEvents24h
+          expr: |
+            csap:audit_events:total_24h == 0
+            and up{job=~".*apiserver.*"} == 1
+          for: 1h
+          labels:
+            severity: critical
+            csap_ref: "D-06"
+          annotations:
+            summary: "CSAP D-06 위반: 24시간 감사 이벤트 없음"
+            description: |
+              API 서버가 실행 중이나 24시간 동안 감사 이벤트가 기록되지 않았습니다.
+              감사 로그 정책 확인 필요.
