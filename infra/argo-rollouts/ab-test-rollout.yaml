@@ -1,0 +1,114 @@
+# A/B 테스트 배포 전략
+# Design Ref: MTU-N101 Design §배포 전략
+# Plan SC: FR-N101.3
+
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: auth-service-ab
+  namespace: production
+  labels:
+    app.kubernetes.io/name: auth-service
+    deployment-strategy: ab-test
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: auth-service
+          image: harbor.saas.go.kr/services/auth-service:v2.0.0
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+  strategy:
+    canary:
+      # A/B 테스트: Header 기반 트래픽 분리
+      trafficRouting:
+        traefik:
+          weightedRouteGroups:
+            - routeGroupName: auth-service-stable
+            - routeGroupName: auth-service-canary
+      canaryService: auth-service-canary
+      stableService: auth-service-stable
+      steps:
+        # A/B 테스트 단계 1: 헤더 기반 라우팅
+        - setHeaderRoute:
+            name: ab-test-header
+            match:
+              - headerName: X-AB-Test
+                headerValue:
+                  exact: "canary"
+        - pause:
+            duration: 1h
+        # 메트릭 분석
+        - analysis:
+            templates:
+              - templateName: success-rate-analysis
+            args:
+              - name: service-name
+                value: auth-service-canary
+        # A/B 트래픽 10% 전환
+        - setWeight: 10
+        - pause:
+            duration: 30m
+        - analysis:
+            templates:
+              - templateName: latency-p99-analysis
+        # 50% 전환
+        - setWeight: 50
+        - pause:
+            duration: 30m
+        - analysis:
+            templates:
+              - templateName: error-rate-analysis
+        # 전체 전환
+        - setWeight: 100
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service-stable
+  namespace: production
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - port: 80
+      targetPort: 3000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service-canary
+  namespace: production
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - port: 80
+      targetPort: 3000
