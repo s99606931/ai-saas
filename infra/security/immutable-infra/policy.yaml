@@ -1,0 +1,146 @@
+# 불변 인프라 정책 (Kyverno ClusterPolicy)
+# Design Ref: MTU-N92 Design §2
+# Plan SC: FR-N92.2
+# CSAP: D-11 가상화 보안
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: immutable-infrastructure
+  labels:
+    app: ai-saas
+    csap: D-11
+    mtu: N92
+  annotations:
+    policies.kyverno.io/title: "불변 인프라 정책"
+    policies.kyverno.io/description: |
+      프로덕션 환경에서 불변 인프라 원칙을 강제합니다:
+      1. readOnlyRootFilesystem 필수
+      2. latest 태그 금지
+      3. 런타임 패키지 설치 차단
+      4. 권한 상승 금지
+    policies.kyverno.io/severity: high
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    # 규칙 1: readOnlyRootFilesystem 필수
+    - name: require-readonly-rootfs
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "grade-*"
+                - "production"
+                - "default"
+      validate:
+        message: |
+          모든 컨테이너에 readOnlyRootFilesystem: true 설정 필수 (불변 인프라 원칙).
+          securityContext.readOnlyRootFilesystem: true 를 추가하세요.
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  readOnlyRootFilesystem: true
+
+    # 규칙 2: latest 태그 금지
+    - name: disallow-latest-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      validate:
+        message: |
+          latest 태그 사용 금지. SHA digest 또는 고정 버전 태그를 사용하세요.
+          예: image: harbor.local/app:v1.2.3@sha256:abc123
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"
+
+    # 규칙 3: 권한 상승 금지
+    - name: disallow-privilege-escalation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "allowPrivilegeEscalation: false 설정 필수"
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  allowPrivilegeEscalation: false
+
+    # 규칙 4: root 사용자 금지
+    - name: disallow-root-user
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "grade-*"
+                - "production"
+      validate:
+        message: "root 사용자(runAsUser: 0) 금지. 비root 사용자 설정 필수."
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+
+    # 규칙 5: 이미지 서명 검증 (Cosign)
+    - name: verify-image-signature
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "production"
+      verifyImages:
+        - imageReferences:
+            - "harbor.local/*"
+          attestors:
+            - entries:
+                - keys:
+                    publicKeys: |-
+                      -----BEGIN PUBLIC KEY-----
+                      # Cosign 공개키 (실제 키로 교체)
+                      -----END PUBLIC KEY-----
+
+---
+# 불변 인프라 예외 정책 (시스템 네임스페이스)
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: immutable-infra-exceptions
+  labels:
+    app: ai-saas
+    mtu: N92
+spec:
+  validationFailureAction: Audit
+  rules:
+    - name: audit-system-namespaces
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "kube-system"
+                - "monitoring"
+                - "flux-system"
+      validate:
+        message: "시스템 네임스페이스 — Audit 모드 (기록만, 차단 안 함)"
+        pattern:
+          spec:
+            containers:
+              - name: "*"

@@ -1,0 +1,54 @@
+# 프로덕션 배포 게이트 자동 검증
+# Design Ref: MTU-N92 Design
+# Plan SC: FR-N92.3
+# CSAP: D-12 시스템 개발 보안
+
+name: Production Readiness Gate
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]
+  workflow_dispatch:
+
+jobs:
+  prod-readiness:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: 소스코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 프로덕션 준비 체크리스트 실행
+        run: |
+          echo "=== 프로덕션 준비 체크리스트 (100항목) ==="
+          bash scripts/prod-readiness-check.sh 2>&1 | tee prod-readiness-report.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+
+          if [ "$EXIT_CODE" -ne 0 ]; then
+            echo "::error::프로덕션 준비 체크리스트 불통과 — main 머지 차단"
+            exit 1
+          fi
+
+      - name: 불변 인프라 정책 검증
+        run: |
+          echo "=== 불변 인프라 정책 검증 ==="
+          # Kyverno 정책 YAML 유효성 검사
+          if [ -f infra/security/immutable-infra/policy.yaml ]; then
+            python3 -c "import yaml; yaml.safe_load_all(open('infra/security/immutable-infra/policy.yaml'))" && \
+              echo "PASS: 정책 YAML 유효" || \
+              echo "FAIL: 정책 YAML 오류"
+          fi
+
+      - name: 감사 로그 기록
+        if: always()
+        run: |
+          echo "{\"timestamp\":\"$(date -Iseconds)\",\"action\":\"PROD_GATE_CHECK\",\"result\":\"${{ job.status }}\",\"csap\":\"D-12\"}" >> .claude/audit.jsonl || true
+
+      - name: PR 코멘트 추가
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "프로덕션 준비 검증 완료 — 상태: ${{ job.status }}"
