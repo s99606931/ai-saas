@@ -1,0 +1,80 @@
+# vCluster OSS — Helm Values
+# Design Ref: MTU-N73 §1.1
+# Plan SC: FR-N73.1
+# 개발자 PR Preview 환경용 가상 클러스터
+
+# vCluster 기본 설정
+vcluster:
+  image: rancher/k3s:v1.30.4-k3s1
+
+# Syncer 설정
+syncer:
+  extraArgs:
+    - --tls-san=pr-preview.saas.internal
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  # PSS Restricted 호환
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false  # vCluster syncer 필요
+    capabilities:
+      drop: ["ALL"]
+    seccompProfile:
+      type: RuntimeDefault
+
+# 격리 설정
+isolation:
+  enabled: true
+  # 네임스페이스 리소스 제한
+  resourceQuota:
+    enabled: true
+    quota:
+      requests.cpu: "500m"
+      requests.memory: "1Gi"
+      limits.cpu: "1"
+      limits.memory: "2Gi"
+      pods: "10"
+      services: "5"
+      persistentvolumeclaims: "3"
+  # 컨테이너 리소스 제한
+  limitRange:
+    enabled: true
+    default:
+      cpu: "200m"
+      memory: "256Mi"
+    defaultRequest:
+      cpu: "50m"
+      memory: "64Mi"
+  # 네트워크 격리
+  networkPolicy:
+    enabled: true
+
+# 동기화 설정
+sync:
+  services:
+    enabled: true
+  ingresses:
+    enabled: true
+  configmaps:
+    enabled: true
+  secrets:
+    enabled: true
+  pods:
+    enabled: true
+
+# 스토리지 (경량)
+storage:
+  persistence: false
+
+# 라벨 (TTL 관리용)
+labels:
+  app.kubernetes.io/component: pr-preview
+  app.kubernetes.io/part-of: saas-framework
+  saas.preview/managed-by: gitea-actions

@@ -1,0 +1,177 @@
+# Kyverno — PSS Restricted 위반 감사 정책
+# Design Ref: MTU-N71 §4
+# Plan SC: FR-N71.4
+# CSAP 매핑: D-06-01, D-08-05
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pss-restricted-audit
+  labels:
+    app.kubernetes.io/component: security
+    app.kubernetes.io/part-of: saas-framework
+    csap.compliance/control: D-08-01
+  annotations:
+    policies.kyverno.io/title: PSS Restricted 프로필 준수 감사
+    policies.kyverno.io/category: Pod Security Standards
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Pod Security Standards Restricted 프로필 위반을 감사하고
+      PolicyReport로 기록합니다. CSAP D-08 접근통제 요건 충족.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    # 1. runAsNonRoot 검사
+    - name: require-run-as-non-root
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - default
+                - saas-apps
+                - saas-data
+      validate:
+        message: "Pod은 runAsNonRoot: true를 설정해야 합니다 (CSAP D-08)"
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+
+    # 2. allowPrivilegeEscalation 금지
+    - name: deny-privilege-escalation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - default
+                - saas-apps
+                - saas-data
+      validate:
+        message: "컨테이너는 allowPrivilegeEscalation: false를 설정해야 합니다 (CSAP D-08)"
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  allowPrivilegeEscalation: false
+
+    # 3. capabilities drop ALL
+    - name: require-drop-all-capabilities
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - default
+                - saas-apps
+                - saas-data
+      validate:
+        message: "컨테이너는 모든 capabilities를 drop해야 합니다 (CSAP D-08)"
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  capabilities:
+                    drop:
+                      - ALL
+
+    # 4. seccompProfile RuntimeDefault
+    - name: require-seccomp-profile
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - default
+                - saas-apps
+                - saas-data
+      validate:
+        message: "Pod은 seccompProfile RuntimeDefault를 설정해야 합니다 (CSAP D-08)"
+        pattern:
+          spec:
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
+
+    # 5. hostNetwork/hostPID/hostIPC 금지
+    - name: deny-host-namespaces
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - default
+                - saas-apps
+                - saas-data
+      validate:
+        message: "Pod은 hostNetwork, hostPID, hostIPC를 사용할 수 없습니다 (CSAP D-08)"
+        pattern:
+          spec:
+            =(hostNetwork): false
+            =(hostPID): false
+            =(hostIPC): false
+
+    # 6. hostPath 볼륨 금지
+    - name: deny-host-path-volumes
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - default
+                - saas-apps
+                - saas-data
+      validate:
+        message: "Pod은 hostPath 볼륨을 사용할 수 없습니다 (CSAP D-08)"
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.spec.volumes[?hostPath] | length(@) }}"
+                operator: GreaterThan
+                value: 0
+
+---
+# PolicyReport 기반 위반 현황 메트릭 (Prometheus 수집)
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pss-restricted-label-check
+  labels:
+    app.kubernetes.io/component: security
+    csap.compliance/control: D-08-01
+  annotations:
+    policies.kyverno.io/title: PSS 라벨 적용 확인
+    policies.kyverno.io/category: Pod Security Standards
+    policies.kyverno.io/severity: medium
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: check-pss-label-exists
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - kube-node-lease
+      validate:
+        message: "네임스페이스에 PSS enforce 라벨이 있어야 합니다"
+        pattern:
+          metadata:
+            labels:
+              pod-security.kubernetes.io/enforce: "?*"

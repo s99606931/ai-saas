@@ -1,0 +1,129 @@
+{
+  "annotations": { "list": [] },
+  "description": "VPA Right-Sizing + OpenCost FinOps 대시보드",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "VPA 권고 vs 실제 CPU 사용량",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "vpa_recommender_recommendation_target{resource=\"cpu\"}",
+          "legendFormat": "VPA 권고: {{container}}",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(container_cpu_usage_seconds_total{container!=\"\"}[5m])",
+          "legendFormat": "실제 사용: {{container}}",
+          "refId": "B"
+        },
+        {
+          "expr": "kube_pod_container_resource_requests{resource=\"cpu\"}",
+          "legendFormat": "현재 Request: {{container}}",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "title": "VPA 권고 vs 실제 Memory 사용량",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "vpa_recommender_recommendation_target{resource=\"memory\"}",
+          "legendFormat": "VPA 권고: {{container}}",
+          "refId": "A"
+        },
+        {
+          "expr": "container_memory_working_set_bytes{container!=\"\"}",
+          "legendFormat": "실제 사용: {{container}}",
+          "refId": "B"
+        },
+        {
+          "expr": "kube_pod_container_resource_requests{resource=\"memory\"}",
+          "legendFormat": "현재 Request: {{container}}",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "title": "네임스페이스별 예상 월간 비용 (OpenCost)",
+      "type": "barchart",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum by (namespace) (opencost_container_cost_cpu_hourly + opencost_container_cost_memory_hourly) * 730",
+          "legendFormat": "{{namespace}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "서비스별 Right-Sizing 절감 예상 (%)",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "100 * (1 - (vpa_recommender_recommendation_target{resource=\"cpu\"} / kube_pod_container_resource_requests{resource=\"cpu\"}))",
+          "legendFormat": "{{container}} 절감률",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 20 },
+              { "color": "red", "value": 50 }
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "title": "서비스 리소스 효율성 점수",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "100 * rate(container_cpu_usage_seconds_total{container!=\"\"}[5m]) / kube_pod_container_resource_requests{resource=\"cpu\"}",
+          "legendFormat": "CPU 효율: {{container}}",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["finops", "vpa", "opencost", "right-sizing", "csap-d12"],
+  "templating": {
+    "list": [
+      {
+        "name": "namespace",
+        "type": "query",
+        "query": "label_values(kube_pod_container_resource_requests, namespace)",
+        "datasource": { "type": "prometheus", "uid": "prometheus" }
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "title": "VPA Right-Sizing + FinOps 비용 분석",
+  "uid": "vpa-rightsizing-finops"
+}

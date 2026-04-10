@@ -1,0 +1,133 @@
+# VPA 오브젝트 — 서비스별 리소스 권고
+# Design Ref: MTU-N72 §1.2
+# Plan SC: FR-N72.2
+
+---
+# 공통 VPA 템플릿 — Off 모드 (권고만 생성)
+# 각 서비스에 대해 VPA 오브젝트를 생성합니다
+
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: auth-service-vpa
+  namespace: saas-apps
+  labels:
+    app.kubernetes.io/component: finops
+    app.kubernetes.io/part-of: saas-framework
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: auth-service
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        minAllowed:
+          cpu: 10m
+          memory: 32Mi
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi
+        controlledResources: ["cpu", "memory"]
+
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: api-gateway-vpa
+  namespace: saas-apps
+  labels:
+    app.kubernetes.io/component: finops
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-gateway
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        minAllowed:
+          cpu: 20m
+          memory: 64Mi
+        maxAllowed:
+          cpu: "4"
+          memory: 8Gi
+
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: tenant-service-vpa
+  namespace: saas-apps
+  labels:
+    app.kubernetes.io/component: finops
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tenant-service
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        minAllowed:
+          cpu: 10m
+          memory: 32Mi
+        maxAllowed:
+          cpu: "1"
+          memory: 2Gi
+
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: ai-service-vpa
+  namespace: saas-apps
+  labels:
+    app.kubernetes.io/component: finops
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-service
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        minAllowed:
+          cpu: 50m
+          memory: 128Mi
+        maxAllowed:
+          cpu: "4"
+          memory: 8Gi
+
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: audit-service-vpa
+  namespace: saas-apps
+  labels:
+    app.kubernetes.io/component: finops
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: audit-service
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        minAllowed:
+          cpu: 10m
+          memory: 32Mi
+        maxAllowed:
+          cpu: "1"
+          memory: 2Gi

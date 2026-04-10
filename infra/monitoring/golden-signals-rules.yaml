@@ -1,0 +1,214 @@
+# SRE 4대 황금 신호 Recording Rules
+# Design Ref: MTU-N74 §1
+# Plan SC: FR-N74.1
+# CSAP 매핑: D-06
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: golden-signals
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/component: sre
+    csap.compliance/control: D-06
+spec:
+  groups:
+    # ============================================================
+    # 1. LATENCY (지연 시간)
+    # ============================================================
+    - name: golden-signals-latency
+      interval: 30s
+      rules:
+        # P50 지연 시간 (서비스별)
+        - record: saas:http_request_duration_seconds:p50
+          expr: |
+            histogram_quantile(0.50,
+              sum by (namespace, service, le) (
+                rate(http_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            signal: latency
+            quantile: "0.50"
+
+        # P95 지연 시간 (서비스별)
+        - record: saas:http_request_duration_seconds:p95
+          expr: |
+            histogram_quantile(0.95,
+              sum by (namespace, service, le) (
+                rate(http_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            signal: latency
+            quantile: "0.95"
+
+        # P99 지연 시간 (서비스별)
+        - record: saas:http_request_duration_seconds:p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (namespace, service, le) (
+                rate(http_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            signal: latency
+            quantile: "0.99"
+
+    # ============================================================
+    # 2. TRAFFIC (트래픽)
+    # ============================================================
+    - name: golden-signals-traffic
+      interval: 30s
+      rules:
+        # 서비스별 초당 요청 수
+        - record: saas:http_requests_total:rate5m
+          expr: |
+            sum by (namespace, service) (
+              rate(http_requests_total[5m])
+            )
+          labels:
+            signal: traffic
+
+        # 서비스별 초당 요청 수 (메서드별)
+        - record: saas:http_requests_total:rate5m_by_method
+          expr: |
+            sum by (namespace, service, method) (
+              rate(http_requests_total[5m])
+            )
+          labels:
+            signal: traffic
+
+    # ============================================================
+    # 3. ERRORS (에러)
+    # ============================================================
+    - name: golden-signals-errors
+      interval: 30s
+      rules:
+        # 서비스별 5xx 에러 수
+        - record: saas:http_errors_total:rate5m
+          expr: |
+            sum by (namespace, service) (
+              rate(http_requests_total{status=~"5.."}[5m])
+            )
+          labels:
+            signal: errors
+
+        # 서비스별 에러율 (%)
+        - record: saas:http_error_rate:ratio5m
+          expr: |
+            (
+              sum by (namespace, service) (rate(http_requests_total{status=~"5.."}[5m]))
+              /
+              sum by (namespace, service) (rate(http_requests_total[5m]))
+            ) * 100
+          labels:
+            signal: errors
+
+    # ============================================================
+    # 4. SATURATION (포화도)
+    # ============================================================
+    - name: golden-signals-saturation
+      interval: 30s
+      rules:
+        # CPU 사용률 (request 대비)
+        - record: saas:cpu_saturation:ratio
+          expr: |
+            sum by (namespace, pod) (
+              rate(container_cpu_usage_seconds_total{container!=""}[5m])
+            )
+            /
+            sum by (namespace, pod) (
+              kube_pod_container_resource_requests{resource="cpu"}
+            )
+          labels:
+            signal: saturation
+            resource: cpu
+
+        # Memory 사용률 (request 대비)
+        - record: saas:memory_saturation:ratio
+          expr: |
+            sum by (namespace, pod) (
+              container_memory_working_set_bytes{container!=""}
+            )
+            /
+            sum by (namespace, pod) (
+              kube_pod_container_resource_requests{resource="memory"}
+            )
+          labels:
+            signal: saturation
+            resource: memory
+
+        # 디스크 사용률
+        - record: saas:disk_saturation:ratio
+          expr: |
+            1 - (
+              node_filesystem_avail_bytes{mountpoint="/"}
+              /
+              node_filesystem_size_bytes{mountpoint="/"}
+            )
+          labels:
+            signal: saturation
+            resource: disk
+
+    # ============================================================
+    # 황금 신호 기반 알림 규칙
+    # ============================================================
+    - name: golden-signals-alerts
+      interval: 1m
+      rules:
+        - alert: HighLatencyP99
+          expr: saas:http_request_duration_seconds:p99 > 1
+          for: 5m
+          labels:
+            severity: warning
+            signal: latency
+            csap_control: D-06
+          annotations:
+            summary: "{{ $labels.service }} P99 지연 1초 초과"
+            runbook_url: "https://docs.saas.go.kr/operations/runbooks/high-latency"
+
+        - alert: HighErrorRate
+          expr: saas:http_error_rate:ratio5m > 5
+          for: 5m
+          labels:
+            severity: critical
+            signal: errors
+            csap_control: D-06
+          annotations:
+            summary: "{{ $labels.service }} 에러율 5% 초과"
+            runbook_url: "https://docs.saas.go.kr/operations/runbooks/high-error-rate"
+
+        - alert: HighCPUSaturation
+          expr: saas:cpu_saturation:ratio > 0.9
+          for: 10m
+          labels:
+            severity: warning
+            signal: saturation
+            csap_control: D-06
+          annotations:
+            summary: "{{ $labels.pod }} CPU 사용률 90% 초과"
+            runbook_url: "https://docs.saas.go.kr/operations/runbooks/oom-kill"
+
+        - alert: HighMemorySaturation
+          expr: saas:memory_saturation:ratio > 0.9
+          for: 10m
+          labels:
+            severity: critical
+            signal: saturation
+            csap_control: D-06
+          annotations:
+            summary: "{{ $labels.pod }} Memory 사용률 90% 초과"
+            runbook_url: "https://docs.saas.go.kr/operations/runbooks/oom-kill"
+
+        - alert: DiskSpaceLow
+          expr: saas:disk_saturation:ratio > 0.85
+          for: 15m
+          labels:
+            severity: warning
+            signal: saturation
+            csap_control: D-06
+          annotations:
+            summary: "디스크 사용률 85% 초과"
+            runbook_url: "https://docs.saas.go.kr/operations/runbooks/disk-space"

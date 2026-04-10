@@ -1,0 +1,80 @@
+# PR Preview 리소스 정책
+# Design Ref: MTU-N73 §2
+# Plan SC: FR-N73.3
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: preview-quota
+  labels:
+    app.kubernetes.io/component: pr-preview
+    csap.compliance/control: D-08
+spec:
+  hard:
+    requests.cpu: "500m"
+    requests.memory: "1Gi"
+    limits.cpu: "1"
+    limits.memory: "2Gi"
+    pods: "10"
+    services: "5"
+    persistentvolumeclaims: "3"
+    configmaps: "10"
+    secrets: "10"
+
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: preview-limit
+  labels:
+    app.kubernetes.io/component: pr-preview
+    csap.compliance/control: D-08
+spec:
+  limits:
+    - default:
+        cpu: "200m"
+        memory: "256Mi"
+      defaultRequest:
+        cpu: "50m"
+        memory: "64Mi"
+      max:
+        cpu: "500m"
+        memory: "1Gi"
+      min:
+        cpu: "10m"
+        memory: "16Mi"
+      type: Container
+
+---
+# NetworkPolicy: PR Preview 환경 격리
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: preview-isolation
+  labels:
+    app.kubernetes.io/component: pr-preview
+    csap.compliance/control: D-08
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}  # 같은 NS 내부 통신만 허용
+  egress:
+    - to:
+        - podSelector: {}
+    # DNS 허용
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # 외부 이미지 pull 허용
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443

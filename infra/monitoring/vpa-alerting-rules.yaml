@@ -1,0 +1,120 @@
+# VPA + FinOps 알림 규칙
+# Design Ref: MTU-N72 §3
+# Plan SC: FR-N72.5
+# CSAP 매핑: D-12-07
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: vpa-finops-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/component: finops
+    csap.compliance/control: D-12-07
+spec:
+  groups:
+    - name: vpa-rightsizing
+      interval: 5m
+      rules:
+        # CPU 과다 할당 경고 (30% 이상)
+        - alert: VPACPUOverProvisioned
+          expr: |
+            (
+              kube_pod_container_resource_requests{resource="cpu", namespace=~"saas-.*|default"}
+              - on(namespace,pod,container)
+              vpa_recommender_recommendation_target{resource="cpu"}
+            )
+            / kube_pod_container_resource_requests{resource="cpu", namespace=~"saas-.*|default"} > 0.3
+          for: 1h
+          labels:
+            severity: warning
+            csap_control: D-12-07
+            category: finops
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} CPU 30% 이상 과다 할당"
+            description: |
+              VPA 권고 대비 {{ $labels.container }} 컨테이너의 CPU request가
+              {{ $value | humanizePercentage }} 초과 할당됨.
+              Right-Sizing 검토 필요.
+            runbook_url: "https://docs.saas.go.kr/operations/finops/rightsizing"
+
+        # Memory 과다 할당 경고 (30% 이상)
+        - alert: VPAMemoryOverProvisioned
+          expr: |
+            (
+              kube_pod_container_resource_requests{resource="memory", namespace=~"saas-.*|default"}
+              - on(namespace,pod,container)
+              vpa_recommender_recommendation_target{resource="memory"}
+            )
+            / kube_pod_container_resource_requests{resource="memory", namespace=~"saas-.*|default"} > 0.3
+          for: 1h
+          labels:
+            severity: warning
+            csap_control: D-12-07
+            category: finops
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} Memory 30% 이상 과다 할당"
+            description: |
+              VPA 권고 대비 {{ $labels.container }} 컨테이너의 Memory request가
+              {{ $value | humanizePercentage }} 초과 할당됨.
+
+        # CPU 과소 할당 위험 (request < VPA 권고의 80%)
+        - alert: VPACPUUnderProvisioned
+          expr: |
+            kube_pod_container_resource_requests{resource="cpu", namespace=~"saas-.*|default"}
+            / on(namespace,pod,container)
+            vpa_recommender_recommendation_target{resource="cpu"} < 0.8
+          for: 30m
+          labels:
+            severity: critical
+            csap_control: D-12-07
+            category: finops
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} CPU 과소 할당 위험"
+            description: |
+              CPU request가 VPA 권고의 80% 미만.
+              OOM 또는 성능 저하 위험.
+
+        # 네임스페이스 월간 예산 초과
+        - alert: NamespaceCostBudgetExceeded
+          expr: |
+            sum by (namespace) (
+              opencost_container_cost_cpu_hourly{namespace=~"saas-.*"}
+              + opencost_container_cost_memory_hourly{namespace=~"saas-.*"}
+            ) * 730 > 100000
+          for: 6h
+          labels:
+            severity: warning
+            csap_control: D-12-07
+            category: finops
+          annotations:
+            summary: "{{ $labels.namespace }} 월간 예상 비용 예산 초과"
+            description: |
+              네임스페이스 {{ $labels.namespace }}의 월간 예상 비용이
+              예산(100,000원)을 초과함.
+
+    - name: vpa-health
+      interval: 1m
+      rules:
+        # VPA Recommender 상태 확인
+        - alert: VPARecommenderDown
+          expr: |
+            absent(up{job="vpa-recommender"} == 1)
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-12-07
+          annotations:
+            summary: "VPA Recommender가 비정상입니다"
+
+        # OpenCost Exporter 상태 확인
+        - alert: OpenCostExporterDown
+          expr: |
+            absent(up{job="opencost"} == 1)
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-12-07
+          annotations:
+            summary: "OpenCost Exporter가 비정상입니다"

@@ -1,0 +1,44 @@
+# 필수 라벨 강제 정책
+# Design Ref: MTU-N75 §1.2
+# Plan SC: FR-N75.2
+# CSAP 매핑: D-08
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-labels
+  labels:
+    app.kubernetes.io/component: admission-security
+    csap.compliance/control: D-08
+  annotations:
+    policies.kyverno.io/title: 필수 라벨 강제
+    policies.kyverno.io/severity: medium
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: require-app-labels
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - flux-system
+      validate:
+        message: >-
+          리소스에 필수 라벨이 누락되었습니다:
+          app.kubernetes.io/name, app.kubernetes.io/component, team
+        pattern:
+          metadata:
+            labels:
+              app.kubernetes.io/name: "?*"
+              app.kubernetes.io/component: "?*"
+              team: "?*"

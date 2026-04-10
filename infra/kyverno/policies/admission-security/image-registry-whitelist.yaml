@@ -1,0 +1,46 @@
+# 이미지 레지스트리 화이트리스트 정책
+# Design Ref: MTU-N75 §1.1
+# Plan SC: FR-N75.1
+# CSAP 매핑: D-12, D-08
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-image-registries
+  labels:
+    app.kubernetes.io/component: admission-security
+    csap.compliance/control: D-12
+  annotations:
+    policies.kyverno.io/title: 허용된 이미지 레지스트리만 사용
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Harbor 및 신뢰할 수 있는 레지스트리의 이미지만 허용합니다.
+      CSAP D-12 시스템 개발 보안 요건 충족.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: validate-image-registry
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-public
+                - flux-system
+                - falco-system
+                - trivy-system
+      validate:
+        message: >-
+          이미지 {{ images.containers.*.registry }} 는 허용되지 않습니다.
+          허용 레지스트리: harbor.saas.internal, registry.k8s.io, docker.io/library, ghcr.io
+        pattern:
+          spec:
+            containers:
+              - image: "harbor.saas.internal/* | registry.k8s.io/* | docker.io/library/* | ghcr.io/* | bitnami/*"

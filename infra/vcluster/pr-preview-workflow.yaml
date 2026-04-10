@@ -1,0 +1,114 @@
+# Gitea Actions — PR Preview 워크플로우
+# Design Ref: MTU-N73 §1.2
+# Plan SC: FR-N73.2
+
+name: PR Preview Environment
+
+# PR 오픈/업데이트 시 프리뷰 환경 생성
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  VCLUSTER_NAME: pr-${{ github.event.pull_request.number }}
+  NAMESPACE: preview-${{ github.event.pull_request.number }}
+
+jobs:
+  create-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install vCluster CLI
+        run: |
+          curl -L -o vcluster "https://github.com/loft-sh/vcluster/releases/latest/download/vcluster-linux-amd64"
+          chmod +x vcluster
+          sudo mv vcluster /usr/local/bin/
+
+      - name: Create Namespace
+        run: |
+          kubectl create namespace ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+          kubectl label namespace ${{ env.NAMESPACE }} \
+            pod-security.kubernetes.io/enforce=restricted \
+            pod-security.kubernetes.io/enforce-version=latest \
+            saas.preview/pr-number="${{ github.event.pull_request.number }}" \
+            saas.preview/created-at="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --overwrite
+
+      - name: Create vCluster
+        run: |
+          vcluster create ${{ env.VCLUSTER_NAME }} \
+            --namespace ${{ env.NAMESPACE }} \
+            --values infra/vcluster/values.yaml \
+            --connect=false
+
+      - name: Apply Resource Policies
+        run: |
+          kubectl apply -f infra/vcluster/resource-policies.yaml \
+            -n ${{ env.NAMESPACE }}
+
+      - name: Deploy Application
+        run: |
+          vcluster connect ${{ env.VCLUSTER_NAME }} \
+            --namespace ${{ env.NAMESPACE }} \
+            -- kubectl apply -f deploy/
+
+      - name: Comment PR with Preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## PR Preview 환경 생성 완료
+              
+              | 항목 | 값 |
+              |------|---|
+              | vCluster | \`${{ env.VCLUSTER_NAME }}\` |
+              | 네임스페이스 | \`${{ env.NAMESPACE }}\` |
+              | 접속 방법 | \`vcluster connect ${{ env.VCLUSTER_NAME }} -n ${{ env.NAMESPACE }}\` |
+              | TTL | 3일 (미사용 시 자동 삭제) |
+              
+              > CSAP D-08: Restricted PSS 적용, 리소스 제한 활성화`
+            })
+
+---
+# PR 닫힘 시 프리뷰 환경 삭제
+name: PR Preview Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+env:
+  VCLUSTER_NAME: pr-${{ github.event.pull_request.number }}
+  NAMESPACE: preview-${{ github.event.pull_request.number }}
+
+jobs:
+  delete-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install vCluster CLI
+        run: |
+          curl -L -o vcluster "https://github.com/loft-sh/vcluster/releases/latest/download/vcluster-linux-amd64"
+          chmod +x vcluster
+          sudo mv vcluster /usr/local/bin/
+
+      - name: Delete vCluster
+        run: |
+          vcluster delete ${{ env.VCLUSTER_NAME }} \
+            --namespace ${{ env.NAMESPACE }} \
+            --delete-namespace || true
+
+      - name: Comment PR Cleanup
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## PR Preview 환경 삭제 완료\n\nvCluster \`${{ env.VCLUSTER_NAME }}\` 삭제됨.`
+            })

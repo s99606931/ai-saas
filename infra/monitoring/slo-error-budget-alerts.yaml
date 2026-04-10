@@ -1,0 +1,168 @@
+# =============================================================================
+# SLO Error Budget 알림 규칙 — 공공기관 SaaS 플랫폼
+# Design Ref: MTU-N70 Design §1
+# Plan SC: FR-N70.2
+# CSAP: D-06(침해사고 관리 — SLO 위반 자동 탐지)
+#
+# MTU-N57 Recording Rules 활용:
+#   slo:error_budget:remaining_ratio  → 에러 버짓 잔여율
+#   slo:burn_rate:1h                  → 1시간 번레이트
+#   slo:burn_rate:6h                  → 6시간 번레이트
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: slo-error-budget-alerts
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 — SLO 위반 자동 알림"
+    design.ref: "MTU-N70 Design §1"
+spec:
+  groups:
+    # =========================================================================
+    # SLO Error Budget 소진 알림
+    # =========================================================================
+    - name: saas:slo:error_budget_alerts
+      rules:
+        # -----------------------------------------------------------------
+        # 에러 버짓 50% 소진 — Warning
+        # 30일 에러 버짓의 절반이 소진됨. 주의 필요.
+        # -----------------------------------------------------------------
+        - alert: SLOErrorBudget50Consumed
+          expr: |
+            slo:error_budget:remaining_ratio < 0.5
+            and
+            slo:error_budget:remaining_ratio >= 0.25
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            category: slo
+          annotations:
+            summary: "SLO 에러 버짓 50% 소진 — {{ $labels.sloth_service }}/{{ $labels.sloth_slo }}"
+            description: >
+              서비스 {{ $labels.sloth_service }}의 SLO {{ $labels.sloth_slo }}
+              에러 버짓 잔여율: {{ $value | printf "%.1f" }}%.
+              30일 버짓의 절반 이상 소진. 에러율 추이 확인 필요.
+            csap_ref: "D-06-03"
+            runbook: "docs/operations/slo-guide.md"
+
+        # -----------------------------------------------------------------
+        # 에러 버짓 75% 소진 — Critical
+        # 에러 버짓 거의 소진. 즉시 원인 분석 필요.
+        # -----------------------------------------------------------------
+        - alert: SLOErrorBudget75Consumed
+          expr: |
+            slo:error_budget:remaining_ratio < 0.25
+            and
+            slo:error_budget:remaining_ratio > 0
+          for: 2m
+          labels:
+            severity: critical
+            team: sre
+            category: slo
+          annotations:
+            summary: "SLO 에러 버짓 75% 소진 — {{ $labels.sloth_service }}/{{ $labels.sloth_slo }}"
+            description: >
+              서비스 {{ $labels.sloth_service }}의 SLO {{ $labels.sloth_slo }}
+              에러 버짓 잔여율: {{ $value | printf "%.1f" }}%.
+              즉시 원인 분석 및 대응 필요.
+            csap_ref: "D-06-03"
+
+        # -----------------------------------------------------------------
+        # 에러 버짓 100% 소진 — Page
+        # SLO 완전 위반. 긴급 대응 필요.
+        # -----------------------------------------------------------------
+        - alert: SLOErrorBudgetExhausted
+          expr: |
+            slo:error_budget:remaining_ratio <= 0
+          for: 1m
+          labels:
+            severity: critical
+            team: sre
+            category: slo
+          annotations:
+            summary: "SLO 에러 버짓 완전 소진 — {{ $labels.sloth_service }}/{{ $labels.sloth_slo }}"
+            description: >
+              서비스 {{ $labels.sloth_service }}의 SLO {{ $labels.sloth_slo }}
+              에러 버짓이 완전히 소진되었습니다.
+              SLO 위반 상태. 긴급 대응 필요.
+            csap_ref: "D-06-03"
+
+    # =========================================================================
+    # SLO Burn Rate 알림 (Multi-Window Multi-Burn-Rate)
+    # Google SRE 워크북 기반 MWMBR 알림
+    # =========================================================================
+    - name: saas:slo:burn_rate_alerts
+      rules:
+        # -----------------------------------------------------------------
+        # 빠른 번 (1시간 14.4x + 6시간 6x) → 즉시 대응
+        # 현재 속도면 1시간 내 에러 버짓 소진 예상
+        # -----------------------------------------------------------------
+        - alert: SLOBurnRateCritical
+          expr: |
+            slo:burn_rate:1h > 14.4
+            and
+            slo:burn_rate:6h > 6
+          for: 2m
+          labels:
+            severity: critical
+            team: sre
+            category: slo
+          annotations:
+            summary: "SLO 번레이트 위험 — {{ $labels.sloth_service }}"
+            description: >
+              서비스 {{ $labels.sloth_service }}: 1시간 번레이트 {{ $value | printf "%.1f" }}x,
+              6시간 번레이트 기준 초과.
+              현재 속도면 에러 버짓이 1시간 내 소진됩니다.
+            csap_ref: "D-06-03"
+
+        # -----------------------------------------------------------------
+        # 중간 번 (1시간 6x + 6시간 3x) → 주의
+        # -----------------------------------------------------------------
+        - alert: SLOBurnRateWarning
+          expr: |
+            slo:burn_rate:1h > 6
+            and
+            slo:burn_rate:6h > 3
+            and
+            slo:burn_rate:1h <= 14.4
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            category: slo
+          annotations:
+            summary: "SLO 번레이트 주의 — {{ $labels.sloth_service }}"
+            description: >
+              서비스 {{ $labels.sloth_service }}: 1시간 번레이트 {{ $value | printf "%.1f" }}x.
+              에러율 상승 추이 확인 필요.
+            csap_ref: "D-06-03"
+
+        # -----------------------------------------------------------------
+        # 느린 번 (6시간 3x + 24시간 1x) → Ticket
+        # 점진적 성능 저하 패턴
+        # -----------------------------------------------------------------
+        - alert: SLOBurnRateTicket
+          expr: |
+            slo:burn_rate:6h > 3
+            and
+            slo:burn_rate:24h > 1
+            and
+            slo:burn_rate:1h <= 6
+          for: 30m
+          labels:
+            severity: warning
+            team: sre
+            category: slo
+          annotations:
+            summary: "SLO 번레이트 티켓 — {{ $labels.sloth_service }}"
+            description: >
+              서비스 {{ $labels.sloth_service }}: 점진적 성능 저하 감지.
+              24시간 번레이트 {{ $value | printf "%.1f" }}x.
+              이슈 생성 후 원인 분석 필요.
+            csap_ref: "D-06-03"

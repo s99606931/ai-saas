@@ -1,0 +1,81 @@
+# OpenCost — Helm Values
+# Design Ref: MTU-N72 §2
+# Plan SC: FR-N72.3
+# CSAP 매핑: D-12-07
+
+opencost:
+  exporter:
+    defaultClusterId: saas-k3s-cluster
+    # Prometheus 연동
+    extraEnv:
+      PROMETHEUS_SERVER_ENDPOINT: http://kube-prometheus-stack-prometheus.monitoring:9090
+      CLUSTER_ID: saas-k3s-cluster
+      # 온프레미스/자체 클러스터 비용 설정
+      CLOUD_PROVIDER_API_KEY: ""
+      EMIT_KSM_V1_METRICS: "false"
+      EMIT_KSM_V1_METRICS_ONLY: "true"
+
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
+
+    # PSS Restricted 호환
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
+
+  ui:
+    enabled: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 128Mi
+
+  # 비용 모델 (온프레미스/자체 클러스터용)
+  customPricing:
+    enabled: true
+    provider: custom
+    costModel:
+      description: "공공기관 SaaS k3s 클러스터 비용 모델"
+      CPU: "30.0"          # 월간 vCPU 비용 (원/코어)
+      RAM: "5.0"           # 월간 GB 비용 (원/GB)
+      storage: "0.5"       # 월간 GB 비용 (원/GB)
+      spotCPU: "15.0"
+      spotRAM: "2.5"
+      GPU: "500.0"
+
+  metrics:
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring
+      interval: 60s
+      labels:
+        release: kube-prometheus-stack
+
+  # Prometheus 스크레이핑 설정
+  prometheus:
+    internal:
+      enabled: true
+      serviceName: kube-prometheus-stack-prometheus
+      namespaceName: monitoring
+      port: 9090
+
+# 네임스페이스별 비용 라벨 기준
+lostCostEstimation:
+  enabled: true
+
+networkCosts:
+  enabled: false  # k3s 단일 클러스터에서는 불필요

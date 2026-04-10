@@ -1,0 +1,57 @@
+# VPA (Vertical Pod Autoscaler) — Helm Values
+# Design Ref: MTU-N72 §1
+# Plan SC: FR-N72.1, FR-N72.2
+# CSAP 매핑: D-12-07
+
+# Recommender: 리소스 사용 분석 및 권고 생성
+recommender:
+  enabled: true
+  image:
+    repository: registry.k8s.io/autoscaling/vpa-recommender
+    tag: "1.1.2"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi
+  extraArgs:
+    # 권고 생성 주기
+    recommender-interval: "1m"
+    # 히스토리 사용 기간 (8일)
+    history-length: "8d"
+    # Prometheus 메트릭 소스
+    prometheus-address: http://kube-prometheus-stack-prometheus.monitoring:9090
+    storage: prometheus
+  # PSS Restricted 호환
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: ["ALL"]
+    seccompProfile:
+      type: RuntimeDefault
+
+# Updater: 비활성화 (안전 — 수동 적용만)
+updater:
+  enabled: false
+
+# Admission Controller: 비활성화 (안전 — 수동 적용만)
+admissionController:
+  enabled: false
+
+# CRD 설치
+crds:
+  enabled: true
+
+# ServiceMonitor (Prometheus Operator 연동)
+metrics:
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 30s
+    labels:
+      release: kube-prometheus-stack
