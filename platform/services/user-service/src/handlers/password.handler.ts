@@ -144,6 +144,7 @@ export async function changePasswordHandler(
         tenantId: user.tenantId,
         reason: 'PASSWORD_CHANGED',
       }),
+      signal: AbortSignal.timeout(10000), // CSAP D-07: 서비스 간 통신 타임아웃 10초
     });
   } catch {
     // 세션 무효화 실패 시에도 비밀번호 변경은 성공 (가용성 우선)

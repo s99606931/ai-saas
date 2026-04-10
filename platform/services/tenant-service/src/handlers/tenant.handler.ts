@@ -540,6 +540,7 @@ async function invalidateTenantSessions(tenantId: string, _callerIp: string): Pr
           tenantId,
           reason: 'ACCOUNT_LOCKED',
         }),
+        signal: AbortSignal.timeout(10000), // CSAP D-07: 서비스 간 통신 타임아웃 10초
       });
     } catch {
       // 개별 사용자 세션 무효화 실패 시 건너뜀 (전체 중단 방지)

@@ -64,6 +64,7 @@ async function authPreHandler(request: FastifyRequest, reply: FastifyReply): Pro
   try {
     const verifyResponse = await fetch(`${AUTH_SERVICE_URL}/auth/verify`, {
       headers: { authorization: authHeader },
+      signal: AbortSignal.timeout(5000), // CSAP D-07: 인증 검증 타임아웃 5초
     });
 
     if (!verifyResponse.ok) {
@@ -238,6 +239,7 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
               'x-request-id': (request.headers['x-request-id'] as string) ?? '',
             },
             body: request.method !== 'GET' && request.method !== 'HEAD' ? JSON.stringify(request.body) : undefined,
+            signal: AbortSignal.timeout(30000), // CSAP D-07: 프록시 타임아웃 30초
           }),
         );
 

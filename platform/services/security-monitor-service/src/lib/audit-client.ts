@@ -44,7 +44,9 @@ class AuditServiceClient {
     const url = `${this.baseUrl}/audit/logs?action=${encodeURIComponent(action)}&fromDate=${encodeURIComponent(fromDate)}&limit=${limit}`;
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(10000), // CSAP D-07: 서비스 간 통신 타임아웃 10초
+      });
       if (!response.ok) {
         return { items: [], total: 0 };
       }
