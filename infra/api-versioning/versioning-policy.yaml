@@ -1,0 +1,80 @@
+# Design Ref: MTU-N165 Section 2
+# Plan SC: FR-N165.1
+# CSAP: D-12 시스템 개발 보안
+#
+# API 버전 관리 정책
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-versioning-policy
+  namespace: public-saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: api-governance
+data:
+  versioning-policy.yaml: |
+    version: "1.0"
+    description: "공공기관 SaaS API 버전 관리 정책"
+
+    # 버전 체계
+    versionScheme:
+      format: "v{major}"
+      pathPrefix: "/api/v{major}"
+      headerName: "X-API-Version"
+      currentVersion: "v1"
+      supportedVersions: ["v1"]
+
+    # Semantic Versioning 규칙
+    semanticVersioning:
+      major: "파괴적 변경 (하위호환 불가)"
+      minor: "하위호환 기능 추가"
+      patch: "버그 수정"
+
+    # 하위호환 정책
+    compatibility:
+      # 동시 지원 메이저 버전 수
+      maxConcurrentMajor: 2
+      # Deprecation 기간
+      deprecationPeriodMonths: 6
+      # 보안 패치 백포트
+      securityBackportVersions: 1
+
+    # Deprecation 프로세스
+    deprecation:
+      stages:
+        - name: "announced"
+          action: "Sunset 헤더 추가"
+          header: "Sunset: {date}"
+          duration: "0d"
+        - name: "warning"
+          action: "응답에 경고 헤더 추가 + 로그"
+          header: "Deprecation: true"
+          duration: "90d"
+        - name: "retired"
+          action: "404 반환"
+          duration: "180d"
+
+    # 파괴적 변경 금지 목록
+    breakingChangeGuard:
+      forbidden:
+        - "필수 필드 제거"
+        - "필드 타입 변경"
+        - "열거형 값 제거"
+        - "HTTP 상태 코드 의미 변경"
+        - "인증 방식 변경"
+      allowed:
+        - "선택적 필드 추가"
+        - "새 엔드포인트 추가"
+        - "새 열거형 값 추가"
+        - "응답 필드 추가"
+        - "선택적 쿼리 파라미터 추가"
+
+    # CI/CD 통합
+    ciIntegration:
+      # OpenAPI diff 자동 검사
+      openApiDiff: true
+      # 파괴적 변경 시 CI 실패
+      breakOnBreaking: true
+      # 호환성 리포트 생성
+      generateReport: true

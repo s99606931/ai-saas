@@ -1,0 +1,61 @@
+# 로컬 k3s 개발 프로파일 — 경량 설정
+# Design Ref: MTU-N119
+# Plan SC: FR-N119.3
+# 용도: 로컬 개발 환경에서 최소 리소스로 k3s 실행
+---
+# k3s 서버 설정 (경량)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k3s-local-profile
+  namespace: kube-system
+data:
+  config.yaml: |
+    # 로컬 개발용 경량 설정
+    write-kubeconfig-mode: "644"
+    disable:
+      - traefik          # 로컬에서 Traefik 불필요 (NodePort 직접 사용)
+      - servicelb         # 로컬에서 ServiceLB 불필요
+      - metrics-server    # 개발 중 메트릭 불필요
+    tls-san:
+      - "localhost"
+      - "127.0.0.1"
+      - "host.docker.internal"
+    # 리소스 절약
+    kube-controller-manager-arg:
+      - "node-monitor-period=60s"
+      - "node-monitor-grace-period=5m"
+    kubelet-arg:
+      - "max-pods=50"
+      - "eviction-hard=memory.available<100Mi,nodefs.available<5%"
+
+  # 로컬 개발 원클릭 설정 스크립트
+  setup-local.sh: |
+    #!/bin/bash
+    # 로컬 k3s 개발 환경 원클릭 설정
+    set -euo pipefail
+
+    echo "=========================================="
+    echo "로컬 개발 환경 설정"
+    echo "=========================================="
+
+    # 1. k3s 설치 확인
+    if ! command -v k3s &>/dev/null; then
+      echo "[INFO] k3s 설치 중..."
+      curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644 --disable traefik --disable servicelb" sh -
+    else
+      echo "[PASS] k3s 이미 설치됨"
+    fi
+
+    # 2. kubectl 설정
+    export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+    mkdir -p ~/.kube
+    cp /etc/rancher/k3s/k3s.yaml ~/.kube/config 2>/dev/null || true
+
+    # 3. 네임스페이스 생성
+    kubectl create namespace saas-system --dry-run=client -o yaml | kubectl apply -f -
+    kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+
+    echo ""
+    echo "[PASS] 로컬 개발 환경 설정 완료"
+    echo "kubectl get nodes 로 확인하세요"
