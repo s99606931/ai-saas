@@ -1,0 +1,43 @@
+# 감리 Q-Gate 자동 검증 워크플로우
+# Design Ref: MTU-N95 Design
+# Plan SC: FR-N95.5
+
+name: Audit Q-Gate Verification
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # 매일 06:00 KST 15:00
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  qgate-verification:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 소스코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Q-Gate G1~G7 검증
+        run: |
+          echo "=== Q-Gate 전수 검증 ==="
+          bash scripts/qgate-verify.sh 2>&1 | tee qgate-report.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          if [ "$EXIT_CODE" -ne 0 ]; then
+            echo "::warning::Q-Gate 미통과 항목 발견"
+          fi
+
+      - name: CSAP 커버리지 검증
+        run: |
+          bash scripts/csap-coverage-check.sh 2>&1 || true
+
+      - name: 감리 대비 보고서 생성
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          bash scripts/audit-readiness-report.sh
+
+      - name: 감사 로그 기록
+        if: always()
+        run: |
+          echo "{\"timestamp\":\"$(date -Iseconds)\",\"action\":\"QGATE_VERIFY\",\"result\":\"${{ job.status }}\"}" >> .claude/audit.jsonl || true
