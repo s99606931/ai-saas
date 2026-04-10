@@ -1,0 +1,248 @@
+{
+  "description": "PVC 라이프사이클 모니터링 대시보드 (MTU-N194)",
+  "editable": true,
+  "tags": ["pvc", "lifecycle", "storage", "mtu-n194"],
+  "title": "PVC 라이프사이클 모니터링",
+  "uid": "pvc-lifecycle-n194",
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "PVC 상태 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 80 },
+              { "color": "red", "value": 60 }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "title": "PVC 건강도 점수",
+      "type": "gauge",
+      "targets": [
+        { "expr": "pvc_lifecycle:health_score", "legendFormat": "건강도" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [{ "color": "green", "value": null }]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 6, "y": 1 },
+      "id": 2,
+      "title": "Bound PVC",
+      "type": "stat",
+      "targets": [
+        { "expr": "pvc_lifecycle:bound_count", "legendFormat": "Bound" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 10, "y": 1 },
+      "id": 3,
+      "title": "Pending PVC",
+      "type": "stat",
+      "targets": [
+        { "expr": "pvc_lifecycle:pending_count", "legendFormat": "Pending" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 14, "y": 1 },
+      "id": 4,
+      "title": "Lost PVC",
+      "type": "stat",
+      "targets": [
+        { "expr": "pvc_lifecycle:lost_count", "legendFormat": "Lost" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "id": 5,
+      "title": "미사용(Unattached) PVC",
+      "type": "stat",
+      "targets": [
+        { "expr": "pvc_lifecycle:unattached_bound_count", "legendFormat": "미사용" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "Pending PVC 상세",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "s" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 6,
+      "title": "Pending PVC 대기 시간",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "pvc_lifecycle:pending_duration_seconds",
+          "format": "table",
+          "instant": true,
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true, "component": true, "mtu": true, "job": true, "instance": true },
+            "renameByName": {
+              "namespace": "네임스페이스",
+              "persistentvolumeclaim": "PVC 이름",
+              "Value": "대기 시간(초)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 15 } }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 7,
+      "title": "PVC 상태별 수량 추이",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "pvc_lifecycle:phase_count", "legendFormat": "{{ phase }}" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "title": "미사용 PVC 정리 권고",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "id": 8,
+      "title": "미사용 PVC 목록 (Pod 미연결)",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "pvc_lifecycle:unattached_bound_pvcs",
+          "format": "table",
+          "instant": true,
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true, "component": true, "mtu": true, "job": true, "instance": true, "Value": true },
+            "renameByName": {
+              "namespace": "네임스페이스",
+              "persistentvolumeclaim": "PVC 이름",
+              "storageclass": "StorageClass"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "id": 9,
+      "title": "StorageClass별 PVC 분포",
+      "type": "piechart",
+      "targets": [
+        { "expr": "pvc_lifecycle:count_by_storageclass", "legendFormat": "{{ storageclass }}" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 103,
+      "title": "네임스페이스별 PVC 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
+      "id": 10,
+      "title": "네임스페이스별 PVC 상태 분포",
+      "type": "bargauge",
+      "options": { "orientation": "horizontal", "displayMode": "gradient", "showUnfilled": true },
+      "targets": [
+        { "expr": "pvc_lifecycle:phase_count_by_namespace", "legendFormat": "{{ namespace }} ({{ phase }})" }
+      ]
+    }
+  ],
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "version": 1,
+  "templating": {
+    "list": [
+      {
+        "name": "namespace",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(kube_persistentvolumeclaim_status_phase, namespace)",
+        "refresh": 2,
+        "includeAll": true,
+        "allValue": ".*"
+      }
+    ]
+  }
+}

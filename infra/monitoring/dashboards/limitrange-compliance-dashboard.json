@@ -1,0 +1,232 @@
+{
+  "description": "LimitRange 준수 모니터링 대시보드 (MTU-N196)",
+  "editable": true,
+  "tags": ["limitrange", "compliance", "resource", "mtu-n196"],
+  "title": "LimitRange 준수 모니터링",
+  "uid": "limitrange-n196",
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "LimitRange 준수 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "green", "value": 80 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "title": "준수 점수",
+      "type": "gauge",
+      "targets": [
+        { "expr": "limitrange:compliance_score", "legendFormat": "준수율" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "green", "value": 90 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "title": "네임스페이스 적용률",
+      "type": "gauge",
+      "targets": [
+        { "expr": "limitrange:namespace_coverage_percent", "legendFormat": "적용률" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 5, "w": 4, "x": 12, "y": 1 },
+      "id": 3,
+      "title": "LimitRange 미설정 NS",
+      "type": "stat",
+      "targets": [
+        { "expr": "limitrange:missing_namespaces_count", "legendFormat": "미설정" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 5, "w": 4, "x": 16, "y": 1 },
+      "id": 4,
+      "title": "요청 미설정 컨테이너",
+      "type": "stat",
+      "targets": [
+        { "expr": "limitrange:containers_without_requests", "legendFormat": "미설정" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 1 },
+      "id": 5,
+      "title": "제한 미설정 컨테이너",
+      "type": "stat",
+      "targets": [
+        { "expr": "limitrange:containers_without_limits", "legendFormat": "미설정" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "id": 101,
+      "title": "네임스페이스별 상세",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 },
+      "id": 6,
+      "title": "네임스페이스별 요청 미설정 컨테이너",
+      "type": "bargauge",
+      "options": { "orientation": "horizontal", "displayMode": "gradient" },
+      "targets": [
+        { "expr": "limitrange:containers_without_requests_by_ns > 0", "legendFormat": "{{ namespace }}" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "id": 7,
+      "title": "네임스페이스별 제한 미설정 컨테이너",
+      "type": "bargauge",
+      "options": { "orientation": "horizontal", "displayMode": "gradient" },
+      "targets": [
+        { "expr": "limitrange:containers_without_limits_by_ns > 0", "legendFormat": "{{ namespace }}" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "id": 102,
+      "title": "LimitRange 설정 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "id": 8,
+      "title": "LimitRange 설정 상세 (유형별)",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "limitrange:settings_by_type",
+          "format": "table",
+          "instant": true,
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true, "component": true, "mtu": true, "job": true, "instance": true },
+            "renameByName": {
+              "namespace": "네임스페이스",
+              "limitrange": "LimitRange 이름",
+              "resource": "리소스",
+              "type": "유형",
+              "constraint": "제약",
+              "Value": "값"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+      "id": 103,
+      "title": "추이",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": { "drawStyle": "line", "fillOpacity": 15 }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 25 },
+      "id": 9,
+      "title": "준수 점수 추이",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "limitrange:compliance_score", "legendFormat": "준수 점수" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "fillOpacity": 15 }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 25 },
+      "id": 10,
+      "title": "미설정 컨테이너 수 추이",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "limitrange:containers_without_requests", "legendFormat": "요청 미설정" },
+        { "expr": "limitrange:containers_without_limits", "legendFormat": "제한 미설정" }
+      ]
+    }
+  ],
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "version": 1
+}

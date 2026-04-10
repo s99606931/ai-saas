@@ -1,0 +1,117 @@
+# Pod Disruption Budget 준수 모니터링 Recording Rules
+# Design Ref: MTU-N199.design.md §1
+# Plan SC: FR-N199.1, FR-N199.3, FR-N199.4
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pdb-compliance-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: pdb-monitoring
+    mtu: N199
+spec:
+  groups:
+    - name: pdb.compliance.recording
+      interval: 30s
+      rules:
+        # FR-N199.1: 전체 PDB 수
+        - record: pdb:total_count
+          expr: |
+            count(kube_poddisruptionbudget_status_current_healthy) or vector(0)
+          labels:
+            component: pdb-compliance
+            mtu: N199
+
+        # FR-N199.1: PDB별 현재 정상(healthy) Pod 수
+        - record: pdb:current_healthy
+          expr: |
+            kube_poddisruptionbudget_status_current_healthy
+          labels:
+            component: pdb-compliance
+            mtu: N199
+
+        # FR-N199.1: PDB별 요구 최소 정상(desired) Pod 수
+        - record: pdb:desired_healthy
+          expr: |
+            kube_poddisruptionbudget_status_desired_healthy
+          labels:
+            component: pdb-compliance
+            mtu: N199
+
+        # FR-N199.1: PDB별 허용 중단(disruptions_allowed) 수
+        - record: pdb:disruptions_allowed
+          expr: |
+            kube_poddisruptionbudget_status_pod_disruptions_allowed
+          labels:
+            component: pdb-compliance
+            mtu: N199
+
+        # FR-N199.2: disruptionsAllowed = 0인 PDB 수
+        - record: pdb:disruptions_allowed_zero
+          expr: |
+            count(
+              kube_poddisruptionbudget_status_pod_disruptions_allowed == 0
+            ) or vector(0)
+          labels:
+            component: pdb-compliance
+            mtu: N199
+
+        # FR-N199.4: PDB 가용성 비율 (현재/요구)
+        - record: pdb:availability_ratio
+          expr: |
+            (
+              kube_poddisruptionbudget_status_current_healthy
+              /
+              (kube_poddisruptionbudget_status_desired_healthy > 0)
+            ) * 100
+          labels:
+            component: pdb-compliance
+            mtu: N199
+
+        # FR-N199.4: PDB 위반 상태 (현재 < 요구)
+        - record: pdb:violation_count
+          expr: |
+            count(
+              kube_poddisruptionbudget_status_current_healthy
+              <
+              kube_poddisruptionbudget_status_desired_healthy
+            ) or vector(0)
+          labels:
+            component: pdb-compliance
+            mtu: N199
+
+        # FR-N199.3: PDB가 설정된 네임스페이스 수
+        - record: pdb:configured_namespaces
+          expr: |
+            count(
+              count by (namespace) (
+                kube_poddisruptionbudget_status_current_healthy
+              )
+            ) or vector(0)
+          labels:
+            component: pdb-compliance
+            mtu: N199
+
+        # 전체 PDB 건강도 점수
+        - record: pdb:health_score
+          expr: |
+            (
+              1 - (
+                (pdb:disruptions_allowed_zero + pdb:violation_count)
+                /
+                (2 * (pdb:total_count > 0))
+              )
+            ) * 100
+          labels:
+            component: pdb-compliance
+            mtu: N199
+
+        # PDB 예상 Pod 수
+        - record: pdb:expected_pods
+          expr: |
+            kube_poddisruptionbudget_status_expected_pods
+          labels:
+            component: pdb-compliance
+            mtu: N199

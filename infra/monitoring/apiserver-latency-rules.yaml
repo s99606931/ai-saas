@@ -1,0 +1,127 @@
+# API 서버 요청 레이턴시 상세 모니터링 Recording Rules
+# Design Ref: MTU-N200.design.md §1
+# Plan SC: FR-N200.1, FR-N200.2, FR-N200.4
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: apiserver-latency-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: apiserver-monitoring
+    mtu: N200
+spec:
+  groups:
+    - name: apiserver.latency.recording
+      interval: 30s
+      rules:
+        # FR-N200.1: 동사별 API 레이턴시 p50
+        - record: apiserver_latency:p50_by_verb
+          expr: |
+            histogram_quantile(0.50,
+              sum by (verb, le) (
+                rate(apiserver_request_duration_seconds_bucket{subresource!~"log|exec|portforward|attach"}[5m])
+              )
+            )
+          labels:
+            component: apiserver-latency
+            mtu: N200
+
+        # FR-N200.1: 동사별 API 레이턴시 p90
+        - record: apiserver_latency:p90_by_verb
+          expr: |
+            histogram_quantile(0.90,
+              sum by (verb, le) (
+                rate(apiserver_request_duration_seconds_bucket{subresource!~"log|exec|portforward|attach"}[5m])
+              )
+            )
+          labels:
+            component: apiserver-latency
+            mtu: N200
+
+        # FR-N200.1: 동사별 API 레이턴시 p99
+        - record: apiserver_latency:p99_by_verb
+          expr: |
+            histogram_quantile(0.99,
+              sum by (verb, le) (
+                rate(apiserver_request_duration_seconds_bucket{subresource!~"log|exec|portforward|attach"}[5m])
+              )
+            )
+          labels:
+            component: apiserver-latency
+            mtu: N200
+
+        # FR-N200.2: 리소스별 API 레이턴시 p99
+        - record: apiserver_latency:p99_by_resource
+          expr: |
+            histogram_quantile(0.99,
+              sum by (resource, le) (
+                rate(apiserver_request_duration_seconds_bucket{subresource!~"log|exec|portforward|attach"}[5m])
+              )
+            )
+          labels:
+            component: apiserver-latency
+            mtu: N200
+
+        # FR-N200.2: 리소스+동사별 API 레이턴시 p99
+        - record: apiserver_latency:p99_by_resource_verb
+          expr: |
+            histogram_quantile(0.99,
+              sum by (resource, verb, le) (
+                rate(apiserver_request_duration_seconds_bucket{subresource!~"log|exec|portforward|attach"}[5m])
+              )
+            )
+          labels:
+            component: apiserver-latency
+            mtu: N200
+
+        # FR-N200.4: 초당 요청률 (전체)
+        - record: apiserver_latency:request_rate
+          expr: |
+            sum(rate(apiserver_request_total[5m]))
+          labels:
+            component: apiserver-latency
+            mtu: N200
+
+        # FR-N200.4: 동사별 초당 요청률
+        - record: apiserver_latency:request_rate_by_verb
+          expr: |
+            sum by (verb) (
+              rate(apiserver_request_total[5m])
+            )
+          labels:
+            component: apiserver-latency
+            mtu: N200
+
+        # FR-N200.4: 에러율 (4xx+5xx / 전체)
+        - record: apiserver_latency:error_rate
+          expr: |
+            (
+              sum(rate(apiserver_request_total{code=~"4..|5.."}[5m]))
+              /
+              sum(rate(apiserver_request_total[5m]))
+            ) * 100
+          labels:
+            component: apiserver-latency
+            mtu: N200
+
+        # FR-N200.4: HTTP 코드별 요청률
+        - record: apiserver_latency:request_rate_by_code
+          expr: |
+            sum by (code) (
+              rate(apiserver_request_total[5m])
+            )
+          labels:
+            component: apiserver-latency
+            mtu: N200
+
+        # 전체 평균 레이턴시
+        - record: apiserver_latency:avg_latency
+          expr: |
+            sum(rate(apiserver_request_duration_seconds_sum{subresource!~"log|exec|portforward|attach"}[5m]))
+            /
+            sum(rate(apiserver_request_duration_seconds_count{subresource!~"log|exec|portforward|attach"}[5m]))
+          labels:
+            component: apiserver-latency
+            mtu: N200

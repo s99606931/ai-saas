@@ -1,0 +1,112 @@
+{
+  "description": "PDB 준수 모니터링 대시보드 (MTU-N199)",
+  "editable": true,
+  "tags": ["pdb", "disruption", "availability", "mtu-n199"],
+  "title": "Pod Disruption Budget 준수",
+  "uid": "pdb-compliance-n199",
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "PDB 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 60 }, { "color": "green", "value": 80 }] } } },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "title": "PDB 건강도",
+      "type": "gauge",
+      "targets": [{ "expr": "pdb:health_score", "legendFormat": "건강도" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
+      "gridPos": { "h": 5, "w": 4, "x": 6, "y": 1 },
+      "id": 2,
+      "title": "전체 PDB",
+      "type": "stat",
+      "targets": [{ "expr": "pdb:total_count", "legendFormat": "전체" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } },
+      "gridPos": { "h": 5, "w": 4, "x": 10, "y": 1 },
+      "id": 3,
+      "title": "중단 차단(0)",
+      "type": "stat",
+      "targets": [{ "expr": "pdb:disruptions_allowed_zero", "legendFormat": "차단" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } },
+      "gridPos": { "h": 5, "w": 4, "x": 14, "y": 1 },
+      "id": 4,
+      "title": "위반 PDB",
+      "type": "stat",
+      "targets": [{ "expr": "pdb:violation_count", "legendFormat": "위반" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "id": 101,
+      "title": "PDB 상세",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 },
+      "id": 5,
+      "title": "PDB별 현재/요구 Pod 수",
+      "type": "table",
+      "targets": [
+        { "expr": "pdb:current_healthy", "format": "table", "instant": true, "legendFormat": "" },
+        { "expr": "pdb:desired_healthy", "format": "table", "instant": true, "legendFormat": "" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 80 }, { "color": "green", "value": 100 }] } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "id": 6,
+      "title": "PDB별 가용성 비율",
+      "type": "bargauge",
+      "options": { "orientation": "horizontal", "displayMode": "gradient" },
+      "targets": [{ "expr": "pdb:availability_ratio", "legendFormat": "{{ poddisruptionbudget }} ({{ namespace }})" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "id": 102,
+      "title": "허용 중단 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 7,
+      "title": "PDB별 허용 중단 수",
+      "type": "bargauge",
+      "options": { "orientation": "horizontal", "displayMode": "gradient" },
+      "targets": [{ "expr": "pdb:disruptions_allowed", "legendFormat": "{{ poddisruptionbudget }} ({{ namespace }})" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 8,
+      "title": "중단 차단 PDB 수 추이",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "pdb:disruptions_allowed_zero", "legendFormat": "차단(0) PDB" },
+        { "expr": "pdb:violation_count", "legendFormat": "위반 PDB" }
+      ]
+    }
+  ],
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "version": 1
+}

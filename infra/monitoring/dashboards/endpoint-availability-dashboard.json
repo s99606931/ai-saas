@@ -1,0 +1,144 @@
+{
+  "description": "Endpoint/EndpointSlice 가용성 모니터링 대시보드 (MTU-N198)",
+  "editable": true,
+  "tags": ["endpoint", "availability", "service", "mtu-n198"],
+  "title": "Endpoint 가용성 모니터링",
+  "uid": "endpoint-avail-n198",
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Endpoint 가용성 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 80 },
+              { "color": "green", "value": 95 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "title": "전체 가용성",
+      "type": "gauge",
+      "targets": [
+        { "expr": "endpoint:overall_availability", "legendFormat": "가용성" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
+      "gridPos": { "h": 5, "w": 4, "x": 6, "y": 1 },
+      "id": 2,
+      "title": "Ready Endpoint",
+      "type": "stat",
+      "targets": [
+        { "expr": "endpoint:total_addresses", "legendFormat": "Ready" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } },
+      "gridPos": { "h": 5, "w": 4, "x": 10, "y": 1 },
+      "id": 3,
+      "title": "NotReady Endpoint",
+      "type": "stat",
+      "targets": [
+        { "expr": "endpoint:total_not_ready", "legendFormat": "NotReady" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } },
+      "gridPos": { "h": 5, "w": 5, "x": 14, "y": 1 },
+      "id": 4,
+      "title": "Endpoint 0 서비스",
+      "type": "stat",
+      "targets": [
+        { "expr": "endpoint:zero_endpoint_services", "legendFormat": "비가용" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "id": 101,
+      "title": "서비스별 상세",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "green", "value": 90 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 },
+      "id": 5,
+      "title": "서비스별 Ready 비율",
+      "type": "bargauge",
+      "options": { "orientation": "horizontal", "displayMode": "gradient" },
+      "targets": [
+        { "expr": "endpoint:ready_ratio", "legendFormat": "{{ endpoint }} ({{ namespace }})" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "id": 6,
+      "title": "서비스별 NotReady Endpoint 수",
+      "type": "bargauge",
+      "options": { "orientation": "horizontal", "displayMode": "gradient" },
+      "targets": [
+        { "expr": "endpoint:not_ready_count_by_service > 0", "legendFormat": "{{ endpoint }} ({{ namespace }})" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "id": 102,
+      "title": "추이",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "custom": { "drawStyle": "line", "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 7,
+      "title": "전체 가용성 추이",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "endpoint:overall_availability", "legendFormat": "가용성" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 8,
+      "title": "네임스페이스별 Endpoint 수 추이",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "endpoint:count_by_namespace", "legendFormat": "{{ namespace }}" }
+      ]
+    }
+  ],
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "version": 1
+}

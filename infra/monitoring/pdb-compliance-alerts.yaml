@@ -1,0 +1,100 @@
+# Pod Disruption Budget 준수 알림 규칙
+# Design Ref: MTU-N199.design.md §2
+# Plan SC: FR-N199.2, FR-N199.3, FR-N199.4
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pdb-compliance-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: pdb-monitoring
+    mtu: N199
+spec:
+  groups:
+    - name: pdb.compliance.alerts
+      rules:
+        # FR-N199.2: disruptionsAllowed = 0 (더 이상 Pod 중단 불가)
+        - alert: PDBDisruptionsAllowedZero
+          expr: |
+            kube_poddisruptionbudget_status_pod_disruptions_allowed == 0
+          for: 10m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-10
+            mtu: N199
+          annotations:
+            summary: "PDB 중단 허용 0: {{ $labels.poddisruptionbudget }}"
+            description: |
+              PDB {{ $labels.poddisruptionbudget }} ({{ $labels.namespace }})의
+              허용 중단 수가 0입니다. 추가 Pod 중단 시 PDB를 위반합니다.
+              노드 유지보수나 롤링 업데이트가 차단될 수 있습니다.
+            runbook_url: "https://docs.saas.local/runbook/pdb-zero-disruptions"
+
+        # FR-N199.4: 현재 healthy Pod < 요구 Pod (PDB 위반)
+        - alert: PDBCurrentBelowDesired
+          expr: |
+            kube_poddisruptionbudget_status_current_healthy
+            <
+            kube_poddisruptionbudget_status_desired_healthy
+          for: 5m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-10
+            mtu: N199
+          annotations:
+            summary: "PDB 위반: {{ $labels.poddisruptionbudget }}"
+            description: |
+              PDB {{ $labels.poddisruptionbudget }} ({{ $labels.namespace }})의
+              현재 정상 Pod 수가 요구 최소 수보다 적습니다.
+              서비스 가용성이 PDB 기준 미달입니다.
+            runbook_url: "https://docs.saas.local/runbook/pdb-violation"
+
+        # 다수 PDB disruptions_allowed = 0 동시 발생
+        - alert: MultiplePDBsBlocked
+          expr: |
+            pdb:disruptions_allowed_zero > 3
+          for: 10m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-10
+            mtu: N199
+          annotations:
+            summary: "다수 PDB 중단 차단: {{ $value }}개"
+            description: |
+              {{ $value }}개 PDB의 허용 중단 수가 0입니다.
+              클러스터 유지보수가 광범위하게 차단될 수 있습니다.
+
+        # PDB 위반 다수 발생
+        - alert: MultiplePDBViolations
+          expr: |
+            pdb:violation_count > 2
+          for: 5m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-10
+            mtu: N199
+          annotations:
+            summary: "PDB 위반 다수: {{ $value }}개"
+            description: |
+              {{ $value }}개 PDB가 위반 상태입니다.
+              서비스 가용성에 심각한 영향이 있을 수 있습니다.
+
+        # PDB 건강도 점수 하락
+        - alert: PDBHealthScoreLow
+          expr: |
+            pdb:health_score < 80
+          for: 15m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N199
+          annotations:
+            summary: "PDB 건강도 점수 하락: {{ $value | printf \"%.1f\" }}%"
+            description: |
+              PDB 전체 건강도가 {{ $value | printf "%.1f" }}%로 80% 미만입니다.

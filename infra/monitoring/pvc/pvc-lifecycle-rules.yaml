@@ -1,0 +1,127 @@
+# PVC 라이프사이클 모니터링 Recording Rules
+# Design Ref: MTU-N194.design.md §1
+# Plan SC: FR-N194.1, FR-N194.4, FR-N194.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pvc-lifecycle-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: storage-lifecycle-monitoring
+    mtu: N194
+spec:
+  groups:
+    - name: pvc.lifecycle.recording
+      interval: 30s
+      rules:
+        # FR-N194.1: PVC 상태별 수량 집계
+        - record: pvc_lifecycle:phase_count
+          expr: |
+            count by (phase) (
+              kube_persistentvolumeclaim_status_phase == 1
+            )
+          labels:
+            component: storage-lifecycle
+            mtu: N194
+
+        # FR-N194.1: 네임스페이스별 PVC 상태 수량
+        - record: pvc_lifecycle:phase_count_by_namespace
+          expr: |
+            count by (namespace, phase) (
+              kube_persistentvolumeclaim_status_phase == 1
+            )
+          labels:
+            component: storage-lifecycle
+            mtu: N194
+
+        # FR-N194.1: Pending 상태 PVC 수
+        - record: pvc_lifecycle:pending_count
+          expr: |
+            count(
+              kube_persistentvolumeclaim_status_phase{phase="Pending"} == 1
+            ) or vector(0)
+          labels:
+            component: storage-lifecycle
+            mtu: N194
+
+        # FR-N194.1: Lost 상태 PVC 수
+        - record: pvc_lifecycle:lost_count
+          expr: |
+            count(
+              kube_persistentvolumeclaim_status_phase{phase="Lost"} == 1
+            ) or vector(0)
+          labels:
+            component: storage-lifecycle
+            mtu: N194
+
+        # FR-N194.1: Bound 상태 PVC 수
+        - record: pvc_lifecycle:bound_count
+          expr: |
+            count(
+              kube_persistentvolumeclaim_status_phase{phase="Bound"} == 1
+            ) or vector(0)
+          labels:
+            component: storage-lifecycle
+            mtu: N194
+
+        # FR-N194.5: PVC Pending 지속 시간 (초)
+        # kube_persistentvolumeclaim_created 타임스탬프와 현재 시간 차이
+        - record: pvc_lifecycle:pending_duration_seconds
+          expr: |
+            (
+              time() - kube_persistentvolumeclaim_created
+            )
+            * on(namespace, persistentvolumeclaim) group_left()
+            (kube_persistentvolumeclaim_status_phase{phase="Pending"} == 1)
+          labels:
+            component: storage-lifecycle
+            mtu: N194
+
+        # FR-N194.4: 미사용 PVC (Bound이나 Pod에 연결되지 않은 PVC)
+        - record: pvc_lifecycle:unattached_bound_count
+          expr: |
+            count(
+              kube_persistentvolumeclaim_status_phase{phase="Bound"} == 1
+              unless on(namespace, persistentvolumeclaim)
+              kube_pod_spec_volumes_persistentvolumeclaims_info
+            ) or vector(0)
+          labels:
+            component: storage-lifecycle
+            mtu: N194
+
+        # FR-N194.4: 미사용 PVC 상세 (네임스페이스, 이름)
+        - record: pvc_lifecycle:unattached_bound_pvcs
+          expr: |
+            (
+              kube_persistentvolumeclaim_status_phase{phase="Bound"} == 1
+              unless on(namespace, persistentvolumeclaim)
+              kube_pod_spec_volumes_persistentvolumeclaims_info
+            )
+          labels:
+            component: storage-lifecycle
+            mtu: N194
+
+        # FR-N194.5: StorageClass별 PVC 수
+        - record: pvc_lifecycle:count_by_storageclass
+          expr: |
+            count by (storageclass) (
+              kube_persistentvolumeclaim_info
+            )
+          labels:
+            component: storage-lifecycle
+            mtu: N194
+
+        # 전체 PVC 건강도 점수 (0-100)
+        # Bound/(Bound+Pending+Lost) * 100
+        - record: pvc_lifecycle:health_score
+          expr: |
+            (
+              (count(kube_persistentvolumeclaim_status_phase{phase="Bound"} == 1) or vector(0))
+              /
+              (count(kube_persistentvolumeclaim_status_phase == 1) or vector(1))
+            ) * 100
+          labels:
+            component: storage-lifecycle
+            mtu: N194

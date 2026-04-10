@@ -1,0 +1,143 @@
+# LimitRange 준수 모니터링 Recording Rules
+# Design Ref: MTU-N196.design.md §1
+# Plan SC: FR-N196.1, FR-N196.3, FR-N196.4
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: limitrange-compliance-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: limitrange-monitoring
+    mtu: N196
+spec:
+  groups:
+    - name: limitrange.compliance.recording
+      interval: 60s
+      rules:
+        # FR-N196.1: LimitRange가 설정된 네임스페이스 수
+        - record: limitrange:namespace_count
+          expr: |
+            count(
+              count by (namespace) (
+                kube_limitrange
+              )
+            ) or vector(0)
+          labels:
+            component: limitrange-compliance
+            mtu: N196
+
+        # FR-N196.1: 전체 활성 네임스페이스 수 (시스템 NS 제외)
+        - record: limitrange:total_active_namespaces
+          expr: |
+            count(
+              kube_namespace_status_phase{phase="Active"}
+              unless on(namespace)
+              kube_namespace_labels{namespace=~"kube-system|kube-public|kube-node-lease|monitoring|flux-system|cert-manager"}
+            ) or vector(0)
+          labels:
+            component: limitrange-compliance
+            mtu: N196
+
+        # FR-N196.2: LimitRange 미설정 테넌트 네임스페이스 수
+        - record: limitrange:missing_namespaces_count
+          expr: |
+            (
+              limitrange:total_active_namespaces
+              -
+              limitrange:namespace_count
+            )
+          labels:
+            component: limitrange-compliance
+            mtu: N196
+
+        # FR-N196.3: 리소스 요청(requests) 미설정 컨테이너 수
+        - record: limitrange:containers_without_requests
+          expr: |
+            count(
+              kube_pod_container_info
+              unless on(namespace, pod, container)
+              kube_pod_container_resource_requests{resource="cpu"}
+            ) or vector(0)
+          labels:
+            component: limitrange-compliance
+            mtu: N196
+
+        # FR-N196.3: 리소스 제한(limits) 미설정 컨테이너 수
+        - record: limitrange:containers_without_limits
+          expr: |
+            count(
+              kube_pod_container_info
+              unless on(namespace, pod, container)
+              kube_pod_container_resource_limits{resource="cpu"}
+            ) or vector(0)
+          labels:
+            component: limitrange-compliance
+            mtu: N196
+
+        # FR-N196.3: 리소스 요청 미설정 컨테이너 (네임스페이스별)
+        - record: limitrange:containers_without_requests_by_ns
+          expr: |
+            count by (namespace) (
+              kube_pod_container_info
+              unless on(namespace, pod, container)
+              kube_pod_container_resource_requests{resource="cpu"}
+            ) or vector(0)
+          labels:
+            component: limitrange-compliance
+            mtu: N196
+
+        # FR-N196.3: 리소스 제한 미설정 컨테이너 (네임스페이스별)
+        - record: limitrange:containers_without_limits_by_ns
+          expr: |
+            count by (namespace) (
+              kube_pod_container_info
+              unless on(namespace, pod, container)
+              kube_pod_container_resource_limits{resource="cpu"}
+            ) or vector(0)
+          labels:
+            component: limitrange-compliance
+            mtu: N196
+
+        # FR-N196.4: LimitRange 유형별 설정 현황
+        - record: limitrange:settings_by_type
+          expr: |
+            kube_limitrange
+          labels:
+            component: limitrange-compliance
+            mtu: N196
+
+        # 전체 컨테이너 수
+        - record: limitrange:total_containers
+          expr: |
+            count(kube_pod_container_info) or vector(0)
+          labels:
+            component: limitrange-compliance
+            mtu: N196
+
+        # LimitRange 준수 점수 (리소스 요청+제한 설정 비율)
+        - record: limitrange:compliance_score
+          expr: |
+            (
+              1 - (
+                (limitrange:containers_without_requests + limitrange:containers_without_limits)
+                /
+                (2 * (limitrange:total_containers > 0))
+              )
+            ) * 100
+          labels:
+            component: limitrange-compliance
+            mtu: N196
+
+        # LimitRange 적용률 (네임스페이스 기준)
+        - record: limitrange:namespace_coverage_percent
+          expr: |
+            (
+              limitrange:namespace_count
+              /
+              (limitrange:total_active_namespaces > 0)
+            ) * 100
+          labels:
+            component: limitrange-compliance
+            mtu: N196

@@ -1,0 +1,119 @@
+# PVC 라이프사이클 알림 규칙
+# Design Ref: MTU-N194.design.md §2
+# Plan SC: FR-N194.2, FR-N194.3
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pvc-lifecycle-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: storage-lifecycle-monitoring
+    mtu: N194
+spec:
+  groups:
+    - name: pvc.lifecycle.alerts
+      rules:
+        # FR-N194.2: PVC Pending 상태 5분 초과 (경고)
+        - alert: PVCPendingTooLong
+          expr: |
+            pvc_lifecycle:pending_duration_seconds > 300
+          for: 5m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-10
+            mtu: N194
+          annotations:
+            summary: "PVC Pending 상태 장기 체류: {{ $labels.persistentvolumeclaim }}"
+            description: |
+              PVC {{ $labels.persistentvolumeclaim }} ({{ $labels.namespace }})이
+              {{ $value | humanizeDuration }} 동안 Pending 상태입니다.
+              StorageClass 프로비저너 상태 및 스토리지 가용량을 확인하십시오.
+            runbook_url: "https://docs.saas.local/runbook/pvc-pending"
+
+        # FR-N194.2: PVC Pending 상태 15분 초과 (긴급)
+        - alert: PVCPendingCritical
+          expr: |
+            pvc_lifecycle:pending_duration_seconds > 900
+          for: 15m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-10
+            mtu: N194
+          annotations:
+            summary: "PVC Pending 긴급: {{ $labels.persistentvolumeclaim }}"
+            description: |
+              PVC {{ $labels.persistentvolumeclaim }} ({{ $labels.namespace }})이
+              15분 이상 Pending 상태입니다.
+              프로비저너 장애 가능성이 있습니다. 즉시 조치하십시오.
+            runbook_url: "https://docs.saas.local/runbook/pvc-pending-critical"
+
+        # FR-N194.3: Lost 상태 PVC 감지 (즉시 긴급)
+        - alert: PVCLostDetected
+          expr: |
+            kube_persistentvolumeclaim_status_phase{phase="Lost"} == 1
+          for: 1m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-09
+            mtu: N194
+          annotations:
+            summary: "PVC Lost 상태 감지: {{ $labels.persistentvolumeclaim }}"
+            description: |
+              PVC {{ $labels.persistentvolumeclaim }} ({{ $labels.namespace }})이
+              Lost 상태입니다. 연결된 PV가 삭제되었거나 접근 불가합니다.
+              데이터 유실 위험이 있습니다. 즉시 PV 상태를 확인하십시오.
+            runbook_url: "https://docs.saas.local/runbook/pvc-lost"
+
+        # FR-N194.4: 미사용 PVC 24시간 초과 (경고)
+        - alert: PVCUnattachedWarning
+          expr: |
+            pvc_lifecycle:unattached_bound_pvcs == 1
+          for: 24h
+          labels:
+            severity: warning
+            team: infra
+            csap: D-10
+            mtu: N194
+          annotations:
+            summary: "미사용 PVC 감지: {{ $labels.persistentvolumeclaim }}"
+            description: |
+              PVC {{ $labels.persistentvolumeclaim }} ({{ $labels.namespace }})이
+              Bound 상태이나 24시간 이상 어떤 Pod에도 연결되지 않았습니다.
+              불필요한 스토리지 비용이 발생 중입니다. 정리를 검토하십시오.
+            runbook_url: "https://docs.saas.local/runbook/pvc-unattached"
+
+        # 다수 PVC Pending 동시 발생 (프로비저너 장애 의심)
+        - alert: MultiplePVCsPending
+          expr: |
+            pvc_lifecycle:pending_count > 3
+          for: 10m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-10
+            mtu: N194
+          annotations:
+            summary: "다수 PVC Pending: {{ $value }}개"
+            description: |
+              {{ $value }}개 PVC가 동시에 Pending 상태입니다.
+              스토리지 프로비저너 장애 또는 클러스터 스토리지 부족 가능성이 있습니다.
+
+        # PVC 건강도 점수 하락
+        - alert: PVCHealthScoreLow
+          expr: |
+            pvc_lifecycle:health_score < 90
+          for: 10m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N194
+          annotations:
+            summary: "PVC 건강도 점수 하락: {{ $value | printf \"%.1f\" }}%"
+            description: |
+              PVC 전체 건강도(Bound 비율)가 {{ $value | printf "%.1f" }}%로 하락했습니다.
+              Pending 또는 Lost 상태 PVC를 점검하십시오.

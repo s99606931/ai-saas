@@ -1,0 +1,116 @@
+# LimitRange 준수 알림 규칙
+# Design Ref: MTU-N196.design.md §2
+# Plan SC: FR-N196.2, FR-N196.3
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: limitrange-compliance-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: limitrange-monitoring
+    mtu: N196
+spec:
+  groups:
+    - name: limitrange.compliance.alerts
+      rules:
+        # FR-N196.2: LimitRange 미설정 네임스페이스 존재
+        - alert: LimitRangeMissing
+          expr: |
+            limitrange:missing_namespaces_count > 0
+          for: 10m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-08
+            mtu: N196
+          annotations:
+            summary: "LimitRange 미설정 네임스페이스 {{ $value }}개"
+            description: |
+              {{ $value }}개 네임스페이스에 LimitRange가 설정되지 않았습니다.
+              멀티테넌시 환경에서 리소스 격리를 위해 LimitRange 설정을 권장합니다.
+            runbook_url: "https://docs.saas.local/runbook/limitrange-missing"
+
+        # FR-N196.3: 리소스 요청 미설정 컨테이너 존재
+        - alert: ContainerWithoutResourceRequests
+          expr: |
+            limitrange:containers_without_requests > 0
+          for: 5m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-10
+            mtu: N196
+          annotations:
+            summary: "리소스 요청 미설정 컨테이너 {{ $value }}개"
+            description: |
+              {{ $value }}개 컨테이너에 CPU/메모리 요청(requests)이 설정되지 않았습니다.
+              스케줄러가 적절한 노드를 선택할 수 없어 리소스 불균형이 발생할 수 있습니다.
+            runbook_url: "https://docs.saas.local/runbook/container-no-requests"
+
+        # FR-N196.3: 리소스 제한 미설정 컨테이너 존재
+        - alert: ContainerWithoutResourceLimits
+          expr: |
+            limitrange:containers_without_limits > 0
+          for: 5m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-10
+            mtu: N196
+          annotations:
+            summary: "리소스 제한 미설정 컨테이너 {{ $value }}개"
+            description: |
+              {{ $value }}개 컨테이너에 CPU/메모리 제한(limits)이 설정되지 않았습니다.
+              단일 컨테이너가 노드 리소스를 독점할 위험이 있습니다.
+            runbook_url: "https://docs.saas.local/runbook/container-no-limits"
+
+        # LimitRange 준수 점수 < 80% (긴급)
+        - alert: LimitRangeComplianceLow
+          expr: |
+            limitrange:compliance_score < 80
+          for: 15m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-08
+            mtu: N196
+          annotations:
+            summary: "LimitRange 준수 점수 하락: {{ $value | printf \"%.1f\" }}%"
+            description: |
+              리소스 요청/제한 설정 준수 점수가 {{ $value | printf "%.1f" }}%로
+              80% 미만입니다. 미설정 컨테이너를 점검하십시오.
+            runbook_url: "https://docs.saas.local/runbook/limitrange-compliance"
+
+        # LimitRange 네임스페이스 적용률 < 90%
+        - alert: LimitRangeNamespaceCoverageLow
+          expr: |
+            limitrange:namespace_coverage_percent < 90
+          for: 15m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-08
+            mtu: N196
+          annotations:
+            summary: "LimitRange 네임스페이스 적용률 하락: {{ $value | printf \"%.1f\" }}%"
+            description: |
+              활성 네임스페이스의 {{ $value | printf "%.1f" }}%만 LimitRange가
+              적용되어 있습니다. 미적용 네임스페이스를 확인하십시오.
+
+        # 다수 컨테이너 리소스 미설정 (심각)
+        - alert: MassResourceMisconfiguration
+          expr: |
+            (limitrange:containers_without_requests + limitrange:containers_without_limits) > 20
+          for: 10m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-10
+            mtu: N196
+          annotations:
+            summary: "대규모 리소스 설정 누락: {{ $value }}건"
+            description: |
+              리소스 요청/제한 미설정 컨테이너가 총 {{ $value }}건입니다.
+              클러스터 안정성에 심각한 위협이 됩니다.

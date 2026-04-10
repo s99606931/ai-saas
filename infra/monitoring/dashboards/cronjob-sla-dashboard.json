@@ -1,0 +1,173 @@
+{
+  "description": "CronJob SLA 모니터링 대시보드 (MTU-N197)",
+  "editable": true,
+  "tags": ["cronjob", "sla", "batch", "mtu-n197"],
+  "title": "CronJob 실행 성공률 및 SLA",
+  "uid": "cronjob-sla-n197",
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "SLA 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 90 },
+              { "color": "green", "value": 95 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "title": "24h 성공률",
+      "type": "gauge",
+      "targets": [
+        { "expr": "cronjob_sla:success_rate_24h", "legendFormat": "성공률" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
+      "gridPos": { "h": 5, "w": 4, "x": 6, "y": 1 },
+      "id": 2,
+      "title": "전체 CronJob",
+      "type": "stat",
+      "targets": [
+        { "expr": "cronjob_sla:total_count", "legendFormat": "전체" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } },
+      "gridPos": { "h": 5, "w": 4, "x": 10, "y": 1 },
+      "id": 3,
+      "title": "24h 실패 Job",
+      "type": "stat",
+      "targets": [
+        { "expr": "cronjob_sla:failed_jobs_24h", "legendFormat": "실패" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
+      "gridPos": { "h": 5, "w": 4, "x": 14, "y": 1 },
+      "id": 4,
+      "title": "24h 성공 Job",
+      "type": "stat",
+      "targets": [
+        { "expr": "cronjob_sla:succeeded_jobs_24h", "legendFormat": "성공" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
+      "gridPos": { "h": 5, "w": 3, "x": 18, "y": 1 },
+      "id": 5,
+      "title": "실행 중 Job",
+      "type": "stat",
+      "targets": [
+        { "expr": "cronjob_sla:active_jobs_count", "legendFormat": "실행중" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }] } } },
+      "gridPos": { "h": 5, "w": 3, "x": 21, "y": 1 },
+      "id": 6,
+      "title": "일시중지",
+      "type": "stat",
+      "targets": [
+        { "expr": "cronjob_sla:suspended_count", "legendFormat": "중지" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "id": 101,
+      "title": "CronJob 상세",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 },
+      "id": 7,
+      "title": "마지막 성공 이후 경과 시간",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "sort_desc(cronjob_sla:since_last_success_seconds)",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true, "component": true, "mtu": true, "job": true, "instance": true },
+            "renameByName": {
+              "namespace": "네임스페이스",
+              "cronjob": "CronJob",
+              "Value": "경과 시간(초)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "bars", "fillOpacity": 50 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "id": 8,
+      "title": "Job 실행 소요 시간",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "cronjob_sla:job_duration_seconds", "legendFormat": "{{ job_name }}" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "id": 102,
+      "title": "SLA 추이",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "custom": { "drawStyle": "line", "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 9,
+      "title": "24h 성공률 추이",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "cronjob_sla:success_rate_24h", "legendFormat": "성공률" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 10,
+      "title": "실패/성공 Job 추이",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "cronjob_sla:failed_jobs_24h", "legendFormat": "실패 (24h)" },
+        { "expr": "cronjob_sla:succeeded_jobs_24h", "legendFormat": "성공 (24h)" }
+      ]
+    }
+  ],
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "version": 1
+}

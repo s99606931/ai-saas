@@ -1,0 +1,103 @@
+# Endpoint/EndpointSlice 가용성 모니터링 Recording Rules
+# Design Ref: MTU-N198.design.md §1
+# Plan SC: FR-N198.1, FR-N198.4
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: endpoint-availability-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: endpoint-monitoring
+    mtu: N198
+spec:
+  groups:
+    - name: endpoint.availability.recording
+      interval: 30s
+      rules:
+        # FR-N198.1: 서비스별 Ready Endpoint 수
+        - record: endpoint:ready_count_by_service
+          expr: |
+            count by (namespace, endpoint) (
+              kube_endpoint_address_available
+            )
+          labels:
+            component: endpoint-availability
+            mtu: N198
+
+        # FR-N198.1: 서비스별 NotReady Endpoint 수
+        - record: endpoint:not_ready_count_by_service
+          expr: |
+            count by (namespace, endpoint) (
+              kube_endpoint_address_not_ready
+            )
+          labels:
+            component: endpoint-availability
+            mtu: N198
+
+        # FR-N198.1: 서비스별 Ready 비율 (%)
+        - record: endpoint:ready_ratio
+          expr: |
+            (
+              count by (namespace, endpoint) (kube_endpoint_address_available)
+              /
+              (
+                count by (namespace, endpoint) (kube_endpoint_address_available)
+                +
+                count by (namespace, endpoint) (kube_endpoint_address_not_ready)
+              )
+            ) * 100
+          labels:
+            component: endpoint-availability
+            mtu: N198
+
+        # FR-N198.2: Endpoint 0개 서비스 수 (시스템 NS 제외)
+        - record: endpoint:zero_endpoint_services
+          expr: |
+            count(
+              kube_endpoint_created
+              unless on(namespace, endpoint)
+              kube_endpoint_address_available
+            ) or vector(0)
+          labels:
+            component: endpoint-availability
+            mtu: N198
+
+        # FR-N198.4: 전체 Endpoint 수
+        - record: endpoint:total_addresses
+          expr: |
+            count(kube_endpoint_address_available) or vector(0)
+          labels:
+            component: endpoint-availability
+            mtu: N198
+
+        # FR-N198.4: 전체 NotReady Endpoint 수
+        - record: endpoint:total_not_ready
+          expr: |
+            count(kube_endpoint_address_not_ready) or vector(0)
+          labels:
+            component: endpoint-availability
+            mtu: N198
+
+        # 네임스페이스별 Endpoint 수
+        - record: endpoint:count_by_namespace
+          expr: |
+            count by (namespace) (
+              kube_endpoint_address_available
+            )
+          labels:
+            component: endpoint-availability
+            mtu: N198
+
+        # 전체 서비스 가용성 점수
+        - record: endpoint:overall_availability
+          expr: |
+            (
+              endpoint:total_addresses
+              /
+              (endpoint:total_addresses + endpoint:total_not_ready > 0)
+            ) * 100
+          labels:
+            component: endpoint-availability
+            mtu: N198

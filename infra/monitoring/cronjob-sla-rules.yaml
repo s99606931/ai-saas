@@ -1,0 +1,132 @@
+# CronJob SLA 모니터링 Recording Rules
+# Design Ref: MTU-N197.design.md §1
+# Plan SC: FR-N197.1, FR-N197.4
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cronjob-sla-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: cronjob-sla-monitoring
+    mtu: N197
+spec:
+  groups:
+    - name: cronjob.sla.recording
+      interval: 60s
+      rules:
+        # FR-N197.1: CronJob 마지막 성공 시각 (epoch seconds)
+        - record: cronjob_sla:last_successful_time
+          expr: |
+            kube_cronjob_status_last_successful_time
+          labels:
+            component: cronjob-sla
+            mtu: N197
+
+        # FR-N197.1: 마지막 성공 이후 경과 시간 (초)
+        - record: cronjob_sla:since_last_success_seconds
+          expr: |
+            time() - kube_cronjob_status_last_successful_time
+          labels:
+            component: cronjob-sla
+            mtu: N197
+
+        # FR-N197.1: CronJob 마지막 스케줄 시각
+        - record: cronjob_sla:last_schedule_time
+          expr: |
+            kube_cronjob_status_last_schedule_time
+          labels:
+            component: cronjob-sla
+            mtu: N197
+
+        # FR-N197.3: CronJob 실행 지연 (예정 대비 초과 시간)
+        # next_schedule_time - 현재 시각 (음수이면 지연)
+        - record: cronjob_sla:overdue_seconds
+          expr: |
+            (
+              time() - kube_cronjob_next_schedule_time
+            ) > 0
+          labels:
+            component: cronjob-sla
+            mtu: N197
+
+        # FR-N197.1: 활성 CronJob 수
+        - record: cronjob_sla:total_count
+          expr: |
+            count(kube_cronjob_info) or vector(0)
+          labels:
+            component: cronjob-sla
+            mtu: N197
+
+        # FR-N197.1: 일시중지(Suspended) CronJob 수
+        - record: cronjob_sla:suspended_count
+          expr: |
+            count(kube_cronjob_spec_suspend == 1) or vector(0)
+          labels:
+            component: cronjob-sla
+            mtu: N197
+
+        # FR-N197.1: 현재 실행 중인 Job 수 (CronJob에 의한)
+        - record: cronjob_sla:active_jobs_count
+          expr: |
+            sum(kube_cronjob_status_active) or vector(0)
+          labels:
+            component: cronjob-sla
+            mtu: N197
+
+        # FR-N197.4: Job 완료 소요 시간 (초)
+        - record: cronjob_sla:job_duration_seconds
+          expr: |
+            kube_job_status_completion_time - kube_job_status_start_time > 0
+          labels:
+            component: cronjob-sla
+            mtu: N197
+
+        # FR-N197.4: CronJob별 평균 실행 시간 (owner_name 기준)
+        - record: cronjob_sla:avg_duration_by_cronjob
+          expr: |
+            avg by (namespace, owner_name) (
+              cronjob_sla:job_duration_seconds
+              * on(namespace, job_name) group_left(owner_name)
+              kube_job_owner{owner_kind="CronJob"}
+            )
+          labels:
+            component: cronjob-sla
+            mtu: N197
+
+        # FR-N197.2: 최근 실패 Job 수 (24h)
+        - record: cronjob_sla:failed_jobs_24h
+          expr: |
+            count(
+              kube_job_status_failed > 0
+              and
+              kube_job_status_start_time > (time() - 86400)
+            ) or vector(0)
+          labels:
+            component: cronjob-sla
+            mtu: N197
+
+        # FR-N197.2: 최근 성공 Job 수 (24h)
+        - record: cronjob_sla:succeeded_jobs_24h
+          expr: |
+            count(
+              kube_job_status_succeeded > 0
+              and
+              kube_job_status_start_time > (time() - 86400)
+            ) or vector(0)
+          labels:
+            component: cronjob-sla
+            mtu: N197
+
+        # FR-N197.1: 24시간 성공률
+        - record: cronjob_sla:success_rate_24h
+          expr: |
+            (
+              cronjob_sla:succeeded_jobs_24h
+              /
+              (cronjob_sla:succeeded_jobs_24h + cronjob_sla:failed_jobs_24h > 0)
+            ) * 100
+          labels:
+            component: cronjob-sla
+            mtu: N197

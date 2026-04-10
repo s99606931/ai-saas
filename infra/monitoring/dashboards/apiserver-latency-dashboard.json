@@ -1,0 +1,128 @@
+{
+  "description": "API 서버 요청 레이턴시 상세 대시보드 (MTU-N200)",
+  "editable": true,
+  "tags": ["apiserver", "latency", "control-plane", "mtu-n200"],
+  "title": "API 서버 레이턴시 상세",
+  "uid": "apiserver-lat-n200",
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "API 서버 성능 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 1.0 }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "title": "평균 레이턴시",
+      "type": "stat",
+      "targets": [{ "expr": "apiserver_latency:avg_latency", "legendFormat": "평균" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "title": "요청률 (req/s)",
+      "type": "stat",
+      "targets": [{ "expr": "apiserver_latency:request_rate", "legendFormat": "요청률" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "id": 3,
+      "title": "에러율",
+      "type": "stat",
+      "targets": [{ "expr": "apiserver_latency:error_rate", "legendFormat": "에러율" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "동사별 레이턴시",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 4,
+      "title": "동사별 p99 레이턴시 추이",
+      "type": "timeseries",
+      "targets": [{ "expr": "apiserver_latency:p99_by_verb", "legendFormat": "{{ verb }}" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 1.0 }] } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 5,
+      "title": "동사별 레이턴시 비교 (p50/p90/p99)",
+      "type": "bargauge",
+      "options": { "orientation": "horizontal", "displayMode": "gradient" },
+      "targets": [
+        { "expr": "apiserver_latency:p50_by_verb", "legendFormat": "{{ verb }} p50" },
+        { "expr": "apiserver_latency:p90_by_verb", "legendFormat": "{{ verb }} p90" },
+        { "expr": "apiserver_latency:p99_by_verb", "legendFormat": "{{ verb }} p99" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "title": "리소스별 레이턴시",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 2.0 }] } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "id": 6,
+      "title": "리소스별 p99 레이턴시",
+      "type": "bargauge",
+      "options": { "orientation": "horizontal", "displayMode": "gradient" },
+      "targets": [{ "expr": "topk(15, apiserver_latency:p99_by_resource)", "legendFormat": "{{ resource }}" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "id": 7,
+      "title": "리소스+동사별 p99 추이",
+      "type": "timeseries",
+      "targets": [{ "expr": "topk(10, apiserver_latency:p99_by_resource_verb)", "legendFormat": "{{ resource }}/{{ verb }}" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 103,
+      "title": "요청/에러 추이",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 8,
+      "title": "동사별 요청률 추이",
+      "type": "timeseries",
+      "targets": [{ "expr": "apiserver_latency:request_rate_by_verb", "legendFormat": "{{ verb }}" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 50 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 9,
+      "title": "HTTP 코드별 요청 분포",
+      "type": "timeseries",
+      "targets": [{ "expr": "apiserver_latency:request_rate_by_code", "legendFormat": "{{ code }}" }]
+    }
+  ],
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "version": 1
+}

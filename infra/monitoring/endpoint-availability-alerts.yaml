@@ -1,0 +1,107 @@
+# Endpoint/EndpointSlice 가용성 알림 규칙
+# Design Ref: MTU-N198.design.md §2
+# Plan SC: FR-N198.2, FR-N198.3
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: endpoint-availability-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: endpoint-monitoring
+    mtu: N198
+spec:
+  groups:
+    - name: endpoint.availability.alerts
+      rules:
+        # FR-N198.2: Ready Endpoint 0개 서비스 (즉시 긴급)
+        - alert: EndpointZero
+          expr: |
+            (
+              kube_endpoint_created
+              unless on(namespace, endpoint)
+              kube_endpoint_address_available
+            )
+            * on(namespace, endpoint) group_left()
+            (kube_endpoint_created{namespace!~"kube-system|kube-public|kube-node-lease"})
+          for: 2m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-10
+            mtu: N198
+          annotations:
+            summary: "Endpoint 0개: {{ $labels.endpoint }}"
+            description: |
+              서비스 {{ $labels.endpoint }} ({{ $labels.namespace }})에
+              Ready 상태 Endpoint가 없습니다.
+              트래픽이 전혀 처리되지 않습니다. 즉시 점검하십시오.
+            runbook_url: "https://docs.saas.local/runbook/endpoint-zero"
+
+        # FR-N198.3: Ready 비율 < 50% (경고)
+        - alert: EndpointReadyRatioLow
+          expr: |
+            endpoint:ready_ratio < 50
+          for: 5m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-10
+            mtu: N198
+          annotations:
+            summary: "Endpoint Ready 비율 하락: {{ $labels.endpoint }}"
+            description: |
+              서비스 {{ $labels.endpoint }} ({{ $labels.namespace }})의
+              Ready Endpoint 비율이 {{ $value | printf "%.1f" }}%입니다.
+              서비스 처리 용량이 부족할 수 있습니다.
+            runbook_url: "https://docs.saas.local/runbook/endpoint-ready-low"
+
+        # NotReady Endpoint 다수 발생
+        - alert: EndpointNotReadySpike
+          expr: |
+            endpoint:not_ready_count_by_service > 3
+          for: 5m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-10
+            mtu: N198
+          annotations:
+            summary: "NotReady Endpoint 다수: {{ $labels.endpoint }}"
+            description: |
+              서비스 {{ $labels.endpoint }} ({{ $labels.namespace }})에
+              {{ $value }}개 Endpoint가 NotReady 상태입니다.
+              Pod 헬스체크 실패 또는 배포 중 일시적 현상인지 확인하십시오.
+
+        # 전체 가용성 하락
+        - alert: EndpointOverallAvailabilityLow
+          expr: |
+            endpoint:overall_availability < 90
+          for: 10m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-10
+            mtu: N198
+          annotations:
+            summary: "전체 Endpoint 가용성 하락: {{ $value | printf \"%.1f\" }}%"
+            description: |
+              클러스터 전체 Endpoint 가용성이 {{ $value | printf "%.1f" }}%로
+              90% 미만입니다. 시스템 전반적인 문제를 점검하십시오.
+
+        # Endpoint 0개 서비스 다수
+        - alert: MultipleServicesNoEndpoints
+          expr: |
+            endpoint:zero_endpoint_services > 3
+          for: 5m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-10
+            mtu: N198
+          annotations:
+            summary: "Endpoint 0개 서비스 다수: {{ $value }}개"
+            description: |
+              {{ $value }}개 서비스에 Ready Endpoint가 없습니다.
+              대규모 배포 실패 또는 노드 장애 가능성이 있습니다.

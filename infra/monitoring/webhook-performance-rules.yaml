@@ -1,0 +1,131 @@
+# Webhook 호출 성능 모니터링 Recording Rules
+# Design Ref: MTU-N195.design.md §1
+# Plan SC: FR-N195.1, FR-N195.3
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: webhook-performance-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: webhook-monitoring
+    mtu: N195
+spec:
+  groups:
+    - name: webhook.performance.recording
+      interval: 30s
+      rules:
+        # FR-N195.1: Webhook별 레이턴시 p50 (5분 윈도우)
+        - record: webhook_perf:latency_p50
+          expr: |
+            histogram_quantile(0.50,
+              sum by (name, type, le) (
+                rate(apiserver_admission_webhook_admission_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            component: webhook-performance
+            mtu: N195
+
+        # FR-N195.1: Webhook별 레이턴시 p90 (5분 윈도우)
+        - record: webhook_perf:latency_p90
+          expr: |
+            histogram_quantile(0.90,
+              sum by (name, type, le) (
+                rate(apiserver_admission_webhook_admission_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            component: webhook-performance
+            mtu: N195
+
+        # FR-N195.1: Webhook별 레이턴시 p99 (5분 윈도우)
+        - record: webhook_perf:latency_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (name, type, le) (
+                rate(apiserver_admission_webhook_admission_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            component: webhook-performance
+            mtu: N195
+
+        # FR-N195.3: Webhook별 거부율 (5분 윈도우)
+        - record: webhook_perf:rejection_rate_5m
+          expr: |
+            (
+              sum by (name, type) (
+                rate(apiserver_admission_webhook_rejection_count[5m])
+              )
+              /
+              sum by (name, type) (
+                rate(apiserver_admission_webhook_admission_duration_seconds_count[5m])
+              )
+            ) * 100
+          labels:
+            component: webhook-performance
+            mtu: N195
+
+        # FR-N195.3: Webhook별 총 요청률 (5분 윈도우)
+        - record: webhook_perf:total_requests_rate_5m
+          expr: |
+            sum by (name, type) (
+              rate(apiserver_admission_webhook_admission_duration_seconds_count[5m])
+            )
+          labels:
+            component: webhook-performance
+            mtu: N195
+
+        # FR-N195.5: Webhook별 에러률 (apiserver_admission_webhook_fail_open_count 기반)
+        - record: webhook_perf:error_rate_5m
+          expr: |
+            (
+              sum by (name, type) (
+                rate(apiserver_admission_webhook_fail_open_count[5m])
+              )
+              /
+              (
+                sum by (name, type) (
+                  rate(apiserver_admission_webhook_admission_duration_seconds_count[5m])
+                ) > 0
+              )
+            ) * 100
+          labels:
+            component: webhook-performance
+            mtu: N195
+
+        # 전체 Webhook 평균 레이턴시
+        - record: webhook_perf:avg_latency
+          expr: |
+            sum by (name, type) (
+              rate(apiserver_admission_webhook_admission_duration_seconds_sum[5m])
+            )
+            /
+            sum by (name, type) (
+              rate(apiserver_admission_webhook_admission_duration_seconds_count[5m])
+            )
+          labels:
+            component: webhook-performance
+            mtu: N195
+
+        # Webhook 유형별(Validating/Mutating) 총 요청 수
+        - record: webhook_perf:requests_by_type
+          expr: |
+            sum by (type) (
+              rate(apiserver_admission_webhook_admission_duration_seconds_count[5m])
+            )
+          labels:
+            component: webhook-performance
+            mtu: N195
+
+        # 가장 느린 Webhook Top 정렬용
+        - record: webhook_perf:slowest_p99
+          expr: |
+            topk(10,
+              webhook_perf:latency_p99
+            )
+          labels:
+            component: webhook-performance
+            mtu: N195
