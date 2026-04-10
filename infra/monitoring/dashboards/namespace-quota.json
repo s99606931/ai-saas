@@ -1,0 +1,234 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "annotations": { "list": [] },
+  "description": "Namespace 리소스 쿼터 모니터링 — 사용률, 잔여량, 고갈 예측 (Design Ref: MTU-N191 §DS-N191.3, CSAP D-08/D-10)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "쿼터 상태 개요",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "count(quota:usage:ratio{namespace=~\"$namespace\"} < 0.8) or vector(0)",
+          "legendFormat": "정상 (<80%)",
+          "refId": "A"
+        },
+        {
+          "expr": "count(quota:usage:ratio{namespace=~\"$namespace\"} >= 0.8 and quota:usage:ratio < 0.9) or vector(0)",
+          "legendFormat": "경고 (80-90%)",
+          "refId": "B"
+        },
+        {
+          "expr": "count(quota:usage:ratio{namespace=~\"$namespace\"} >= 0.9) or vector(0)",
+          "legendFormat": "위험 (>90%)",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "CPU 쿼터 사용률",
+      "description": "Design Ref: DS-N191.1 — 네임스페이스별 CPU 쿼터 사용률",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "quota:cpu_usage:ratio{namespace=~\"$namespace\"} * 100",
+          "legendFormat": "{{ namespace }} ({{ resource }})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "orange", "value": 80 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "title": "Memory 쿼터 사용률",
+      "description": "Design Ref: DS-N191.1 — 네임스페이스별 Memory 쿼터 사용률",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "quota:memory_usage:ratio{namespace=~\"$namespace\"} * 100",
+          "legendFormat": "{{ namespace }} ({{ resource }})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "orange", "value": 80 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "title": "Pod 수 쿼터 사용률 추세",
+      "description": "Design Ref: DS-N191.1 — Pod 쿼터 사용률 시계열",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "quota:pods_usage:ratio{namespace=~\"$namespace\"} * 100",
+          "legendFormat": "{{ namespace }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 80 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "네임스페이스별 쿼터 사용률 비교",
+      "description": "모든 리소스 타입 합산",
+      "type": "bargauge",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 18 },
+      "targets": [
+        {
+          "expr": "quota:usage:ratio{namespace=~\"$namespace\"} * 100",
+          "legendFormat": "{{ namespace }}/{{ resource }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "unit": "percent"
+        }
+      }
+    },
+    {
+      "title": "쿼터 잔여량",
+      "description": "쿼터 Hard - Used 값",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "quota:remaining:value{namespace=~\"$namespace\", resource=~\"pods|requests.cpu|requests.memory\"}",
+          "legendFormat": "{{ namespace }}/{{ resource }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "title": "ResourceQuota 설정 현황",
+      "description": "네임스페이스별 쿼터 Hard/Used 값 테이블",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        {
+          "expr": "kube_resourcequota{type=\"hard\", namespace=~\"$namespace\"}",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true, "type": true },
+            "renameByName": {
+              "namespace": "네임스페이스",
+              "resource": "리소스",
+              "resourcequota": "쿼터명",
+              "Value": "Hard 값"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["quota", "namespace", "resource", "multitenant", "csap-d08", "csap-d10", "mtu-n191"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(kube_resourcequota, namespace)",
+        "name": "namespace",
+        "type": "query",
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2,
+        "sort": 1
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "Namespace 리소스 쿼터 모니터링",
+  "uid": "namespace-quota-n191",
+  "version": 1
+}

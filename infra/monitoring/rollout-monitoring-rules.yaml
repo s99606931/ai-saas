@@ -1,0 +1,196 @@
+# =============================================================================
+# Deployment/StatefulSet 롤아웃 모니터링 — Recording + Alerting Rules
+# Design Ref: MTU-N192 Design §DS-N192.1~DS-N192.2
+# Plan SC: FR-N192.1~FR-N192.4
+# CSAP: D-06(감사 로깅), D-10(서비스 가용성)
+#
+# 적용: kubectl apply -f infra/monitoring/rollout-monitoring-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: rollout-monitoring-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: rollout-monitoring
+    mtu: N192
+  annotations:
+    csap.ref/d06: "침해사고관리 — 배포 이벤트 감사 추적"
+    csap.ref/d10: "서비스 가용성 — 롤아웃 상태 모니터링"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: Deployment 롤아웃 Recording Rules
+    # Design Ref: MTU-N192 Design §DS-N192.1
+    # Plan SC: FR-N192.1
+    # =========================================================================
+    - name: rollout:deployment_rules
+      interval: 30s
+      rules:
+        # Deployment 롤아웃 진행률 (%)
+        - record: deployment:rollout_progress:ratio
+          expr: |
+            kube_deployment_status_replicas_updated
+            / on(namespace, deployment)
+            kube_deployment_spec_replicas
+          labels:
+            mtu: N192
+            csap_control: D-10-03
+
+        # Deployment 가용률 (available / desired)
+        - record: deployment:availability:ratio
+          expr: |
+            kube_deployment_status_replicas_available
+            / on(namespace, deployment)
+            kube_deployment_spec_replicas
+          labels:
+            mtu: N192
+            csap_control: D-10-03
+
+        # Deployment Generation 불일치 감지
+        - record: deployment:generation_mismatch:bool
+          expr: |
+            kube_deployment_metadata_generation
+            != on(namespace, deployment)
+            kube_deployment_status_observed_generation
+          labels:
+            mtu: N192
+            csap_control: D-06-02
+
+        # Deployment 롤아웃 변경 이벤트
+        - record: deployment:rollout_events:rate5m
+          expr: |
+            changes(kube_deployment_status_observed_generation[5m])
+          labels:
+            mtu: N192
+            csap_control: D-06-02
+
+    # =========================================================================
+    # 그룹 2: StatefulSet 롤아웃 Recording Rules
+    # Design Ref: MTU-N192 Design §DS-N192.1
+    # Plan SC: FR-N192.2
+    # =========================================================================
+    - name: rollout:statefulset_rules
+      interval: 30s
+      rules:
+        # StatefulSet 롤아웃 진행률
+        - record: statefulset:rollout_progress:ratio
+          expr: |
+            kube_statefulset_status_replicas_updated
+            / on(namespace, statefulset)
+            kube_statefulset_replicas
+          labels:
+            mtu: N192
+            csap_control: D-10-03
+
+        # StatefulSet 가용률
+        - record: statefulset:availability:ratio
+          expr: |
+            kube_statefulset_status_replicas_ready
+            / on(namespace, statefulset)
+            kube_statefulset_replicas
+          labels:
+            mtu: N192
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 3: 롤아웃 알림 규칙
+    # Design Ref: MTU-N192 Design §DS-N192.2
+    # Plan SC: FR-N192.3, FR-N192.4
+    # =========================================================================
+    - name: rollout:alerts
+      rules:
+        # Deployment 롤아웃 지연 (15분 이상)
+        - alert: DeploymentRolloutStuck
+          expr: |
+            kube_deployment_status_replicas_updated
+            != on(namespace, deployment)
+            kube_deployment_spec_replicas
+          for: 15m
+          labels:
+            severity: critical
+            csap_control: D-10-03
+            team: sre
+            mtu: N192
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.deployment }} 롤아웃 지연"
+            description: |
+              Deployment {{ $labels.deployment }}의 롤아웃이 15분 이상 완료되지 않고 있습니다.
+              이미지 Pull 실패, 리소스 부족, 또는 readiness probe 실패 가능성이 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/deployment/rollout-stuck"
+
+        # Deployment Generation 불일치 (10분 이상)
+        - alert: DeploymentGenerationMismatch
+          expr: |
+            deployment:generation_mismatch:bool == 1
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-06-02
+            team: sre
+            mtu: N192
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.deployment }} Generation 불일치"
+            description: |
+              Deployment {{ $labels.deployment }}의 metadata.generation과
+              status.observedGeneration이 10분 이상 불일치합니다.
+              컨트롤러가 최신 변경을 처리하지 못하고 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/deployment/generation-mismatch"
+
+        # Deployment Available < Desired (10분 이상)
+        - alert: DeploymentReplicasMismatch
+          expr: |
+            kube_deployment_status_replicas_available
+            < on(namespace, deployment)
+            kube_deployment_spec_replicas
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N192
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.deployment }} 가용 레플리카 부족"
+            description: |
+              Deployment {{ $labels.deployment }}의 가용 레플리카가
+              요구 레플리카보다 적습니다.
+              서비스 가용성이 저하되고 있을 수 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/deployment/replicas-mismatch"
+
+        # StatefulSet 롤아웃 지연 (15분 이상)
+        - alert: StatefulSetRolloutStuck
+          expr: |
+            kube_statefulset_status_replicas_updated
+            != on(namespace, statefulset)
+            kube_statefulset_replicas
+          for: 15m
+          labels:
+            severity: critical
+            csap_control: D-10-03
+            team: sre
+            mtu: N192
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.statefulset }} StatefulSet 롤아웃 지연"
+            description: |
+              StatefulSet {{ $labels.statefulset }}의 롤아웃이 15분 이상 진행 중입니다.
+              순차적 업데이트 중 Pod가 Ready 상태에 도달하지 못했을 수 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/statefulset/rollout-stuck"
+
+        # Deployment 0 레플리카 (의도적이지 않은 경우)
+        - alert: DeploymentZeroReplicas
+          expr: |
+            kube_deployment_spec_replicas{namespace=~"saas-.*"} == 0
+          for: 30m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N192
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.deployment }} 0 레플리카"
+            description: |
+              Deployment {{ $labels.deployment }}의 레플리카가 0으로 설정되어 있습니다.
+              의도적인 설정인지 확인하십시오.

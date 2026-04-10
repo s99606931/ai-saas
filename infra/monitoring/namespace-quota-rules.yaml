@@ -1,0 +1,194 @@
+# =============================================================================
+# Namespace 리소스 쿼터 모니터링 — Recording + Alerting Rules
+# Design Ref: MTU-N191 Design §DS-N191.1~DS-N191.2
+# Plan SC: FR-N191.1~FR-N191.4
+# CSAP: D-06(감사 로깅), D-08(접근 통제), D-10(서비스 가용성)
+#
+# 적용: kubectl apply -f infra/monitoring/namespace-quota-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: namespace-quota-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: quota-monitoring
+    mtu: N191
+  annotations:
+    csap.ref/d08: "접근 통제 — 테넌트 리소스 격리 모니터링"
+    csap.ref/d10: "서비스 가용성 — 쿼터 고갈 사전 감지"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 쿼터 사용률 Recording Rules
+    # Design Ref: MTU-N191 Design §DS-N191.1
+    # Plan SC: FR-N191.1, FR-N191.2
+    # =========================================================================
+    - name: quota:usage_rules
+      interval: 30s
+      rules:
+        # 리소스 쿼터 사용률 (리소스 타입별)
+        - record: quota:usage:ratio
+          expr: |
+            kube_resourcequota{type="used"}
+            / on(namespace, resourcequota, resource)
+            kube_resourcequota{type="hard"}
+          labels:
+            mtu: N191
+            csap_control: D-10-03
+
+        # CPU 쿼터 사용률
+        - record: quota:cpu_usage:ratio
+          expr: |
+            kube_resourcequota{type="used", resource=~"requests.cpu|limits.cpu|cpu"}
+            / on(namespace, resourcequota, resource)
+            kube_resourcequota{type="hard", resource=~"requests.cpu|limits.cpu|cpu"}
+          labels:
+            mtu: N191
+            csap_control: D-10-03
+
+        # Memory 쿼터 사용률
+        - record: quota:memory_usage:ratio
+          expr: |
+            kube_resourcequota{type="used", resource=~"requests.memory|limits.memory|memory"}
+            / on(namespace, resourcequota, resource)
+            kube_resourcequota{type="hard", resource=~"requests.memory|limits.memory|memory"}
+          labels:
+            mtu: N191
+            csap_control: D-10-03
+
+        # Pod 수 쿼터 사용률
+        - record: quota:pods_usage:ratio
+          expr: |
+            kube_resourcequota{type="used", resource="pods"}
+            / on(namespace, resourcequota, resource)
+            kube_resourcequota{type="hard", resource="pods"}
+          labels:
+            mtu: N191
+            csap_control: D-10-03
+
+        # 네임스페이스별 쿼터 잔여량
+        - record: quota:remaining:value
+          expr: |
+            kube_resourcequota{type="hard"}
+            - on(namespace, resourcequota, resource)
+            kube_resourcequota{type="used"}
+          labels:
+            mtu: N191
+            csap_control: D-10-03
+
+        # 서비스 수 쿼터 사용률
+        - record: quota:services_usage:ratio
+          expr: |
+            kube_resourcequota{type="used", resource=~"services|services.loadbalancers|services.nodeports"}
+            / on(namespace, resourcequota, resource)
+            kube_resourcequota{type="hard", resource=~"services|services.loadbalancers|services.nodeports"}
+          labels:
+            mtu: N191
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 2: 쿼터 알림 규칙
+    # Design Ref: MTU-N191 Design §DS-N191.2
+    # Plan SC: FR-N191.3, FR-N191.4
+    # =========================================================================
+    - name: quota:alerts
+      rules:
+        # 쿼터 사용률 80% 초과 경고
+        - alert: QuotaUsageHigh
+          expr: |
+            quota:usage:ratio > 0.8
+            and quota:usage:ratio < 0.9
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N191
+          annotations:
+            summary: "{{ $labels.namespace }} {{ $labels.resource }} 쿼터 80% 초과"
+            description: |
+              네임스페이스 {{ $labels.namespace }}의
+              {{ $labels.resource }} 쿼터 사용률이
+              {{ $value | humanizePercentage }}입니다.
+              쿼터 증가 또는 리소스 최적화를 검토하십시오.
+            runbook_url: "https://docs.saas.go.kr/operations/quota/usage-high"
+
+        # 쿼터 사용률 90% 초과 위험
+        - alert: QuotaUsageCritical
+          expr: |
+            quota:usage:ratio >= 0.9
+            and quota:usage:ratio < 1
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-10-03
+            team: sre
+            mtu: N191
+          annotations:
+            summary: "{{ $labels.namespace }} {{ $labels.resource }} 쿼터 90% 초과"
+            description: |
+              네임스페이스 {{ $labels.namespace }}의
+              {{ $labels.resource }} 쿼터 사용률이
+              {{ $value | humanizePercentage }}로 위험 수준입니다.
+              즉시 쿼터 증가 조치가 필요합니다.
+            runbook_url: "https://docs.saas.go.kr/operations/quota/usage-critical"
+
+        # 쿼터 완전 소진
+        - alert: QuotaExhausted
+          expr: |
+            quota:usage:ratio >= 1
+          for: 1m
+          labels:
+            severity: critical
+            csap_control: D-10-03
+            team: sre
+            mtu: N191
+          annotations:
+            summary: "{{ $labels.namespace }} {{ $labels.resource }} 쿼터 소진"
+            description: |
+              네임스페이스 {{ $labels.namespace }}의
+              {{ $labels.resource }} 쿼터가 완전히 소진되었습니다.
+              새로운 리소스 생성이 차단됩니다.
+            runbook_url: "https://docs.saas.go.kr/operations/quota/exhausted"
+
+        # Pod 쿼터 고갈 임박
+        - alert: PodQuotaNearExhaustion
+          expr: |
+            quota:pods_usage:ratio > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-08-01
+            team: sre
+            mtu: N191
+          annotations:
+            summary: "{{ $labels.namespace }} Pod 쿼터 85% 초과"
+            description: |
+              네임스페이스 {{ $labels.namespace }}의 Pod 쿼터 사용률이
+              {{ $value | humanizePercentage }}입니다.
+              새 Pod 배포가 곧 차단될 수 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/quota/pod-quota"
+
+        # 쿼터 미설정 네임스페이스 감지
+        - alert: NamespaceWithoutQuota
+          expr: |
+            count by (namespace) (kube_namespace_labels{namespace=~"saas-.*"})
+            unless on(namespace)
+            count by (namespace) (kube_resourcequota)
+          for: 30m
+          labels:
+            severity: warning
+            csap_control: D-08-01
+            team: security
+            mtu: N191
+          annotations:
+            summary: "{{ $labels.namespace }} 쿼터 미설정"
+            description: |
+              테넌트 네임스페이스 {{ $labels.namespace }}에
+              ResourceQuota가 설정되어 있지 않습니다.
+              리소스 격리를 위해 쿼터 설정이 필수입니다.
+            runbook_url: "https://docs.saas.go.kr/operations/quota/missing-quota"

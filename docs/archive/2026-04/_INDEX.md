@@ -437,3 +437,5 @@
 | **MTU-N187** 서비스 디스커버리 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N187-service-discovery/` |
 | **MTU-N188** ConfigMap/Secret 변경 감지 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N188-configmap-secret-change/` |
 | **MTU-N189** Pod 리소스 제한 위반 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N189-pod-resource-limit/` |
+| **MTU-N191** Namespace 리소스 쿼터 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N191-namespace-quota/` |
+| **MTU-N192** Deployment/StatefulSet 롤아웃 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N192-rollout-monitoring/` |

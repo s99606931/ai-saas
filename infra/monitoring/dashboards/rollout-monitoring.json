@@ -1,0 +1,216 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "annotations": { "list": [] },
+  "description": "Deployment/StatefulSet 롤아웃 모니터링 — 배포 진행률, 실패 감지, 이력 추적 (Design Ref: MTU-N192 §DS-N192.3, CSAP D-06/D-10)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "롤아웃 상태 개요",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "count(deployment:rollout_progress:ratio{namespace=~\"$namespace\"} == 1) or vector(0)",
+          "legendFormat": "완료",
+          "refId": "A"
+        },
+        {
+          "expr": "count(deployment:rollout_progress:ratio{namespace=~\"$namespace\"} < 1 and deployment:rollout_progress:ratio > 0) or vector(0)",
+          "legendFormat": "진행 중",
+          "refId": "B"
+        },
+        {
+          "expr": "count(deployment:generation_mismatch:bool{namespace=~\"$namespace\"} == 1) or vector(0)",
+          "legendFormat": "Generation 불일치",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Deployment 롤아웃 진행률",
+      "description": "Design Ref: DS-N192.1 — updated/desired 비율",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "deployment:rollout_progress:ratio{namespace=~\"$namespace\"} * 100",
+          "legendFormat": "{{ deployment }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "title": "StatefulSet 롤아웃 진행률",
+      "description": "Design Ref: DS-N192.1 — StatefulSet 업데이트 진행률",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "statefulset:rollout_progress:ratio{namespace=~\"$namespace\"} * 100",
+          "legendFormat": "{{ statefulset }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "title": "롤아웃 중인 워크로드",
+      "description": "롤아웃 진행률 < 100% 워크로드 목록",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "deployment:rollout_progress:ratio{namespace=~\"$namespace\"} < 1",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true },
+            "renameByName": { "namespace": "네임스페이스", "deployment": "Deployment", "Value": "진행률" }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Available vs Desired 레플리카",
+      "description": "Design Ref: DS-N192.1 — 가용 레플리카 vs 요구 레플리카",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_available{namespace=~\"$namespace\", deployment=~\"$deployment\"}",
+          "legendFormat": "가용: {{ deployment }}",
+          "refId": "A"
+        },
+        {
+          "expr": "kube_deployment_spec_replicas{namespace=~\"$namespace\", deployment=~\"$deployment\"}",
+          "legendFormat": "요구: {{ deployment }}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "title": "배포 세대 불일치 목록",
+      "description": "Design Ref: DS-N192.2 — metadata.generation != status.observedGeneration",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "targets": [
+        {
+          "expr": "deployment:generation_mismatch:bool{namespace=~\"$namespace\"} == 1",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true, "Value": true },
+            "renameByName": { "namespace": "네임스페이스", "deployment": "Deployment" }
+          }
+        }
+      ]
+    },
+    {
+      "title": "롤아웃 이벤트 타임라인",
+      "description": "Design Ref: DS-N192.1 — observedGeneration 변경 이벤트",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 26 },
+      "targets": [
+        {
+          "expr": "deployment:rollout_events:rate5m{namespace=~\"$namespace\"}",
+          "legendFormat": "{{ deployment }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } },
+          "unit": "short"
+        }
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["rollout", "deployment", "statefulset", "sre", "csap-d10", "mtu-n192"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(kube_deployment_spec_replicas, namespace)",
+        "name": "namespace",
+        "type": "query",
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2,
+        "sort": 1
+      },
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(kube_deployment_spec_replicas{namespace=~\"$namespace\"}, deployment)",
+        "name": "deployment",
+        "type": "query",
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2,
+        "sort": 1
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "Deployment/StatefulSet 롤아웃 모니터링",
+  "uid": "rollout-monitoring-n192",
+  "version": 1
+}
