@@ -20,7 +20,7 @@ import {
   deleteTemplateHandler,
 } from './handlers/template.handler.js';
 import { notificationStatsHandler } from './handlers/stats.handler.js';
-import { createRateLimiter } from './middleware/rate-limit.middleware.js';
+import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   // 서비스 수준 내부 인증 (CSAP D-08: 심층 방어)

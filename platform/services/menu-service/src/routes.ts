@@ -13,7 +13,7 @@ import {
   searchMenuHandler,
 } from './handlers/menu.handler.js';
 import { menuStatsHandler } from './handlers/menu-stats.handler.js';
-import { createRateLimiter } from './middleware/rate-limit.middleware.js';
+import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   // C-03 수정 (CSAP D-08): 서비스 간 내부 인증 — API 게이트웨이 우회 차단

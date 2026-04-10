@@ -1,0 +1,29 @@
+{
+  "name": "@public-saas/rate-limit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "공공기관 SaaS 플랫폼 — Rate Limiting 미들웨어 (CSAP D-08/D-10)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/ --max-warnings 0",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "fastify": "^5.2.1",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.9"
+  },
+  "peerDependencies": {
+    "fastify": ">=4.0.0"
+  }
+}

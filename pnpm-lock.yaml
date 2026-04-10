@@ -132,6 +132,18 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  platform/packages/rate-limit:
+    devDependencies:
+      fastify:
+        specifier: ^5.2.1
+        version: 5.8.4
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
+
   platform/packages/types:
     devDependencies:
       typescript:
@@ -421,6 +433,9 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/rate-limit':
+        specifier: workspace:*
+        version: link:../../packages/rate-limit
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -455,6 +470,9 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/rate-limit':
+        specifier: workspace:*
+        version: link:../../packages/rate-limit
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -523,6 +541,9 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/rate-limit':
+        specifier: workspace:*
+        version: link:../../packages/rate-limit
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -557,6 +578,9 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/rate-limit':
+        specifier: workspace:*
+        version: link:../../packages/rate-limit
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -591,6 +615,9 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/rate-limit':
+        specifier: workspace:*
+        version: link:../../packages/rate-limit
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -659,6 +686,9 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/rate-limit':
+        specifier: workspace:*
+        version: link:../../packages/rate-limit
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -795,6 +825,9 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/rate-limit':
+        specifier: workspace:*
+        version: link:../../packages/rate-limit
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types

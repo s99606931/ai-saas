@@ -8,7 +8,7 @@ import { changeRoleHandler } from './handlers/role.handler.js';
 import { changePasswordHandler } from './handlers/password.handler.js';
 import { requestPasswordResetHandler, confirmPasswordResetHandler } from './handlers/password-reset.handler.js';
 import { listInactiveUsersHandler } from './handlers/inactive.handler.js';
-import { createRateLimiter } from './middleware/rate-limit.middleware.js';
+import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
   // 서비스 수준 내부 인증 (CSAP D-08: 심층 방어)
