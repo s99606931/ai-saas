@@ -1,0 +1,183 @@
+# =============================================================================
+# 포스트모템 트리거 PrometheusRule
+# Design Ref: MTU-N117 Design SS2.5
+# Plan SC: FR-N117.5
+# CSAP: D-06(침해사고 관리 -- 포스트모템 자동 트리거)
+#
+# P1 인시던트 해소 후 포스트모템 생성을 트리거하는 규칙
+# P2 인시던트 30분 이상 지속 후 해소 시에도 트리거
+#
+# 적용: kubectl apply -f infra/monitoring/postmortem-trigger-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: postmortem-trigger-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 -- 포스트모템 자동 트리거 규칙"
+    description: "P1/P2 인시던트 해소 시 포스트모템 생성 알림"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 포스트모템 필요 판단 Recording Rules
+    # =========================================================================
+    - name: postmortem:trigger_evaluation
+      interval: 30s
+      rules:
+        # P1 인시던트 최근 해소 감지 (1시간 이내)
+        # 활성 P1 알림 수가 0이 되면서 최근 1시간 내 P1이 존재했던 경우
+        - record: postmortem:p1_recently_resolved
+          expr: |
+            (
+              count(ALERTS{alertstate="firing", severity="critical",
+                alertname=~"ServiceDown.*|SLO.*|Falco.*|PolicyViolation.*"}) or vector(0)
+            ) == 0
+            and
+            (
+              max_over_time(
+                (count(ALERTS{alertstate="firing", severity="critical",
+                  alertname=~"ServiceDown.*|SLO.*|Falco.*|PolicyViolation.*"}) or vector(0)
+                )[1h:]
+              ) > 0
+            )
+          labels:
+            trigger_type: p1_resolved
+
+        # P2 인시던트 30분 이상 지속 후 해소 감지
+        - record: postmortem:p2_long_duration_resolved
+          expr: |
+            (
+              count(ALERTS{alertstate="firing", severity="critical",
+                alertname!~"ServiceDown.*|SLO.*|Falco.*|PolicyViolation.*"}) or vector(0)
+            ) == 0
+            and
+            (
+              max_over_time(
+                (count(ALERTS{alertstate="firing", severity="critical",
+                  alertname!~"ServiceDown.*|SLO.*|Falco.*|PolicyViolation.*"}) or vector(0)
+                )[2h:]
+              ) > 0
+            )
+          labels:
+            trigger_type: p2_long_resolved
+
+        # 반복 인시던트 감지 (동일 alertname 3회 이상 / 7일)
+        - record: postmortem:repeated_incident
+          expr: |
+            count by (alertname) (
+              count_over_time(ALERTS{alertstate="firing"}[7d])
+            ) >= 3
+          labels:
+            trigger_type: repeated
+
+        # 전체 포스트모템 필요 인시던트 수
+        - record: postmortem:pending_count
+          expr: |
+            (postmortem:p1_recently_resolved or vector(0))
+            + (postmortem:p2_long_duration_resolved or vector(0))
+
+    # =========================================================================
+    # 그룹 2: 포스트모템 트리거 알림
+    # =========================================================================
+    - name: postmortem:trigger_alerts
+      rules:
+        # P1 인시던트 해소 -- 포스트모템 필수
+        - alert: PostmortemRequiredP1
+          expr: postmortem:p1_recently_resolved > 0
+          for: 1m
+          labels:
+            severity: info
+            category: process
+            priority: P2
+            postmortem_required: "true"
+          annotations:
+            summary: "P1 인시던트 해소 -- 포스트모템 작성 필요"
+            description: |
+              P1 등급 인시던트가 해소되었습니다.
+              24시간 이내에 포스트모템 보고서를 작성하십시오.
+              자동 생성: scripts/generate-postmortem.sh --severity P1
+            runbook_url: "docs/operations/five-whys-guide.md"
+
+        # P2 인시던트 장기 지속 후 해소 -- 포스트모템 필수
+        - alert: PostmortemRequiredP2Long
+          expr: postmortem:p2_long_duration_resolved > 0
+          for: 1m
+          labels:
+            severity: info
+            category: process
+            priority: P3
+            postmortem_required: "true"
+          annotations:
+            summary: "P2 장기 인시던트 해소 -- 포스트모템 작성 필요"
+            description: |
+              P2 등급 인시던트가 30분 이상 지속 후 해소되었습니다.
+              48시간 이내에 포스트모템 보고서를 작성하십시오.
+              자동 생성: scripts/generate-postmortem.sh --severity P2
+            runbook_url: "docs/operations/five-whys-guide.md"
+
+        # 반복 인시던트 경고
+        - alert: RepeatedIncidentPattern
+          expr: postmortem:repeated_incident > 0
+          for: 5m
+          labels:
+            severity: warning
+            category: process
+            priority: P3
+            postmortem_required: "true"
+          annotations:
+            summary: "알림 {{ $labels.alertname }} 7일간 3회 이상 반복"
+            description: |
+              동일 알림이 7일간 3회 이상 반복 발생하고 있습니다.
+              포스트모템을 작성하여 근본 원인을 분석하십시오.
+              자동 생성: scripts/generate-postmortem.sh --alert-name {{ $labels.alertname }}
+
+        # MTTR 목표 초과 경고
+        - alert: MTTRExceeded
+          expr: |
+            (
+              time() - (
+                min by (alertname) (
+                  ALERTS_FOR_STATE{alertstate="firing", severity="critical"}
+                )
+              )
+            ) > 1800
+          for: 1m
+          labels:
+            severity: warning
+            category: sre
+            priority: P2
+          annotations:
+            summary: "P1 인시던트 {{ $labels.alertname }} MTTR 30분 초과"
+            description: |
+              P1 등급 인시던트의 MTTR 목표(30분)를 초과했습니다.
+              현재 지속 시간: {{ $value | humanizeDuration }}
+              에스컬레이션을 검토하십시오.
+
+    # =========================================================================
+    # 그룹 3: 포스트모템 완료 추적 Recording Rules
+    # =========================================================================
+    - name: postmortem:completion_tracking
+      interval: 60s
+      rules:
+        # 포스트모템 미작성 인시던트 수 (P1, 24시간 초과)
+        - record: postmortem:overdue:p1_count
+          expr: |
+            (
+              postmortem:p1_recently_resolved > 0
+            ) or vector(0)
+          labels:
+            sla: "24h"
+
+        # 포스트모템 미작성 인시던트 수 (P2, 48시간 초과)
+        - record: postmortem:overdue:p2_count
+          expr: |
+            (
+              postmortem:p2_long_duration_resolved > 0
+            ) or vector(0)
+          labels:
+            sla: "48h"

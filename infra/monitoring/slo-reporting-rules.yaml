@@ -1,0 +1,195 @@
+# =============================================================================
+# SLO 리포팅용 Recording Rules
+# Design Ref: MTU-N121 Design SS3.2
+# Plan SC: FR-N121.3
+# CSAP: D-06(침해사고 관리 -- SLO 리포팅 메트릭)
+#
+# 기존 slo-error-budget-alerts.yaml의 Recording Rule을 확장하여
+# 일간/주간/월간 리포팅에 필요한 집계 메트릭을 사전 계산합니다.
+#
+# 적용: kubectl apply -f infra/monitoring/slo-reporting-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: slo-reporting-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 -- SLO 리포팅 집계 메트릭"
+    description: "SLO 에러 예산 리포팅용 Recording Rules"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 일간 에러 예산 소진량
+    # =========================================================================
+    - name: slo:reporting:daily
+      interval: 5m
+      rules:
+        # 일간 에러율 (24시간 윈도우)
+        - record: slo:report:daily_error_rate
+          expr: |
+            sum by (sloth_service, sloth_slo) (
+              rate(http_requests_total{code=~"5.."}[24h])
+            )
+            / clamp_min(
+              sum by (sloth_service, sloth_slo) (
+                rate(http_requests_total[24h])
+              ), 0.001
+            )
+
+        # 일간 가용성 (24시간 윈도우)
+        - record: slo:report:daily_availability
+          expr: |
+            1 - (
+              sum by (sloth_service, sloth_slo) (
+                rate(http_requests_total{code=~"5.."}[24h])
+              )
+              / clamp_min(
+                sum by (sloth_service, sloth_slo) (
+                  rate(http_requests_total[24h])
+                ), 0.001
+              )
+            )
+
+        # 일간 P99 지연
+        - record: slo:report:daily_p99_latency
+          expr: |
+            histogram_quantile(0.99,
+              sum by (sloth_service, le) (
+                rate(http_request_duration_seconds_bucket[24h])
+              )
+            )
+
+    # =========================================================================
+    # 그룹 2: 주간 에러 예산 소진 추이
+    # =========================================================================
+    - name: slo:reporting:weekly
+      interval: 15m
+      rules:
+        # 주간 에러율 (7일 윈도우)
+        - record: slo:report:weekly_error_rate
+          expr: |
+            sum by (sloth_service, sloth_slo) (
+              rate(http_requests_total{code=~"5.."}[7d])
+            )
+            / clamp_min(
+              sum by (sloth_service, sloth_slo) (
+                rate(http_requests_total[7d])
+              ), 0.001
+            )
+
+        # 주간 에러 예산 소진량 (현재 잔여 - 7일 전 잔여)
+        - record: slo:report:weekly_budget_consumed
+          expr: |
+            (
+              slo:error_budget:remaining_ratio offset 7d
+              - slo:error_budget:remaining_ratio
+            ) or vector(0)
+
+        # 주간 가용성
+        - record: slo:report:weekly_availability
+          expr: |
+            1 - (
+              sum by (sloth_service, sloth_slo) (
+                rate(http_requests_total{code=~"5.."}[7d])
+              )
+              / clamp_min(
+                sum by (sloth_service, sloth_slo) (
+                  rate(http_requests_total[7d])
+                ), 0.001
+              )
+            )
+
+    # =========================================================================
+    # 그룹 3: MTTR/MTTD 자동 계산 (FR-N121.4)
+    # =========================================================================
+    - name: slo:reporting:incident_metrics
+      interval: 5m
+      rules:
+        # 활성 인시던트의 현재 지속 시간 (초)
+        - record: slo:report:incident_duration_seconds
+          expr: |
+            time() - ALERTS_FOR_STATE{alertstate="firing", severity=~"critical|warning"}
+
+        # P1 인시던트 평균 MTTR (7일 윈도우)
+        # 해소된 critical 알림의 평균 지속 시간
+        - record: slo:report:mttr_p1_avg_7d
+          expr: |
+            avg(
+              avg_over_time(
+                (time() - ALERTS_FOR_STATE{alertstate="firing", severity="critical"})[7d:]
+              )
+            ) or vector(0)
+
+        # P2 인시던트 평균 MTTR (7일 윈도우)
+        - record: slo:report:mttr_p2_avg_7d
+          expr: |
+            avg(
+              avg_over_time(
+                (time() - ALERTS_FOR_STATE{alertstate="firing", severity="warning"})[7d:]
+              )
+            ) or vector(0)
+
+    # =========================================================================
+    # 그룹 4: 에러 예산 소진 예측 (FR-N121.5)
+    # =========================================================================
+    - name: slo:reporting:prediction
+      interval: 15m
+      rules:
+        # 에러 예산 소진 속도 (시간당)
+        - record: slo:report:budget_burn_per_hour
+          expr: |
+            (
+              slo:error_budget:remaining_ratio offset 1h
+              - slo:error_budget:remaining_ratio
+            ) or vector(0)
+
+        # 에러 예산 소진 예측 일수
+        # 현재 소진 속도가 유지될 경우 잔여 에러 예산이 소진되는 데 걸리는 일수
+        - record: slo:report:budget_exhaustion_days
+          expr: |
+            clamp_min(
+              slo:error_budget:remaining_ratio
+              / clamp_min(
+                (slo:error_budget:remaining_ratio offset 1h - slo:error_budget:remaining_ratio) * 24,
+                0.0001
+              ),
+              0
+            ) or vector(999)
+
+    # =========================================================================
+    # 그룹 5: SLO 리포팅 알림
+    # =========================================================================
+    - name: slo:reporting:alerts
+      rules:
+        # 주간 SLO 보고서 생성 알림 (매주 월요일 09:00)
+        - alert: SLOWeeklyReportDue
+          expr: |
+            vector(1) and on() (hour() == 9 and day_of_week() == 1)
+          for: 5m
+          labels:
+            severity: info
+            category: reporting
+          annotations:
+            summary: "주간 SLO 보고서 생성 시점"
+            description: |
+              주간 SLO 에러 예산 보고서를 생성하십시오.
+              자동 생성: scripts/generate-slo-report.sh --period weekly
+
+        # 월간 SLO 보고서 생성 알림 (매월 1일 09:00)
+        - alert: SLOMonthlyReportDue
+          expr: |
+            vector(1) and on() (hour() == 9 and day_of_month() == 1)
+          for: 5m
+          labels:
+            severity: info
+            category: reporting
+          annotations:
+            summary: "월간 SLO 보고서 생성 시점"
+            description: |
+              월간 SLO 에러 예산 보고서를 생성하십시오.
+              자동 생성: scripts/generate-slo-report.sh --period monthly

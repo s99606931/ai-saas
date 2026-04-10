@@ -1,0 +1,173 @@
+# =============================================================================
+# 온콜 로테이션 스케줄 ConfigMap
+# Design Ref: MTU-N122 Design SS1
+# Plan SC: FR-N122.1
+# CSAP: D-06(침해사고 관리 -- 온콜 대응 체계)
+#
+# 팀별 온콜 로테이션 스케줄을 ConfigMap으로 관리합니다.
+# AlertManager가 이 설정을 참조하여 알림을 라우팅합니다.
+#
+# 적용: kubectl apply -f infra/monitoring/oncall-schedule.yaml
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oncall-schedule
+  namespace: monitoring
+  labels:
+    app: oncall-management
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 -- 온콜 로테이션 스케줄"
+    description: "팀별 온콜 담당자 로테이션 및 에스컬레이션 연락처"
+data:
+  # ---------------------------------------------------------------------------
+  # 온콜 로테이션 (주간 교대)
+  # ---------------------------------------------------------------------------
+  schedule.yaml: |
+    # 온콜 로테이션 스케줄
+    # 매주 월요일 09:00 KST 교대
+    rotation:
+      interval: weekly
+      handoff_time: "09:00"
+      timezone: "Asia/Seoul"
+
+    # 팀별 온콜 담당자 목록
+    teams:
+      sre:
+        name: "SRE팀"
+        description: "서비스 안정성 엔지니어링"
+        rotation_members:
+          - name: "SRE-A"
+            contact: "sre-a@saas-platform.gov.kr"
+          - name: "SRE-B"
+            contact: "sre-b@saas-platform.gov.kr"
+          - name: "SRE-C"
+            contact: "sre-c@saas-platform.gov.kr"
+        escalation_lead: "SRE 팀장"
+        escalation_contact: "sre-lead@saas-platform.gov.kr"
+
+      security:
+        name: "보안팀"
+        description: "보안 인시던트 대응"
+        rotation_members:
+          - name: "SEC-A"
+            contact: "sec-a@saas-platform.gov.kr"
+          - name: "SEC-B"
+            contact: "sec-b@saas-platform.gov.kr"
+        escalation_lead: "보안 팀장"
+        escalation_contact: "sec-lead@saas-platform.gov.kr"
+
+      devops:
+        name: "DevOps팀"
+        description: "CI/CD 파이프라인 및 배포 관리"
+        rotation_members:
+          - name: "OPS-A"
+            contact: "ops-a@saas-platform.gov.kr"
+          - name: "OPS-B"
+            contact: "ops-b@saas-platform.gov.kr"
+        escalation_lead: "DevOps 팀장"
+        escalation_contact: "ops-lead@saas-platform.gov.kr"
+
+      dba:
+        name: "DBA팀"
+        description: "데이터베이스 관리"
+        rotation_members:
+          - name: "DBA-A"
+            contact: "dba-a@saas-platform.gov.kr"
+        escalation_lead: "DBA 팀장"
+        escalation_contact: "dba-lead@saas-platform.gov.kr"
+
+      infra:
+        name: "인프라팀"
+        description: "인프라 장비 및 네트워크 관리"
+        rotation_members:
+          - name: "INFRA-A"
+            contact: "infra-a@saas-platform.gov.kr"
+          - name: "INFRA-B"
+            contact: "infra-b@saas-platform.gov.kr"
+        escalation_lead: "인프라 팀장"
+        escalation_contact: "infra-lead@saas-platform.gov.kr"
+
+  # ---------------------------------------------------------------------------
+  # 에스컬레이션 정책
+  # ---------------------------------------------------------------------------
+  escalation-policy.yaml: |
+    # 심각도별 에스컬레이션 타임라인
+    escalation_policies:
+      P1:
+        name: "긴급 (Critical)"
+        initial_response: "즉시"
+        stages:
+          - timeout_minutes: 0
+            notify: "oncall_primary"
+            channel: "알림"
+          - timeout_minutes: 15
+            notify: "team_lead"
+            channel: "전화"
+          - timeout_minutes: 30
+            notify: "cto"
+            channel: "전화 + 메시지"
+          - timeout_minutes: 60
+            notify: "전체 엔지니어링"
+            channel: "전체 공지"
+
+      P2:
+        name: "높음 (High)"
+        initial_response: "5분 이내"
+        stages:
+          - timeout_minutes: 0
+            notify: "oncall_primary"
+            channel: "알림"
+          - timeout_minutes: 30
+            notify: "team_lead"
+            channel: "메시지"
+          - timeout_minutes: 120
+            notify: "cto"
+            channel: "메시지"
+
+      P3:
+        name: "보통 (Medium)"
+        initial_response: "30분 이내"
+        stages:
+          - timeout_minutes: 0
+            notify: "oncall_primary"
+            channel: "알림"
+          - timeout_minutes: 120
+            notify: "team_lead"
+            channel: "메시지"
+
+      P4:
+        name: "낮음 (Low)"
+        initial_response: "2시간 이내"
+        stages:
+          - timeout_minutes: 0
+            notify: "oncall_primary"
+            channel: "알림"
+          - timeout_minutes: 1440
+            notify: "team_lead"
+            channel: "메시지"
+
+    # 카테고리별 담당 팀 매핑
+    category_routing:
+      security: "security"
+      availability: "sre"
+      performance: "sre"
+      infrastructure: "infra"
+      deployment: "devops"
+      data: "dba"
+
+  # ---------------------------------------------------------------------------
+  # 현재 온콜 상태 (스크립트에서 업데이트)
+  # ---------------------------------------------------------------------------
+  current-oncall.yaml: |
+    # 현재 온콜 담당자 (자동 업데이트)
+    current_week: "2026-W15"
+    effective_from: "2026-04-07T09:00:00+09:00"
+    effective_until: "2026-04-14T09:00:00+09:00"
+    oncall:
+      sre: "SRE-A"
+      security: "SEC-A"
+      devops: "OPS-A"
+      dba: "DBA-A"
+      infra: "INFRA-A"
