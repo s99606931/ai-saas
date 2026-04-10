@@ -1,0 +1,53 @@
+# 아키텍처 다이어그램 자동 업데이트 워크플로우
+# Design Ref: DS-N111.3
+# Plan SC: FR-N111.3
+
+name: Architecture Diagram Auto-Update
+
+on:
+  push:
+    branches: [main, stg]
+    paths:
+      - "infra/**"
+      - "scripts/generate-arch-diagram.sh"
+  pull_request:
+    branches: [main]
+    paths:
+      - "infra/**"
+
+jobs:
+  update-diagram:
+    name: 아키텍처 다이어그램 업데이트
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 소스코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 다이어그램 생성
+        run: bash scripts/generate-arch-diagram.sh
+
+      - name: 변경 확인
+        id: changes
+        run: |
+          if git diff --quiet docs-portal/docs/architecture/; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "[INFO] 아키텍처 변경 없음"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "[INFO] 아키텍처 다이어그램 업데이트 필요"
+          fi
+
+      - name: 변경 커밋 (push 이벤트만)
+        if: steps.changes.outputs.changed == 'true' && github.event_name == 'push'
+        run: |
+          git config user.name "Architecture Bot"
+          git config user.email "arch-bot@saas.go.kr"
+          git add docs-portal/docs/architecture/
+          git commit -m "docs(arch): 아키텍처 다이어그램 자동 업데이트"
+          git push
+
+      - name: 감사 로그 기록
+        if: always()
+        run: |
+          echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"actor\":\"gitea-ci\",\"action\":\"ARCH_DIAGRAM_UPDATE\",\"target\":\"platform-overview\",\"result\":\"${{ job.status }}\"}" >> .claude/audit.jsonl
