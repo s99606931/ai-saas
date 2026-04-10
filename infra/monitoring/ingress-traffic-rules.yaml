@@ -1,0 +1,372 @@
+# MTU-N182: Ingress/Gateway API 트래픽 모니터링 PrometheusRule
+# Design Ref: DESIGN-N182 DS-N182.1 ~ DS-N182.6
+# Plan SC: FR-N182.1 ~ FR-N182.6
+# CSAP: D-08 (접근 통제), D-09 (암호화), D-13 (네트워크 보안)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ingress-traffic-monitoring
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: ingress-traffic-monitoring
+    app.kubernetes.io/part-of: saas-monitoring
+    csap-control: D-13
+    release: kube-prometheus-stack
+spec:
+  groups:
+    # =========================================================
+    # Recording Rules: Ingress 트래픽 메트릭 사전 집계
+    # =========================================================
+    - name: ingress-traffic.recording
+      interval: 15s
+      rules:
+        # FR-N182.1: HTTP 상태 코드별 RPS (Traefik)
+        # Design Ref: DS-N182.1
+        - record: ingress:http:requests_by_code_traefik
+          expr: |
+            sum by (entrypoint, code) (
+              rate(traefik_entrypoint_requests_total[5m])
+            )
+          labels:
+            monitor_domain: ingress_traffic
+            csap_control: D-13
+
+        # FR-N182.1: HTTP 상태 코드별 RPS (Nginx)
+        - record: ingress:http:requests_by_code_nginx
+          expr: |
+            sum by (ingress, status) (
+              rate(nginx_ingress_controller_requests[5m])
+            )
+          labels:
+            monitor_domain: ingress_traffic
+            csap_control: D-13
+
+        # FR-N182.1: 5xx 에러율 (Traefik)
+        - record: ingress:http:error_rate_5xx_traefik
+          expr: |
+            clamp_min(
+              sum(rate(traefik_entrypoint_requests_total{code=~"5.."}[5m]))
+              / clamp_min(sum(rate(traefik_entrypoint_requests_total[5m])), 0.001)
+              * 100
+            , 0)
+          labels:
+            monitor_domain: ingress_traffic
+            csap_control: D-13
+
+        # FR-N182.1: 5xx 에러율 (Nginx)
+        - record: ingress:http:error_rate_5xx_nginx
+          expr: |
+            clamp_min(
+              sum(rate(nginx_ingress_controller_requests{status=~"5.."}[5m]))
+              / clamp_min(sum(rate(nginx_ingress_controller_requests[5m])), 0.001)
+              * 100
+            , 0)
+          labels:
+            monitor_domain: ingress_traffic
+
+        # FR-N182.1: 4xx 에러율
+        - record: ingress:http:error_rate_4xx
+          expr: |
+            clamp_min(
+              sum(rate(traefik_entrypoint_requests_total{code=~"4.."}[5m]))
+              / clamp_min(sum(rate(traefik_entrypoint_requests_total[5m])), 0.001)
+              * 100
+            , 0)
+          labels:
+            monitor_domain: ingress_traffic
+
+        # FR-N182.2: 요청 레이턴시 P50 (Traefik)
+        # Design Ref: DS-N182.2
+        - record: ingress:http:latency_p50_traefik
+          expr: |
+            histogram_quantile(0.50,
+              sum by (entrypoint, le) (
+                rate(traefik_entrypoint_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            monitor_domain: ingress_traffic
+
+        # FR-N182.2: 요청 레이턴시 P90 (Traefik)
+        - record: ingress:http:latency_p90_traefik
+          expr: |
+            histogram_quantile(0.90,
+              sum by (entrypoint, le) (
+                rate(traefik_entrypoint_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            monitor_domain: ingress_traffic
+
+        # FR-N182.2: 요청 레이턴시 P99 (Traefik)
+        - record: ingress:http:latency_p99_traefik
+          expr: |
+            histogram_quantile(0.99,
+              sum by (entrypoint, le) (
+                rate(traefik_entrypoint_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            monitor_domain: ingress_traffic
+            csap_control: D-13
+
+        # FR-N182.2: 요청 레이턴시 P99 (Nginx)
+        - record: ingress:http:latency_p99_nginx
+          expr: |
+            histogram_quantile(0.99,
+              sum by (ingress, le) (
+                rate(nginx_ingress_controller_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            monitor_domain: ingress_traffic
+
+        # FR-N182.3: 총 RPS (Traefik)
+        # Design Ref: DS-N182.3
+        - record: ingress:http:total_rps_traefik
+          expr: |
+            sum(rate(traefik_entrypoint_requests_total[5m]))
+          labels:
+            monitor_domain: ingress_traffic
+
+        # FR-N182.3: 총 RPS (Nginx)
+        - record: ingress:http:total_rps_nginx
+          expr: |
+            sum(rate(nginx_ingress_controller_requests[5m]))
+          labels:
+            monitor_domain: ingress_traffic
+
+        # FR-N182.3: Entrypoint별 RPS
+        - record: ingress:http:rps_by_entrypoint
+          expr: |
+            sum by (entrypoint) (
+              rate(traefik_entrypoint_requests_total[5m])
+            )
+          labels:
+            monitor_domain: ingress_traffic
+
+        # FR-N182.5: 요청 크기 평균 (bytes)
+        - record: ingress:http:request_size_avg
+          expr: |
+            sum(rate(traefik_entrypoint_request_bytes_total[5m]))
+            / clamp_min(sum(rate(traefik_entrypoint_requests_total[5m])), 0.001)
+          labels:
+            monitor_domain: ingress_traffic
+
+        # FR-N182.5: 응답 크기 평균 (bytes)
+        - record: ingress:http:response_size_avg
+          expr: |
+            sum(rate(traefik_entrypoint_response_bytes_total[5m]))
+            / clamp_min(sum(rate(traefik_entrypoint_requests_total[5m])), 0.001)
+          labels:
+            monitor_domain: ingress_traffic
+
+        # FR-N182.6: TLS 인증서 잔여일
+        # Design Ref: DS-N182.6
+        - record: ingress:tls:cert_days_remaining
+          expr: |
+            (traefik_tls_certs_not_after - time()) / 86400
+          labels:
+            monitor_domain: ingress_traffic
+            csap_control: D-09
+
+        # Ingress 트래픽 건강 종합 점수 (0~100)
+        - record: ingress:traffic:health_score
+          expr: |
+            clamp(
+              100
+              - (clamp_max(ingress:http:error_rate_5xx_traefik, 10) * 5)
+              - (clamp_max(ingress:http:error_rate_4xx / 5, 10) * 2)
+              - (clamp_max(ingress:http:latency_p99_traefik * 10, 30))
+            , 0, 100)
+          labels:
+            monitor_domain: ingress_traffic
+
+    # =========================================================
+    # Alerting Rules: Ingress 트래픽 이상 알림
+    # =========================================================
+    - name: ingress-traffic.alerts
+      rules:
+        # FR-N182.1: 5xx 에러율 경고
+        - alert: IngressHighErrorRate5xx
+          expr: ingress:http:error_rate_5xx_traefik > 1
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-13
+            team: sre
+          annotations:
+            summary: "Ingress 5xx 에러율 1% 초과"
+            description: |
+              Ingress 5xx 에러율이 {{ $value | printf "%.2f" }}%입니다.
+              백엔드 서비스 상태를 확인하십시오.
+            runbook_url: "https://docs.example.com/runbooks/ingress-5xx"
+
+        # FR-N182.1: 5xx 에러율 위험
+        - alert: IngressCriticalErrorRate5xx
+          expr: ingress:http:error_rate_5xx_traefik > 5
+          for: 3m
+          labels:
+            severity: critical
+            csap_control: D-13
+            team: sre
+          annotations:
+            summary: "Ingress 5xx 에러율 5% 초과 - 위험"
+            description: |
+              Ingress 5xx 에러율이 {{ $value | printf "%.2f" }}%로 위험 수준입니다.
+              서비스 장애 가능성이 높습니다. 즉시 점검하십시오.
+
+        # FR-N182.1: 4xx 에러율 높음 (봇/공격 의심)
+        - alert: IngressHigh4xxRate
+          expr: ingress:http:error_rate_4xx > 20
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-08
+            team: security
+          annotations:
+            summary: "Ingress 4xx 에러율 20% 초과"
+            description: |
+              4xx 에러율이 {{ $value | printf "%.1f" }}%입니다.
+              봇 트래픽, 스캐닝 공격, 또는 잘못된 클라이언트 설정을 확인하십시오.
+
+        # FR-N182.2: P99 레이턴시 경고
+        - alert: IngressHighLatencyP99
+          expr: ingress:http:latency_p99_traefik > 0.5
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-13
+            team: sre
+          annotations:
+            summary: "Ingress P99 레이턴시 500ms 초과"
+            description: |
+              P99 레이턴시가 {{ $value | printf "%.3f" }}초입니다.
+              백엔드 성능 또는 네트워크 지연을 확인하십시오.
+            runbook_url: "https://docs.example.com/runbooks/ingress-latency"
+
+        # FR-N182.2: P99 레이턴시 위험
+        - alert: IngressCriticalLatencyP99
+          expr: ingress:http:latency_p99_traefik > 2
+          for: 3m
+          labels:
+            severity: critical
+            csap_control: D-13
+            team: sre
+          annotations:
+            summary: "Ingress P99 레이턴시 2초 초과 - 위험"
+            description: |
+              P99 레이턴시가 {{ $value | printf "%.3f" }}초로 위험 수준입니다.
+              사용자 경험에 심각한 영향이 있습니다.
+
+        # FR-N182.3: RPS 급증 (DDoS 의심)
+        # Design Ref: DS-N182.5
+        - alert: IngressTrafficSpike
+          expr: |
+            ingress:http:total_rps_traefik
+            > 5 * clamp_min(
+              avg_over_time(ingress:http:total_rps_traefik[1h] offset 1h),
+              1
+            )
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-08
+            n2sf_domain: access_control
+            team: security
+          annotations:
+            summary: "Ingress RPS 급증 - DDoS 의심"
+            description: |
+              현재 RPS가 {{ $value | printf "%.0f" }}로 이전 시간 대비 5배 이상 급증했습니다.
+              DDoS 공격 가능성을 확인하고 WAF 규칙을 점검하십시오.
+            runbook_url: "https://docs.example.com/runbooks/ddos-response"
+            csap_reference: "CSAP D-08 접근 통제"
+
+        # FR-N182.3: RPS 급감 (서비스 장애 의심)
+        - alert: IngressTrafficDrop
+          expr: |
+            ingress:http:total_rps_traefik
+            < 0.1 * clamp_min(
+              avg_over_time(ingress:http:total_rps_traefik[1h] offset 1h),
+              0.1
+            )
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-13
+            team: sre
+          annotations:
+            summary: "Ingress 트래픽 급감 - 서비스 장애 의심"
+            description: |
+              현재 RPS가 {{ $value | printf "%.1f" }}로 이전 대비 90% 이상 감소했습니다.
+              DNS, 로드밸런서, Ingress Controller 상태를 확인하십시오.
+
+        # FR-N182.5: 대용량 요청 감지 (공격 의심)
+        - alert: IngressLargeRequestSize
+          expr: ingress:http:request_size_avg > 1048576
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-08
+            team: security
+          annotations:
+            summary: "Ingress 대용량 요청 감지"
+            description: |
+              평균 요청 크기가 {{ $value | humanize1024 }}B입니다.
+              파일 업로드 공격 또는 비정상 페이로드를 확인하십시오.
+
+        # FR-N182.6: TLS 인증서 만료 30일 전
+        # Design Ref: DS-N182.6
+        - alert: TlsCertExpiring30Days
+          expr: ingress:tls:cert_days_remaining < 30
+          for: 1h
+          labels:
+            severity: warning
+            csap_control: D-09
+            team: sre
+          annotations:
+            summary: "TLS 인증서 30일 내 만료 예정"
+            description: |
+              인증서 잔여일: {{ $value | printf "%.0f" }}일.
+              인증서 갱신을 준비하십시오.
+            runbook_url: "https://docs.example.com/runbooks/tls-cert-renewal"
+            csap_reference: "CSAP D-09 암호화"
+
+        # FR-N182.6: TLS 인증서 만료 7일 전
+        - alert: TlsCertExpiring7Days
+          expr: ingress:tls:cert_days_remaining < 7
+          for: 30m
+          labels:
+            severity: critical
+            csap_control: D-09
+            team: sre
+          annotations:
+            summary: "TLS 인증서 7일 내 만료 - 긴급"
+            description: |
+              인증서 잔여일: {{ $value | printf "%.0f" }}일.
+              즉시 인증서를 갱신하십시오. 만료 시 HTTPS 접속이 불가합니다.
+
+        # Ingress 트래픽 건강 점수 저하
+        - alert: IngressTrafficHealthLow
+          expr: ingress:traffic:health_score < 70
+          for: 10m
+          labels:
+            severity: warning
+            team: sre
+          annotations:
+            summary: "Ingress 트래픽 건강 점수 저하"
+            description: |
+              Ingress 트래픽 건강 점수가 {{ $value | printf "%.1f" }}점입니다.
+              에러율, 레이턴시를 종합 점검하십시오.
+
+        - alert: IngressTrafficHealthCritical
+          expr: ingress:traffic:health_score < 50
+          for: 5m
+          labels:
+            severity: critical
+            team: sre
+          annotations:
+            summary: "Ingress 트래픽 건강 점수 위험"
+            description: |
+              Ingress 트래픽 건강 점수가 {{ $value | printf "%.1f" }}점입니다.
+              서비스 전체 영향 분석이 필요합니다.

@@ -1,0 +1,179 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" },
+    { "type": "datasource", "id": "loki", "name": "Loki" }
+  ],
+  "description": "MTU-N181: 애플리케이션 로그 패턴 이상 탐지 - 에러율, 볼륨, 보안 패턴, 스택트레이스",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "로그 이상 탐지 종합 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 10 }] },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "에러 로그 비율",
+      "description": "FR-N181.1: 전체 로그 대비 에러 로그 비율",
+      "type": "stat",
+      "targets": [{ "expr": "sum(namespace:log:error_volume) / clamp_min(sum(namespace:log:volume), 0.001) * 100", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1000 }, { "color": "red", "value": 5000 }] },
+          "unit": "cps"
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 1 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "전체 로그 볼륨",
+      "description": "FR-N181.2: 클러스터 전체 초당 로그 수",
+      "type": "stat",
+      "targets": [{ "expr": "cluster:log:total_volume", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 1 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "보안 이벤트 (5분)",
+      "description": "FR-N181.3: 인증 실패/권한 위반 감지 수",
+      "type": "stat",
+      "targets": [{ "expr": "sum(count_over_time({namespace=~\".+\"} |~ \"(?i)(authentication failed|login failed|unauthorized|forbidden)\" [5m]))", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] }
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 1 },
+      "id": 5,
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "스택트레이스 (5분)",
+      "description": "FR-N181.5: 패닉/스택트레이스 감지 수",
+      "type": "stat",
+      "targets": [{ "expr": "sum(count_over_time({namespace=~\".+\"} |~ \"(?i)(panic|stacktrace|fatal error)\" [5m]))", "refId": "A" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "id": 10,
+      "title": "시계열 추이",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": { "defaults": { "unit": "cps", "custom": { "drawStyle": "line", "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 },
+      "id": 11,
+      "title": "네임스페이스별 에러 로그 볼륨",
+      "type": "timeseries",
+      "targets": [{ "expr": "namespace:log:error_volume", "legendFormat": "{{ namespace }}", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": { "defaults": { "unit": "cps", "custom": { "drawStyle": "line", "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "id": 12,
+      "title": "네임스페이스별 로그 볼륨",
+      "type": "timeseries",
+      "targets": [{ "expr": "namespace:log:volume", "legendFormat": "{{ namespace }}", "refId": "A" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "id": 20,
+      "title": "보안 분석",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 80 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 21,
+      "title": "인증 실패 추이",
+      "description": "FR-N181.3: 인증 실패 로그 시계열",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum by (namespace) (count_over_time({namespace=~\".+\"} |~ \"(?i)(authentication failed|login failed|unauthorized)\" [5m]))", "legendFormat": "{{ namespace }}", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${loki}" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 80 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 22,
+      "title": "스택트레이스/패닉 이벤트",
+      "description": "FR-N181.5: 패닉 및 스택트레이스 시계열",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum by (namespace) (count_over_time({namespace=~\".+\"} |~ \"(?i)(panic|stacktrace|fatal error)\" [5m]))", "legendFormat": "{{ namespace }}", "refId": "A" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+      "id": 30,
+      "title": "N2SF 등급별 로그 분석",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": { "defaults": { "unit": "cps", "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 25 },
+      "id": 31,
+      "title": "N2SF 등급별 로그 볼륨",
+      "description": "FR-N181.6: C/S/O 등급 네임스페이스별 로그 볼륨",
+      "type": "timeseries",
+      "targets": [{ "expr": "n2sf:log:volume_by_grade", "legendFormat": "[{{ label_n2sf_grade }}] {{ namespace }}", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "fieldConfig": { "defaults": { "unit": "cps", "custom": { "drawStyle": "line", "fillOpacity": 20 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 25 },
+      "id": 32,
+      "title": "C등급 네임스페이스 로그 볼륨",
+      "description": "FR-N181.6: N2SF C등급 기밀 영역 로그 볼륨 감시",
+      "type": "timeseries",
+      "targets": [{ "expr": "n2sf:log:c_grade_volume", "legendFormat": "C등급 {{ namespace }}", "refId": "A" }]
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["log", "anomaly", "loki", "security", "sre", "csap", "n2sf", "MTU-N181"],
+  "templating": {
+    "list": [
+      { "current": {}, "hide": 0, "name": "prometheus", "query": "prometheus", "refresh": 1, "type": "datasource" },
+      { "current": {}, "hide": 0, "name": "loki", "query": "loki", "refresh": 1, "type": "datasource" }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "로그 패턴 이상 탐지",
+  "uid": "log-anomaly-n181",
+  "version": 1
+}

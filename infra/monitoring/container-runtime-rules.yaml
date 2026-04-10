@@ -1,0 +1,362 @@
+# MTU-N180: 컨테이너 런타임 모니터링 PrometheusRule
+# Design Ref: DESIGN-N180 DS-N180.1 ~ DS-N180.6
+# Plan SC: FR-N180.1 ~ FR-N180.6
+# CSAP: D-12 (시스템 개발 보안), D-06 (침해사고 관리)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: container-runtime-monitoring
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: container-runtime-monitoring
+    app.kubernetes.io/part-of: saas-monitoring
+    csap-control: D-12
+    release: kube-prometheus-stack
+spec:
+  groups:
+    # =========================================================
+    # Recording Rules: 컨테이너 런타임 메트릭 사전 집계
+    # Design Ref: DS-N180.1 ~ DS-N180.6
+    # =========================================================
+    - name: container-runtime.recording
+      interval: 15s
+      rules:
+        # FR-N180.1: containerd 런타임 작업 처리율 (초당)
+        # Design Ref: DS-N180.1
+        - record: node:containerd:operations_rate
+          expr: |
+            sum by (instance, operation_type) (
+              rate(container_runtime_operations_total[5m])
+            )
+          labels:
+            monitor_domain: container_runtime
+            csap_control: D-12
+
+        # FR-N180.1: containerd 런타임 작업 오류율
+        - record: node:containerd:operations_errors_rate
+          expr: |
+            sum by (instance, operation_type) (
+              rate(container_runtime_operations_errors_total[5m])
+            )
+          labels:
+            monitor_domain: container_runtime
+
+        # FR-N180.1: containerd 런타임 작업 지연 P99 (초)
+        - record: node:containerd:operations_duration_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (instance, operation_type, le) (
+                rate(container_runtime_operations_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            monitor_domain: container_runtime
+
+        # FR-N180.1: 실행 중 컨테이너 수
+        - record: cluster:container:running_count
+          expr: |
+            count(container_last_seen{name!=""})
+          labels:
+            monitor_domain: container_runtime
+
+        # FR-N180.1: 컨테이너 상태별 수량
+        - record: cluster:container:status_count
+          expr: |
+            count by (reason) (
+              kube_pod_container_status_waiting_reason > 0
+            )
+          labels:
+            monitor_domain: container_runtime
+
+        # FR-N180.2: 이미지 풀 지연 P50 (초)
+        # Design Ref: DS-N180.2
+        - record: cluster:image:pull_duration_p50
+          expr: |
+            histogram_quantile(0.50,
+              sum by (le) (
+                rate(kubelet_image_pull_duration_seconds_bucket[15m])
+              )
+            )
+          labels:
+            monitor_domain: container_runtime
+
+        # FR-N180.2: 이미지 풀 지연 P99 (초)
+        - record: cluster:image:pull_duration_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (le) (
+                rate(kubelet_image_pull_duration_seconds_bucket[15m])
+              )
+            )
+          labels:
+            monitor_domain: container_runtime
+            csap_control: D-12
+
+        # FR-N180.2: 이미지 풀 크기 P99 (bytes)
+        - record: cluster:image:size_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (le) (
+                rate(kubelet_image_size_bytes_bucket[15m])
+              )
+            )
+          labels:
+            monitor_domain: container_runtime
+
+        # FR-N180.3: OOM Kill 발생 수 (1시간)
+        # Design Ref: DS-N180.3
+        - record: cluster:container:oom_kills_1h
+          expr: |
+            sum(
+              increase(
+                kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[1h]
+              )
+            )
+          labels:
+            monitor_domain: container_runtime
+            csap_control: D-06
+
+        # FR-N180.3: 네임스페이스별 OOM Kill 발생 수
+        - record: namespace:container:oom_kills_1h
+          expr: |
+            sum by (namespace, pod, container) (
+              increase(
+                kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[1h]
+              )
+            )
+          labels:
+            monitor_domain: container_runtime
+
+        # FR-N180.4: 컨테이너 재시작 수 (1시간)
+        # Design Ref: DS-N180.4
+        - record: cluster:container:restarts_1h
+          expr: |
+            sum by (namespace, pod, container) (
+              increase(kube_pod_container_status_restarts_total[1h])
+            )
+          labels:
+            monitor_domain: container_runtime
+
+        # FR-N180.4: CrashLoopBackOff 상태 컨테이너 수
+        - record: cluster:container:crashloop_count
+          expr: |
+            count(
+              kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} > 0
+            )
+          labels:
+            monitor_domain: container_runtime
+            csap_control: D-12
+
+        # FR-N180.6: 이미지 풀 오류 수 (15분)
+        # Design Ref: DS-N180.6
+        - record: cluster:image:pull_errors_15m
+          expr: |
+            sum(increase(kubelet_image_pull_errors_total[15m]))
+          labels:
+            monitor_domain: container_runtime
+
+        # FR-N180.6: 이미지 풀 성공률 (%)
+        - record: cluster:image:pull_success_rate
+          expr: |
+            clamp(
+              (1 - (
+                rate(kubelet_image_pull_errors_total[15m])
+                / clamp_min(rate(kubelet_image_pulls_total[15m]), 0.001)
+              )) * 100
+            , 0, 100)
+          labels:
+            monitor_domain: container_runtime
+
+        # 런타임 건강 종합 점수 (0~100)
+        - record: cluster:container_runtime:health_score
+          expr: |
+            clamp(
+              100
+              - (clamp_max(cluster:container:crashloop_count, 10) * 5)
+              - (clamp_max(cluster:container:oom_kills_1h, 10) * 3)
+              - (clamp_max(cluster:image:pull_duration_p99 / 10, 30))
+            , 0, 100)
+          labels:
+            monitor_domain: container_runtime
+
+    # =========================================================
+    # Alerting Rules: 컨테이너 런타임 이상 알림
+    # =========================================================
+    - name: container-runtime.alerts
+      rules:
+        # FR-N180.1: containerd 런타임 작업 오류
+        - alert: ContainerdOperationErrors
+          expr: |
+            sum by (instance, operation_type) (
+              rate(container_runtime_operations_errors_total[5m])
+            ) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-12
+            team: sre
+          annotations:
+            summary: "containerd 런타임 작업 오류 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}에서 {{ $labels.operation_type }} 작업 오류가
+              초당 {{ $value | printf "%.3f" }}건 발생하고 있습니다.
+            runbook_url: "https://docs.example.com/runbooks/containerd-errors"
+
+        # FR-N180.1: containerd 작업 지연 높음
+        - alert: ContainerdOperationSlow
+          expr: node:containerd:operations_duration_p99 > 30
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-12
+            team: sre
+          annotations:
+            summary: "containerd 작업 지연 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}의 {{ $labels.operation_type }} P99 지연이
+              {{ $value | printf "%.1f" }}초입니다. 디스크 I/O 또는 리소스 문제를 점검하십시오.
+
+        # FR-N180.2: 이미지 풀 지연 경고
+        - alert: ImagePullSlowP99
+          expr: cluster:image:pull_duration_p99 > 30
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-12
+            team: sre
+          annotations:
+            summary: "이미지 풀 P99 지연 30초 초과"
+            description: |
+              이미지 풀 P99 지연이 {{ $value | printf "%.1f" }}초입니다.
+              레지스트리 접근성 또는 네트워크 대역폭을 확인하십시오.
+            runbook_url: "https://docs.example.com/runbooks/image-pull-slow"
+
+        # FR-N180.2: 이미지 풀 지연 위험
+        - alert: ImagePullSlowCritical
+          expr: cluster:image:pull_duration_p99 > 120
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-12
+            team: sre
+          annotations:
+            summary: "이미지 풀 P99 지연 2분 초과 - 위험"
+            description: |
+              이미지 풀 P99 지연이 {{ $value | printf "%.1f" }}초입니다.
+              배포 실패가 예상됩니다. 즉시 레지스트리 상태를 확인하십시오.
+
+        # FR-N180.3: OOM Kill 발생
+        - alert: ContainerOOMKilled
+          expr: |
+            increase(
+              kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[5m]
+            ) > 0
+          for: 1m
+          labels:
+            severity: warning
+            csap_control: D-06
+            team: sre
+          annotations:
+            summary: "컨테이너 OOM Kill 발생 ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: |
+              {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} 컨테이너가
+              OOM Kill되었습니다. 메모리 limit 조정이 필요합니다.
+            runbook_url: "https://docs.example.com/runbooks/container-oom"
+
+        # FR-N180.3: OOM Kill 빈발
+        - alert: ContainerOOMKilledFrequent
+          expr: cluster:container:oom_kills_1h > 5
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-06
+            team: sre
+          annotations:
+            summary: "OOM Kill 빈발 - 1시간 내 {{ $value }}건"
+            description: |
+              최근 1시간 내 {{ $value | printf "%.0f" }}건의 OOM Kill이 발생했습니다.
+              클러스터 메모리 리소스 전체 점검이 필요합니다.
+
+        # FR-N180.4: CrashLoopBackOff 탐지
+        - alert: ContainerCrashLoopBackOff
+          expr: |
+            kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} > 0
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-12
+            team: sre
+          annotations:
+            summary: "CrashLoopBackOff 감지 ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: |
+              {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}가
+              CrashLoopBackOff 상태입니다. 파드 로그를 확인하십시오.
+            runbook_url: "https://docs.example.com/runbooks/crashloop"
+
+        # FR-N180.4: 높은 컨테이너 재시작 수
+        - alert: ContainerHighRestartRate
+          expr: cluster:container:restarts_1h > 5
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-12
+            team: sre
+          annotations:
+            summary: "컨테이너 재시작 빈발 ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: |
+              {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}가
+              최근 1시간 내 {{ $value | printf "%.0f" }}회 재시작되었습니다.
+
+        # FR-N180.6: 이미지 풀 오류 발생
+        - alert: ImagePullErrors
+          expr: cluster:image:pull_errors_15m > 3
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-12
+            team: sre
+          annotations:
+            summary: "이미지 풀 오류 빈발"
+            description: |
+              최근 15분 내 {{ $value | printf "%.0f" }}건의 이미지 풀 오류가 발생했습니다.
+              레지스트리 인증 및 네트워크 접근성을 확인하십시오.
+            runbook_url: "https://docs.example.com/runbooks/image-pull-errors"
+
+        # FR-N180.6: 이미지 풀 오류 위험
+        - alert: ImagePullErrorsCritical
+          expr: cluster:image:pull_errors_15m > 10
+          for: 3m
+          labels:
+            severity: critical
+            csap_control: D-12
+            team: sre
+          annotations:
+            summary: "이미지 풀 오류 위험 수준"
+            description: |
+              최근 15분 내 {{ $value | printf "%.0f" }}건의 이미지 풀 오류가 발생했습니다.
+              레지스트리 장애 가능성이 높습니다. 즉시 확인하십시오.
+
+        # 런타임 건강 점수 저하
+        - alert: ContainerRuntimeHealthLow
+          expr: cluster:container_runtime:health_score < 70
+          for: 10m
+          labels:
+            severity: warning
+            team: sre
+          annotations:
+            summary: "컨테이너 런타임 건강 점수 저하"
+            description: |
+              컨테이너 런타임 건강 종합 점수가 {{ $value | printf "%.1f" }}점입니다.
+              CrashLoop, OOM Kill, 이미지 풀 지연을 종합 점검하십시오.
+
+        - alert: ContainerRuntimeHealthCritical
+          expr: cluster:container_runtime:health_score < 50
+          for: 5m
+          labels:
+            severity: critical
+            team: sre
+          annotations:
+            summary: "컨테이너 런타임 건강 점수 위험"
+            description: |
+              컨테이너 런타임 건강 종합 점수가 {{ $value | printf "%.1f" }}점입니다.
+              런타임 인프라 긴급 점검이 필요합니다.

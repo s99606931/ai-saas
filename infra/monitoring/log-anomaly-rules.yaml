@@ -1,0 +1,276 @@
+# MTU-N181: 애플리케이션 로그 패턴 이상 탐지 규칙
+# Design Ref: DESIGN-N181 DS-N181.1 ~ DS-N181.5
+# Plan SC: FR-N181.1 ~ FR-N181.5
+# CSAP: D-06 (침해사고 관리), D-08 (접근 통제), D-12 (시스템 개발 보안)
+# 적용 대상: Loki Ruler (LogQL 기반 알림)
+
+# =========================================================
+# Loki Ruler 알림 규칙 (ruler/rules 경로에 배포)
+# =========================================================
+groups:
+  # =========================================================
+  # FR-N181.1: 에러 로그 비율 모니터링
+  # Design Ref: DS-N181.1
+  # =========================================================
+  - name: log-anomaly.error-rate
+    rules:
+      # 에러 로그 비율 경고 (10% 초과)
+      - alert: LogErrorRateHigh
+        expr: |
+          sum by (namespace, app) (
+            rate({namespace=~".+"} |= "error" [5m])
+          )
+          / clamp_min(
+            sum by (namespace, app) (
+              rate({namespace=~".+"} [5m])
+            ), 0.001
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          csap_control: D-06
+          team: sre
+        annotations:
+          summary: "에러 로그 비율 10% 초과 ({{ $labels.namespace }}/{{ $labels.app }})"
+          description: |
+            {{ $labels.namespace }}/{{ $labels.app }}의 에러 로그 비율이
+            {{ $value | printf "%.1f" }}%입니다. 애플리케이션 상태를 확인하십시오.
+          runbook_url: "https://docs.example.com/runbooks/log-error-rate"
+
+      # 에러 로그 비율 위험 (30% 초과)
+      - alert: LogErrorRateCritical
+        expr: |
+          sum by (namespace, app) (
+            rate({namespace=~".+"} |= "error" [5m])
+          )
+          / clamp_min(
+            sum by (namespace, app) (
+              rate({namespace=~".+"} [5m])
+            ), 0.001
+          ) > 0.3
+        for: 3m
+        labels:
+          severity: critical
+          csap_control: D-06
+          team: sre
+        annotations:
+          summary: "에러 로그 비율 30% 초과 - 위험 ({{ $labels.namespace }}/{{ $labels.app }})"
+          description: |
+            {{ $labels.namespace }}/{{ $labels.app }}의 에러 로그 비율이
+            {{ $value | printf "%.1f" }}%로 위험 수준입니다. 즉시 점검이 필요합니다.
+
+      # WARN 로그 비율 경고 (20% 초과)
+      - alert: LogWarnRateHigh
+        expr: |
+          sum by (namespace, app) (
+            rate({namespace=~".+"} |= "warn" [5m])
+          )
+          / clamp_min(
+            sum by (namespace, app) (
+              rate({namespace=~".+"} [5m])
+            ), 0.001
+          ) > 0.2
+        for: 10m
+        labels:
+          severity: warning
+          csap_control: D-06
+          team: sre
+        annotations:
+          summary: "WARN 로그 비율 20% 초과 ({{ $labels.namespace }}/{{ $labels.app }})"
+          description: |
+            WARN 로그 비율이 높습니다. 잠재적 문제를 사전 점검하십시오.
+
+  # =========================================================
+  # FR-N181.2: 로그 볼륨 이상 탐지
+  # Design Ref: DS-N181.2
+  # =========================================================
+  - name: log-anomaly.volume
+    rules:
+      # 로그 볼륨 급증 (3배 이상)
+      - alert: LogVolumeSurge
+        expr: |
+          sum by (namespace) (rate({namespace=~".+"} [5m]))
+          > 3 * clamp_min(
+            sum by (namespace) (rate({namespace=~".+"} [1h] offset 1h)),
+            0.001
+          )
+        for: 10m
+        labels:
+          severity: warning
+          csap_control: D-06
+          team: sre
+        annotations:
+          summary: "로그 볼륨 급증 ({{ $labels.namespace }})"
+          description: |
+            {{ $labels.namespace }}의 로그 볼륨이 이전 대비 3배 이상 급증했습니다.
+            무한 루프, 재시도 폭풍, 디버그 로그 활성화 등을 확인하십시오.
+          runbook_url: "https://docs.example.com/runbooks/log-volume-surge"
+
+      # 로그 볼륨 급증 위험 (10배 이상)
+      - alert: LogVolumeSurgeCritical
+        expr: |
+          sum by (namespace) (rate({namespace=~".+"} [5m]))
+          > 10 * clamp_min(
+            sum by (namespace) (rate({namespace=~".+"} [1h] offset 1h)),
+            0.001
+          )
+        for: 5m
+        labels:
+          severity: critical
+          csap_control: D-06
+          team: sre
+        annotations:
+          summary: "로그 볼륨 폭증 10배 - 위험 ({{ $labels.namespace }})"
+          description: |
+            {{ $labels.namespace }}의 로그 볼륨이 10배 이상 폭증했습니다.
+            디스크 용량 고갈 위험이 있습니다. 즉시 원인을 파악하십시오.
+
+      # 로그 볼륨 급감 (정상 대비 10% 미만)
+      - alert: LogVolumeDropped
+        expr: |
+          sum by (namespace) (rate({namespace=~".+"} [5m]))
+          < 0.1 * clamp_min(
+            sum by (namespace) (rate({namespace=~".+"} [1h] offset 1h)),
+            0.001
+          )
+        for: 15m
+        labels:
+          severity: warning
+          csap_control: D-06
+          team: sre
+        annotations:
+          summary: "로그 볼륨 급감 ({{ $labels.namespace }})"
+          description: |
+            {{ $labels.namespace }}의 로그 볼륨이 정상 대비 10% 미만으로 급감했습니다.
+            서비스 중단 또는 로그 수집 장애 가능성을 확인하십시오.
+
+  # =========================================================
+  # FR-N181.3: 보안 관련 로그 패턴 감지
+  # Design Ref: DS-N181.3
+  # =========================================================
+  - name: log-anomaly.security
+    rules:
+      # 인증 실패 다발
+      - alert: AuthenticationFailureBurst
+        expr: |
+          sum by (namespace) (
+            count_over_time(
+              {namespace=~".+"} |~ "(?i)(authentication failed|login failed|unauthorized|401)" [5m]
+            )
+          ) > 10
+        for: 1m
+        labels:
+          severity: critical
+          csap_control: D-08
+          n2sf_domain: access_control
+          team: security
+        annotations:
+          summary: "인증 실패 다발 감지 ({{ $labels.namespace }})"
+          description: |
+            {{ $labels.namespace }}에서 5분 내 인증 실패가 {{ $value }}건 발생했습니다.
+            무차별 대입 공격(Brute Force) 가능성을 확인하십시오.
+          runbook_url: "https://docs.example.com/runbooks/auth-failure-burst"
+          csap_reference: "CSAP D-08 접근 통제"
+
+      # 권한 위반 감지
+      - alert: AuthorizationViolation
+        expr: |
+          sum by (namespace) (
+            count_over_time(
+              {namespace=~".+"} |~ "(?i)(forbidden|access denied|permission denied|403)" [5m]
+            )
+          ) > 5
+        for: 3m
+        labels:
+          severity: warning
+          csap_control: D-08
+          team: security
+        annotations:
+          summary: "권한 위반 감지 ({{ $labels.namespace }})"
+          description: |
+            {{ $labels.namespace }}에서 5분 내 권한 위반이 {{ $value }}건 발생했습니다.
+            RBAC 설정 및 비인가 접근 시도를 확인하십시오.
+
+      # SQL 주입 의심 패턴
+      - alert: SqlInjectionSuspicion
+        expr: |
+          sum by (namespace) (
+            count_over_time(
+              {namespace=~".+"} |~ "(?i)(sql injection|union select|drop table|1=1|or 1=)" [5m]
+            )
+          ) > 0
+        for: 1m
+        labels:
+          severity: critical
+          csap_control: D-12
+          team: security
+        annotations:
+          summary: "SQL 주입 의심 패턴 감지 ({{ $labels.namespace }})"
+          description: |
+            {{ $labels.namespace }}에서 SQL 주입 의심 패턴이 감지되었습니다.
+            즉시 보안팀에 보고하십시오.
+          csap_reference: "CSAP D-12 시스템 개발 보안"
+
+      # XSS 의심 패턴
+      - alert: XssSuspicion
+        expr: |
+          sum by (namespace) (
+            count_over_time(
+              {namespace=~".+"} |~ "(?i)(<script|javascript:|onerror=|onload=)" [5m]
+            )
+          ) > 0
+        for: 1m
+        labels:
+          severity: critical
+          csap_control: D-12
+          team: security
+        annotations:
+          summary: "XSS 의심 패턴 감지 ({{ $labels.namespace }})"
+          description: |
+            {{ $labels.namespace }}에서 XSS 의심 패턴이 감지되었습니다.
+            입력 검증 및 새니타이제이션 상태를 확인하십시오.
+
+  # =========================================================
+  # FR-N181.5: 스택트레이스/패닉 로그 감지
+  # Design Ref: DS-N181.5
+  # =========================================================
+  - name: log-anomaly.stacktrace
+    rules:
+      # 스택트레이스/패닉 감지
+      - alert: StackTraceDetected
+        expr: |
+          sum by (namespace, app) (
+            count_over_time(
+              {namespace=~".+"} |~ "(?i)(panic|stacktrace|stack trace|fatal error|unhandled exception)" [5m]
+            )
+          ) > 0
+        for: 1m
+        labels:
+          severity: warning
+          csap_control: D-12
+          team: sre
+        annotations:
+          summary: "스택트레이스/패닉 감지 ({{ $labels.namespace }}/{{ $labels.app }})"
+          description: |
+            {{ $labels.namespace }}/{{ $labels.app }}에서 패닉 또는 스택트레이스가 감지되었습니다.
+            애플리케이션 안정성 점검이 필요합니다.
+          runbook_url: "https://docs.example.com/runbooks/stacktrace-detected"
+
+      # 스택트레이스 빈발
+      - alert: StackTraceFrequent
+        expr: |
+          sum by (namespace, app) (
+            count_over_time(
+              {namespace=~".+"} |~ "(?i)(panic|stacktrace|stack trace|fatal error|unhandled exception)" [1h]
+            )
+          ) > 10
+        for: 5m
+        labels:
+          severity: critical
+          csap_control: D-12
+          team: sre
+        annotations:
+          summary: "스택트레이스 빈발 ({{ $labels.namespace }}/{{ $labels.app }})"
+          description: |
+            {{ $labels.namespace }}/{{ $labels.app }}에서 1시간 내 {{ $value }}건의
+            패닉/스택트레이스가 발생했습니다. 근본 원인 분석이 필요합니다.

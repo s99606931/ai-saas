@@ -1,0 +1,223 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "description": "MTU-N182: Ingress/Gateway API 트래픽 모니터링 - HTTP 상태, 레이턴시, RPS, TLS",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Ingress 트래픽 종합 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "총 RPS",
+      "description": "FR-N182.3: 총 초당 요청 수",
+      "type": "stat",
+      "targets": [{ "expr": "ingress:http:total_rps_traefik", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 1 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "5xx 에러율",
+      "description": "FR-N182.1: HTTP 5xx 에러율 (%)",
+      "type": "stat",
+      "targets": [{ "expr": "ingress:http:error_rate_5xx_traefik", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.2 }, { "color": "red", "value": 0.5 }] },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 1 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "P99 레이턴시",
+      "description": "FR-N182.2: HTTP 요청 P99 레이턴시 (초)",
+      "type": "stat",
+      "targets": [{ "expr": "ingress:http:latency_p99_traefik", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 7 }, { "color": "green", "value": 30 }] },
+          "unit": "d"
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 1 },
+      "id": 5,
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["min"] } },
+      "title": "TLS 인증서 잔여일",
+      "description": "FR-N182.6: TLS 인증서 만료까지 남은 일수",
+      "type": "stat",
+      "targets": [{ "expr": "min(ingress:tls:cert_days_remaining)", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 50 }, { "color": "green", "value": 70 }] },
+          "unit": "none", "min": 0, "max": 100
+        }
+      },
+      "gridPos": { "h": 5, "w": 24, "x": 0, "y": 6 },
+      "id": 6,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal" },
+      "title": "Ingress 트래픽 건강 점수",
+      "type": "stat",
+      "targets": [{ "expr": "ingress:traffic:health_score", "refId": "A" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 11 },
+      "id": 10,
+      "title": "HTTP 상태 코드 분석",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 20, "stacking": { "mode": "normal" } } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 11,
+      "title": "HTTP 상태 코드별 RPS",
+      "description": "FR-N182.1: 상태 코드별 요청 분포",
+      "type": "timeseries",
+      "targets": [{ "expr": "ingress:http:requests_by_code_traefik", "legendFormat": "{{ code }} ({{ entrypoint }})", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "percent", "custom": { "drawStyle": "line", "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 12,
+      "title": "에러율 추이 (4xx/5xx)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "ingress:http:error_rate_5xx_traefik", "legendFormat": "5xx 에러율", "refId": "A" },
+        { "expr": "ingress:http:error_rate_4xx", "legendFormat": "4xx 에러율", "refId": "B" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "id": 20,
+      "title": "레이턴시 분석",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 21 },
+      "id": 21,
+      "title": "레이턴시 분위수 추이",
+      "description": "FR-N182.2: P50/P90/P99 레이턴시",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "ingress:http:latency_p50_traefik", "legendFormat": "P50", "refId": "A" },
+        { "expr": "ingress:http:latency_p90_traefik", "legendFormat": "P90", "refId": "B" },
+        { "expr": "ingress:http:latency_p99_traefik", "legendFormat": "P99", "refId": "C" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
+      "id": 22,
+      "title": "Entrypoint별 RPS 추이",
+      "description": "FR-N182.3: 진입점별 초당 요청 수",
+      "type": "timeseries",
+      "targets": [{ "expr": "ingress:http:rps_by_entrypoint", "legendFormat": "{{ entrypoint }}", "refId": "A" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 29 },
+      "id": 30,
+      "title": "트래픽 분석 및 보안",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 30 },
+      "id": 31,
+      "title": "총 RPS 추이",
+      "description": "FR-N182.5: 비정상 트래픽 패턴 모니터링",
+      "type": "timeseries",
+      "targets": [{ "expr": "ingress:http:total_rps_traefik", "legendFormat": "총 RPS", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "decbytes", "custom": { "drawStyle": "line", "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 30 },
+      "id": 32,
+      "title": "요청/응답 크기",
+      "description": "FR-N182.5: 요청 및 응답 평균 크기",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "ingress:http:request_size_avg", "legendFormat": "요청 평균 크기", "refId": "A" },
+        { "expr": "ingress:http:response_size_avg", "legendFormat": "응답 평균 크기", "refId": "B" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 38 },
+      "id": 40,
+      "title": "TLS 인증서 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "d", "custom": { "drawStyle": "line", "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 39 },
+      "id": 41,
+      "title": "TLS 인증서 잔여일 추이",
+      "description": "FR-N182.6: TLS 인증서 만료 예측",
+      "type": "timeseries",
+      "targets": [{ "expr": "ingress:tls:cert_days_remaining", "legendFormat": "{{ cn }}", "refId": "A" }]
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["ingress", "traffic", "gateway", "sre", "csap", "tls", "MTU-N182"],
+  "templating": {
+    "list": [
+      { "current": {}, "hide": 0, "name": "datasource", "query": "prometheus", "refresh": 1, "type": "datasource" }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Ingress 트래픽 모니터링",
+  "uid": "ingress-traffic-n182",
+  "version": 1
+}

@@ -1,0 +1,105 @@
+# MTU-N181: 로그 메트릭 Prometheus Recording Rules
+# Design Ref: DESIGN-N181 DS-N181.6
+# Plan SC: FR-N181.6
+# CSAP: D-06 (침해사고 관리)
+# N2SF: N-03 (격리 영역)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: log-metrics-recording
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: log-metrics-recording
+    app.kubernetes.io/part-of: saas-monitoring
+    csap-control: D-06
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: log-metrics.recording
+      interval: 30s
+      rules:
+        # FR-N181.6: N2SF 등급별 로그 볼륨 (초당 로그 수)
+        # Design Ref: DS-N181.6
+        - record: n2sf:log:volume_by_grade
+          expr: |
+            sum by (namespace, label_n2sf_grade) (
+              rate(promtail_custom_log_entries_total[5m])
+              * on(namespace) group_left(label_n2sf_grade)
+              kube_namespace_labels{label_n2sf_grade=~".+"}
+            )
+          labels:
+            monitor_domain: log_anomaly
+            n2sf_domain: log_analysis
+
+        # FR-N181.6: N2SF C등급 네임스페이스 로그 볼륨 (감사 목적)
+        - record: n2sf:log:c_grade_volume
+          expr: |
+            sum by (namespace) (
+              rate(promtail_custom_log_entries_total[5m])
+              * on(namespace) group_left(label_n2sf_grade)
+              kube_namespace_labels{label_n2sf_grade="C"}
+            )
+          labels:
+            monitor_domain: log_anomaly
+            n2sf_grade: C
+
+        # 전체 클러스터 로그 볼륨 (초당)
+        - record: cluster:log:total_volume
+          expr: |
+            sum(rate(promtail_custom_log_entries_total[5m]))
+          labels:
+            monitor_domain: log_anomaly
+
+        # 네임스페이스별 로그 볼륨 (초당)
+        - record: namespace:log:volume
+          expr: |
+            sum by (namespace) (
+              rate(promtail_custom_log_entries_total[5m])
+            )
+          labels:
+            monitor_domain: log_anomaly
+
+        # 네임스페이스별 에러 로그 볼륨 추정
+        - record: namespace:log:error_volume
+          expr: |
+            sum by (namespace) (
+              rate(promtail_custom_log_entries_total{level="error"}[5m])
+            )
+          labels:
+            monitor_domain: log_anomaly
+            csap_control: D-06
+
+    # 로그 메트릭 기반 알림
+    - name: log-metrics.alerts
+      rules:
+        # N2SF C등급 로그 볼륨 이상
+        - alert: N2sfGradeCLogVolumeAnomaly
+          expr: |
+            n2sf:log:c_grade_volume > 100
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-06
+            n2sf_domain: log_analysis
+            n2sf_grade: C
+            team: security
+          annotations:
+            summary: "N2SF C등급 네임스페이스 로그 볼륨 이상"
+            description: |
+              C등급 네임스페이스 {{ $labels.namespace }}의 로그 볼륨이
+              초당 {{ $value | printf "%.1f" }}건으로 높습니다.
+              기밀 데이터 관련 이상 활동을 점검하십시오.
+
+        # 클러스터 전체 로그 볼륨 급증
+        - alert: ClusterLogVolumeHigh
+          expr: cluster:log:total_volume > 10000
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-06
+            team: sre
+          annotations:
+            summary: "클러스터 전체 로그 볼륨 급증"
+            description: |
+              클러스터 전체 로그 볼륨이 초당 {{ $value | printf "%.0f" }}건입니다.
+              Loki 스토리지 용량을 확인하십시오.

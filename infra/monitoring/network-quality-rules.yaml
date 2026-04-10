@@ -1,0 +1,346 @@
+# MTU-N179: 네트워크 품질 모니터링 PrometheusRule
+# Design Ref: DESIGN-N179 DS-N179.1 ~ DS-N179.6
+# Plan SC: FR-N179.1 ~ FR-N179.6
+# CSAP: D-13 (네트워크 보안), D-06 (감사 로깅)
+# N2SF: N-03 (격리 영역)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: network-quality-monitoring
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: network-quality-monitoring
+    app.kubernetes.io/part-of: saas-monitoring
+    csap-control: D-13
+    n2sf-domain: network
+    release: kube-prometheus-stack
+spec:
+  groups:
+    # =========================================================
+    # Recording Rules: 네트워크 품질 메트릭 사전 집계
+    # Design Ref: DS-N179.1 ~ DS-N179.6
+    # =========================================================
+    - name: network-quality.recording
+      interval: 15s
+      rules:
+        # FR-N179.1: TCP 재전송률 (%)
+        # Design Ref: DS-N179.1
+        - record: node:network:tcp_retransmit_rate
+          expr: |
+            clamp_min(
+              rate(node_netstat_Tcp_RetransSegs[5m])
+              / clamp_min(rate(node_netstat_Tcp_OutSegs[5m]), 1)
+              * 100
+            , 0)
+          labels:
+            monitor_domain: network_quality
+            csap_control: D-13
+
+        # FR-N179.1: TCP 재전송 절대 수치 (초당)
+        - record: node:network:tcp_retransmit_per_sec
+          expr: |
+            rate(node_netstat_Tcp_RetransSegs[5m])
+          labels:
+            monitor_domain: network_quality
+
+        # FR-N179.2: 인터페이스별 수신 대역폭 (bytes/sec)
+        # Design Ref: DS-N179.2
+        - record: node:network:receive_bandwidth_bytes
+          expr: |
+            rate(node_network_receive_bytes_total{device!~"lo|veth.*|cali.*|flannel.*|cni0"}[5m])
+          labels:
+            monitor_domain: network_quality
+
+        # FR-N179.2: 인터페이스별 송신 대역폭 (bytes/sec)
+        - record: node:network:transmit_bandwidth_bytes
+          expr: |
+            rate(node_network_transmit_bytes_total{device!~"lo|veth.*|cali.*|flannel.*|cni0"}[5m])
+          labels:
+            monitor_domain: network_quality
+
+        # FR-N179.2: 인터페이스별 총 대역폭 사용률 (%)
+        - record: node:network:bandwidth_utilization
+          expr: |
+            clamp_min(
+              (
+                rate(node_network_receive_bytes_total{device!~"lo|veth.*|cali.*|flannel.*|cni0"}[5m])
+                + rate(node_network_transmit_bytes_total{device!~"lo|veth.*|cali.*|flannel.*|cni0"}[5m])
+              )
+              / clamp_min(node_network_speed_bytes{device!~"lo|veth.*|cali.*|flannel.*|cni0"}, 1)
+              * 100
+            , 0)
+          labels:
+            monitor_domain: network_quality
+            csap_control: D-13
+
+        # FR-N179.3: 패킷 손실률 (%)
+        # Design Ref: DS-N179.3
+        - record: node:network:packet_loss_rate
+          expr: |
+            clamp_min(
+              (
+                rate(node_network_receive_drop_total{device!~"lo|veth.*|cali.*|flannel.*|cni0"}[5m])
+                + rate(node_network_transmit_drop_total{device!~"lo|veth.*|cali.*|flannel.*|cni0"}[5m])
+              )
+              / clamp_min(
+                rate(node_network_receive_packets_total{device!~"lo|veth.*|cali.*|flannel.*|cni0"}[5m])
+                + rate(node_network_transmit_packets_total{device!~"lo|veth.*|cali.*|flannel.*|cni0"}[5m])
+              , 1)
+              * 100
+            , 0)
+          labels:
+            monitor_domain: network_quality
+            csap_control: D-13
+
+        # FR-N179.3: 네트워크 오류율 (%)
+        - record: node:network:error_rate
+          expr: |
+            clamp_min(
+              (
+                rate(node_network_receive_errs_total{device!~"lo|veth.*|cali.*|flannel.*|cni0"}[5m])
+                + rate(node_network_transmit_errs_total{device!~"lo|veth.*|cali.*|flannel.*|cni0"}[5m])
+              )
+              / clamp_min(
+                rate(node_network_receive_packets_total{device!~"lo|veth.*|cali.*|flannel.*|cni0"}[5m])
+                + rate(node_network_transmit_packets_total{device!~"lo|veth.*|cali.*|flannel.*|cni0"}[5m])
+              , 1)
+              * 100
+            , 0)
+          labels:
+            monitor_domain: network_quality
+
+        # FR-N179.5: N2SF 등급별 네트워크 트래픽 (bytes/sec)
+        # Design Ref: DS-N179.5
+        - record: n2sf:network:traffic_by_grade_receive
+          expr: |
+            sum by (namespace, label_n2sf_grade) (
+              rate(container_network_receive_bytes_total[5m])
+              * on(namespace) group_left(label_n2sf_grade)
+              kube_namespace_labels{label_n2sf_grade=~".+"}
+            )
+          labels:
+            monitor_domain: network_quality
+            n2sf_domain: network
+
+        - record: n2sf:network:traffic_by_grade_transmit
+          expr: |
+            sum by (namespace, label_n2sf_grade) (
+              rate(container_network_transmit_bytes_total[5m])
+              * on(namespace) group_left(label_n2sf_grade)
+              kube_namespace_labels{label_n2sf_grade=~".+"}
+            )
+          labels:
+            monitor_domain: network_quality
+            n2sf_domain: network
+
+        # FR-N179.6: TCP RTT 평균 (초)
+        # Design Ref: DS-N179.6
+        - record: node:network:tcp_rtt_avg_seconds
+          expr: |
+            node_tcp_rtt_avg_seconds
+          labels:
+            monitor_domain: network_quality
+            csap_control: D-13
+
+        # FR-N179.6: TCP RTT P99 (초)
+        - record: node:network:tcp_rtt_p99_seconds
+          expr: |
+            node_tcp_rtt_p99_seconds
+          labels:
+            monitor_domain: network_quality
+
+        # 네트워크 품질 종합 점수 (0~100)
+        - record: node:network:quality_score
+          expr: |
+            clamp(
+              100
+              - (node:network:tcp_retransmit_rate * 10)
+              - (node:network:packet_loss_rate * 50)
+              - (clamp_max(node:network:bandwidth_utilization, 100) * 0.3)
+            , 0, 100)
+          labels:
+            monitor_domain: network_quality
+
+    # =========================================================
+    # Alerting Rules: 네트워크 품질 이상 알림
+    # =========================================================
+    - name: network-quality.alerts
+      rules:
+        # FR-N179.1: TCP 재전송률 경고
+        - alert: NetworkTcpRetransmitRateHigh
+          expr: node:network:tcp_retransmit_rate > 1
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-13
+            n2sf_domain: network
+            team: sre
+          annotations:
+            summary: "TCP 재전송률 높음 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}의 TCP 재전송률이 {{ $value | printf "%.2f" }}%로
+              임계치 1%를 초과했습니다. 네트워크 품질 저하가 의심됩니다.
+            runbook_url: "https://docs.example.com/runbooks/network-tcp-retransmit"
+            csap_reference: "CSAP D-13 네트워크 보안"
+
+        # FR-N179.1: TCP 재전송률 위험
+        - alert: NetworkTcpRetransmitRateCritical
+          expr: node:network:tcp_retransmit_rate > 5
+          for: 3m
+          labels:
+            severity: critical
+            csap_control: D-13
+            n2sf_domain: network
+            team: sre
+          annotations:
+            summary: "TCP 재전송률 위험 수준 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}의 TCP 재전송률이 {{ $value | printf "%.2f" }}%로
+              위험 임계치 5%를 초과했습니다. 즉시 네트워크 점검이 필요합니다.
+            runbook_url: "https://docs.example.com/runbooks/network-tcp-retransmit-critical"
+
+        # FR-N179.2: 대역폭 사용률 경고
+        - alert: NetworkBandwidthUtilizationHigh
+          expr: node:network:bandwidth_utilization > 80
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-13
+            team: sre
+          annotations:
+            summary: "대역폭 사용률 80% 초과 ({{ $labels.instance }}/{{ $labels.device }})"
+            description: |
+              인터페이스 {{ $labels.device }}의 대역폭 사용률이
+              {{ $value | printf "%.1f" }}%입니다. 트래픽 증가 추이를 확인하십시오.
+            runbook_url: "https://docs.example.com/runbooks/network-bandwidth"
+
+        # FR-N179.2: 대역폭 사용률 위험
+        - alert: NetworkBandwidthUtilizationCritical
+          expr: node:network:bandwidth_utilization > 95
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-13
+            team: sre
+          annotations:
+            summary: "대역폭 포화 임계치 도달 ({{ $labels.instance }}/{{ $labels.device }})"
+            description: |
+              인터페이스 {{ $labels.device }}의 대역폭 사용률이
+              {{ $value | printf "%.1f" }}%로 포화 상태입니다. 즉시 조치가 필요합니다.
+
+        # FR-N179.3: 패킷 손실률 경고
+        - alert: NetworkPacketLossRateHigh
+          expr: node:network:packet_loss_rate > 0.01
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-13
+            team: sre
+          annotations:
+            summary: "패킷 손실률 증가 ({{ $labels.instance }}/{{ $labels.device }})"
+            description: |
+              인터페이스 {{ $labels.device }}의 패킷 손실률이
+              {{ $value | printf "%.4f" }}%입니다. 네트워크 인터페이스 상태를 점검하십시오.
+
+        # FR-N179.3: 패킷 손실률 위험
+        - alert: NetworkPacketLossRateCritical
+          expr: node:network:packet_loss_rate > 0.1
+          for: 3m
+          labels:
+            severity: critical
+            csap_control: D-13
+            team: sre
+          annotations:
+            summary: "패킷 손실률 위험 수준 ({{ $labels.instance }}/{{ $labels.device }})"
+            description: |
+              인터페이스 {{ $labels.device }}의 패킷 손실률이
+              {{ $value | printf "%.4f" }}%로 위험 수준입니다. 서비스 영향 분석이 필요합니다.
+
+        # FR-N179.3: 네트워크 오류 발생
+        - alert: NetworkInterfaceErrors
+          expr: node:network:error_rate > 0.01
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-13
+            team: sre
+          annotations:
+            summary: "네트워크 인터페이스 오류 발생 ({{ $labels.instance }}/{{ $labels.device }})"
+            description: |
+              인터페이스 {{ $labels.device }}에서 네트워크 오류가 발생하고 있습니다.
+              오류율: {{ $value | printf "%.4f" }}%. 하드웨어 또는 드라이버 문제를 점검하십시오.
+
+        # FR-N179.5: N2SF C등급 영역 비정상 트래픽
+        - alert: N2sfGradeCNetworkAnomaly
+          expr: |
+            n2sf:network:traffic_by_grade_transmit{label_n2sf_grade="C"}
+            > 10485760
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-13
+            n2sf_domain: network
+            n2sf_grade: C
+            team: security
+          annotations:
+            summary: "N2SF C등급 영역 비정상 외부 트래픽 감지"
+            description: |
+              C등급 네임스페이스 {{ $labels.namespace }}에서
+              {{ $value | humanize1024 }}B/s의 외부 전송 트래픽이 감지되었습니다.
+              기밀 데이터 유출 가능성을 확인하십시오.
+
+        # FR-N179.6: 네트워크 지연 경고
+        - alert: NetworkHighLatency
+          expr: node:network:tcp_rtt_avg_seconds > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-13
+            team: sre
+          annotations:
+            summary: "네트워크 지연 증가 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}의 평균 TCP RTT가
+              {{ $value | printf "%.3f" }}초로 100ms를 초과했습니다.
+
+        # FR-N179.6: 네트워크 지연 위험
+        - alert: NetworkHighLatencyCritical
+          expr: node:network:tcp_rtt_avg_seconds > 0.5
+          for: 3m
+          labels:
+            severity: critical
+            csap_control: D-13
+            team: sre
+          annotations:
+            summary: "네트워크 지연 위험 수준 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}의 평균 TCP RTT가
+              {{ $value | printf "%.3f" }}초로 500ms를 초과했습니다.
+              서비스 응답 시간에 심각한 영향이 예상됩니다.
+
+        # 네트워크 품질 종합 점수 저하
+        - alert: NetworkQualityScoreLow
+          expr: node:network:quality_score < 70
+          for: 10m
+          labels:
+            severity: warning
+            team: sre
+          annotations:
+            summary: "네트워크 품질 점수 저하 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}의 네트워크 품질 종합 점수가
+              {{ $value | printf "%.1f" }}점으로 70점 미만입니다.
+              TCP 재전송, 패킷 손실, 대역폭 상태를 종합 점검하십시오.
+
+        - alert: NetworkQualityScoreCritical
+          expr: node:network:quality_score < 50
+          for: 5m
+          labels:
+            severity: critical
+            team: sre
+          annotations:
+            summary: "네트워크 품질 점수 위험 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}의 네트워크 품질 종합 점수가
+              {{ $value | printf "%.1f" }}점으로 50점 미만입니다.
+              즉시 네트워크 인프라 점검이 필요합니다.

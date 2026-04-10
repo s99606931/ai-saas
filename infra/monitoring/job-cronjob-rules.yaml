@@ -1,0 +1,263 @@
+# MTU-N183: 쿠버네티스 잡/크론잡 모니터링 PrometheusRule
+# Design Ref: DESIGN-N183 DS-N183.1 ~ DS-N183.6
+# Plan SC: FR-N183.1 ~ FR-N183.6
+# CSAP: D-06 (침해사고 관리), D-12 (시스템 개발 보안)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: job-cronjob-monitoring
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: job-cronjob-monitoring
+    app.kubernetes.io/part-of: saas-monitoring
+    csap-control: D-06
+    release: kube-prometheus-stack
+spec:
+  groups:
+    # =========================================================
+    # Recording Rules: Job/CronJob 메트릭 사전 집계
+    # =========================================================
+    - name: job-cronjob.recording
+      interval: 30s
+      rules:
+        # FR-N183.1: 네임스페이스별 실패 Job 수
+        # Design Ref: DS-N183.1
+        - record: namespace:job:failed_count
+          expr: |
+            sum by (namespace, job_name) (
+              kube_job_status_failed
+            )
+          labels:
+            monitor_domain: job_cronjob
+            csap_control: D-06
+
+        # FR-N183.1: 네임스페이스별 성공 Job 수
+        - record: namespace:job:succeeded_count
+          expr: |
+            sum by (namespace, job_name) (
+              kube_job_status_succeeded
+            )
+          labels:
+            monitor_domain: job_cronjob
+
+        # FR-N183.1: 네임스페이스별 활성 Job 수
+        - record: namespace:job:active_count
+          expr: |
+            sum by (namespace) (
+              kube_job_status_active
+            )
+          labels:
+            monitor_domain: job_cronjob
+
+        # FR-N183.2: CronJob 마지막 스케줄 이후 경과 시간 (초)
+        # Design Ref: DS-N183.2
+        - record: namespace:cronjob:time_since_last_schedule
+          expr: |
+            time() - kube_cronjob_status_last_schedule_time
+          labels:
+            monitor_domain: job_cronjob
+            csap_control: D-06
+
+        # FR-N183.2: CronJob 마지막 성공 이후 경과 시간 (초)
+        - record: namespace:cronjob:time_since_last_success
+          expr: |
+            time() - kube_cronjob_status_last_successful_time
+          labels:
+            monitor_domain: job_cronjob
+
+        # FR-N183.3: 실행 중 Job 경과 시간 (초)
+        # Design Ref: DS-N183.3
+        - record: namespace:job:running_duration_seconds
+          expr: |
+            (time() - kube_job_status_start_time)
+            * on(namespace, job_name) group_left()
+            (kube_job_status_active > 0)
+          labels:
+            monitor_domain: job_cronjob
+
+        # FR-N183.5: Job 완료 시간 (초)
+        - record: namespace:job:completion_duration_seconds
+          expr: |
+            kube_job_status_completion_time - kube_job_status_start_time
+          labels:
+            monitor_domain: job_cronjob
+
+        # FR-N183.6: 네임스페이스별 Job 성공률 (%)
+        - record: namespace:job:success_rate
+          expr: |
+            clamp(
+              sum by (namespace) (kube_job_status_succeeded)
+              / clamp_min(
+                sum by (namespace) (kube_job_status_succeeded + kube_job_status_failed),
+                1
+              ) * 100
+            , 0, 100)
+          labels:
+            monitor_domain: job_cronjob
+            csap_control: D-06
+
+        # 전체 클러스터 Job 성공률
+        - record: cluster:job:success_rate
+          expr: |
+            clamp(
+              sum(kube_job_status_succeeded)
+              / clamp_min(
+                sum(kube_job_status_succeeded + kube_job_status_failed),
+                1
+              ) * 100
+            , 0, 100)
+          labels:
+            monitor_domain: job_cronjob
+
+        # CronJob 정지 상태 수
+        - record: cluster:cronjob:suspended_count
+          expr: |
+            count(kube_cronjob_spec_suspend > 0)
+          labels:
+            monitor_domain: job_cronjob
+
+        # Job/CronJob 건강 종합 점수
+        - record: cluster:job:health_score
+          expr: |
+            clamp(
+              cluster:job:success_rate
+              - (clamp_max(sum(kube_job_status_failed), 10) * 2)
+            , 0, 100)
+          labels:
+            monitor_domain: job_cronjob
+
+    # =========================================================
+    # Alerting Rules: Job/CronJob 이상 알림
+    # =========================================================
+    - name: job-cronjob.alerts
+      rules:
+        # FR-N183.1: Job 실패
+        - alert: KubeJobFailed
+          expr: kube_job_status_failed > 0
+          for: 1m
+          labels:
+            severity: warning
+            csap_control: D-06
+            team: sre
+          annotations:
+            summary: "Job 실패 ({{ $labels.namespace }}/{{ $labels.job_name }})"
+            description: |
+              {{ $labels.namespace }}/{{ $labels.job_name }}이 실패했습니다.
+              파드 로그를 확인하십시오.
+            runbook_url: "https://docs.example.com/runbooks/job-failed"
+
+        # FR-N183.1: Job 연속 실패
+        - alert: KubeJobRepeatedFailure
+          expr: |
+            sum by (namespace, job_name) (kube_job_status_failed) > 3
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-06
+            team: sre
+          annotations:
+            summary: "Job 연속 실패 ({{ $labels.namespace }}/{{ $labels.job_name }})"
+            description: |
+              {{ $labels.namespace }}/{{ $labels.job_name }}이 3회 이상 실패했습니다.
+              근본 원인 분석이 필요합니다.
+
+        # FR-N183.2: CronJob 스케줄 누락
+        - alert: CronJobMissedSchedule
+          expr: |
+            namespace:cronjob:time_since_last_schedule > 3600
+            and kube_cronjob_spec_suspend == 0
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-06
+            team: sre
+          annotations:
+            summary: "CronJob 스케줄 누락 ({{ $labels.namespace }}/{{ $labels.cronjob }})"
+            description: |
+              {{ $labels.namespace }}/{{ $labels.cronjob }}가 1시간 이상 실행되지 않았습니다.
+              CronJob 설정 및 컨트롤러 상태를 확인하십시오.
+            runbook_url: "https://docs.example.com/runbooks/cronjob-missed"
+
+        # FR-N183.2: CronJob 장기 미실행
+        - alert: CronJobLongNotRun
+          expr: |
+            namespace:cronjob:time_since_last_schedule > 86400
+            and kube_cronjob_spec_suspend == 0
+          for: 30m
+          labels:
+            severity: critical
+            csap_control: D-06
+            team: sre
+          annotations:
+            summary: "CronJob 24시간 이상 미실행 ({{ $labels.namespace }}/{{ $labels.cronjob }})"
+            description: |
+              {{ $labels.namespace }}/{{ $labels.cronjob }}가 24시간 이상 실행되지 않았습니다.
+              데이터 동기화 또는 정기 작업이 중단되었을 수 있습니다.
+
+        # FR-N183.3: Job 장시간 실행
+        - alert: KubeJobRunningLong
+          expr: namespace:job:running_duration_seconds > 3600
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-12
+            team: sre
+          annotations:
+            summary: "Job 장시간 실행 ({{ $labels.namespace }}/{{ $labels.job_name }})"
+            description: |
+              {{ $labels.namespace }}/{{ $labels.job_name }}이
+              {{ $value | printf "%.0f" }}초 동안 실행 중입니다. (1시간 초과)
+              무한 루프 또는 리소스 부족을 확인하십시오.
+            runbook_url: "https://docs.example.com/runbooks/job-long-running"
+
+        # FR-N183.3: Job 매우 장시간 실행
+        - alert: KubeJobRunningVeryLong
+          expr: namespace:job:running_duration_seconds > 14400
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-12
+            team: sre
+          annotations:
+            summary: "Job 4시간 초과 실행 ({{ $labels.namespace }}/{{ $labels.job_name }})"
+            description: |
+              {{ $labels.namespace }}/{{ $labels.job_name }}이
+              4시간 이상 실행 중입니다. 강제 종료 검토가 필요합니다.
+
+        # FR-N183.6: 네임스페이스 Job 성공률 저하
+        - alert: JobSuccessRateLow
+          expr: namespace:job:success_rate < 80
+          for: 30m
+          labels:
+            severity: warning
+            csap_control: D-06
+            team: sre
+          annotations:
+            summary: "Job 성공률 80% 미만 ({{ $labels.namespace }})"
+            description: |
+              {{ $labels.namespace }}의 Job 성공률이 {{ $value | printf "%.1f" }}%입니다.
+              반복 실패 원인을 분석하십시오.
+
+        # 건강 점수 저하
+        - alert: JobHealthScoreLow
+          expr: cluster:job:health_score < 70
+          for: 30m
+          labels:
+            severity: warning
+            team: sre
+          annotations:
+            summary: "Job/CronJob 건강 점수 저하"
+            description: |
+              건강 점수가 {{ $value | printf "%.1f" }}점입니다.
+              실패 Job, 누락 CronJob을 종합 점검하십시오.
+
+        - alert: JobHealthScoreCritical
+          expr: cluster:job:health_score < 50
+          for: 15m
+          labels:
+            severity: critical
+            team: sre
+          annotations:
+            summary: "Job/CronJob 건강 점수 위험"
+            description: |
+              건강 점수가 {{ $value | printf "%.1f" }}점으로 위험 수준입니다.
