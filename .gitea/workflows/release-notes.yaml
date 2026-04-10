@@ -1,0 +1,47 @@
+# 릴리스 노트 + 마이그레이션 가이드 자동 생성
+# Design Ref: MTU-N94 Design
+# Plan SC: FR-N94.1, FR-N94.2
+
+name: Release Notes & Migration Guide
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      previous_tag:
+        description: '이전 태그 (기본: 최신 태그)'
+        required: false
+
+jobs:
+  generate-release-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 소스코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 릴리스 노트 생성
+        run: |
+          PREV_TAG="${{ github.event.inputs.previous_tag }}"
+          if [ -z "$PREV_TAG" ]; then
+            PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "HEAD~50")
+          fi
+          bash scripts/generate-release-notes.sh "$PREV_TAG" HEAD
+
+      - name: 마이그레이션 가이드 생성
+        run: |
+          PREV_TAG="${{ github.event.inputs.previous_tag }}"
+          if [ -z "$PREV_TAG" ]; then
+            PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "HEAD~50")
+          fi
+          bash scripts/generate-migration-guide.sh "$PREV_TAG" HEAD
+
+      - name: 감사 로그 기록
+        run: |
+          echo "{\"timestamp\":\"$(date -Iseconds)\",\"action\":\"RELEASE_NOTES_GENERATED\",\"tag\":\"${{ github.ref_name }}\"}" >> .claude/audit.jsonl || true
