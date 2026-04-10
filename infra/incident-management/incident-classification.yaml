@@ -1,0 +1,82 @@
+# 인시던트 분류 체계
+# Design Ref: MTU-N117
+# Plan SC: FR-N117.5
+# CSAP: D-06 침해사고 관리
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: incident-classification
+  namespace: saas-system
+  labels:
+    csap.compliance/control: D-06
+data:
+  classification.yaml: |
+    severityLevels:
+      SEV1:
+        name: "긴급"
+        description: "서비스 전체 중단"
+        responseTime: "즉시 (15분 이내)"
+        escalation: "CTO + SRE 리드"
+        sloImpact: "에러 버짓 100% 소진"
+        csapMapping: "D-06-01 긴급 침해사고"
+        autoActions:
+          - rollback
+          - scaleUp
+          - notifyAll
+
+      SEV2:
+        name: "높음"
+        description: "주요 기능 성능 저하"
+        responseTime: "1시간 이내"
+        escalation: "SRE 리드"
+        sloImpact: "에러 버짓 50% 소진"
+        csapMapping: "D-06-01 주요 침해사고"
+        autoActions:
+          - scaleUp
+          - notifySre
+
+      SEV3:
+        name: "보통"
+        description: "부분 서비스 장애"
+        responseTime: "4시간 이내"
+        escalation: "담당 팀"
+        sloImpact: "에러 버짓 10% 소진"
+        csapMapping: "D-06-02 일반 침해사고"
+        autoActions:
+          - notifyTeam
+
+      SEV4:
+        name: "낮음"
+        description: "경미한 이슈"
+        responseTime: "24시간 이내"
+        escalation: "담당자"
+        sloImpact: "무시"
+        csapMapping: "D-06-02 경미 이슈"
+        autoActions:
+          - createTicket
+
+    impactDimensions:
+      - name: "사용자 영향"
+        levels: ["없음", "일부 사용자", "대다수 사용자", "전체 사용자"]
+      - name: "데이터 영향"
+        levels: ["없음", "읽기 지연", "쓰기 지연", "데이터 손실 위험"]
+      - name: "보안 영향"
+        levels: ["없음", "정보 노출 위험", "접근 통제 위반", "데이터 유출"]
+      - name: "규정 영향"
+        levels: ["없음", "보고 필요", "시정 조치", "과태료 위험"]
+
+    automaticClassification:
+      rules:
+        - condition: "error_rate > 50%"
+          severity: SEV1
+        - condition: "error_rate > 20%"
+          severity: SEV2
+        - condition: "p95_latency > 5s"
+          severity: SEV2
+        - condition: "error_rate > 5%"
+          severity: SEV3
+        - condition: "p95_latency > 2s"
+          severity: SEV3
+        - condition: "security_alert == true"
+          severity: SEV1

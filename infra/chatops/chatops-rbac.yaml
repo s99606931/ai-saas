@@ -1,0 +1,67 @@
+# ChatOps RBAC — Botkube 서비스 계정 권한
+# Design Ref: DS-N116.3
+# Plan SC: FR-N116.3
+# CSAP: D-08 접근통제 (최소 권한 원칙)
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: botkube
+  namespace: saas-system
+  labels:
+    app: botkube
+    csap.compliance/control: D-08
+---
+# 읽기 전용 ClusterRole (모든 운영자)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: botkube-readonly
+  labels:
+    app: botkube
+    csap.compliance/control: D-08
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "services", "events", "nodes", "namespaces"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "networkpolicies"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch"]
+---
+# SRE 확장 ClusterRole (스케일/롤아웃)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: botkube-sre
+  labels:
+    app: botkube
+    csap.compliance/control: D-08
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale", "statefulsets", "statefulsets/scale"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/rollout"]
+    verbs: ["get", "list"]
+  # delete, exec 는 명시적으로 제외 (CSAP D-08)
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: botkube-readonly-binding
+  labels:
+    app: botkube
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: botkube-readonly
+subjects:
+  - kind: ServiceAccount
+    name: botkube
+    namespace: saas-system

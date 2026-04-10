@@ -1,0 +1,86 @@
+# OpenSSF Scorecard CI 파이프라인
+# Design Ref: DS-N115.1
+# Plan SC: FR-N115.1
+# CSAP: D-05 공급망 보안, D-12 개발 보안
+---
+name: OpenSSF Scorecard CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - stg
+  schedule:
+    # 매주 월요일 03:00 KST 정기 스캔
+    - cron: '0 18 * * 0'  # UTC 18:00 일요일 = KST 03:00 월요일
+  workflow_dispatch:
+
+env:
+  SCORECARD_MIN_SCORE: "5.0"
+  SCORECARD_TARGET_SCORE: "7.0"
+  SCORECARD_REPORT_DIR: "reports/scorecard"
+
+jobs:
+  scorecard:
+    name: OpenSSF Scorecard 보안 평가
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+
+    steps:
+      - name: 소스 코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: OpenSSF Scorecard 실행
+        id: scorecard
+        uses: ossf/scorecard-action@v2
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: false
+
+      - name: Scorecard 결과 JSON 변환
+        id: parse
+        run: |
+          # SARIF → JSON 점수 추출
+          if [ -f results.sarif ]; then
+            python3 scripts/scorecard-parse.py results.sarif > scorecard-summary.json
+            SCORE=$(python3 -c "import json; d=json.load(open('scorecard-summary.json')); print(d.get('totalScore', 0))")
+            echo "score=$SCORE" >> "$GITHUB_OUTPUT"
+          else
+            echo "score=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 최소 점수 게이트 검증
+        run: |
+          bash scripts/scorecard-gate.sh scorecard-summary.json
+
+      - name: PR 코멘트 게시
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = JSON.parse(fs.readFileSync('scorecard-summary.json', 'utf8'));
+            const comment = fs.readFileSync('scorecard-comment.md', 'utf8');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });
+
+      - name: SARIF 리포트 보관
+        if: always()
+        run: |
+          mkdir -p ${{ env.SCORECARD_REPORT_DIR }}
+          cp results.sarif "${{ env.SCORECARD_REPORT_DIR }}/scorecard-$(date +%Y%m%d).sarif"
+
+      - name: 감사 로그 기록
+        if: always()
+        run: |
+          echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"action\":\"scorecard-ci\",\"score\":\"${{ steps.parse.outputs.score }}\",\"event\":\"${{ github.event_name }}\",\"csap\":\"D-05\"}" >> .claude/audit.jsonl

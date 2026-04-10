@@ -1,0 +1,73 @@
+# Alertmanager ChatOps 라우팅 설정
+# Design Ref: DS-N116.4
+# Plan SC: FR-N116.4
+# CSAP: D-06 침해사고 관리
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-chatops-routes
+  namespace: monitoring
+  labels:
+    app: alertmanager
+    csap.compliance/control: D-06
+data:
+  chatops-routes.yaml: |
+    # ChatOps 알림 라우팅 규칙
+    routes:
+      # Critical 알림 → #incidents 채널
+      - match:
+          severity: critical
+        receiver: chatops-incidents
+        continue: true
+        group_by: ['alertname', 'namespace', 'service']
+        group_wait: 10s
+        group_interval: 5m
+        repeat_interval: 1h
+
+      # Firing 알림 → #incidents 채널
+      - match:
+          status: firing
+        receiver: chatops-incidents
+        continue: true
+        group_wait: 30s
+
+      # Warning 알림 → #operations 채널
+      - match:
+          severity: warning
+        receiver: chatops-operations
+        continue: true
+        group_by: ['alertname', 'namespace']
+        group_wait: 1m
+        group_interval: 10m
+        repeat_interval: 4h
+
+      # 보안 알림 → #audit 채널
+      - match_re:
+          alertname: "(Falco|SecurityPolicy|AccessDenied|PolicyViolation).*"
+        receiver: chatops-audit
+        continue: true
+
+      # SLO 위반 → #incidents 채널
+      - match_re:
+          alertname: "(SLO|ErrorBudget).*"
+        receiver: chatops-incidents
+        continue: true
+
+    receivers:
+      - name: chatops-incidents
+        webhook_configs:
+          - url: "http://botkube.saas-system:2112/api/v1/webhook"
+            send_resolved: true
+            http_config:
+              bearer_token_file: /etc/alertmanager/secrets/botkube-token
+
+      - name: chatops-operations
+        webhook_configs:
+          - url: "http://botkube.saas-system:2112/api/v1/webhook"
+            send_resolved: true
+
+      - name: chatops-audit
+        webhook_configs:
+          - url: "http://botkube.saas-system:2112/api/v1/webhook"
+            send_resolved: false
