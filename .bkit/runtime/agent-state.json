@@ -1,45 +1,14 @@
 {
   "version": "1.0",
-  "enabled": true,
+  "enabled": false,
   "teamName": "",
   "feature": "public-saas-framework",
   "pdcaPhase": "archived",
   "orchestrationPattern": "leader",
   "ctoAgent": "opus",
-  "startedAt": "2026-04-10T08:48:15.420Z",
-  "lastUpdated": "2026-04-10T08:49:09.763Z",
-  "teammates": [
-    {
-      "name": "ac23d26bbb0e74c4b",
-      "role": "pm-lead",
-      "model": "sonnet",
-      "status": "spawning",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-10T08:48:15.421Z",
-      "lastActivityAt": "2026-04-10T08:48:15.421Z"
-    },
-    {
-      "name": "a8152dd45c12ff811",
-      "role": "pm-lead",
-      "model": "sonnet",
-      "status": "spawning",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-10T08:48:40.331Z",
-      "lastActivityAt": "2026-04-10T08:48:40.331Z"
-    },
-    {
-      "name": "a727c43047e67ab35",
-      "role": "pm-lead",
-      "model": "sonnet",
-      "status": "spawning",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-10T08:49:09.763Z",
-      "lastActivityAt": "2026-04-10T08:49:09.763Z"
-    }
-  ],
+  "startedAt": "2026-04-10T09:06:48.629Z",
+  "lastUpdated": "2026-04-10T09:12:13.172Z",
+  "teammates": [],
   "progress": {
     "totalTasks": 0,
     "completedTasks": 0,
@@ -48,5 +17,5 @@
     "pendingTasks": 0
   },
   "recentMessages": [],
-  "sessionId": "41e76dad-7dc9-498f-a790-2d47a5269121"
+  "sessionId": "ccb2e7ee-51b9-42a6-a1e3-e9a6a080d439"
 }
