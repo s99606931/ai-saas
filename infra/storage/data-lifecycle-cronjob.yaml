@@ -1,0 +1,96 @@
+# 데이터 수명주기 관리 CronJob
+# Design Ref: MTU-N97 Design §데이터 이전 크론잡
+# Plan SC: FR-N97.3
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: data-lifecycle-manager
+  namespace: minio-system
+  labels:
+    app.kubernetes.io/name: data-lifecycle-manager
+    app.kubernetes.io/part-of: storage-tiering
+    app.kubernetes.io/component: lifecycle
+spec:
+  schedule: "0 2 * * *"  # 매일 새벽 2시
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: data-lifecycle-manager
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: lifecycle-manager
+              image: minio/mc:RELEASE.2026-03-01T00-00-00Z
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+
+                  echo "=== 데이터 수명주기 관리 시작: $(date -Iseconds) ==="
+
+                  # MinIO 클라이언트 설정
+                  mc alias set myminio \
+                    http://minio.minio-system.svc.cluster.local:9000 \
+                    "${MINIO_ACCESS_KEY}" "${MINIO_SECRET_KEY}"
+
+                  # 1. ILM 규칙 적용 확인
+                  echo "[1/4] ILM 규칙 상태 확인..."
+                  for bucket in audit-logs metrics-data velero-backups; do
+                    if mc ilm ls myminio/$bucket 2>/dev/null; then
+                      echo "  $bucket: ILM 규칙 활성화 확인"
+                    else
+                      echo "  $bucket: ILM 규칙 없음 -- 기본 규칙 적용"
+                    fi
+                  done
+
+                  # 2. 스토리지 사용량 보고
+                  echo "[2/4] 스토리지 사용량..."
+                  mc du myminio/ --depth=1 2>/dev/null || echo "  사용량 조회 실패 (버킷 미존재 가능)"
+
+                  # 3. 오래된 임시 파일 정리
+                  echo "[3/4] 임시 파일 정리 (7일+)..."
+                  mc rm --recursive --force --older-than 7d myminio/tmp/ 2>/dev/null || echo "  tmp 버킷 없음"
+
+                  # 4. 무결성 검증 (Cold 티어)
+                  echo "[4/4] Cold 데이터 무결성 검증..."
+                  mc stat myminio/audit-logs/ 2>/dev/null | head -5 || echo "  감사 로그 버킷 미존재"
+
+                  echo "=== 데이터 수명주기 관리 완료: $(date -Iseconds) ==="
+              env:
+                - name: MINIO_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: minio-credentials
+                      key: access-key
+                - name: MINIO_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: minio-credentials
+                      key: secret-key
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL

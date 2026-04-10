@@ -1,0 +1,24 @@
+# StorageClass: Hot Tier (NVMe/SSD)
+# Design Ref: MTU-N97 Design §StorageClass
+# Plan SC: FR-N97.1
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: sc-hot-nvme
+  labels:
+    tier: hot
+    app.kubernetes.io/part-of: public-saas-framework
+    app.kubernetes.io/managed-by: platform-team
+  annotations:
+    description: "Hot 티어 - 실시간 메트릭, 활성 로그 (0~7일)"
+    storage.kubernetes.io/tier: "hot"
+    csap.ref: "D-07"
+provisioner: rancher.io/local-path
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+parameters:
+  nodePath: /opt/local-path-provisioner/hot
+mountOptions:
+  - noatime
+  - nodiratime

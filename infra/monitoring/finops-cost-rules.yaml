@@ -1,0 +1,161 @@
+# =============================================================================
+# FinOps 비용 할당 — 테넌트별 리소스 비용 계산
+# Design Ref: MTU-N97 Design §2
+# Plan SC: FR-N97.1, FR-N97.3, FR-N97.4
+# CSAP: D-06(리소스 감사 추적)
+#
+# 비용 모델: CPU 0.05 USD/vCPU/h, Memory 0.01 USD/GiB/h
+# 적용: kubectl apply -f infra/monitoring/finops-cost-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: finops-cost-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "리소스 감사 — 테넌트별 비용 추적"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 비용 할당 Recording Rules (FR-N97.1)
+    # =========================================================================
+    - name: finops:cost_allocation
+      interval: 60s
+      rules:
+        # 테넌트별 CPU 비용 (시간당 USD)
+        - record: tenant:cost_cpu:hourly_usd
+          expr: |
+            sum by (namespace) (
+              rate(container_cpu_usage_seconds_total{
+                container!="", container!="POD",
+                namespace!~"kube-system|monitoring|flux-system|cert-manager"
+              }[1h])
+            ) * 0.05
+          labels:
+            cost_type: cpu
+
+        # 테넌트별 메모리 비용 (시간당 USD)
+        - record: tenant:cost_memory:hourly_usd
+          expr: |
+            sum by (namespace) (
+              container_memory_working_set_bytes{
+                container!="", container!="POD",
+                namespace!~"kube-system|monitoring|flux-system|cert-manager"
+              }
+            ) / 1073741824 * 0.01
+          labels:
+            cost_type: memory
+
+        # 테넌트별 총 비용 (시간당 USD)
+        - record: tenant:cost_total:hourly_usd
+          expr: |
+            (
+              sum by (namespace) (
+                rate(container_cpu_usage_seconds_total{
+                  container!="", container!="POD",
+                  namespace!~"kube-system|monitoring|flux-system|cert-manager"
+                }[1h])
+              ) * 0.05
+            )
+            +
+            (
+              sum by (namespace) (
+                container_memory_working_set_bytes{
+                  container!="", container!="POD",
+                  namespace!~"kube-system|monitoring|flux-system|cert-manager"
+                }
+              ) / 1073741824 * 0.01
+            )
+          labels:
+            cost_type: total
+
+        # 테넌트별 일간 예상 비용 (USD)
+        - record: tenant:cost_total:daily_usd
+          expr: |
+            tenant:cost_total:hourly_usd * 24
+          labels:
+            cost_type: daily_estimate
+
+        # 테넌트별 월간 예상 비용 (USD)
+        - record: tenant:cost_total:monthly_usd
+          expr: |
+            tenant:cost_total:hourly_usd * 720
+          labels:
+            cost_type: monthly_estimate
+
+    # =========================================================================
+    # 그룹 2: 리소스 효율성 점수 (FR-N97.3)
+    # =========================================================================
+    - name: finops:efficiency
+      interval: 60s
+      rules:
+        # CPU 효율성 (실제 사용 / 요청)
+        - record: tenant:cpu_efficiency:ratio
+          expr: |
+            sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=""}[5m]))
+            / clamp_min(
+              sum by (namespace) (kube_pod_container_resource_requests{resource="cpu", container!=""}),
+              0.001
+            )
+          labels:
+            efficiency: cpu
+
+        # 메모리 효율성 (실제 사용 / 요청)
+        - record: tenant:memory_efficiency:ratio
+          expr: |
+            sum by (namespace) (container_memory_working_set_bytes{container!=""})
+            / clamp_min(
+              sum by (namespace) (kube_pod_container_resource_requests{resource="memory", container!=""}),
+              1
+            )
+          labels:
+            efficiency: memory
+
+        # 비용 낭비 금액 (요청 - 실제 사용 차이의 비용)
+        - record: tenant:cost_waste:hourly_usd
+          expr: |
+            (
+              sum by (namespace) (kube_pod_container_resource_requests{resource="cpu", container!=""})
+              - sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=""}[1h]))
+            ) * 0.05
+          labels:
+            cost_type: waste
+
+    # =========================================================================
+    # 그룹 3: 비용 최적화 알림 (FR-N97.4)
+    # =========================================================================
+    - name: finops:optimization_alerts
+      rules:
+        # CPU 효율성 20% 미만 (과다 요청)
+        - alert: FinOpsCPUOverProvisioned
+          expr: |
+            tenant:cpu_efficiency:ratio < 0.2
+            and sum by (namespace) (kube_pod_container_resource_requests{resource="cpu"}) > 0.1
+          for: 1h
+          labels:
+            severity: info
+            category: finops
+          annotations:
+            summary: "테넌트 {{ $labels.namespace }} CPU 효율성 20% 미만"
+            description: |
+              CPU 요청 대비 실제 사용률이 {{ $value | printf "%.1f" }}%입니다.
+              리소스 요청을 줄여 비용을 절감할 수 있습니다.
+
+        # 메모리 효율성 30% 미만
+        - alert: FinOpsMemoryOverProvisioned
+          expr: |
+            tenant:memory_efficiency:ratio < 0.3
+            and sum by (namespace) (kube_pod_container_resource_requests{resource="memory"}) > 134217728
+          for: 1h
+          labels:
+            severity: info
+            category: finops
+          annotations:
+            summary: "테넌트 {{ $labels.namespace }} 메모리 효율성 30% 미만"
+            description: |
+              메모리 요청 대비 실제 사용률이 {{ $value | printf "%.1f" }}%입니다.
+              VPA를 통한 리소스 최적화를 권장합니다.

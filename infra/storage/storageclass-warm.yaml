@@ -1,0 +1,23 @@
+# StorageClass: Warm Tier (Standard HDD)
+# Design Ref: MTU-N97 Design §StorageClass
+# Plan SC: FR-N97.1
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: sc-warm-standard
+  labels:
+    tier: warm
+    app.kubernetes.io/part-of: public-saas-framework
+    app.kubernetes.io/managed-by: platform-team
+  annotations:
+    description: "Warm 티어 - 분석용 로그, 지난 메트릭 (7~30일)"
+    storage.kubernetes.io/tier: "warm"
+    csap.ref: "D-07"
+provisioner: rancher.io/local-path
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+parameters:
+  nodePath: /opt/local-path-provisioner/warm
+mountOptions:
+  - noatime

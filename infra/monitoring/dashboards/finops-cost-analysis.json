@@ -1,0 +1,75 @@
+{
+  "description": "FinOps 비용 분석 대시보드 — 테넌트별 리소스 비용 + 효율성",
+  "editable": false,
+  "panels": [
+    {
+      "id": 1, "title": "테넌트별 월간 예상 비용 (USD)",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "sort_desc(tenant:cost_total:monthly_usd)", "legendFormat": "{{ namespace }}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" } }
+    },
+    {
+      "id": 2, "title": "비용 구성 (CPU vs Memory)",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "sum(tenant:cost_cpu:hourly_usd) * 720", "legendFormat": "CPU", "refId": "A" },
+        { "expr": "sum(tenant:cost_memory:hourly_usd) * 720", "legendFormat": "Memory", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" } }
+    },
+    {
+      "id": 3, "title": "CPU 효율성 (실제/요청)",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "tenant:cpu_efficiency:ratio{namespace=~\"$tenant\"}", "legendFormat": "{{ namespace }}", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit", "max": 1,
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.3 }, { "color": "green", "value": 0.6 }] }
+        }
+      }
+    },
+    {
+      "id": 4, "title": "메모리 효율성 (실제/요청)",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "tenant:memory_efficiency:ratio{namespace=~\"$tenant\"}", "legendFormat": "{{ namespace }}", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit", "max": 1,
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.3 }, { "color": "green", "value": 0.6 }] }
+        }
+      }
+    },
+    {
+      "id": 5, "title": "비용 낭비 (시간당 USD)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "tenant:cost_waste:hourly_usd{namespace=~\"$tenant\"}", "legendFormat": "{{ namespace }}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" } }
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["finops", "cost", "efficiency", "공공SaaS"],
+  "templating": {
+    "list": [{
+      "name": "tenant", "type": "query",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "query": "label_values(tenant:cost_total:hourly_usd, namespace)",
+      "multi": true, "includeAll": true
+    }]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "FinOps 비용 분석",
+  "uid": "finops-cost-analysis",
+  "version": 1
+}

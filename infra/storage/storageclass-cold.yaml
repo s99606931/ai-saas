@@ -1,0 +1,24 @@
+# StorageClass: Cold Tier (Archive/Compressed)
+# Design Ref: MTU-N97 Design §StorageClass
+# Plan SC: FR-N97.1
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: sc-cold-archive
+  labels:
+    tier: cold
+    app.kubernetes.io/part-of: public-saas-framework
+    app.kubernetes.io/managed-by: platform-team
+  annotations:
+    description: "Cold 티어 - 감사 로그 장기보관, 백업 (30일+)"
+    storage.kubernetes.io/tier: "cold"
+    csap.ref: "D-06,D-07"
+provisioner: rancher.io/local-path
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+parameters:
+  nodePath: /opt/local-path-provisioner/cold
+mountOptions:
+  - noatime
+  - compress=zstd

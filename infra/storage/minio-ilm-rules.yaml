@@ -1,0 +1,185 @@
+# MinIO ILM (Information Lifecycle Management) 규칙
+# Design Ref: MTU-N97 Design §MinIO ILM 규칙
+# Plan SC: FR-N97.2
+#
+# 적용 방법:
+#   mc ilm import myminio/audit-logs < minio-ilm-rules.yaml
+#   또는 MinIO Console > Bucket > Lifecycle에서 설정
+
+---
+# 규칙 1: 감사 로그 Hot -> Warm (7일)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-ilm-audit-log-warm
+  namespace: minio-system
+  labels:
+    app.kubernetes.io/part-of: storage-tiering
+    tier-transition: hot-to-warm
+  annotations:
+    csap.ref: "D-06"
+data:
+  bucket: audit-logs
+  rule.json: |
+    {
+      "Rules": [
+        {
+          "ID": "audit-log-hot-to-warm",
+          "Status": "Enabled",
+          "Filter": {
+            "Prefix": "audit/"
+          },
+          "Transition": {
+            "Days": 7,
+            "StorageClass": "WARM"
+          }
+        }
+      ]
+    }
+
+---
+# 규칙 2: 감사 로그 Warm -> Cold (30일)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-ilm-audit-log-cold
+  namespace: minio-system
+  labels:
+    app.kubernetes.io/part-of: storage-tiering
+    tier-transition: warm-to-cold
+  annotations:
+    csap.ref: "D-06"
+data:
+  bucket: audit-logs
+  rule.json: |
+    {
+      "Rules": [
+        {
+          "ID": "audit-log-warm-to-cold",
+          "Status": "Enabled",
+          "Filter": {
+            "Prefix": "audit/"
+          },
+          "Transition": {
+            "Days": 30,
+            "StorageClass": "COLD"
+          }
+        }
+      ]
+    }
+
+---
+# 규칙 3: 메트릭 데이터 Hot -> Warm (3일)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-ilm-metrics-warm
+  namespace: minio-system
+  labels:
+    app.kubernetes.io/part-of: storage-tiering
+    tier-transition: hot-to-warm
+data:
+  bucket: metrics-data
+  rule.json: |
+    {
+      "Rules": [
+        {
+          "ID": "metrics-hot-to-warm",
+          "Status": "Enabled",
+          "Filter": {
+            "Prefix": "prometheus/"
+          },
+          "Transition": {
+            "Days": 3,
+            "StorageClass": "WARM"
+          }
+        }
+      ]
+    }
+
+---
+# 규칙 4: 메트릭 데이터 Warm -> Cold (14일)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-ilm-metrics-cold
+  namespace: minio-system
+  labels:
+    app.kubernetes.io/part-of: storage-tiering
+    tier-transition: warm-to-cold
+data:
+  bucket: metrics-data
+  rule.json: |
+    {
+      "Rules": [
+        {
+          "ID": "metrics-warm-to-cold",
+          "Status": "Enabled",
+          "Filter": {
+            "Prefix": "prometheus/"
+          },
+          "Transition": {
+            "Days": 14,
+            "StorageClass": "COLD"
+          }
+        }
+      ]
+    }
+
+---
+# 규칙 5: 백업 데이터 Hot -> Cold 직접 이전 (7일)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-ilm-backup-cold
+  namespace: minio-system
+  labels:
+    app.kubernetes.io/part-of: storage-tiering
+    tier-transition: hot-to-cold
+data:
+  bucket: velero-backups
+  rule.json: |
+    {
+      "Rules": [
+        {
+          "ID": "backup-hot-to-cold",
+          "Status": "Enabled",
+          "Filter": {
+            "Prefix": "backups/"
+          },
+          "Transition": {
+            "Days": 7,
+            "StorageClass": "COLD"
+          }
+        }
+      ]
+    }
+
+---
+# 규칙 6: Cold 데이터 자동 만료 (365일 -- CSAP D-06 최소 1년 보존 후)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-ilm-expiration
+  namespace: minio-system
+  labels:
+    app.kubernetes.io/part-of: storage-tiering
+  annotations:
+    csap.ref: "D-06 감사 로그 최소 1년 보존"
+data:
+  bucket: audit-logs
+  rule.json: |
+    {
+      "Rules": [
+        {
+          "ID": "audit-log-expiration",
+          "Status": "Enabled",
+          "Filter": {
+            "Prefix": "audit/"
+          },
+          "Expiration": {
+            "Days": 365
+          }
+        }
+      ]
+    }
