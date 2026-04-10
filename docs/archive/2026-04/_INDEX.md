@@ -107,6 +107,40 @@
 | **MTU-N42** Semantic Release + CHANGELOG 자동화 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N42/` |
 | **MTU-N43** 파이프라인 성능 벤치마크 + 최적화 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N43/` |
 | **MTU-N44** CI/CD 고도화 통합 검증 (39/39 ALL PASS) | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N44/` |
+| **MTU-N45** Falco 런타임 보안 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N45-falco-runtime-security/` |
+| **MTU-N46** SLSA Level 3 Provenance | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N46-slsa-l3-provenance/` |
+| **MTU-N47** Flux Drift Detection | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N47-drift-detection/` |
+| **MTU-N48** OTel 분산 추적 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N48-distributed-tracing/` |
+| **MTU-N49** SLO/SLI 자동화 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N49-slo-automation/` |
+| **MTU-N50** 카오스 엔지니어링 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N50-chaos-engineering/` |
+| **MTU-N51** Matrix Build 최적화 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N51-matrix-build-optimization/` |
+| **MTU-N52** 2라운드 통합 검증 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N52-round2-integration/` |
+| **MTU-N53** Gatekeeper 정책 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N53-gatekeeper-policy/` |
+| **MTU-N54** Linkerd 서비스 메시 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N54-linkerd-mesh/` |
+| **MTU-N55** Velero 재해 복구 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N55-velero-dr/` |
+| **MTU-N56** KEDA 이벤트 기반 오토스케일 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N56-keda-autoscaling/` |
+| **MTU-N57** Prometheus Recording Rules | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N57-recording-rules/` |
+| **MTU-N58** devcontainer 표준화 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N58-devcontainer/` |
+| **MTU-N59** FinOps 비용 대시보드 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N59-finops/` |
+| **MTU-N60** 3라운드 통합 검증 | 2026-04-09 | 100% | `docs/archive/2026-04/MTU-N60-round3-integration/` |
+| **MTU-N61** Grafana 공공기관 SaaS 특화 대시보드 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N61-grafana-dashboards/` |
+| **MTU-N62** cert-manager TLS 인증서 자동화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N62-cert-manager-tls/` |
+| **MTU-N63** Trivy Operator 클러스터 보안 스캔 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N63-trivy-operator/` |
+| **MTU-N64** CloudNativePG PostgreSQL Operator | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N64-cloudnativepg/` |
+| **MTU-N65** Gateway API + Traefik 고도화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N65-gateway-api-traefik/` |
+| **MTU-N66** External Secrets Operator | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N66-external-secrets/` |
+| **MTU-N67** Flux Drift Detection + ConfigMap/Secret 감사 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N67-drift-detection-v2/` |
+| **MTU-N68** 4라운드 통합 검증 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N68-round4-integration/` |
+| **MTU-N69** Loki LogQL + Tempo TraceQL 고급 쿼리 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N69-logql-traceql/` |
+| **MTU-N70** 모니터링 스택 E2E + SLO Error Budget | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N70-monitoring-e2e-slo/` |
+| **MTU-N71** Pod Security Standards Restricted 프로필 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N71-pss-restricted/` |
+| **MTU-N72** VPA Right-Sizing + OpenCost FinOps | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N72-vpa-finops/` |
+| **MTU-N73** vCluster PR Preview 환경 자동 생성 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N73-vcluster-preview/` |
+| **MTU-N74** SRE Runbook 자동화 + 황금 신호 완성 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N74-sre-runbooks/` |
+| **MTU-N75** Admission Webhook 커스텀 보안 검증기 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N75-admission-webhook/` |
+| **MTU-N76** 자동 용량 계획 + ResourceQuota/LimitRange 강화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N76-capacity-planning/` |
+| **MTU-N77** AI 기반 CI/CD 파이프라인 통합 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N77-ai-cicd/` |
+| **MTU-N78** 5라운드 통합 검증 (86/86 ALL PASS) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N78-round5-integration/` |
 
 ## av-skill 요약
 
