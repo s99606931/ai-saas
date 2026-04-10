@@ -252,7 +252,8 @@ export async function payInvoiceHandler(
 
 /**
  * 결제 이력 조회
- * Plan SC: FR-P08.2
+ * Plan SC: FR-P08.2, FR-BILL.5
+ * CSAP D-08-05: 테넌트 격리 (Design Ref: SVC-BILL-R1 DESIGN)
  */
 export async function listPaymentsHandler(
   request: FastifyRequest<{ Querystring: { invoiceId?: string; page?: string; pageSize?: string } }>,
@@ -260,7 +261,18 @@ export async function listPaymentsHandler(
 ): Promise<void> {
   const page = parseInt(request.query.page ?? '1', 10);
   const pageSize = Math.min(parseInt(request.query.pageSize ?? '20', 10), 100);
-  const where = request.query.invoiceId ? { invoiceId: request.query.invoiceId } : {};
+
+  // FR-BILL.5: 테넌트 격리 (CSAP D-08-05, Design Ref: SVC-BILL-R1 DESIGN)
+  const payListJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const payListJwtRole = request.headers['x-user-role'] as string | undefined;
+
+  const where: Record<string, unknown> = {};
+  if (request.query.invoiceId) where['invoiceId'] = request.query.invoiceId;
+
+  // SUPER_ADMIN이 아닌 경우 본인 테넌트 인보이스의 결제만 조회
+  if (payListJwtRole !== 'SUPER_ADMIN' && payListJwtTenantId) {
+    where['invoice'] = { is: { subscription: { is: { tenantId: payListJwtTenantId } } } };
+  }
 
   const [payments, total] = await Promise.all([
     prisma.payment.findMany({
@@ -310,6 +322,18 @@ export async function generateTaxInvoiceHandler(
     total: (Number(invoice.amount) * 1.1).toFixed(2),
     issuedAt: new Date().toISOString(),
   };
+
+  // FR-BILL.4: 세금계산서 생성 감사 로그 (CSAP D-06, Design Ref: SVC-BILL-R1 DESIGN)
+  const taxActor = (request.headers['x-user-id'] as string) || 'system';
+  await logBillingEvent(
+    'TAX_INVOICE_GENERATED',
+    taxActor,
+    invoice.id,
+    invoice.subscription.tenantId,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { amount: taxInvoice.amount, total: taxInvoice.total },
+  );
 
   await reply.send({ success: true, data: taxInvoice });
 }

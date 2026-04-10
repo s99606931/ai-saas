@@ -364,3 +364,12 @@
 > MTU-P21 추가 (2026-04-05): 통합 테스트 PDCA 완료 -- 100%, 15개 서비스 헬스체크+CSAP 검증 | PM Agent
 > MTU-N19 추가 (2026-04-08): 성능 최적화 가이드 5종 PDCA 완료 -- 100%, DB 인덱스/k8s 리소스/WSL2/.wslconfig/Docker/연결풀 | PM Lead (Opus)
 > MTU-N20 추가 (2026-04-08): 보안 최종 점검 가이드 5종 PDCA 완료 -- 100%, Trivy/ZAP/pnpm audit/보고서 템플릿/CI 보안 파이프라인 | PM Lead (Opus)
+| **MTU-N57** Prometheus Recording Rules + AlertManager 라우팅 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N57-recording-rules/` |
+| **MTU-N61** Grafana 공공기관 SaaS 특화 대시보드 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N61-grafana-dashboards/` |
+| **MTU-N69** LogQL + TraceQL 고급 쿼리 최적화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N69-logql-traceql/` |
+| **MTU-N70** 모니터링 E2E 통합 테스트 + SLO Error Budget | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N70-monitoring-e2e/` |
+
+> MTU-N57 추가 (2026-04-10): Recording Rules 21개 + AlertManager 5채널 + 억제 규칙 — 29 tests ALL PASS | PM Lead (Opus)
+> MTU-N61 추가 (2026-04-10): CSAP/테넌트/보안 대시보드 3종 — 22 tests ALL PASS | PM Lead (Opus)
+> MTU-N69 추가 (2026-04-10): LogQL 10종 + TraceQL 8종 + Loki 알림 7개 — 15 tests ALL PASS | PM Lead (Opus)
+> MTU-N70 추가 (2026-04-10): 모니터링 E2E 41건 ALL PASS + SLO Error Budget MWMBR 6개 | PM Lead (Opus)
