@@ -4,8 +4,14 @@
 // CSAP: N2SF N-03 테넌트 격리 — 리소스 사용량 추적
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { logTenantEvent } from '../lib/audit.js';
+
+// CSAP D-12: 입력 검증 — UUID 형식 강제 (SQL 주입 방어)
+const tenantIdParamSchema = z.object({
+  id: z.string().uuid('유효한 UUID 형식이 아닙니다'),
+});
 
 /**
  * 테넌트 리소스 사용량 조회
@@ -21,7 +27,19 @@ export async function getTenantUsageHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
-  const tenantId = request.params.id;
+  // CSAP D-12: 입력 검증 — tenantId UUID 형식 확인
+  const parseResult = tenantIdParamSchema.safeParse(request.params);
+  if (!parseResult.success) {
+    await reply.status(400).send({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: parseResult.error.issues.map((i) => i.message).join(', '),
+      },
+    });
+    return;
+  }
+  const tenantId = parseResult.data.id;
 
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },

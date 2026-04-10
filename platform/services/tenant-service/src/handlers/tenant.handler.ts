@@ -14,6 +14,11 @@ function serializeTenant<T extends { maxStorage: bigint }>(t: T) {
   return { ...t, maxStorage: t.maxStorage.toString() };
 }
 
+// CSAP D-12: 입력 검증 — UUID 형식 강제 (SQL 주입 방어)
+const tenantIdParamSchema = z.object({
+  id: z.string().uuid('유효한 UUID 형식이 아닙니다'),
+});
+
 const createTenantSchema = z.object({
   name: z.string().min(1, '테넌트명은 필수입니다').max(200),
   slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, 'slug는 소문자, 숫자, 하이픈만 허용'),
@@ -79,8 +84,18 @@ export async function getTenantHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-12: UUID 형식 검증
+  const idParse = tenantIdParamSchema.safeParse(request.params);
+  if (!idParse.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: idParse.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+
   const tenant = await prisma.tenant.findUnique({
-    where: { id: request.params.id },
+    where: { id: idParse.data.id },
     include: {
       _count: { select: { users: true, subscriptions: true } },
     },
@@ -159,6 +174,16 @@ export async function updateTenantHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-12: UUID 형식 검증
+  const idParse = tenantIdParamSchema.safeParse(request.params);
+  if (!idParse.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: idParse.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+
   const parseResult = updateTenantSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -170,8 +195,9 @@ export async function updateTenantHandler(
 
   const { maxStorage, ...rest } = parseResult.data;
 
+  const validatedTenantId = idParse.data.id;
   const tenant = await prisma.tenant.update({
-    where: { id: request.params.id },
+    where: { id: validatedTenantId },
     data: {
       ...rest,
       ...(maxStorage !== undefined ? { maxStorage: BigInt(maxStorage) } : {}),
@@ -183,8 +209,8 @@ export async function updateTenantHandler(
   await logTenantEvent(
     'TENANT_UPDATED',
     updateActor,
-    request.params.id,
-    request.params.id,
+    validatedTenantId,
+    validatedTenantId,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
     { fields: Object.keys(parseResult.data) },
@@ -204,6 +230,17 @@ export async function updateTenantStatusHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-12: UUID 형식 검증
+  const idParse = tenantIdParamSchema.safeParse(request.params);
+  if (!idParse.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: idParse.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const statusTenantId = idParse.data.id;
+
   const parseResult = updateStatusSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -214,7 +251,7 @@ export async function updateTenantStatusHandler(
   }
 
   const tenant = await prisma.tenant.update({
-    where: { id: request.params.id },
+    where: { id: statusTenantId },
     data: { status: parseResult.data.status },
   });
 
@@ -223,8 +260,8 @@ export async function updateTenantStatusHandler(
   await logTenantEvent(
     'TENANT_STATUS_CHANGED',
     statusActor,
-    request.params.id,
-    request.params.id,
+    statusTenantId,
+    statusTenantId,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
     { newStatus: parseResult.data.status, reason: parseResult.data.reason },
@@ -233,7 +270,7 @@ export async function updateTenantStatusHandler(
   // FR-TENANT.2: SUSPENDED 시 테넌트 내 모든 사용자 세션 무효화
   // Design Ref: SVC-TENANT-R1 DESIGN §2
   if (parseResult.data.status === 'SUSPENDED') {
-    await invalidateTenantSessions(request.params.id, request.ip);
+    await invalidateTenantSessions(statusTenantId, request.ip);
   }
 
   await reply.send({
@@ -253,7 +290,16 @@ export async function deleteTenantHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
-  const tenantId = request.params.id;
+  // CSAP D-12: UUID 형식 검증
+  const idParse = tenantIdParamSchema.safeParse(request.params);
+  if (!idParse.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: idParse.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const tenantId = idParse.data.id;
 
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
@@ -313,8 +359,18 @@ export async function getTenantConfigHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-12: UUID 형식 검증
+  const idParse = tenantIdParamSchema.safeParse(request.params);
+  if (!idParse.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: idParse.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+
   const tenant = await prisma.tenant.findUnique({
-    where: { id: request.params.id },
+    where: { id: idParse.data.id },
     select: { id: true, name: true, config: true, theme: true },
   });
 
@@ -346,6 +402,17 @@ export async function updateTenantConfigHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-12: UUID 형식 검증
+  const idParse = tenantIdParamSchema.safeParse(request.params);
+  if (!idParse.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: idParse.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const configTenantId = idParse.data.id;
+
   const configSchema = z.object({
     config: z.record(z.unknown()).optional(),
     theme: z.object({
@@ -370,7 +437,7 @@ export async function updateTenantConfigHandler(
   if (parseResult.data.theme) updateData['theme'] = parseResult.data.theme;
 
   const tenant = await prisma.tenant.update({
-    where: { id: request.params.id },
+    where: { id: configTenantId },
     data: updateData as Parameters<typeof prisma.tenant.update>[0]['data'],
     select: { id: true, name: true, config: true, theme: true },
   });
@@ -379,8 +446,8 @@ export async function updateTenantConfigHandler(
   await logTenantEvent(
     'TENANT_CONFIG_UPDATED',
     configActor,
-    request.params.id,
-    request.params.id,
+    configTenantId,
+    configTenantId,
     request.ip,
     request.headers['user-agent'] ?? 'unknown',
     { updatedFields: Object.keys(parseResult.data) },

@@ -6,6 +6,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
+import { logNotificationEvent } from '../lib/audit.js';
 
 /**
  * 알림 템플릿 인터페이스
@@ -129,6 +130,18 @@ export async function createTemplateHandler(
 
   templateStore.set(id, template);
 
+  // CSAP D-06: 템플릿 생성 감사 로그
+  const createActor = (request.headers['x-user-id'] as string) || 'system';
+  await logNotificationEvent(
+    'TEMPLATE_CREATED',
+    createActor,
+    id,
+    (request.headers['x-user-tenant-id'] as string) || 'platform',
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { name: parseResult.data.name, channel: parseResult.data.channel },
+  );
+
   await reply.status(201).send({ success: true, data: template });
 }
 
@@ -205,6 +218,18 @@ export async function updateTemplateHandler(
 
   templateStore.set(request.params.id, updated);
 
+  // CSAP D-06: 템플릿 수정 감사 로그
+  const updateActor = (request.headers['x-user-id'] as string) || 'system';
+  await logNotificationEvent(
+    'TEMPLATE_UPDATED',
+    updateActor,
+    request.params.id,
+    (request.headers['x-user-tenant-id'] as string) || 'platform',
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { fields: Object.keys(parseResult.data) },
+  );
+
   await reply.send({ success: true, data: updated });
 }
 
@@ -224,6 +249,18 @@ export async function deleteTemplateHandler(
   }
 
   templateStore.delete(request.params.id);
+
+  // CSAP D-06: 템플릿 삭제 감사 로그
+  const deleteActor = (request.headers['x-user-id'] as string) || 'system';
+  await logNotificationEvent(
+    'TEMPLATE_DELETED',
+    deleteActor,
+    request.params.id,
+    (request.headers['x-user-tenant-id'] as string) || 'platform',
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+  );
+
   await reply.send({ success: true, message: '템플릿이 삭제되었습니다' });
 }
 

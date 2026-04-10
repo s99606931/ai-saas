@@ -8,6 +8,14 @@ import { z } from 'zod';
 import { logSubscriptionEvent } from '../lib/audit.js';
 import { prisma } from '../lib/prisma.js';
 
+// CSAP D-12: 입력 검증 — UUID 형식 강제
+const idParamSchema = z.object({
+  id: z.string().uuid('유효한 UUID 형식이 아닙니다'),
+});
+const tenantIdParamSchema = z.object({
+  tenantId: z.string().uuid('유효한 UUID 형식이 아닙니다'),
+});
+
 const createPlanSchema = z.object({
   name: z.string().min(1, '플랜명은 필수입니다').max(100),
   slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/),
@@ -67,6 +75,18 @@ export async function createPlanHandler(
     },
   });
 
+  // FR-SUB.2: 플랜 생성 감사 로그 (CSAP D-06, Design Ref: SVC-SUB-R1 DESIGN)
+  const createPlanActor = (request.headers['x-user-id'] as string) || 'system';
+  await logSubscriptionEvent(
+    'PLAN_CREATED',
+    createPlanActor,
+    plan.id,
+    'platform',
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { name: plan.name, slug: plan.slug },
+  );
+
   await reply.status(201).send({
     success: true,
     data: { ...plan, maxStorage: plan.maxStorage.toString(), price: plan.price.toString() },
@@ -81,6 +101,16 @@ export async function updatePlanHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-12: UUID 형식 검증
+  const idParse = idParamSchema.safeParse(request.params);
+  if (!idParse.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: idParse.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+
   const schema = z.object({
     name: z.string().optional(),
     price: z.number().min(0).optional(),
@@ -100,9 +130,21 @@ export async function updatePlanHandler(
 
   const { maxStorage, ...rest } = parseResult.data;
   const plan = await prisma.plan.update({
-    where: { id: request.params.id },
+    where: { id: idParse.data.id },
     data: { ...rest, ...(maxStorage !== undefined ? { maxStorage: BigInt(maxStorage) } : {}) },
   });
+
+  // FR-SUB.2: 플랜 수정 감사 로그 (CSAP D-06, Design Ref: SVC-SUB-R1 DESIGN)
+  const updatePlanActor = (request.headers['x-user-id'] as string) || 'system';
+  await logSubscriptionEvent(
+    'PLAN_UPDATED',
+    updatePlanActor,
+    plan.id,
+    'platform',
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+    { fields: Object.keys(parseResult.data) },
+  );
 
   await reply.send({
     success: true,
@@ -167,10 +209,21 @@ export async function getTenantSubscriptionHandler(
   request: FastifyRequest<{ Params: { tenantId: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-12: tenantId UUID 형식 검증
+  const tenantIdParse = tenantIdParamSchema.safeParse(request.params);
+  if (!tenantIdParse.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: tenantIdParse.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+
   // CSAP D-08-05: JWT 클레임 기반 테넌트 격리 (Security Ref: FR-N08.5)
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
-  if (jwtRole !== 'SUPER_ADMIN' && jwtTenantId && request.params.tenantId !== jwtTenantId) {
+  const validatedTenantId = tenantIdParse.data.tenantId;
+  if (jwtRole !== 'SUPER_ADMIN' && jwtTenantId && validatedTenantId !== jwtTenantId) {
     await reply.status(403).send({
       success: false,
       error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
@@ -180,7 +233,7 @@ export async function getTenantSubscriptionHandler(
 
   // CSAP D-10: 페이지네이션으로 DoS 방어 (최대 100건)
   const subscriptions = await prisma.subscription.findMany({
-    where: { tenantId: request.params.tenantId },
+    where: { tenantId: validatedTenantId },
     include: { plan: true },
     orderBy: { createdAt: 'desc' },
     take: 100,
@@ -199,6 +252,17 @@ export async function upgradeHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-12: UUID 형식 검증
+  const idParse = idParamSchema.safeParse(request.params);
+  if (!idParse.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: idParse.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const upgradeSubId = idParse.data.id;
+
   const schema = z.object({ newPlanId: z.string().min(1) });
   const parseResult = schema.safeParse(request.body);
   if (!parseResult.success) {
@@ -211,7 +275,7 @@ export async function upgradeHandler(
 
   // CSAP D-08-05: 구독 소유 테넌트 확인 (Security Ref: FR-N08.5)
   const existingSub = await prisma.subscription.findUnique({
-    where: { id: request.params.id },
+    where: { id: upgradeSubId },
     select: { tenantId: true },
   });
   if (!existingSub) {
@@ -232,7 +296,7 @@ export async function upgradeHandler(
   }
 
   const subscription = await prisma.subscription.update({
-    where: { id: request.params.id },
+    where: { id: upgradeSubId },
     data: { planId: parseResult.data.newPlanId },
   });
 
@@ -260,6 +324,17 @@ export async function downgradeHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-12: UUID 형식 검증
+  const idParse = idParamSchema.safeParse(request.params);
+  if (!idParse.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: idParse.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const downgradeSubId = idParse.data.id;
+
   const schema = z.object({ newPlanId: z.string().min(1) });
   const parseResult = schema.safeParse(request.body);
   if (!parseResult.success) {
@@ -272,7 +347,7 @@ export async function downgradeHandler(
 
   // CSAP D-08-05: 구독 소유 테넌트 확인 (Security Ref: FR-N08.5)
   const existingDownSub = await prisma.subscription.findUnique({
-    where: { id: request.params.id },
+    where: { id: downgradeSubId },
     select: { tenantId: true },
   });
   if (!existingDownSub) {
@@ -293,7 +368,7 @@ export async function downgradeHandler(
   }
 
   const subscription = await prisma.subscription.update({
-    where: { id: request.params.id },
+    where: { id: downgradeSubId },
     data: { planId: parseResult.data.newPlanId },
   });
 
@@ -321,9 +396,20 @@ export async function cancelHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-12: UUID 형식 검증
+  const idParse = idParamSchema.safeParse(request.params);
+  if (!idParse.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: idParse.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const cancelSubId = idParse.data.id;
+
   // CSAP D-08-05: 구독 소유 테넌트 확인 (Security Ref: FR-N08.5)
   const existingCancelSub = await prisma.subscription.findUnique({
-    where: { id: request.params.id },
+    where: { id: cancelSubId },
     select: { tenantId: true },
   });
   if (!existingCancelSub) {
@@ -344,7 +430,7 @@ export async function cancelHandler(
   }
 
   const subscription = await prisma.subscription.update({
-    where: { id: request.params.id },
+    where: { id: cancelSubId },
     data: { status: 'CANCELED', canceledAt: new Date() },
   });
 
