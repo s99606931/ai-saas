@@ -9398,3 +9398,172 @@
 {"timestamp":"2026-04-10T10:14:30Z","tool":"Bash","user":"kunkin"}
 {"timestamp":"2026-04-10T10:14:42Z","tool":"Edit/Write","user":"kunkin"}
 {"timestamp":"2026-04-10T10:14:52Z","event":"session-end"}
+{"timestamp":"2026-04-10T10:14:55Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:15:14Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:15:19Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:16:22Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:16:39Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:17:01Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:19:02Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:19:03Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:19:08Z","actor":"alert-fatigue-analyzer","action":"ALERT_FATIGUE_ANALYSIS_START","detail":"period=weekly"}
+{"timestamp":"2026-04-10T10:19:08Z","actor":"alert-fatigue-analyzer","action":"ALERT_FATIGUE_ANALYSIS_COMPLETE","detail":"output=/tmp/tmp.UGy4bUhT39/alert-fatigue-weekly-2026-04-10.md fatigue_grade=LOW (낮음)"}
+{"timestamp":"2026-04-10T10:19:08Z","actor":"alert-fatigue-analyzer","action":"ALERT_FATIGUE_ANALYSIS_START","detail":"period=monthly"}
+{"timestamp":"2026-04-10T10:19:08Z","actor":"alert-fatigue-analyzer","action":"ALERT_FATIGUE_ANALYSIS_COMPLETE","detail":"output=/tmp/tmp.UGy4bUhT39/alert-fatigue-monthly-2026-04-10.md fatigue_grade=LOW (낮음)"}
+{"timestamp":"2026-04-10T10:19:09Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:19:17Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:19:25Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:19:42Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:19:49Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:19:56Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:20:42Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:20:57Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:21:37Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:22:52Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:23:26Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:23:30Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:23:36Z","actor":"dora-metrics-analyzer","action":"DORA_ANALYSIS_START","detail":"period=weekly"}
+{"timestamp":"2026-04-10T10:23:36Z","actor":"dora-metrics-analyzer","action":"DORA_ANALYSIS_COMPLETE","detail":"output=/tmp/tmp.4LHL0wz7VI/dora-weekly-2026-04-10.md overall_grade=Elite"}
+{"timestamp":"2026-04-10T10:23:36Z","actor":"dora-metrics-analyzer","action":"DORA_ANALYSIS_START","detail":"period=monthly"}
+{"timestamp":"2026-04-10T10:23:36Z","actor":"dora-metrics-analyzer","action":"DORA_ANALYSIS_COMPLETE","detail":"output=/tmp/tmp.4LHL0wz7VI/dora-monthly-2026-04-10.md overall_grade=High"}
+{"timestamp":"2026-04-10T10:23:36Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:23:44Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:23:51Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:24:07Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:24:17Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:24:29Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:24:58Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:25:09Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:27:00Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:27:34Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:27:39Z","actor":"sre-maturity-assessor","action":"SRE_MATURITY_ASSESS_START","detail":"domain=all"}
+{"timestamp":"2026-04-10T10:27:40Z","actor":"sre-maturity-assessor","action":"SRE_MATURITY_ASSESS_COMPLETE","detail":"output=/tmp/tmp.TnRh9h7Ilu/sre-maturity-2026-04-10.md overall=100%"}
+{"timestamp":"2026-04-10T10:27:40Z","actor":"sre-maturity-assessor","action":"SRE_MATURITY_ASSESS_START","detail":"domain=monitoring"}
+{"timestamp":"2026-04-10T10:27:40Z","actor":"sre-maturity-assessor","action":"SRE_MATURITY_ASSESS_COMPLETE","detail":"output=/tmp/tmp.TnRh9h7Ilu/sre-maturity-2026-04-10.md overall=100%"}
+{"timestamp":"2026-04-10T10:27:40Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:27:50Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:28:05Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:28:17Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:28:27Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:29:34Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:30:05Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:30:12Z","actor":"incident-timeline-generator","action":"INCIDENT_TIMELINE_START","detail":"incident_id=INC-TEST-001"}
+{"timestamp":"2026-04-10T10:30:12Z","actor":"incident-timeline-generator","action":"INCIDENT_TIMELINE_COMPLETE","detail":"output=/tmp/tmp.Wu2EWPTTeQ/timeline-INC-TEST-001.md incident_id=INC-TEST-001 events=10"}
+{"timestamp":"2026-04-10T10:30:12Z","actor":"incident-timeline-generator","action":"INCIDENT_TIMELINE_START","detail":"incident_id=INC-TEST-002"}
+{"timestamp":"2026-04-10T10:30:12Z","actor":"incident-timeline-generator","action":"INCIDENT_TIMELINE_COMPLETE","detail":"output=/tmp/tmp.Wu2EWPTTeQ/timeline-INC-TEST-002.md incident_id=INC-TEST-002 events=11"}
+{"timestamp":"2026-04-10T10:30:12Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:30:21Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:30:34Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:30:43Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:31:02Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:31:20Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:31:32Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:32:35Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:33:04Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:33:11Z","actor":"deployment-verifier","action":"DEPLOYMENT_VERIFY_START","detail":"service=api-gateway namespace=default"}
+{"timestamp":"2026-04-10T10:33:11Z","actor":"deployment-verifier","action":"DEPLOYMENT_VERIFY_COMPLETE","detail":"output=/tmp/tmp.2IGRXJhwe9/verify-2026-04-10.md verdict=HEALTHY pass=5 fail=0"}
+{"timestamp":"2026-04-10T10:33:11Z","actor":"deployment-verifier","action":"DEPLOYMENT_VERIFY_START","detail":"service=all namespace=default"}
+{"timestamp":"2026-04-10T10:33:11Z","actor":"deployment-verifier","action":"DEPLOYMENT_VERIFY_COMPLETE","detail":"output=/tmp/tmp.2IGRXJhwe9/verify-2026-04-10.md verdict=HEALTHY pass=5 fail=0"}
+{"timestamp":"2026-04-10T10:33:11Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:33:19Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:33:33Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:33:46Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:33:56Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:35:26Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:35:54Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:36:03Z","actor":"tech-debt-dashboard","action":"TECH_DEBT_ANALYSIS_START","detail":"category=all"}
+{"timestamp":"2026-04-10T10:36:12Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:36:25Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:36:33Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:36:41Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:36:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:36:54Z","actor":"tech-debt-dashboard","action":"TECH_DEBT_ANALYSIS_START","detail":"category=all"}
+{"timestamp":"2026-04-10T10:36:59Z","actor":"tech-debt-dashboard","action":"TECH_DEBT_ANALYSIS_START","detail":"category=all"}
+{"timestamp":"2026-04-10T10:36:59Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:38:47Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:38:54Z","actor":"tech-debt-dashboard","action":"TECH_DEBT_ANALYSIS_START","detail":"category=all"}
+{"timestamp":"2026-04-10T10:38:55Z","actor":"tech-debt-dashboard","action":"TECH_DEBT_ANALYSIS_COMPLETE","detail":"output=/tmp/tmp.nnrOGbKeNR/tech-debt-2026-04-10.md overall=88%"}
+{"timestamp":"2026-04-10T10:38:55Z","actor":"tech-debt-dashboard","action":"TECH_DEBT_ANALYSIS_START","detail":"category=code"}
+{"timestamp":"2026-04-10T10:38:55Z","actor":"tech-debt-dashboard","action":"TECH_DEBT_ANALYSIS_COMPLETE","detail":"output=/tmp/tmp.nnrOGbKeNR/tech-debt-2026-04-10.md overall=80%"}
+{"timestamp":"2026-04-10T10:38:55Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:39:04Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:39:15Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:39:24Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:39:31Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:40:19Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:40:30Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:41:37Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:42:04Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:42:11Z","actor":"security-compliance-scanner","action":"SECURITY_COMPLIANCE_SCAN_START","detail":"rule=all"}
+{"timestamp":"2026-04-10T10:42:11Z","actor":"security-compliance-scanner","action":"SECURITY_COMPLIANCE_SCAN_COMPLETE","detail":"output=/tmp/tmp.i6V2L7Uux2/security-scan-2026-04-10.md result=FAIL pass=6 warn=4 fail=1"}
+{"timestamp":"2026-04-10T10:42:11Z","actor":"security-compliance-scanner","action":"SECURITY_COMPLIANCE_SCAN_START","detail":"rule=SECRET"}
+{"timestamp":"2026-04-10T10:42:11Z","actor":"security-compliance-scanner","action":"SECURITY_COMPLIANCE_SCAN_COMPLETE","detail":"output=/tmp/tmp.i6V2L7Uux2/security-scan-2026-04-10.md result=PASS pass=3 warn=0 fail=0"}
+{"timestamp":"2026-04-10T10:42:11Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:42:22Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:42:35Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:42:45Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:43:43Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:43:51Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:43:59Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:44:01Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:44:07Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:44:12Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:44:13Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:44:14Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:44:43Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:45:08Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:45:45Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:46:17Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:47:26Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:48:04Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:48:34Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:48:40Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:48:45Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:48:52Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:49:21Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:49:46Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:51:04Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:51:30Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:51:35Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:51:44Z","actor":"cicd-quality-gate","action":"QUALITY_GATE_FAIL","detail":"total=72,security=35,test=80,code=90,compliance=100"}
+{"timestamp":"2026-04-10T10:51:46Z","actor":"cicd-quality-gate","action":"QUALITY_GATE_FAIL","detail":"total=10,security=35,test=0,code=0,compliance=0"}
+{"timestamp":"2026-04-10T10:51:46Z","actor":"cicd-quality-gate","action":"QUALITY_GATE_FAIL","detail":"total=20,security=0,test=80,code=0,compliance=0"}
+{"timestamp":"2026-04-10T10:51:46Z","actor":"cicd-quality-gate","action":"QUALITY_GATE_FAIL","detail":"total=22,security=0,test=0,code=90,compliance=0"}
+{"timestamp":"2026-04-10T10:51:46Z","actor":"cicd-quality-gate","action":"QUALITY_GATE_FAIL","detail":"total=20,security=0,test=0,code=0,compliance=100"}
+{"timestamp":"2026-04-10T10:51:46Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:52:11Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:52:28Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:53:50Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:54:21Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:54:25Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:54:44Z","actor":"cost-optimization-report","action":"COST_REPORT_GENERATED","detail":"date=2026-04-10,output=/data/ai-saas/docs/reports/cost-optimization/cost-report-2026-04-10.md"}
+{"timestamp":"2026-04-10T10:54:44Z","actor":"cost-optimization-report","action":"COST_REPORT_GENERATED","detail":"date=2026-04-10,output=/data/ai-saas/docs/reports/cost-optimization/cost-report-2026-04-10.md"}
+{"timestamp":"2026-04-10T10:54:44Z","actor":"cost-optimization-report","action":"COST_REPORT_GENERATED","detail":"date=2026-04-10,output=/data/ai-saas/docs/reports/cost-optimization/cost-report-2026-04-10.md"}
+{"timestamp":"2026-04-10T10:54:44Z","actor":"cost-optimization-report","action":"COST_REPORT_GENERATED","detail":"date=2026-04-10,output=/data/ai-saas/docs/reports/cost-optimization/cost-report-2026-04-10.md"}
+{"timestamp":"2026-04-10T10:54:47Z","actor":"cost-optimization-report","action":"COST_REPORT_GENERATED","detail":"date=2026-04-10,output=/data/ai-saas/docs/reports/cost-optimization/cost-report-2026-04-10.md"}
+{"timestamp":"2026-04-10T10:54:48Z","actor":"cost-optimization-report","action":"COST_REPORT_GENERATED","detail":"date=2026-04-10,output=/data/ai-saas/docs/reports/cost-optimization/cost-report-2026-04-10.md"}
+{"timestamp":"2026-04-10T10:54:48Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:55:19Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:55:35Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:56:06Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:56:57Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:57:23Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:57:30Z","actor":"capacity-forecast","action":"CAPACITY_FORECAST_REPORT","detail":"date=2026-04-10"}
+{"timestamp":"2026-04-10T10:57:30Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:57:51Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:58:05Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:59:02Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:59:25Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T10:59:34Z","actor":"change-impact-analysis","action":"CHANGE_IMPACT_ANALYSIS","detail":"commit=27ae040,infra=0,security=7,db=0,service=0"}
+{"timestamp":"2026-04-10T10:59:34Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T10:59:58Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T11:00:10Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T11:00:52Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T11:01:12Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T11:01:18Z","actor":"runbook-index","action":"RUNBOOK_RECOMMEND","detail":"alert=OOMKilled,found=true"}
+{"timestamp":"2026-04-10T11:01:18Z","actor":"runbook-index","action":"RUNBOOK_RECOMMEND","detail":"alert=DiskPressure,found=true"}
+{"timestamp":"2026-04-10T11:01:18Z","actor":"runbook-index","action":"RUNBOOK_RECOMMEND","detail":"alert=CrashLoop,found=true"}
+{"timestamp":"2026-04-10T11:01:19Z","actor":"runbook-index","action":"RUNBOOK_RECOMMEND","detail":"alert=HighLatency,found=true"}
+{"timestamp":"2026-04-10T11:01:19Z","actor":"runbook-index","action":"RUNBOOK_RECOMMEND","detail":"alert=UnknownAlert,found=false"}
+{"timestamp":"2026-04-10T11:01:19Z","actor":"runbook-index","action":"RUNBOOK_VERIFY","detail":"total=6,ok=1,issues=5"}
+{"timestamp":"2026-04-10T11:01:19Z","tool":"Bash","user":"kunkin"}

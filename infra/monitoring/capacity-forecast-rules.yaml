@@ -1,0 +1,212 @@
+# 용량 예측 Recording Rules
+# Plan SC: FR-N135.2, FR-N135.3
+# Design Ref: MTU-N135 Design §1, §2
+# CSAP: D-08 (접근 통제 -- 적정 리소스 할당)
+#
+# predict_linear 기반 14일/30일 용량 예측
+# 적용: kubectl apply -f infra/monitoring/capacity-forecast-rules.yaml
+
+groups:
+  - name: capacity-forecast
+    interval: 5m
+    rules:
+      # ──────────────────────────────────────────
+      # CPU 용량 예측
+      # ──────────────────────────────────────────
+
+      # 현재 CPU 사용률
+      - record: capacity_forecast:cpu:current_usage_ratio
+        expr: |
+          1 - avg(rate(node_cpu_seconds_total{mode="idle"}[1h]))
+        labels:
+          resource: cpu
+          forecast: current
+
+      # 14일 후 CPU 사용률 예측
+      # Design Ref: MTU-N135 §1.1
+      - record: capacity_forecast:cpu:14d_usage_ratio
+        expr: |
+          clamp_max(
+            1 - avg(
+              predict_linear(
+                node_cpu_seconds_total{mode="idle"}[7d],
+                14 * 24 * 3600
+              )
+            ),
+            1
+          )
+        labels:
+          resource: cpu
+          forecast: 14d
+
+      # 30일 후 CPU 사용률 예측
+      - record: capacity_forecast:cpu:30d_usage_ratio
+        expr: |
+          clamp_max(
+            1 - avg(
+              predict_linear(
+                node_cpu_seconds_total{mode="idle"}[7d],
+                30 * 24 * 3600
+              )
+            ),
+            1
+          )
+        labels:
+          resource: cpu
+          forecast: 30d
+
+      # ──────────────────────────────────────────
+      # 메모리 용량 예측
+      # ──────────────────────────────────────────
+
+      # 현재 메모리 사용률
+      - record: capacity_forecast:memory:current_usage_ratio
+        expr: |
+          1 - (sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))
+        labels:
+          resource: memory
+          forecast: current
+
+      # 14일 후 메모리 사용률 예측
+      - record: capacity_forecast:memory:14d_usage_ratio
+        expr: |
+          clamp_max(
+            1 - (
+              sum(predict_linear(node_memory_MemAvailable_bytes[7d], 14 * 24 * 3600))
+              / sum(node_memory_MemTotal_bytes)
+            ),
+            1
+          )
+        labels:
+          resource: memory
+          forecast: 14d
+
+      # 30일 후 메모리 사용률 예측
+      - record: capacity_forecast:memory:30d_usage_ratio
+        expr: |
+          clamp_max(
+            1 - (
+              sum(predict_linear(node_memory_MemAvailable_bytes[7d], 30 * 24 * 3600))
+              / sum(node_memory_MemTotal_bytes)
+            ),
+            1
+          )
+        labels:
+          resource: memory
+          forecast: 30d
+
+      # ──────────────────────────────────────────
+      # 디스크 용량 예측
+      # ──────────────────────────────────────────
+
+      # 현재 디스크 여유 비율
+      - record: capacity_forecast:disk:current_avail_ratio
+        expr: |
+          sum(node_filesystem_avail_bytes{mountpoint="/",fstype!="tmpfs"})
+          / sum(node_filesystem_size_bytes{mountpoint="/",fstype!="tmpfs"})
+        labels:
+          resource: disk
+          forecast: current
+
+      # 14일 후 디스크 여유 비율 예측
+      - record: capacity_forecast:disk:14d_avail_ratio
+        expr: |
+          clamp_min(
+            sum(predict_linear(node_filesystem_avail_bytes{mountpoint="/",fstype!="tmpfs"}[7d], 14 * 24 * 3600))
+            / sum(node_filesystem_size_bytes{mountpoint="/",fstype!="tmpfs"}),
+            0
+          )
+        labels:
+          resource: disk
+          forecast: 14d
+
+      # 30일 후 디스크 여유 비율 예측
+      - record: capacity_forecast:disk:30d_avail_ratio
+        expr: |
+          clamp_min(
+            sum(predict_linear(node_filesystem_avail_bytes{mountpoint="/",fstype!="tmpfs"}[7d], 30 * 24 * 3600))
+            / sum(node_filesystem_size_bytes{mountpoint="/",fstype!="tmpfs"}),
+            0
+          )
+        labels:
+          resource: disk
+          forecast: 30d
+
+  # ──────────────────────────────────────────
+  # 용량 고갈 경고 알림
+  # Design Ref: MTU-N135 §1.2
+  # Plan SC: FR-N135.3
+  # ──────────────────────────────────────────
+  - name: capacity-forecast-alerts
+    interval: 5m
+    rules:
+      # CPU 14일 후 85% 초과 경고
+      - alert: CpuCapacityWarning14d
+        expr: capacity_forecast:cpu:14d_usage_ratio > 0.85
+        for: 1h
+        labels:
+          severity: warning
+          category: capacity-forecast
+          csap_control: D-08
+        annotations:
+          summary: "CPU 14일 후 사용률 {{ $value | humanizePercentage }} 예측"
+          description: "선형 회귀 기반 14일 후 CPU 사용률이 85%를 초과할 것으로 예측됩니다. 증설 검토가 필요합니다."
+          runbook_url: "https://docs.saas.go.kr/operations/runbooks/capacity-forecast"
+
+      # CPU 14일 후 95% 초과 위험
+      - alert: CpuCapacityCritical14d
+        expr: capacity_forecast:cpu:14d_usage_ratio > 0.95
+        for: 30m
+        labels:
+          severity: critical
+          category: capacity-forecast
+          csap_control: D-08
+        annotations:
+          summary: "CPU 14일 후 사용률 {{ $value | humanizePercentage }} 위험 예측"
+          description: "14일 이내 CPU 고갈이 예상됩니다. 즉시 증설이 필요합니다."
+
+      # 메모리 14일 후 80% 초과 경고
+      - alert: MemoryCapacityWarning14d
+        expr: capacity_forecast:memory:14d_usage_ratio > 0.80
+        for: 1h
+        labels:
+          severity: warning
+          category: capacity-forecast
+          csap_control: D-08
+        annotations:
+          summary: "메모리 14일 후 사용률 {{ $value | humanizePercentage }} 예측"
+          description: "14일 후 메모리 사용률 80% 초과 예측. 증설 또는 최적화 검토 필요."
+
+      # 메모리 14일 후 90% 초과 위험
+      - alert: MemoryCapacityCritical14d
+        expr: capacity_forecast:memory:14d_usage_ratio > 0.90
+        for: 30m
+        labels:
+          severity: critical
+          category: capacity-forecast
+        annotations:
+          summary: "메모리 14일 후 사용률 {{ $value | humanizePercentage }} 위험"
+          description: "14일 이내 메모리 고갈 예상. 즉시 증설 필요."
+
+      # 디스크 30일 후 여유 20% 미만 경고
+      - alert: DiskCapacityWarning30d
+        expr: capacity_forecast:disk:30d_avail_ratio < 0.20
+        for: 1h
+        labels:
+          severity: warning
+          category: capacity-forecast
+          csap_control: D-08
+        annotations:
+          summary: "디스크 30일 후 여유 {{ $value | humanizePercentage }} 예측"
+          description: "30일 후 디스크 여유 공간이 20% 미만으로 예측됩니다."
+
+      # 디스크 30일 후 여유 10% 미만 위험
+      - alert: DiskCapacityCritical30d
+        expr: capacity_forecast:disk:30d_avail_ratio < 0.10
+        for: 30m
+        labels:
+          severity: critical
+          category: capacity-forecast
+        annotations:
+          summary: "디스크 30일 후 여유 {{ $value | humanizePercentage }} 위험"
+          description: "30일 이내 디스크 고갈 예상. 즉시 정리 또는 증설 필요."

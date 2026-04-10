@@ -1,0 +1,183 @@
+# 운영 대시보드 통합 허브 — Recording Rules
+# Plan SC: FR-N132.3
+# Design Ref: MTU-N132 Design §2
+# 각 영역을 0(정상)/1(경고)/2(위험) 3단계로 집약
+
+groups:
+  - name: ops-hub-status
+    interval: 30s
+    rules:
+      # ──────────────────────────────────────────
+      # 클러스터 상태 (CPU + 메모리 종합)
+      # ──────────────────────────────────────────
+      - record: ops_hub:cluster:cpu_ratio
+        expr: cluster:cpu_usage:ratio or (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])))
+        labels:
+          area: cluster
+
+      - record: ops_hub:cluster:memory_ratio
+        expr: cluster:memory_usage:ratio or (1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))
+        labels:
+          area: cluster
+
+      - record: ops_hub:cluster:status
+        expr: |
+          clamp(
+            (
+              (clamp_min(ceil(cluster:cpu_usage:ratio or (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))) - 0.9), 0) * 2)
+              or
+              (clamp_min(ceil(cluster:cpu_usage:ratio or (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))) - 0.7), 0))
+              or vector(0)
+            )
+            +
+            (
+              (clamp_min(ceil(cluster:memory_usage:ratio or (1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes)) - 0.9), 0) * 2)
+              or
+              (clamp_min(ceil(cluster:memory_usage:ratio or (1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes)) - 0.7), 0))
+              or vector(0)
+            ),
+            0, 2
+          )
+        labels:
+          area: cluster
+
+      # ──────────────────────────────────────────
+      # SLO 상태 (에러 버짓 소진율 기반)
+      # ──────────────────────────────────────────
+      - record: ops_hub:slo:min_budget
+        expr: |
+          min(
+            1 - slo:sli_error:ratio_rate30d
+          ) or vector(1)
+        labels:
+          area: slo
+
+      - record: ops_hub:slo:status
+        expr: |
+          clamp(
+            (
+              (clamp_min(ceil(0.1 - (min(1 - slo:sli_error:ratio_rate30d) or vector(1))), 0) * 2)
+              or
+              (clamp_min(ceil(0.5 - (min(1 - slo:sli_error:ratio_rate30d) or vector(1))), 0))
+              or vector(0)
+            ),
+            0, 2
+          )
+        labels:
+          area: slo
+
+      # ──────────────────────────────────────────
+      # 인시던트 상태 (활성 인시던트 수 기반)
+      # ──────────────────────────────────────────
+      - record: ops_hub:incident:active_total
+        expr: incident:total:active_count or vector(0)
+        labels:
+          area: incident
+
+      - record: ops_hub:incident:p1_count
+        expr: incident:p1:active_count or vector(0)
+        labels:
+          area: incident
+
+      - record: ops_hub:incident:status
+        expr: |
+          clamp(
+            (
+              (clamp_min(incident:p1:active_count or vector(0), 0) * 2)
+              or
+              (clamp_min(ceil((incident:total:active_count or vector(0)) - 0.5), 0))
+              or vector(0)
+            ),
+            0, 2
+          )
+        labels:
+          area: incident
+
+      # ──────────────────────────────────────────
+      # 보안 상태 (보안 이벤트 기반)
+      # ──────────────────────────────────────────
+      - record: ops_hub:security:critical_count
+        expr: |
+          (sum(ALERTS{alertstate="firing",severity="critical",area=~"security|csap|compliance"}) or vector(0))
+        labels:
+          area: security
+
+      - record: ops_hub:security:warning_count
+        expr: |
+          (sum(ALERTS{alertstate="firing",severity="warning",area=~"security|csap|compliance"}) or vector(0))
+        labels:
+          area: security
+
+      - record: ops_hub:security:status
+        expr: |
+          clamp(
+            (
+              (clamp_min(sum(ALERTS{alertstate="firing",severity="critical",area=~"security|csap|compliance"}) or vector(0), 0) * 2)
+              or
+              (clamp_min(ceil((sum(ALERTS{alertstate="firing",severity="warning",area=~"security|csap|compliance"}) or vector(0)) - 0.5), 0))
+              or vector(0)
+            ),
+            0, 2
+          )
+        labels:
+          area: security
+
+      # ──────────────────────────────────────────
+      # 비용 상태 (예산 대비 사용률)
+      # ──────────────────────────────────────────
+      - record: ops_hub:finops:budget_ratio
+        expr: |
+          (sum(tenant:cost_total:monthly_usd) / (sum(tenant:budget_total:monthly_usd) > 0)) or vector(0.5)
+        labels:
+          area: finops
+
+      - record: ops_hub:finops:status
+        expr: |
+          clamp(
+            (
+              (clamp_min(ceil((sum(tenant:cost_total:monthly_usd) / (sum(tenant:budget_total:monthly_usd) > 0) or vector(0.5)) - 1.0), 0) * 2)
+              or
+              (clamp_min(ceil((sum(tenant:cost_total:monthly_usd) / (sum(tenant:budget_total:monthly_usd) > 0) or vector(0.5)) - 0.8), 0))
+              or vector(0)
+            ),
+            0, 2
+          )
+        labels:
+          area: finops
+
+      # ──────────────────────────────────────────
+      # 배포 상태 (최근 배포 성공률)
+      # ──────────────────────────────────────────
+      - record: ops_hub:deploy:success_ratio
+        expr: |
+          (
+            sum(rate(deployment_status_total{status="success"}[24h]))
+            / (sum(rate(deployment_status_total[24h])) > 0)
+          ) or vector(1)
+        labels:
+          area: deploy
+
+      - record: ops_hub:deploy:status
+        expr: |
+          clamp(
+            (
+              (clamp_min(ceil(0.8 - (sum(rate(deployment_status_total{status="success"}[24h])) / (sum(rate(deployment_status_total[24h])) > 0) or vector(1))), 0) * 2)
+              or
+              (clamp_min(ceil(0.95 - (sum(rate(deployment_status_total{status="success"}[24h])) / (sum(rate(deployment_status_total[24h])) > 0) or vector(1))), 0))
+              or vector(0)
+            ),
+            0, 2
+          )
+        labels:
+          area: deploy
+
+      # ──────────────────────────────────────────
+      # 전체 상태 종합 (최악값 기준)
+      # ──────────────────────────────────────────
+      - record: ops_hub:overall:status
+        expr: |
+          max(ops_hub:cluster:status) or max(ops_hub:slo:status) or max(ops_hub:incident:status)
+          or max(ops_hub:security:status) or max(ops_hub:finops:status) or max(ops_hub:deploy:status)
+          or vector(0)
+        labels:
+          area: overall

@@ -1,0 +1,512 @@
+{
+  "annotations": { "list": [] },
+  "description": "운영 대시보드 통합 허브 -- 6개 영역 상태 + 드릴다운 + 알림 피드",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "id": 1,
+      "title": "클러스터 상태",
+      "description": "CPU/메모리/디스크 종합 상태 (Design Ref: MTU-N132 §1.2)",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "ops_hub:cluster:status",
+        "legendFormat": "클러스터",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "정상", "color": "green" } } },
+            { "type": "value", "options": { "1": { "text": "경고", "color": "yellow" } } },
+            { "type": "value", "options": { "2": { "text": "위험", "color": "red" } } }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        }
+      },
+      "links": [
+        { "title": "클러스터 개요", "url": "/d/optimized-overview", "targetBlank": false },
+        { "title": "노드 상세", "url": "/d/node-exporter-detail", "targetBlank": false },
+        { "title": "용량 계획", "url": "/d/capacity-planning", "targetBlank": false }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "SLO 상태",
+      "description": "에러 버짓 소진율 기반 SLO 현황 (Design Ref: MTU-N132 §1.2)",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "ops_hub:slo:status",
+        "legendFormat": "SLO",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "정상", "color": "green" } } },
+            { "type": "value", "options": { "1": { "text": "경고", "color": "yellow" } } },
+            { "type": "value", "options": { "2": { "text": "위험", "color": "red" } } }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        }
+      },
+      "links": [
+        { "title": "SLO 현황", "url": "/d/slo-overview", "targetBlank": false },
+        { "title": "RED 메트릭", "url": "/d/service-red-metrics", "targetBlank": false }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "인시던트 상태",
+      "description": "활성 인시던트 기반 상태 (Design Ref: MTU-N132 §1.2)",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "ops_hub:incident:status",
+        "legendFormat": "인시던트",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "정상", "color": "green" } } },
+            { "type": "value", "options": { "1": { "text": "경고", "color": "yellow" } } },
+            { "type": "value", "options": { "2": { "text": "위험", "color": "red" } } }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        }
+      },
+      "links": [
+        { "title": "인시던트 관리", "url": "/d/incident-management", "targetBlank": false },
+        { "title": "분산 추적", "url": "/d/distributed-tracing", "targetBlank": false },
+        { "title": "로그 탐색", "url": "/d/log-explorer", "targetBlank": false }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "보안 상태",
+      "description": "보안 이벤트 기반 상태 (CSAP D-06, D-08)",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "ops_hub:security:status",
+        "legendFormat": "보안",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "정상", "color": "green" } } },
+            { "type": "value", "options": { "1": { "text": "경고", "color": "yellow" } } },
+            { "type": "value", "options": { "2": { "text": "위험", "color": "red" } } }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        }
+      },
+      "links": [
+        { "title": "인증/보안 이벤트", "url": "/d/security-auth-events", "targetBlank": false },
+        { "title": "CSAP 준수 상태", "url": "/d/csap-compliance-status", "targetBlank": false },
+        { "title": "Trivy 보안 스캔", "url": "/d/trivy-security-scan", "targetBlank": false },
+        { "title": "Falco 런타임", "url": "/d/falco-runtime-security", "targetBlank": false },
+        { "title": "Gatekeeper", "url": "/d/gatekeeper-dashboard", "targetBlank": false }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "비용 상태",
+      "description": "예산 대비 사용률 기반 FinOps 상태",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "ops_hub:finops:status",
+        "legendFormat": "비용",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "정상", "color": "green" } } },
+            { "type": "value", "options": { "1": { "text": "경고", "color": "yellow" } } },
+            { "type": "value", "options": { "2": { "text": "위험", "color": "red" } } }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        }
+      },
+      "links": [
+        { "title": "FinOps 비용 분석", "url": "/d/finops-cost-analysis", "targetBlank": false },
+        { "title": "FinOps 대시보드", "url": "/d/finops-dashboard", "targetBlank": false },
+        { "title": "VPA 적정 크기", "url": "/d/vpa-rightsizing", "targetBlank": false },
+        { "title": "테넌트 리소스", "url": "/d/tenant-resource-usage", "targetBlank": false }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "배포/CI 상태",
+      "description": "배포 성공률 기반 CI/CD 상태",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "ops_hub:deploy:status",
+        "legendFormat": "배포",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "정상", "color": "green" } } },
+            { "type": "value", "options": { "1": { "text": "경고", "color": "yellow" } } },
+            { "type": "value", "options": { "2": { "text": "위험", "color": "red" } } }
+          ],
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        }
+      },
+      "links": [
+        { "title": "파이프라인 메트릭", "url": "/d/pipeline-metrics", "targetBlank": false },
+        { "title": "GitOps 상태", "url": "/d/gitops-status", "targetBlank": false },
+        { "title": "Flux 드리프트", "url": "/d/flux-drift-detection", "targetBlank": false },
+        { "title": "서비스 토폴로지", "url": "/d/service-topology", "targetBlank": false }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "주요 메트릭 요약",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "collapsed": false
+    },
+    {
+      "id": 8,
+      "title": "CPU 사용률",
+      "type": "gauge",
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "ops_hub:cluster:cpu_ratio",
+        "legendFormat": "CPU",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0, "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "메모리 사용률",
+      "type": "gauge",
+      "gridPos": { "h": 5, "w": 4, "x": 4, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "ops_hub:cluster:memory_ratio",
+        "legendFormat": "메모리",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0, "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "활성 인시던트",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 8, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "ops_hub:incident:active_total",
+        "legendFormat": "인시던트",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "최소 SLO 에러 버짓",
+      "type": "gauge",
+      "gridPos": { "h": 5, "w": 4, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "ops_hub:slo:min_budget",
+        "legendFormat": "최소 버짓",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0, "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.1 },
+              { "color": "green", "value": 0.5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "예산 사용률",
+      "type": "gauge",
+      "gridPos": { "h": 5, "w": 4, "x": 16, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "ops_hub:finops:budget_ratio",
+        "legendFormat": "예산 사용",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0, "max": 1.5,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.8 },
+              { "color": "red", "value": 1.0 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "배포 성공률",
+      "type": "gauge",
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "ops_hub:deploy:success_ratio",
+        "legendFormat": "배포 성공",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0, "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.8 },
+              { "color": "green", "value": 0.95 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "최근 활성 알림",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 11 },
+      "collapsed": false
+    },
+    {
+      "id": 15,
+      "title": "활성 알림 목록 (Top 10)",
+      "description": "현재 발동 중인 알림 상위 10건",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "topk(10, ALERTS{alertstate=\"firing\"})",
+        "format": "table",
+        "instant": true,
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "severity" },
+            "properties": [{
+              "id": "custom.cellOptions",
+              "value": {
+                "type": "color-background",
+                "mode": "gradient"
+              }
+            }]
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "includeByName": {
+              "alertname": true,
+              "severity": true,
+              "namespace": true,
+              "alertstate": true,
+              "Value": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "대시보드 네비게이션",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "collapsed": false
+    },
+    {
+      "id": 17,
+      "title": "클러스터 & 인프라",
+      "type": "text",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 21 },
+      "options": {
+        "mode": "markdown",
+        "content": "### 클러스터 & 인프라\n- [클러스터 개요 (최적화)](/d/optimized-overview)\n- [노드 상세](/d/node-exporter-detail)\n- [용량 계획](/d/capacity-planning)\n- [이상 탐지](/d/anomaly-detection)\n- [예측 스케일링](/d/predictive-scaling)\n- [KEDA 오토스케일](/d/keda-autoscale)\n- [SQL 모니터링](/d/sql-monitoring)"
+      }
+    },
+    {
+      "id": 18,
+      "title": "SLO & 서비스",
+      "type": "text",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 21 },
+      "options": {
+        "mode": "markdown",
+        "content": "### SLO & 서비스\n- [SLO 현황](/d/slo-overview)\n- [RED 메트릭](/d/service-red-metrics)\n- [서비스 상태](/d/service-status)\n- [서비스 트래픽](/d/service-traffic)\n- [서비스 토폴로지](/d/service-topology)\n- [분산 추적](/d/distributed-tracing)\n- [Linkerd 메시](/d/linkerd-dashboard)"
+      }
+    },
+    {
+      "id": 19,
+      "title": "보안 & 규정 준수",
+      "type": "text",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 21 },
+      "options": {
+        "mode": "markdown",
+        "content": "### 보안 & 규정 준수\n- [인증/보안 이벤트](/d/security-auth-events)\n- [CSAP 준수 상태](/d/csap-compliance-status)\n- [Trivy 보안 스캔](/d/trivy-security-scan)\n- [Falco 런타임 보안](/d/falco-runtime-security)\n- [Gatekeeper 정책](/d/gatekeeper-dashboard)\n- [CSAP 감사 모니터링 (Rules)](/d/csap-audit-monitoring)"
+      }
+    },
+    {
+      "id": 20,
+      "title": "비용 & FinOps",
+      "type": "text",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 27 },
+      "options": {
+        "mode": "markdown",
+        "content": "### 비용 & FinOps\n- [비용 분석](/d/finops-cost-analysis)\n- [FinOps 대시보드](/d/finops-dashboard)\n- [VPA 적정 크기](/d/vpa-rightsizing)\n- [테넌트 리소스 사용](/d/tenant-resource-usage)\n- [테넌트 모니터링](/d/tenant-monitoring)"
+      }
+    },
+    {
+      "id": 21,
+      "title": "인시던트 & 운영",
+      "type": "text",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 27 },
+      "options": {
+        "mode": "markdown",
+        "content": "### 인시던트 & 운영\n- [인시던트 관리](/d/incident-management)\n- [로그 탐색](/d/log-explorer)\n- [이상 탐지](/d/anomaly-detection)\n- [알림 피로도 분석 (Rules)](/d/alert-fatigue)\n- [온콜 스케줄 (Rules)](/d/oncall-schedule)"
+      }
+    },
+    {
+      "id": 22,
+      "title": "배포 & CI/CD",
+      "type": "text",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 27 },
+      "options": {
+        "mode": "markdown",
+        "content": "### 배포 & CI/CD\n- [파이프라인 메트릭](/d/pipeline-metrics)\n- [GitOps 상태](/d/gitops-status)\n- [Flux 드리프트 감지](/d/flux-drift-detection)\n- [Linkerd 메시 확장](/d/linkerd-mesh-extended)\n- [DORA 메트릭 (Rules)](/d/dora-metrics)"
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["ops-hub", "home", "sre", "overview"],
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "label": "Prometheus",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "text": "Prometheus", "value": "Prometheus" }
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "운영 대시보드 통합 허브",
+  "uid": "ops-hub-home",
+  "version": 1,
+  "weekStart": "monday"
+}
