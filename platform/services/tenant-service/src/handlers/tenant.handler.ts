@@ -44,18 +44,37 @@ const updateStatusSchema = z.object({
   reason: z.string().optional(),
 });
 
+// FR-TENANT.5: 정렬 가능 필드 (Design Ref: SVC-TENANT-R2 DESIGN)
+const VALID_SORT_FIELDS = ['name', 'createdAt', 'status', 'maxUsers'] as const;
+
 /**
  * 테넌트 목록 조회 (슈퍼 어드민 전용)
+ * Design Ref: SVC-TENANT-R2 DESIGN — 향상된 목록 조회
+ * CSAP D-12: Zod 입력 검증, sortBy/sortOrder 지원
  */
 export async function listTenantsHandler(
-  request: FastifyRequest<{ Querystring: { page?: string; pageSize?: string; status?: string } }>,
+  request: FastifyRequest<{ Querystring: { page?: string; pageSize?: string; status?: string; sortBy?: string; sortOrder?: string; search?: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
   const page = parseInt(request.query.page ?? '1', 10);
   const pageSize = Math.min(parseInt(request.query.pageSize ?? '20', 10), 100);
   const status = request.query.status;
+  const sortBy = (VALID_SORT_FIELDS as readonly string[]).includes(request.query.sortBy ?? '')
+    ? (request.query.sortBy as typeof VALID_SORT_FIELDS[number])
+    : 'createdAt';
+  const sortOrder = request.query.sortOrder === 'asc' ? 'asc' : 'desc';
 
-  const where = status ? { status: status as 'ACTIVE' | 'SUSPENDED' | 'TRIAL' | 'ARCHIVED' } : {};
+  const where: Record<string, unknown> = {};
+  if (status) {
+    where['status'] = status as 'ACTIVE' | 'SUSPENDED' | 'TRIAL' | 'ARCHIVED';
+  }
+  // Round 2: 인라인 검색 지원
+  if (request.query.search) {
+    where['OR'] = [
+      { name: { contains: request.query.search, mode: 'insensitive' } },
+      { slug: { contains: request.query.search, mode: 'insensitive' } },
+    ];
+  }
 
   const [tenants, total] = await Promise.all([
     prisma.tenant.findMany({
@@ -65,7 +84,7 @@ export async function listTenantsHandler(
       },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { [sortBy]: sortOrder },
     }),
     prisma.tenant.count({ where }),
   ]);

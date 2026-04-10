@@ -14,6 +14,7 @@ import {
   updateTenantConfigHandler,
 } from './handlers/tenant.handler.js';
 import { getTenantUsageHandler } from './handlers/tenant-usage.handler.js';
+import { searchTenantsHandler, tenantStatsHandler } from './handlers/tenant-stats.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerTenantRoutes(app: FastifyInstance): Promise<void> {
@@ -39,6 +40,12 @@ export async function registerTenantRoutes(app: FastifyInstance): Promise<void> 
   // CSAP D-08-06: Rate Limiting (읽기/쓰기 분리)
   const readLimiter = createRateLimiter(100, 60, 'rl:tenant:read');
   const writeLimiter = createRateLimiter(30, 60, 'rl:tenant:write');
+
+  // FR-TENANT.6: 테넌트 통계 (정적 라우트 우선 등록)
+  app.get('/tenants/stats', { preHandler: readLimiter }, tenantStatsHandler as never);
+
+  // FR-TENANT.5: 테넌트 검색 (정적 라우트 우선 등록)
+  app.get('/tenants/search', { preHandler: readLimiter }, searchTenantsHandler as never);
 
   app.get('/tenants', { preHandler: readLimiter }, listTenantsHandler as never);
   app.get('/tenants/:id', { preHandler: readLimiter }, getTenantHandler as never);
