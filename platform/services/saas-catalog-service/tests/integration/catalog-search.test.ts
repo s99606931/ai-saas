@@ -118,7 +118,8 @@ describe('SaaS 카탈로그 검색 및 통계 (FR-SCAT.3, FR-SCAT.5)', () => {
       headers: { 'x-tenant-id': TENANT },
     });
     const names: string[] = res.json().data.items.map((i: { name: string }) => i.name);
-    const sorted = [...names].sort((a, b) => a.localeCompare(b));
+    // 코드는 문자열 < / > 비교 (유니코드 코드포인트 기준)
+    const sorted = [...names].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
     expect(names).toEqual(sorted);
   });
 
