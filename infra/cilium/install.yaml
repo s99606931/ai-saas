@@ -1,0 +1,94 @@
+# Cilium eBPF CNI 설치 (Helm Values)
+# Design Ref: MTU-N93 Design §1
+# Plan SC: FR-N93.1
+# CSAP: D-10 네트워크 보안
+
+# 설치 명령:
+# helm repo add cilium https://helm.cilium.io/
+# helm install cilium cilium/cilium --namespace kube-system -f install.yaml
+
+cluster:
+  name: ai-saas-cluster
+
+# k3s 통합 설정
+k8sServiceHost: "127.0.0.1"
+k8sServicePort: "6443"
+
+# k3s Flannel 대체
+operator:
+  replicas: 1
+
+# eBPF 설정
+bpf:
+  masquerade: true
+  tproxy: true
+  hostLegacyRouting: false
+
+# kube-proxy 대체 (eBPF 서비스 로드밸런싱)
+kubeProxyReplacement: true
+
+# WireGuard 기반 노드 간 암호화 (Zero Trust)
+encryption:
+  enabled: true
+  type: wireguard
+  nodeEncryption: true
+
+# Hubble 관측성 활성화
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+    replicas: 1
+  ui:
+    enabled: true
+    replicas: 1
+  metrics:
+    enabled:
+      - dns:query;ignoreAAAA
+      - drop
+      - tcp
+      - flow
+      - icmp
+      - http
+    serviceMonitor:
+      enabled: true
+  tls:
+    enabled: true
+    auto:
+      enabled: true
+      method: helm
+
+# L7 프록시 (HTTP 필터링)
+l7Proxy: true
+
+# 네트워크 정책 설정
+policyEnforcementMode: "default"
+
+# 리소스 제한 (WSL2 환경)
+resources:
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
+
+# Prometheus 메트릭
+prometheus:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+
+# IPAM 설정
+ipam:
+  mode: "kubernetes"
+
+# 헬스체크
+healthChecking: true
+healthPort: 9879
+
+# Cilium 에이전트 설정
+agent:
+  tolerations:
+    - effect: NoSchedule
+      operator: Exists

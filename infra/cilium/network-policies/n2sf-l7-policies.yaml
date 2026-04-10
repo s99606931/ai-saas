@@ -1,0 +1,132 @@
+# N2SF 등급별 Cilium L7 네트워크 정책
+# Design Ref: MTU-N93 Design §2
+# Plan SC: FR-N93.3, FR-N93.5
+# CSAP: D-10 네트워크 보안, N2SF N-03 격리
+
+---
+# C등급 (기밀) — 인터넷 완전 차단, 내부 C등급만 통신
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: n2sf-grade-c-isolation
+  namespace: grade-c
+  labels:
+    n2sf: "C"
+    csap: "D-10"
+spec:
+  description: "C등급 네임스페이스 완전 격리 (N2SF N-03)"
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": grade-c
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": grade-c
+    # DNS 허용 (내부만)
+    - toEndpoints:
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": kube-system
+            "k8s-app": kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+
+---
+# S등급 (민감) — 외부 차단, S+O 내부 통신만
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: n2sf-grade-s-isolation
+  namespace: grade-s
+  labels:
+    n2sf: "S"
+    csap: "D-10"
+spec:
+  description: "S등급 네임스페이스 제한적 통신 (N2SF N-03)"
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": grade-s
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": grade-o
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": grade-s
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": grade-o
+    - toEndpoints:
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": kube-system
+            "k8s-app": kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+
+---
+# O등급 (공개) — AI GW 443만 외부 허용 + L7 HTTP 필터링
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: n2sf-grade-o-l7
+  namespace: grade-o
+  labels:
+    n2sf: "O"
+    csap: "D-10"
+spec:
+  description: "O등급 L7 HTTP 필터링 + AI GW 외부 허용 (N2SF N-03)"
+  endpointSelector:
+    matchLabels:
+      app: ai-gateway
+  egress:
+    # Claude API 외부 연동 (HTTPS만)
+    - toCIDR:
+        - "0.0.0.0/0"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+          rules:
+            http:
+              - method: POST
+                path: "/v1/.*"
+                headers:
+                  - "Content-Type: application/json"
+    # 내부 통신
+    - toEndpoints:
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": grade-o
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": grade-s
+    # DNS
+    - toEndpoints:
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+
+---
+# 모니터링 네임스페이스 — 전체 수집 허용
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: monitoring-collect-all
+  namespace: monitoring
+  labels:
+    csap: "D-06"
+spec:
+  description: "모니터링 네임스페이스 전체 메트릭/로그 수집 허용"
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - {}
+  egress:
+    - toEndpoints:
+        - {}

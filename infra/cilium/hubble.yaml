@@ -1,0 +1,90 @@
+# Hubble 네트워크 관측 설정
+# Design Ref: MTU-N93 Design §1
+# Plan SC: FR-N93.2
+# CSAP: D-06 침해사고 관리, D-10 네트워크 보안
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hubble-config
+  namespace: kube-system
+  labels:
+    app: hubble
+    csap: "D-10"
+    mtu: N93
+data:
+  # 관측 레벨 설정
+  enable-hubble: "true"
+  hubble-socket-path: "/var/run/cilium/hubble.sock"
+  hubble-listen-address: ":4244"
+
+  # 메트릭 수집
+  hubble-metrics-server: ":9965"
+  hubble-metrics: "dns:query;ignoreAAAA drop tcp flow icmp http"
+
+  # 플로우 로그 보존
+  hubble-flow-buffer-size: "4096"
+  hubble-event-buffer-capacity: "8192"
+
+  # TLS 설정
+  hubble-tls-enabled: "true"
+
+---
+# Hubble UI 서비스
+apiVersion: v1
+kind: Service
+metadata:
+  name: hubble-ui
+  namespace: kube-system
+  labels:
+    app: hubble-ui
+data: {}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8081
+  selector:
+    k8s-app: hubble-ui
+
+---
+# Hubble 네트워크 플로우 내보내기 (Grafana 연동)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hubble-export-config
+  namespace: kube-system
+data:
+  config.yaml: |
+    # Hubble 플로우를 Prometheus/Grafana로 내보내기
+    exporters:
+      - name: prometheus
+        options:
+          metric:
+            - contextLabels:
+                - source_namespace
+                - destination_namespace
+                - source_pod
+                - destination_pod
+                - traffic_direction
+              includeFilters:
+                - {}
+    # N2SF 등급별 트래픽 레이블링
+    labeling:
+      rules:
+        - match:
+            source_namespace: "grade-c"
+          labels:
+            n2sf_grade: "C"
+            sensitivity: "confidential"
+        - match:
+            source_namespace: "grade-s"
+          labels:
+            n2sf_grade: "S"
+            sensitivity: "sensitive"
+        - match:
+            source_namespace: "grade-o"
+          labels:
+            n2sf_grade: "O"
+            sensitivity: "open"

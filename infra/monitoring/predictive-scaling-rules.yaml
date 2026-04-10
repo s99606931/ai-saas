@@ -1,0 +1,228 @@
+# =============================================================================
+# 예측적 스케일링 — predict_linear 기반 용량 예측 알림
+# Design Ref: MTU-N93 Design §2
+# Plan SC: FR-N93.1, FR-N93.2, FR-N93.3, FR-N93.4, FR-N93.6
+# CSAP: D-06(사전 용량 관리로 서비스 가용성 확보)
+#
+# predict_linear(v, t): v의 선형 회귀로 t초 후 값 예측
+# 적용: kubectl apply -f infra/monitoring/predictive-scaling-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: predictive-scaling-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 — 리소스 용량 소진 사전 예측으로 가용성 확보"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 예측 Recording Rules (사전 계산)
+    # Design Ref: MTU-N93 Design §2
+    # Plan SC: FR-N93.3, FR-N93.4
+    # =========================================================================
+    - name: predictive:recording_rules
+      interval: 60s
+      rules:
+        # 디스크 잔여 용량 24시간 후 예측 (바이트)
+        - record: node:disk_avail:predict24h
+          expr: |
+            predict_linear(
+              node_filesystem_avail_bytes{mountpoint="/"}[24h], 86400
+            )
+          labels:
+            prediction: "linear_24h"
+
+        # 메모리 잔여 용량 24시간 후 예측 (바이트)
+        - record: node:memory_avail:predict24h
+          expr: |
+            predict_linear(
+              node_memory_MemAvailable_bytes[24h], 86400
+            )
+          labels:
+            prediction: "linear_24h"
+
+        # CPU 사용률 24시간 후 예측
+        - record: node:cpu_usage:predict24h
+          expr: |
+            clamp_max(
+              predict_linear(
+                node:cpu_usage:ratio[24h], 86400
+              ), 1
+            )
+          labels:
+            prediction: "linear_24h"
+
+        # 네트워크 수신 대역폭 24시간 후 예측
+        - record: node:network_receive:predict24h
+          expr: |
+            predict_linear(
+              rate(node_network_receive_bytes_total{device!~"lo|veth.*|cni.*"}[1h])[24h:1h], 86400
+            )
+          labels:
+            prediction: "linear_24h"
+
+        # PV 잔여 용량 48시간 후 예측
+        - record: pv:available:predict48h
+          expr: |
+            predict_linear(
+              kubelet_volume_stats_available_bytes[48h], 172800
+            )
+          labels:
+            prediction: "linear_48h"
+
+        # 디스크 용량 소진까지 남은 시간 (초)
+        - record: node:disk_exhaustion:seconds
+          expr: |
+            node_filesystem_avail_bytes{mountpoint="/"}
+            / clamp_min(
+              -1 * deriv(node_filesystem_avail_bytes{mountpoint="/"}[6h]),
+              0.0001
+            )
+          labels:
+            prediction: "time_to_exhaustion"
+
+    # =========================================================================
+    # 그룹 2: 디스크 용량 소진 예측 알림 (FR-N93.1)
+    # Design Ref: MTU-N93 Design §2.1
+    # =========================================================================
+    - name: predictive:disk_alerts
+      rules:
+        # 24시간 내 디스크 소진 예측
+        - alert: PredictDiskFullIn24h
+          expr: |
+            predict_linear(
+              node_filesystem_avail_bytes{mountpoint="/"}[24h], 86400
+            ) < 0
+          for: 30m
+          labels:
+            severity: warning
+            prediction: disk
+          annotations:
+            summary: "노드 {{ $labels.instance }} 디스크 24시간 내 소진 예측"
+            description: |
+              현재 추세대로라면 24시간 내에 디스크 용량이 소진될 것으로 예측됩니다.
+              현재 여유: {{ with printf "node_filesystem_avail_bytes{instance='%s',mountpoint='/'}" $labels.instance | query }}{{ . | first | value | humanize1024 }}B{{ end }}
+            runbook_url: "docs/operations/runbooks/04-디스크-용량-부족-대응.md"
+
+        # 4시간 내 디스크 소진 예측 (긴급)
+        - alert: PredictDiskFullIn4h
+          expr: |
+            predict_linear(
+              node_filesystem_avail_bytes{mountpoint="/"}[6h], 14400
+            ) < 0
+          for: 15m
+          labels:
+            severity: critical
+            prediction: disk
+          annotations:
+            summary: "노드 {{ $labels.instance }} 디스크 4시간 내 소진 예측 (긴급)"
+            description: |
+              디스크 용량이 4시간 내에 소진될 것으로 예측됩니다.
+              즉시 디스크 정리 또는 확장 필요.
+            runbook_url: "docs/operations/runbooks/04-디스크-용량-부족-대응.md"
+
+    # =========================================================================
+    # 그룹 3: 메모리 트렌드 예측 알림 (FR-N93.2)
+    # Design Ref: MTU-N93 Design §2.2
+    # =========================================================================
+    - name: predictive:memory_alerts
+      rules:
+        # 24시간 내 메모리 95% 도달 예측
+        - alert: PredictMemoryExhaustIn24h
+          expr: |
+            predict_linear(
+              node_memory_MemAvailable_bytes[24h], 86400
+            ) < node_memory_MemTotal_bytes * 0.05
+          for: 30m
+          labels:
+            severity: warning
+            prediction: memory
+          annotations:
+            summary: "노드 {{ $labels.instance }} 메모리 24시간 내 95% 사용 예측"
+            description: |
+              현재 추세대로라면 24시간 내에 메모리 사용률이 95%를 초과할 것으로 예측됩니다.
+              OOM 킬 위험이 있으므로 사전 조치 필요.
+            runbook_url: "docs/operations/runbooks/06-oom-킬-빈발-대응.md"
+
+        # 6시간 내 메모리 소진 예측 (긴급)
+        - alert: PredictMemoryExhaustIn6h
+          expr: |
+            predict_linear(
+              node_memory_MemAvailable_bytes[6h], 21600
+            ) < node_memory_MemTotal_bytes * 0.03
+          for: 15m
+          labels:
+            severity: critical
+            prediction: memory
+          annotations:
+            summary: "노드 {{ $labels.instance }} 메모리 6시간 내 소진 (긴급)"
+            description: |
+              메모리가 6시간 내에 97%를 초과할 것으로 예측됩니다.
+              즉시 Pod 리소스 조정 또는 노드 확장 필요.
+
+    # =========================================================================
+    # 그룹 4: PV 용량 예측 알림 (FR-N93.6)
+    # Design Ref: MTU-N93 Design §2.3
+    # =========================================================================
+    - name: predictive:pv_alerts
+      rules:
+        # 48시간 내 PV 소진 예측
+        - alert: PredictPVFullIn48h
+          expr: |
+            predict_linear(
+              kubelet_volume_stats_available_bytes[48h], 172800
+            ) < 0
+          for: 1h
+          labels:
+            severity: warning
+            prediction: pv
+          annotations:
+            summary: "PV {{ $labels.persistentvolumeclaim }} 48시간 내 소진 예측"
+            description: |
+              PersistentVolume {{ $labels.persistentvolumeclaim }}(네임스페이스: {{ $labels.namespace }})의
+              용량이 48시간 내에 소진될 것으로 예측됩니다.
+
+        # 12시간 내 PV 소진 예측 (긴급)
+        - alert: PredictPVFullIn12h
+          expr: |
+            predict_linear(
+              kubelet_volume_stats_available_bytes[12h], 43200
+            ) < 0
+          for: 30m
+          labels:
+            severity: critical
+            prediction: pv
+          annotations:
+            summary: "PV {{ $labels.persistentvolumeclaim }} 12시간 내 소진 (긴급)"
+            description: |
+              PV 용량이 12시간 내에 소진될 것으로 예측됩니다.
+              데이터 손실 방지를 위해 즉시 확장 필요.
+
+    # =========================================================================
+    # 그룹 5: CPU 트렌드 예측 알림 (FR-N93.3)
+    # Design Ref: MTU-N93 Design §2
+    # =========================================================================
+    - name: predictive:cpu_alerts
+      rules:
+        - alert: PredictHighCPUIn24h
+          expr: |
+            clamp_max(
+              predict_linear(node:cpu_usage:ratio[24h], 86400),
+              1
+            ) > 0.9
+            and
+            node:cpu_usage:ratio > 0.6
+          for: 1h
+          labels:
+            severity: warning
+            prediction: cpu
+          annotations:
+            summary: "노드 {{ $labels.instance }} CPU 24시간 내 90% 초과 예측"
+            description: |
+              현재 CPU 사용률 추세대로라면 24시간 내에 90%를 초과할 것으로 예측됩니다.
+              현재 사용률: {{ $value | printf "%.1f" }}%

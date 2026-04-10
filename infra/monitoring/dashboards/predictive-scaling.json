@@ -1,0 +1,146 @@
+{
+  "annotations": { "list": [] },
+  "description": "예측적 스케일링 대시보드 — 리소스 용량 소진 시점 예측",
+  "editable": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "디스크 잔여 용량 추세 + 24시간 예측",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "node_filesystem_avail_bytes{mountpoint=\"/\"}",
+          "legendFormat": "{{ instance }} (현재)",
+          "refId": "A"
+        },
+        {
+          "expr": "node:disk_avail:predict24h",
+          "legendFormat": "{{ instance }} (24시간 후 예측)",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 2,
+      "title": "메모리 잔여 용량 추세 + 24시간 예측",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "node_memory_MemAvailable_bytes",
+          "legendFormat": "{{ instance }} (현재)",
+          "refId": "A"
+        },
+        {
+          "expr": "node:memory_avail:predict24h",
+          "legendFormat": "{{ instance }} (24시간 후 예측)",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 3,
+      "title": "CPU 사용률 추세 + 24시간 예측",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "node:cpu_usage:ratio",
+          "legendFormat": "{{ instance }} (현재)",
+          "refId": "A"
+        },
+        {
+          "expr": "node:cpu_usage:predict24h",
+          "legendFormat": "{{ instance }} (24시간 후 예측)",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1 } }
+    },
+    {
+      "id": 4,
+      "title": "PV 잔여 용량 + 48시간 예측",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "kubelet_volume_stats_available_bytes",
+          "legendFormat": "{{ persistentvolumeclaim }} (현재)",
+          "refId": "A"
+        },
+        {
+          "expr": "pv:available:predict48h",
+          "legendFormat": "{{ persistentvolumeclaim }} (48시간 후 예측)",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 5,
+      "title": "디스크 용량 소진까지 남은 시간",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "node:disk_exhaustion:seconds / 3600",
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 24 },
+              { "color": "green", "value": 168 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "예측 알림 현황",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "count(ALERTS{alertstate=\"firing\", prediction=~\".+\"}) or vector(0)",
+          "legendFormat": "발생 중 예측 알림",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["predictive", "scaling", "capacity", "공공SaaS"],
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "예측적 스케일링 (Predictive Scaling)",
+  "uid": "predictive-scaling",
+  "version": 1
+}

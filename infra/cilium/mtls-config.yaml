@@ -1,0 +1,71 @@
+# Cilium mTLS Zero Trust 설정
+# Design Ref: MTU-N93 Design §3
+# Plan SC: FR-N93.4
+# CSAP: D-09 암호화, D-10 네트워크 보안
+
+# WireGuard 노드 간 암호화 설정
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cilium-mtls-config
+  namespace: kube-system
+  labels:
+    app: cilium
+    csap: "D-09"
+    mtu: N93
+data:
+  # WireGuard 전송 암호화
+  enable-wireguard: "true"
+  enable-wireguard-userspace-fallback: "true"
+
+  # Pod 간 mTLS (SPIFFE 아이덴티티 기반)
+  mesh-auth-enabled: "true"
+  mesh-auth-mutual-enabled: "true"
+
+  # 인증서 자동 교체
+  mesh-auth-gc-interval: "5m0s"
+  mesh-auth-queue-size: "1024"
+  mesh-auth-rotated-identities-queue-size: "1024"
+
+---
+# Cilium 클러스터 전역 mTLS 정책
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: enforce-mtls-everywhere
+  labels:
+    csap: "D-09"
+    mtu: N93
+spec:
+  description: |
+    Zero Trust 아키텍처: 모든 Pod 간 트래픽에 mTLS 강제.
+    암호화되지 않은 트래픽은 차단됩니다.
+  endpointSelector: {}
+  ingressDeny:
+    - fromEntities:
+        - "world"
+  ingress:
+    - fromEndpoints:
+        - {}
+      authentication:
+        mode: "required"
+
+---
+# SPIFFE 아이덴티티 설정
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cilium-spiffe-config
+  namespace: kube-system
+data:
+  # SPIFFE Trust Domain
+  spiffe-trust-domain: "ai-saas.local"
+
+  # 인증서 유효 기간
+  mesh-auth-cert-validity: "48h"
+
+  # 인증서 교체 간격
+  mesh-auth-cert-rotation-threshold: "24h"
+
+  # 아이덴티티 매핑
+  identity-allocation-mode: "crd"
