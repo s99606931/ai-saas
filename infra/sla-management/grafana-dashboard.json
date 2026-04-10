@@ -1,0 +1,75 @@
+{
+  "__meta": { "design_ref": "MTU-N167" },
+  "description": "서비스 SLA 계약 관리 대시보드 - 가용성, 응답시간, 위반 추적",
+  "panels": [
+    { "title": "SLA 현황", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 } },
+    {
+      "title": "서비스별 30일 가용성",
+      "type": "gauge",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        { "expr": "sla:availability_ratio_30d * 100", "legendFormat": "{{ service }}" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 99, "max": 100,
+          "decimals": 3,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 99.5 },
+              { "color": "yellow", "value": 99.9 },
+              { "color": "green", "value": 99.99 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "P99 응답시간 (30일)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "targets": [
+        { "expr": "sla:response_time_p99_30d * 1000", "legendFormat": "{{ service }}" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 200 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "SLA 준수 상태",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 9 },
+      "targets": [
+        { "expr": "sla:compliance_status", "legendFormat": "{{ service }}" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "SLA 준수", "color": "green" } } },
+            { "type": "value", "options": { "0": { "text": "SLA 위반", "color": "red" } } }
+          ]
+        }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["sla", "contract", "availability"],
+  "time": { "from": "now-30d", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "SLA 계약 관리 대시보드",
+  "uid": "sla-mgmt-N167",
+  "version": 1
+}

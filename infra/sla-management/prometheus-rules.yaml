@@ -1,0 +1,67 @@
+# Design Ref: MTU-N167
+# CSAP: D-06, D-08
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sla-management-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: sla-management.recording
+      interval: 30s
+      rules:
+        # SLA 가용성 (30일 이동 평균)
+        - record: sla:availability_ratio_30d
+          expr: |
+            1 - (
+              sum(increase(http_requests_total{status=~"5.."}[30d])) by (namespace, service)
+              /
+              clamp_min(sum(increase(http_requests_total[30d])) by (namespace, service), 1)
+            )
+
+        # SLA P99 응답시간
+        - record: sla:response_time_p99_30d
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(http_request_duration_seconds_bucket[30d])) by (le, namespace, service)
+            )
+
+        # SLA 달성 여부 (99.9% 기준)
+        - record: sla:compliance_status
+          expr: |
+            sla:availability_ratio_30d >= 0.999
+
+    - name: sla-management.alerts
+      rules:
+        # SLA 위반 경고
+        - alert: SlaAvailabilityViolation
+          expr: |
+            sla:availability_ratio_30d < 0.999
+          for: 5m
+          labels:
+            severity: critical
+            team: sre
+          annotations:
+            summary: "SLA 가용성 위반 ({{ $labels.service }})"
+            description: |
+              {{ $labels.service }}의 30일 가용성이 99.9% 미만입니다.
+              현재: {{ printf "%.4f" $value }}. 패널티 크레딧이 발생할 수 있습니다.
+
+        # SLA 응답시간 위반
+        - alert: SlaResponseTimeViolation
+          expr: |
+            sla:response_time_p99_30d > 0.5
+          for: 10m
+          labels:
+            severity: warning
+            team: sre
+          annotations:
+            summary: "SLA 응답시간 위반 ({{ $labels.service }})"
+            description: |
+              {{ $labels.service }}의 P99 응답시간이 500ms를 초과합니다.
+              현재: {{ printf "%.0f" $value }}ms

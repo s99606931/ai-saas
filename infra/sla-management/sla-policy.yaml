@@ -1,0 +1,63 @@
+# Design Ref: MTU-N167 Section 2
+# CSAP: D-08 서비스 수준 관리
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sla-contract-policy
+  namespace: public-saas
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+data:
+  sla-policy.yaml: |
+    version: "1.0"
+    description: "서비스 SLA 계약 관리 정책"
+
+    # SLA 등급 정의
+    tiers:
+      platinum:
+        availability: 99.99
+        responseTimeP99Ms: 200
+        throughputRps: 1000
+        creditRatio: 0.30
+        evaluationWindow: "30d"
+      gold:
+        availability: 99.9
+        responseTimeP99Ms: 500
+        throughputRps: 500
+        creditRatio: 0.20
+        evaluationWindow: "30d"
+      silver:
+        availability: 99.5
+        responseTimeP99Ms: 1000
+        throughputRps: 200
+        creditRatio: 0.10
+        evaluationWindow: "30d"
+
+    # SLI 측정 방식
+    indicators:
+      availability:
+        metric: "sli:availability:ratio"
+        description: "성공 요청 / 전체 요청"
+      responseTime:
+        metric: "sli:response_time:p99"
+        description: "P99 응답 시간"
+      throughput:
+        metric: "sli:throughput:rps"
+        description: "초당 처리 요청 수"
+
+    # 패널티 계산 규칙
+    penaltyRules:
+      - condition: "availability < tier.availability"
+        action: "credit"
+        calculation: "monthly_fee * tier.creditRatio"
+      - condition: "responseTimeP99 > tier.responseTimeP99Ms * 2"
+        action: "credit"
+        calculation: "monthly_fee * tier.creditRatio * 0.5"
+
+    # 보고서 설정
+    reporting:
+      schedule: "monthly"
+      generateDate: 1  # 매월 1일
+      includeMetrics: true
+      includeTrend: true

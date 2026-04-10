@@ -1,0 +1,69 @@
+{
+  "__meta": { "design_ref": "MTU-N166", "plan_sc": "FR-N166.4" },
+  "description": "테넌트 자원 할당량 모니터링 - 사용률, Noisy Neighbor 탐지, 권고",
+  "panels": [
+    { "title": "할당량 사용 현황", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 } },
+    {
+      "title": "테넌트별 CPU 할당량 사용률",
+      "type": "gauge",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        { "expr": "tenant_quota:cpu_usage_ratio * 100", "legendFormat": "{{ namespace }}" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "orange", "value": 80 },
+              { "color": "red", "value": 95 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "테넌트별 메모리 할당량 사용률",
+      "type": "gauge",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "targets": [
+        { "expr": "tenant_quota:memory_usage_ratio * 100", "legendFormat": "{{ namespace }}" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "orange", "value": 80 },
+              { "color": "red", "value": 95 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "할당량 사용률 추이",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 9 },
+      "targets": [
+        { "expr": "tenant_quota:cpu_usage_ratio * 100", "legendFormat": "CPU {{ namespace }}" },
+        { "expr": "tenant_quota:memory_usage_ratio * 100", "legendFormat": "MEM {{ namespace }}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["tenant", "quota", "noisy-neighbor", "csap"],
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "테넌트 할당량 자동 조정 대시보드",
+  "uid": "tenant-quota-N166",
+  "version": 1
+}
