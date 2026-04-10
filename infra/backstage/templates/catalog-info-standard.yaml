@@ -1,0 +1,111 @@
+# Backstage 서비스 카탈로그 표준 템플릿
+# Design Ref: MTU-N170.design.md §4
+# Plan SC: FR-N170.2
+# 모든 마이크로서비스는 이 템플릿을 기반으로 catalog-info.yaml 작성
+---
+# -----------------------------------------------------------------------
+# 서비스 카탈로그 표준 템플릿 v1.0
+# 사용법: 이 파일을 복사하여 각 서비스 루트에 catalog-info.yaml로 저장
+# 필수 필드: [REQUIRED] 표시된 항목은 반드시 값 입력
+# -----------------------------------------------------------------------
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  # [REQUIRED] 서비스 식별자 (kebab-case, K8s Deployment name과 일치)
+  name: "${SERVICE_NAME}"
+
+  # [REQUIRED] 서비스 설명 (한국어, 최소 10자)
+  description: "${SERVICE_DESCRIPTION}"
+
+  # [REQUIRED] 기술 스택 및 분류 태그
+  tags:
+    - nestjs           # 프레임워크
+    - ${DOMAIN}        # 도메인 (auth, billing, catalog 등)
+    # CSAP 관련 태그 (해당 시)
+    # - csap-d08
+    # - csap-d09
+
+  annotations:
+    # [REQUIRED] Kubernetes 리소스 연결
+    backstage.io/kubernetes-id: "${SERVICE_NAME}"
+
+    # [REQUIRED] TechDocs 연동
+    backstage.io/techdocs-ref: dir:.
+
+    # [REQUIRED] N2SF 데이터 등급 분류
+    # O: 공개 (AI API 전송 가능)
+    # C: 대외비 (내부 전용, AI API 전송 금지)
+    # S: 비밀 (격리 처리, AI API 전송 절대 금지)
+    saas.local/data-classification: "${DATA_CLASSIFICATION}"
+
+    # [REQUIRED] 관련 CSAP 통제항목 (쉼표 구분)
+    saas.local/csap-controls: "${CSAP_CONTROLS}"
+
+    # [REQUIRED] 서비스 중요도 등급
+    # critical: 장애 시 전체 시스템 영향
+    # standard: 장애 시 부분 기능 영향
+    # background: 장애 시 비즈니스 영향 미미
+    saas.local/tier: "${TIER}"
+
+    # [REQUIRED] SLO 목표
+    saas.local/slo-target: "${SLO_TARGET}"
+
+    # [선택] 당직 담당 팀
+    saas.local/on-call: "${OWNER_TEAM}"
+
+    # [선택] 운영 매뉴얼 URL
+    saas.local/runbook-url: "https://docs.saas.local/runbook/${SERVICE_NAME}"
+
+    # [선택] Grafana 대시보드 UID
+    saas.local/monitoring-dashboard: "${SERVICE_NAME}-overview"
+
+    # [선택] 비용 센터 코드
+    # saas.local/cost-center: "CC-001"
+
+    # [선택] 최종 감사일
+    # saas.local/last-audit-date: "2026-04-10"
+
+spec:
+  # [REQUIRED] 컴포넌트 유형
+  type: service
+
+  # [REQUIRED] 수명주기 단계
+  lifecycle: production
+
+  # [REQUIRED] 소유 팀
+  owner: "${OWNER_TEAM}"
+
+  # [REQUIRED] 소속 시스템
+  system: "${SYSTEM}"
+
+  # [선택] 제공 API
+  providesApis:
+    - "${SERVICE_NAME}-api"
+
+  # [선택] 소비 API
+  # consumesApis:
+  #   - auth-api
+
+  # [선택] 의존 리소스
+  # dependsOn:
+  #   - resource:${SERVICE_NAME}-postgresql
+
+---
+# -----------------------------------------------------------------------
+# 서비스별 표준 메타데이터 매핑 가이드
+# -----------------------------------------------------------------------
+# 서비스          | 데이터등급 | 중요도    | CSAP     | SLO
+# auth-service    | C         | critical  | D-08,D-09 | 99.99%
+# api-gateway     | O         | critical  | D-08      | 99.99%
+# tenant-service  | C         | critical  | D-08      | 99.9%
+# audit-service   | C         | critical  | D-06      | 99.9%
+# ai-service      | O         | standard  | D-08      | 99.5%
+# catalog-service | O         | standard  | D-08      | 99.5%
+# user-service    | C         | standard  | D-08      | 99.9%
+# billing-service | C         | standard  | D-08      | 99.5%
+# notification-sv | O         | background| D-08      | 99.0%
+# file-service    | C         | standard  | D-08,D-09 | 99.5%
+# menu-service    | O         | background| D-08      | 99.0%
+# security-monitor| C         | critical  | D-06,D-08 | 99.9%
+# compliance-sv   | C         | critical  | D-06,D-08 | 99.9%
+# subscription-sv | O         | standard  | D-08      | 99.5%

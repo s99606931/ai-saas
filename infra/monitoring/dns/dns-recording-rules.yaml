@@ -1,0 +1,115 @@
+# CoreDNS 해석 모니터링 Recording Rules
+# Design Ref: MTU-N174.design.md
+# Plan SC: FR-N174.3, FR-N174.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: dns-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: dns-monitoring
+    mtu: N174
+spec:
+  groups:
+    - name: dns.recording
+      interval: 30s
+      rules:
+        # DNS 요청률 (초당)
+        - record: dns:request_rate_5m
+          expr: |
+            sum(rate(coredns_dns_requests_total[5m]))
+          labels:
+            component: coredns
+
+        # DNS 응답률 (rcode별)
+        - record: dns:response_rate_by_rcode_5m
+          expr: |
+            sum by (rcode) (
+              rate(coredns_dns_responses_total[5m])
+            )
+          labels:
+            component: coredns
+
+        # DNS 에러율 (SERVFAIL + REFUSED)
+        - record: dns:error_rate_5m
+          expr: |
+            (
+              sum(rate(coredns_dns_responses_total{rcode=~"SERVFAIL|REFUSED"}[5m]))
+              /
+              sum(rate(coredns_dns_responses_total[5m]))
+            ) * 100
+          labels:
+            component: coredns
+
+        # NXDOMAIN 비율
+        - record: dns:nxdomain_rate_5m
+          expr: |
+            (
+              sum(rate(coredns_dns_responses_total{rcode="NXDOMAIN"}[5m]))
+              /
+              sum(rate(coredns_dns_responses_total[5m]))
+            ) * 100
+          labels:
+            component: coredns
+
+        # DNS 해석 P50 지연
+        - record: dns:latency_p50_5m
+          expr: |
+            histogram_quantile(0.50,
+              sum by (le) (
+                rate(coredns_dns_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            component: coredns
+
+        # DNS 해석 P95 지연
+        - record: dns:latency_p95_5m
+          expr: |
+            histogram_quantile(0.95,
+              sum by (le) (
+                rate(coredns_dns_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            component: coredns
+
+        # DNS 해석 P99 지연
+        - record: dns:latency_p99_5m
+          expr: |
+            histogram_quantile(0.99,
+              sum by (le) (
+                rate(coredns_dns_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            component: coredns
+
+        # DNS 캐시 히트율
+        - record: dns:cache_hit_rate_5m
+          expr: |
+            (
+              sum(rate(coredns_cache_hits_total[5m]))
+              /
+              (sum(rate(coredns_cache_hits_total[5m])) + sum(rate(coredns_cache_misses_total[5m])))
+            ) * 100
+          labels:
+            component: coredns
+
+        # DNS 캐시 크기
+        - record: dns:cache_size
+          expr: |
+            sum by (type) (coredns_cache_entries)
+          labels:
+            component: coredns
+
+        # 쿼리 유형별 비율
+        - record: dns:query_type_rate_5m
+          expr: |
+            sum by (type) (
+              rate(coredns_dns_requests_total[5m])
+            )
+          labels:
+            component: coredns

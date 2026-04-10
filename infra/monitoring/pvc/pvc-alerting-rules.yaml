@@ -1,0 +1,117 @@
+# PVC 용량 알림 규칙
+# Design Ref: MTU-N173.design.md
+# Plan SC: FR-N173.2
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pvc-capacity-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: storage-monitoring
+    mtu: N173
+spec:
+  groups:
+    - name: pvc.capacity.alerts
+      rules:
+        # PVC 사용률 80% 초과 (경고)
+        - alert: PVCUsageWarning
+          expr: |
+            pvc:usage_percent > 80
+          for: 10m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-09
+            mtu: N173
+          annotations:
+            summary: "PVC 사용률 80% 초과: {{ $labels.persistentvolumeclaim }}"
+            description: |
+              PVC {{ $labels.persistentvolumeclaim }} ({{ $labels.namespace }})의
+              사용률이 {{ $value | printf "%.1f" }}%입니다.
+              용량 확장을 검토하십시오.
+            runbook_url: "https://docs.saas.local/runbook/pvc-capacity"
+
+        # PVC 사용률 90% 초과 (긴급)
+        - alert: PVCUsageCritical
+          expr: |
+            pvc:usage_percent > 90
+          for: 5m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-09
+            mtu: N173
+          annotations:
+            summary: "PVC 사용률 긴급: {{ $labels.persistentvolumeclaim }}"
+            description: |
+              PVC {{ $labels.persistentvolumeclaim }} ({{ $labels.namespace }})의
+              사용률이 {{ $value | printf "%.1f" }}%입니다.
+              즉시 용량을 확장하십시오.
+
+        # PVC 24시간 내 만사 예측
+        - alert: PVCFullWithin24h
+          expr: |
+            pvc:hours_until_full < 24
+            and
+            pvc:hours_until_full > 0
+          for: 30m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-09
+            mtu: N173
+          annotations:
+            summary: "PVC 24시간 내 용량 소진 예측: {{ $labels.persistentvolumeclaim }}"
+            description: |
+              현재 증가율로 PVC {{ $labels.persistentvolumeclaim }}이
+              약 {{ $value | printf "%.0f" }}시간 후 용량이 소진됩니다.
+
+        # PVC 72시간 내 만사 예측 (경고)
+        - alert: PVCFullWithin72h
+          expr: |
+            pvc:hours_until_full < 72
+            and
+            pvc:hours_until_full > 24
+          for: 1h
+          labels:
+            severity: warning
+            team: infra
+            mtu: N173
+          annotations:
+            summary: "PVC 72시간 내 용량 소진 예측: {{ $labels.persistentvolumeclaim }}"
+            description: |
+              현재 증가율로 PVC {{ $labels.persistentvolumeclaim }}이
+              약 {{ $value | printf "%.0f" }}시간 후 용량이 소진됩니다.
+
+        # inode 사용률 80% 초과
+        - alert: PVCInodeUsageHigh
+          expr: |
+            pvc:inode_usage_percent > 80
+          for: 10m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N173
+          annotations:
+            summary: "PVC inode 사용률 80% 초과: {{ $labels.persistentvolumeclaim }}"
+            description: |
+              PVC {{ $labels.persistentvolumeclaim }}의 inode 사용률이
+              {{ $value | printf "%.1f" }}%입니다.
+              소규모 파일이 과다 생성되고 있을 수 있습니다.
+
+        # PVC 사용 불가 (용량 0)
+        - alert: PVCCapacityZero
+          expr: |
+            kubelet_volume_stats_capacity_bytes == 0
+          for: 5m
+          labels:
+            severity: critical
+            team: infra
+            mtu: N173
+          annotations:
+            summary: "PVC 용량 0: {{ $labels.persistentvolumeclaim }}"
+            description: |
+              PVC {{ $labels.persistentvolumeclaim }}의 용량이 0바이트입니다.
+              스토리지 프로비저너 상태를 확인하십시오.

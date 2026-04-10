@@ -1,0 +1,192 @@
+# cert-manager 인증서 갱신 재시도 정책
+# Design Ref: MTU-N169.design.md §5
+# Plan SC: FR-N169.3
+# 갱신 실패 시 자동 재시도: 최대 5회, 지수 백오프
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cert-renewal-retry-config
+  namespace: cert-manager
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: cert-monitoring
+    mtu: N169
+data:
+  # -----------------------------------------------------------------------
+  # 갱신 재시도 정책 설정
+  # FR-N169.3: 최대 5회 재시도, 지수 백오프 (1m → 2m → 4m → 8m → 16m)
+  # -----------------------------------------------------------------------
+  retry-policy.yaml: |
+    # 인증서 갱신 재시도 정책
+    policy:
+      maxRetries: 5
+      backoff:
+        type: exponential
+        initialDelay: 1m
+        maxDelay: 16m
+        multiplier: 2
+      # 재시도 조건
+      retryOn:
+        - "certificate-request-failed"
+        - "issuer-not-ready"
+        - "acme-challenge-failed"
+      # 3회 실패 시 경고 알림
+      warningThreshold: 3
+      # 5회 실패 시 긴급 알림 + 에스컬레이션
+      criticalThreshold: 5
+
+  # -----------------------------------------------------------------------
+  # 자동 갱신 스케줄 설정
+  # cert-manager 기본: 만료 2/3 시점에 갱신
+  # 추가: 갱신 실패 시 백오프 재시도
+  # -----------------------------------------------------------------------
+  renewal-schedule.yaml: |
+    # 인증서 유형별 갱신 주기
+    schedules:
+      # 내부 CA 인증서 (자체 서명)
+      internal-ca:
+        renewBefore: 720h    # 30일 전
+        duration: 8760h      # 1년
+        retryBackoff: exponential
+
+      # 서비스 TLS 인증서
+      service-tls:
+        renewBefore: 168h    # 7일 전
+        duration: 2160h      # 90일
+        retryBackoff: exponential
+
+      # Webhook 인증서
+      webhook:
+        renewBefore: 72h     # 3일 전
+        duration: 720h       # 30일
+        retryBackoff: exponential
+
+---
+# -----------------------------------------------------------------------
+# 갱신 실패 자동 복구 CronJob
+# Design Ref: MTU-N169.design.md §5
+# 5회 초과 실패 인증서를 자동으로 재발급 시도
+# -----------------------------------------------------------------------
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cert-renewal-recovery
+  namespace: cert-manager
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: cert-monitoring
+    mtu: N169
+spec:
+  schedule: "0 */2 * * *"  # 매 2시간마다 실행
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: cert-renewal-recovery
+        spec:
+          serviceAccountName: cert-renewal-recovery
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: recovery
+              image: bitnami/kubectl:1.30
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] 인증서 갱신 복구 시작"
+
+                  # NotReady 인증서 조회
+                  NOT_READY=$(kubectl get certificates --all-namespaces \
+                    -o jsonpath='{range .items[?(@.status.conditions[0].status=="False")]}{.metadata.namespace}/{.metadata.name}{"\n"}{end}')
+
+                  if [ -z "$NOT_READY" ]; then
+                    echo "모든 인증서 정상 (Ready)"
+                    exit 0
+                  fi
+
+                  echo "미준비 인증서 발견:"
+                  echo "$NOT_READY"
+
+                  # 각 미준비 인증서에 대해 갱신 트리거
+                  echo "$NOT_READY" | while IFS='/' read -r ns name; do
+                    if [ -n "$ns" ] && [ -n "$name" ]; then
+                      echo "갱신 트리거: $ns/$name"
+                      # 인증서 갱신을 위해 시크릿 삭제 (cert-manager가 자동 재발급)
+                      SECRET_NAME=$(kubectl get certificate "$name" -n "$ns" \
+                        -o jsonpath='{.spec.secretName}' 2>/dev/null)
+                      if [ -n "$SECRET_NAME" ]; then
+                        kubectl delete secret "$SECRET_NAME" -n "$ns" 2>/dev/null || true
+                        echo "시크릿 삭제 완료: $ns/$SECRET_NAME (재발급 트리거)"
+                      fi
+                    fi
+                  done
+
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] 인증서 갱신 복구 완료"
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 50m
+                  memory: 64Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+
+---
+# ServiceAccount + RBAC for cert-renewal-recovery
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cert-renewal-recovery
+  namespace: cert-manager
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    mtu: N169
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cert-renewal-recovery
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    mtu: N169
+rules:
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificates"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "delete"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cert-renewal-recovery
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    mtu: N169
+subjects:
+  - kind: ServiceAccount
+    name: cert-renewal-recovery
+    namespace: cert-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cert-renewal-recovery

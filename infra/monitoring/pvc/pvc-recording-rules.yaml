@@ -1,0 +1,99 @@
+# PVC 용량 모니터링 Recording Rules
+# Design Ref: MTU-N173.design.md
+# Plan SC: FR-N173.3, FR-N173.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pvc-capacity-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: storage-monitoring
+    mtu: N173
+spec:
+  groups:
+    - name: pvc.recording
+      interval: 60s
+      rules:
+        # PVC 사용률 (%)
+        - record: pvc:usage_percent
+          expr: |
+            (
+              kubelet_volume_stats_used_bytes
+              /
+              kubelet_volume_stats_capacity_bytes
+            ) * 100
+          labels:
+            component: storage
+
+        # PVC 여유 공간 (bytes)
+        - record: pvc:available_bytes
+          expr: |
+            kubelet_volume_stats_available_bytes
+          labels:
+            component: storage
+
+        # PVC 사용량 증가 속도 (bytes/hour, 1시간 추이)
+        - record: pvc:usage_growth_rate_1h
+          expr: |
+            rate(kubelet_volume_stats_used_bytes[1h]) * 3600
+          labels:
+            component: storage
+
+        # PVC 사용량 예측 — 현재 증가율로 100% 도달까지 남은 시간 (시간)
+        # 선형 회귀 기반 예측
+        - record: pvc:hours_until_full
+          expr: |
+            (
+              kubelet_volume_stats_available_bytes
+              /
+              (rate(kubelet_volume_stats_used_bytes[6h]) > 0)
+            ) / 3600
+          labels:
+            component: storage
+
+        # 전체 PVC 수
+        - record: pvc:total_count
+          expr: |
+            count(kubelet_volume_stats_capacity_bytes)
+          labels:
+            component: storage
+
+        # 80% 이상 사용 PVC 수
+        - record: pvc:high_usage_count
+          expr: |
+            count(
+              (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) > 0.8
+            ) or vector(0)
+          labels:
+            component: storage
+
+        # 네임스페이스별 총 PVC 용량
+        - record: pvc:total_capacity_by_namespace
+          expr: |
+            sum by (namespace) (
+              kubelet_volume_stats_capacity_bytes
+            )
+          labels:
+            component: storage
+
+        # 네임스페이스별 총 PVC 사용량
+        - record: pvc:total_used_by_namespace
+          expr: |
+            sum by (namespace) (
+              kubelet_volume_stats_used_bytes
+            )
+          labels:
+            component: storage
+
+        # inode 사용률
+        - record: pvc:inode_usage_percent
+          expr: |
+            (
+              kubelet_volume_stats_inodes_used
+              /
+              kubelet_volume_stats_inodes
+            ) * 100
+          labels:
+            component: storage

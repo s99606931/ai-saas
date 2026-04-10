@@ -1,0 +1,95 @@
+{
+  "description": "PVC 용량 모니터링 및 자동 확장 권고 (MTU-N173)",
+  "editable": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 500,
+      "title": "PVC 용량 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "title": "전체 PVC 수",
+      "type": "stat",
+      "targets": [{ "expr": "pvc:total_count", "legendFormat": "전체" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "title": "80%+ 사용 PVC",
+      "type": "stat",
+      "targets": [{ "expr": "pvc:high_usage_count", "legendFormat": "위험" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "id": 3,
+      "options": { "orientation": "horizontal", "displayMode": "gradient", "showUnfilled": true },
+      "title": "PVC 사용률 순위",
+      "type": "bargauge",
+      "targets": [{ "expr": "sort_desc(pvc:usage_percent)", "legendFormat": "{{ persistentvolumeclaim }} ({{ namespace }})" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "custom": { "drawStyle": "line", "fillOpacity": 20 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "id": 4,
+      "title": "PVC 사용률 추이",
+      "type": "timeseries",
+      "targets": [{ "expr": "pvc:usage_percent", "legendFormat": "{{ persistentvolumeclaim }}" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "id": 501,
+      "title": "용량 예측 및 inode",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "h", "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 24 }, { "color": "green", "value": 168 }] } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 5,
+      "title": "용량 소진까지 남은 시간",
+      "type": "bargauge",
+      "targets": [{ "expr": "sort(pvc:hours_until_full > 0 and pvc:hours_until_full < 720)", "legendFormat": "{{ persistentvolumeclaim }}" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "custom": { "drawStyle": "line" } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 6,
+      "title": "inode 사용률",
+      "type": "timeseries",
+      "targets": [{ "expr": "pvc:inode_usage_percent", "legendFormat": "{{ persistentvolumeclaim }}" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" } } } },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 22 },
+      "id": 7,
+      "title": "네임스페이스별 스토리지 사용 현황",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "pvc:total_used_by_namespace", "legendFormat": "사용: {{ namespace }}" },
+        { "expr": "pvc:total_capacity_by_namespace - pvc:total_used_by_namespace", "legendFormat": "여유: {{ namespace }}" }
+      ]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["PVC", "스토리지", "용량", "MTU-N173"],
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "PVC 용량 모니터링",
+  "uid": "pvc-capacity-n173",
+  "version": 1
+}

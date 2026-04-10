@@ -1,0 +1,196 @@
+# 서비스 의존성 그래프 자동 생성 설정
+# Design Ref: MTU-N170.design.md §8
+# Plan SC: FR-N170.6
+# providesApis/consumesApis 기반 서비스 토폴로지 시각화
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: service-dependency-graph
+  namespace: backstage
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: catalog-metadata
+    mtu: N170
+data:
+  # -----------------------------------------------------------------------
+  # 서비스 의존성 그래프 설정
+  # Backstage Catalog Graph Plugin 연동
+  # -----------------------------------------------------------------------
+  dependency-graph.yaml: |
+    # 서비스 의존성 그래프 설정 v1.0
+    version: "1.0.0"
+
+    # 그래프 시각화 설정
+    visualization:
+      layout: "dagre"             # 방향성 그래프 레이아웃
+      direction: "TB"             # 위에서 아래 (Top-Bottom)
+      nodeSpacing: 80
+      rankSpacing: 120
+      maxDepth: 5                 # 최대 의존성 깊이
+
+    # 노드 스타일 (서비스 유형별)
+    nodeStyles:
+      service:
+        shape: "box"
+        color: "#4A90D9"
+      library:
+        shape: "ellipse"
+        color: "#7B68EE"
+      database:
+        shape: "cylinder"
+        color: "#FF8C00"
+      cache:
+        shape: "diamond"
+        color: "#32CD32"
+      registry:
+        shape: "hexagon"
+        color: "#DC143C"
+
+    # 엣지 스타일 (관계 유형별)
+    edgeStyles:
+      providesApis:
+        color: "#4A90D9"
+        style: "solid"
+        label: "provides"
+      consumesApis:
+        color: "#FF6347"
+        style: "dashed"
+        label: "consumes"
+      dependsOn:
+        color: "#808080"
+        style: "dotted"
+        label: "depends"
+
+    # 시스템별 그룹핑
+    groupBy: "system"
+    groups:
+      core-platform:
+        label: "코어 플랫폼"
+        color: "#E8F4FD"
+      ai-platform:
+        label: "AI 플랫폼"
+        color: "#FFF3E0"
+      compliance-system:
+        label: "규제 준수 시스템"
+        color: "#F3E5F5"
+
+  # -----------------------------------------------------------------------
+  # 서비스 의존성 매트릭스 (정적 참조)
+  # 이 데이터는 catalog의 providesApis/consumesApis에서 자동 추출
+  # -----------------------------------------------------------------------
+  dependency-matrix.yaml: |
+    # 서비스 의존성 매트릭스
+    # 자동 생성 기준 데이터
+
+    services:
+      auth-service:
+        provides:
+          - auth-api
+        consumes: []
+        depends:
+          - auth-postgresql
+          - redis-cache
+
+      api-gateway:
+        provides:
+          - gateway-api
+        consumes:
+          - auth-api
+        depends: []
+
+      tenant-service:
+        provides:
+          - tenant-api
+        consumes:
+          - auth-api
+        depends:
+          - tenant-postgresql
+
+      audit-service:
+        provides:
+          - audit-api
+        consumes:
+          - auth-api
+        depends:
+          - audit-postgresql
+
+      ai-service:
+        provides:
+          - ai-api
+        consumes:
+          - auth-api
+          - audit-api
+        depends: []
+
+      catalog-service:
+        provides:
+          - catalog-api
+        consumes:
+          - auth-api
+        depends:
+          - catalog-postgresql
+
+      user-service:
+        provides:
+          - user-api
+        consumes:
+          - auth-api
+        depends:
+          - user-postgresql
+
+      notification-service:
+        provides:
+          - notification-api
+        consumes:
+          - auth-api
+          - user-api
+        depends:
+          - redis-cache
+
+      file-service:
+        provides:
+          - file-api
+        consumes:
+          - auth-api
+        depends:
+          - minio-storage
+
+      billing-service:
+        provides:
+          - billing-api
+        consumes:
+          - auth-api
+          - tenant-api
+        depends:
+          - billing-postgresql
+
+      security-monitor-service:
+        provides:
+          - security-api
+        consumes:
+          - auth-api
+          - audit-api
+        depends: []
+
+      compliance-service:
+        provides:
+          - compliance-api
+        consumes:
+          - auth-api
+          - audit-api
+        depends:
+          - compliance-postgresql
+
+    # 외부 인프라 의존성
+    infrastructure:
+      - auth-postgresql
+      - tenant-postgresql
+      - audit-postgresql
+      - catalog-postgresql
+      - user-postgresql
+      - billing-postgresql
+      - compliance-postgresql
+      - redis-cache
+      - minio-storage
+      - harbor-registry

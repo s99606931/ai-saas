@@ -1,0 +1,111 @@
+{
+  "description": "CoreDNS 해석 모니터링 대시보드 (MTU-N174)",
+  "editable": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 600,
+      "title": "DNS 현황 요약",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "title": "DNS 요청률",
+      "type": "stat",
+      "targets": [{ "expr": "dns:request_rate_5m", "legendFormat": "요청/s" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 5 }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "title": "DNS 에러율",
+      "type": "stat",
+      "targets": [{ "expr": "dns:error_rate_5m", "legendFormat": "에러%" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.05 }, { "color": "red", "value": 0.1 }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "id": 3,
+      "title": "P99 지연",
+      "type": "stat",
+      "targets": [{ "expr": "dns:latency_p99_5m", "legendFormat": "P99" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 50 }, { "color": "green", "value": 80 }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "id": 4,
+      "title": "캐시 히트율",
+      "type": "stat",
+      "targets": [{ "expr": "dns:cache_hit_rate_5m", "legendFormat": "히트율" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 601,
+      "title": "지연 및 응답 분석",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 5,
+      "title": "DNS 해석 지연 (P50/P95/P99)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "dns:latency_p50_5m", "legendFormat": "P50" },
+        { "expr": "dns:latency_p95_5m", "legendFormat": "P95" },
+        { "expr": "dns:latency_p99_5m", "legendFormat": "P99" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 6,
+      "title": "응답 코드 분포 (rcode)",
+      "type": "timeseries",
+      "targets": [{ "expr": "dns:response_rate_by_rcode_5m", "legendFormat": "{{ rcode }}" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 602,
+      "title": "캐시 및 쿼리 유형",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 20 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "id": 7,
+      "title": "캐시 크기 (유형별)",
+      "type": "timeseries",
+      "targets": [{ "expr": "dns:cache_size", "legendFormat": "{{ type }}" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 60 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "id": 8,
+      "title": "쿼리 유형 분포 (A/AAAA/SRV)",
+      "type": "timeseries",
+      "targets": [{ "expr": "dns:query_type_rate_5m", "legendFormat": "{{ type }}" }]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["DNS", "CoreDNS", "네트워크", "MTU-N174"],
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "DNS 해석 모니터링",
+  "uid": "dns-monitoring-n174",
+  "version": 1
+}

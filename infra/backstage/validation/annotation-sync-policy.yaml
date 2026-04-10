@@ -1,0 +1,90 @@
+# Backstage ↔ K8s 어노테이션 동기화 정책
+# Design Ref: MTU-N170.design.md §6
+# Plan SC: FR-N170.4
+# Backstage catalog-info.yaml 어노테이션과 K8s Deployment 어노테이션 일치 보장
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: annotation-sync-policy
+  namespace: backstage
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: catalog-metadata
+    mtu: N170
+data:
+  # -----------------------------------------------------------------------
+  # 동기화 매핑 정책
+  # Backstage 어노테이션 → K8s Deployment/Pod 어노테이션
+  # -----------------------------------------------------------------------
+  sync-policy.yaml: |
+    # 어노테이션 동기화 정책 v1.0
+    version: "1.0.0"
+
+    # 동기화 방향
+    # backstage-to-k8s: Backstage가 원본, K8s에 반영
+    # k8s-to-backstage: K8s가 원본, Backstage에 반영
+    # bidirectional: 양방향 동기화 (충돌 시 Backstage 우선)
+
+    mappings:
+      # 서비스 식별
+      - backstage: "backstage.io/kubernetes-id"
+        kubernetes: "app.kubernetes.io/name"
+        direction: backstage-to-k8s
+        required: true
+
+      # N2SF 데이터 등급
+      - backstage: "saas.local/data-classification"
+        kubernetes: "saas.local/data-classification"
+        direction: bidirectional
+        required: true
+        validation:
+          enum: ["O", "C", "S"]
+
+      # 서비스 중요도
+      - backstage: "saas.local/tier"
+        kubernetes: "saas.local/tier"
+        direction: bidirectional
+        required: true
+        validation:
+          enum: ["critical", "standard", "background"]
+
+      # CSAP 통제항목
+      - backstage: "saas.local/csap-controls"
+        kubernetes: "saas.local/csap-controls"
+        direction: backstage-to-k8s
+        required: true
+
+      # 소유 팀
+      - backstage: "spec.owner"
+        kubernetes: "saas.local/owner-team"
+        direction: backstage-to-k8s
+        required: true
+
+      # SLO 목표
+      - backstage: "saas.local/slo-target"
+        kubernetes: "saas.local/slo-target"
+        direction: backstage-to-k8s
+        required: false
+
+      # 비용 센터
+      - backstage: "saas.local/cost-center"
+        kubernetes: "saas.local/cost-center"
+        direction: backstage-to-k8s
+        required: false
+
+    # 동기화 실행 설정
+    schedule:
+      interval: "30m"      # 30분마다 동기화 확인
+      timeout: "5m"        # 동기화 타임아웃
+      retryOnFailure: true
+      maxRetries: 3
+
+    # 드리프트 허용 정책
+    driftPolicy:
+      # 필수 필드 불일치 → 자동 수정 + 알림
+      required: "auto-fix-and-alert"
+      # 선택 필드 불일치 → 알림만
+      optional: "alert-only"
+      # 수정 후 변경 이력 기록
+      auditLog: true

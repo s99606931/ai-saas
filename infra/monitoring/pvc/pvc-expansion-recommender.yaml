@@ -1,0 +1,138 @@
+# PVC 자동 확장 권고 생성 CronJob
+# Design Ref: MTU-N173.design.md
+# Plan SC: FR-N173.4
+# 사용률 기반 PVC 확장 권고 자동 생성
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pvc-expansion-recommender
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: storage-monitoring
+    mtu: N173
+spec:
+  schedule: "0 */8 * * *"  # 매 8시간마다
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: pvc-expansion-recommender
+        spec:
+          serviceAccountName: pvc-expansion-recommender
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: recommender
+              image: bitnami/kubectl:1.30
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] PVC 확장 권고 분석 시작"
+
+                  RECOMMENDATIONS=""
+                  HIGH_USAGE_COUNT=0
+                  TOTAL=0
+
+                  # 모든 PVC 조회
+                  PVCS=$(kubectl get pvc --all-namespaces \
+                    -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}:{.spec.resources.requests.storage}{"\n"}{end}')
+
+                  echo "$PVCS" | while IFS=':' read -r pvc_path size; do
+                    if [ -z "$pvc_path" ]; then continue; fi
+                    TOTAL=$((TOTAL + 1))
+
+                    NS=$(echo "$pvc_path" | cut -d'/' -f1)
+                    NAME=$(echo "$pvc_path" | cut -d'/' -f2)
+
+                    echo "  PVC: $NS/$NAME (할당: $size)"
+
+                    # StorageClass 확인 (allowVolumeExpansion 지원 여부)
+                    SC=$(kubectl get pvc "$NAME" -n "$NS" -o jsonpath='{.spec.storageClassName}' 2>/dev/null)
+                    if [ -n "$SC" ]; then
+                      EXPANDABLE=$(kubectl get storageclass "$SC" -o jsonpath='{.allowVolumeExpansion}' 2>/dev/null)
+                    fi
+
+                    # 현재 크기에서 50% 확장 권고 계산
+                    CURRENT_SIZE_NUM=$(echo "$size" | sed 's/[^0-9]//g')
+                    UNIT=$(echo "$size" | sed 's/[0-9]//g')
+                    RECOMMENDED_SIZE="$((CURRENT_SIZE_NUM * 3 / 2))${UNIT}"
+
+                    echo "    StorageClass: ${SC:-default}"
+                    echo "    확장 가능: ${EXPANDABLE:-unknown}"
+                    echo "    확장 권고 크기: $RECOMMENDED_SIZE"
+                  done
+
+                  # 권고 결과를 ConfigMap에 저장
+                  kubectl create configmap pvc-expansion-recommendations \
+                    --namespace=monitoring \
+                    --from-literal=total-pvcs="$TOTAL" \
+                    --from-literal=high-usage-count="$HIGH_USAGE_COUNT" \
+                    --from-literal=last-analyzed="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                    --dry-run=client -o yaml | kubectl apply -f -
+
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] PVC 확장 권고 분석 완료"
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 50m
+                  memory: 64Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pvc-expansion-recommender
+  namespace: monitoring
+  labels:
+    mtu: N173
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pvc-expansion-recommender
+  labels:
+    mtu: N173
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims", "configmaps"]
+    verbs: ["get", "list", "create", "update", "patch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pvc-expansion-recommender
+  labels:
+    mtu: N173
+subjects:
+  - kind: ServiceAccount
+    name: pvc-expansion-recommender
+    namespace: monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pvc-expansion-recommender

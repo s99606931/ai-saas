@@ -1,0 +1,154 @@
+# RED 메트릭 Recording Rules (Tempo metrics_generator 확장)
+# Design Ref: MTU-N171.design.md §6
+# Plan SC: FR-N171.4
+# Rate/Errors/Duration 메트릭 자동 생성 및 집계
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tempo-red-metrics-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+    app.kubernetes.io/component: distributed-tracing
+    mtu: N171
+spec:
+  groups:
+    # -----------------------------------------------------------------------
+    # RED 메트릭 Recording Rules
+    # Tempo metrics_generator에서 생성된 span 메트릭 기반
+    # -----------------------------------------------------------------------
+    - name: tempo.red.recording
+      interval: 15s
+      rules:
+        # ---------------------------------------------------------------
+        # Rate (요청률) — 서비스별 초당 요청 수
+        # ---------------------------------------------------------------
+        - record: service:request_rate_5m
+          expr: |
+            sum by (service) (
+              rate(traces_spanmetrics_calls_total[5m])
+            )
+          labels:
+            component: tempo-red
+
+        # 서비스 + HTTP 메서드별 요청률
+        - record: service:request_rate_by_method_5m
+          expr: |
+            sum by (service, http_method) (
+              rate(traces_spanmetrics_calls_total[5m])
+            )
+          labels:
+            component: tempo-red
+
+        # ---------------------------------------------------------------
+        # Errors (에러율) — 서비스별 에러 비율
+        # ---------------------------------------------------------------
+        - record: service:error_rate_5m
+          expr: |
+            (
+              sum by (service) (
+                rate(traces_spanmetrics_calls_total{status_code="STATUS_CODE_ERROR"}[5m])
+              )
+              /
+              sum by (service) (
+                rate(traces_spanmetrics_calls_total[5m])
+              )
+            ) * 100
+          labels:
+            component: tempo-red
+
+        # 서비스 + HTTP 상태 코드별 에러 수
+        - record: service:error_count_by_status_5m
+          expr: |
+            sum by (service, http_status_code) (
+              rate(traces_spanmetrics_calls_total{status_code="STATUS_CODE_ERROR"}[5m])
+            )
+          labels:
+            component: tempo-red
+
+        # ---------------------------------------------------------------
+        # Duration (지연) — 서비스별 백분위 지연
+        # ---------------------------------------------------------------
+        - record: service:latency_p50_5m
+          expr: |
+            histogram_quantile(0.50,
+              sum by (service, le) (
+                rate(traces_spanmetrics_latency_bucket[5m])
+              )
+            )
+          labels:
+            component: tempo-red
+
+        - record: service:latency_p95_5m
+          expr: |
+            histogram_quantile(0.95,
+              sum by (service, le) (
+                rate(traces_spanmetrics_latency_bucket[5m])
+              )
+            )
+          labels:
+            component: tempo-red
+
+        - record: service:latency_p99_5m
+          expr: |
+            histogram_quantile(0.99,
+              sum by (service, le) (
+                rate(traces_spanmetrics_latency_bucket[5m])
+              )
+            )
+          labels:
+            component: tempo-red
+
+        # ---------------------------------------------------------------
+        # 서비스 그래프 메트릭 — 서비스 간 호출 관계
+        # ---------------------------------------------------------------
+        - record: service_graph:request_rate_5m
+          expr: |
+            sum by (client, server) (
+              rate(traces_service_graph_request_total[5m])
+            )
+          labels:
+            component: tempo-red
+
+        - record: service_graph:latency_p99_5m
+          expr: |
+            histogram_quantile(0.99,
+              sum by (client, server, le) (
+                rate(traces_service_graph_request_server_seconds_bucket[5m])
+              )
+            )
+          labels:
+            component: tempo-red
+
+        - record: service_graph:error_rate_5m
+          expr: |
+            (
+              sum by (client, server) (
+                rate(traces_service_graph_request_failed_total[5m])
+              )
+              /
+              sum by (client, server) (
+                rate(traces_service_graph_request_total[5m])
+              )
+            ) * 100
+          labels:
+            component: tempo-red
+
+        # ---------------------------------------------------------------
+        # 서비스 가용성 (SLI)
+        # ---------------------------------------------------------------
+        - record: service:availability_5m
+          expr: |
+            (
+              1 -
+              sum by (service) (
+                rate(traces_spanmetrics_calls_total{status_code="STATUS_CODE_ERROR"}[5m])
+              )
+              /
+              sum by (service) (
+                rate(traces_spanmetrics_calls_total[5m])
+              )
+            ) * 100
+          labels:
+            component: tempo-red

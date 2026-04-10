@@ -1,0 +1,263 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" },
+    { "type": "datasource", "id": "tempo", "name": "Tempo" }
+  ],
+  "description": "분산 트레이싱 크로스 서비스 상관관계 대시보드 (MTU-N171)",
+  "editable": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 200,
+      "title": "서비스 그래프 및 요청 현황",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 1 },
+      "id": 1,
+      "title": "서비스 토폴로지 그래프",
+      "type": "nodeGraph",
+      "targets": [
+        {
+          "expr": "traces_service_graph_request_total",
+          "legendFormat": "{{ client }} -> {{ server }}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "description": "서비스 간 호출 관계 시각화 (Tempo service_graph)"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "bars", "fillOpacity": 80 }
+        }
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 1 },
+      "id": 2,
+      "title": "서비스별 요청률 (5분)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "service:request_rate_5m",
+          "legendFormat": "{{ service }}"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 11 },
+      "id": 201,
+      "title": "지연 분석 (P50/P95/P99)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 12 },
+      "id": 3,
+      "title": "P50 지연 (서비스별)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "service:latency_p50_5m",
+          "legendFormat": "{{ service }}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 12 },
+      "id": 4,
+      "title": "P95 지연 (서비스별)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "service:latency_p95_5m",
+          "legendFormat": "{{ service }}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 20 },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 1.0 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 12 },
+      "id": 5,
+      "title": "P99 지연 (서비스별)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "service:latency_p99_5m",
+          "legendFormat": "{{ service }}"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "id": 202,
+      "title": "에러 분석",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 21 },
+      "id": 6,
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "서비스별 에러율",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "service:error_rate_5m",
+          "legendFormat": "{{ service }}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": { "drawStyle": "line", "fillOpacity": 30 }
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 21 },
+      "id": 7,
+      "title": "서비스 가용성 (SLI)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "service:availability_5m",
+          "legendFormat": "{{ service }}"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "id": 203,
+      "title": "서비스 간 호출 분석",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "id": 8,
+      "title": "서비스 간 호출 요청률",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "service_graph:request_rate_5m > 0",
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "client": "호출자",
+              "server": "피호출자",
+              "Value": "요청률 (req/s)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "scaleDistribution": { "type": "log", "log": 2 }
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "id": 9,
+      "title": "서비스 간 지연 히트맵",
+      "type": "heatmap",
+      "targets": [
+        {
+          "expr": "sum by (le, client, server) (rate(traces_service_graph_request_server_seconds_bucket[5m]))",
+          "legendFormat": "{{ client }}->{{ server }}",
+          "format": "heatmap"
+        }
+      ],
+      "description": "서비스 간 호출 지연 분포 (히트맵)"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+      "id": 204,
+      "title": "최근 트레이스",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 37 },
+      "id": 10,
+      "title": "최근 에러 트레이스",
+      "type": "table",
+      "targets": [
+        {
+          "queryType": "traceql",
+          "query": "{status = error}",
+          "limit": 20
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["트레이싱", "Tempo", "RED메트릭", "상관관계", "MTU-N171"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "분산 트레이싱 상관관계 분석",
+  "uid": "tracing-correlation-n171",
+  "version": 1
+}

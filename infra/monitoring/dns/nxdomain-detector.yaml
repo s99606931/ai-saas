@@ -1,0 +1,84 @@
+# NXDOMAIN 이상 탐지 설정
+# Design Ref: MTU-N174.design.md
+# Plan SC: FR-N174.4
+# NXDOMAIN 급증 시 원인 분석을 위한 로그 수집 강화
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nxdomain-detection-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: dns-monitoring
+    mtu: N174
+data:
+  # -----------------------------------------------------------------------
+  # NXDOMAIN 이상 탐지 설정
+  # CoreDNS 로그에서 NXDOMAIN 패턴을 분석하여 원인 파악
+  # -----------------------------------------------------------------------
+  detection-config.yaml: |
+    version: "1.0.0"
+
+    # NXDOMAIN 탐지 임계값
+    thresholds:
+      # 정상 범위: 총 쿼리 대비 NXDOMAIN 5% 이하
+      normalRatio: 5
+      # 경고: 10% 초과
+      warningRatio: 10
+      # 긴급: 20% 초과
+      criticalRatio: 20
+
+    # 일반적인 NXDOMAIN 원인 및 대응
+    knownPatterns:
+      # DNS Search Domain 탐색 (정상)
+      - pattern: "*.svc.cluster.local"
+        description: "K8s 서비스 디스커버리 탐색 (정상 동작)"
+        action: "무시"
+
+      # 외부 도메인 오타
+      - pattern: "*.localdomain"
+        description: "로컬 도메인 오타"
+        action: "서비스 설정 확인"
+
+      # 삭제된 서비스 참조
+      - pattern: "deleted-service.*.svc.cluster.local"
+        description: "삭제된 서비스 참조"
+        action: "호출자 서비스 설정 업데이트"
+
+    # Loki 로그 쿼리 (NXDOMAIN 분석용)
+    lokiQueries:
+      # NXDOMAIN 응답 로그
+      - name: "NXDOMAIN 로그"
+        query: |
+          {app="coredns"} |~ "NXDOMAIN"
+        description: "CoreDNS NXDOMAIN 응답 로그"
+
+      # 특정 도메인 NXDOMAIN
+      - name: "서비스 NXDOMAIN"
+        query: |
+          {app="coredns"} |~ "NXDOMAIN" |~ ".svc.cluster.local"
+        description: "클러스터 내부 서비스 NXDOMAIN"
+
+    # CoreDNS 로그 플러그인 설정 권고
+    # Corefile에 log 플러그인 활성화 필요
+    coreDNSLogging:
+      recommended: |
+        .:53 {
+          errors
+          log . {
+            class denial  # NXDOMAIN 로그만
+          }
+          health
+          ready
+          kubernetes cluster.local in-addr.arpa ip6.arpa {
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+          }
+          prometheus :9153
+          forward . /etc/resolv.conf
+          cache 30
+          loop
+          reload
+          loadbalance
+        }

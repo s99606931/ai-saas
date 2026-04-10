@@ -1,0 +1,160 @@
+# Backstage 서비스 카탈로그 메타데이터 표준 스키마
+# Design Ref: MTU-N170.design.md §3
+# Plan SC: FR-N170.1
+# 모든 서비스 catalog-info.yaml이 준수해야 하는 표준 스키마 정의
+---
+# 메타데이터 표준 스키마 v1.0
+# 검증 도구: validate-metadata.sh (FR-N170.3)
+schema:
+  version: "1.0.0"
+  lastUpdated: "2026-04-10"
+
+  # -----------------------------------------------------------------------
+  # 필수 필드 (12개) — 모든 서비스에 반드시 포함
+  # -----------------------------------------------------------------------
+  required:
+    metadata:
+      - name: "metadata.name"
+        type: string
+        pattern: "^[a-z][a-z0-9-]*$"  # kebab-case
+        description: "서비스 식별자 (영문 소문자 + 하이픈)"
+        example: "auth-service"
+
+      - name: "metadata.description"
+        type: string
+        minLength: 10
+        description: "서비스 설명 (한국어, 최소 10자)"
+        example: "인증/인가 서비스 (JWT + RBAC + MFA)"
+
+      - name: "metadata.tags"
+        type: array
+        minItems: 1
+        description: "기술 스택 및 분류 태그"
+        example: ["nestjs", "auth", "csap-d08"]
+
+      - name: "metadata.annotations.backstage.io/kubernetes-id"
+        type: string
+        pattern: "^[a-z][a-z0-9-]*$"
+        description: "Kubernetes 리소스 식별자 (Deployment name과 일치)"
+        example: "auth-service"
+
+    spec:
+      - name: "spec.type"
+        type: enum
+        values: ["service", "library", "website", "documentation"]
+        description: "컴포넌트 유형"
+        example: "service"
+
+      - name: "spec.lifecycle"
+        type: enum
+        values: ["development", "staging", "production", "deprecated"]
+        description: "서비스 수명주기 단계"
+        example: "production"
+
+      - name: "spec.owner"
+        type: string
+        pattern: "^[a-z]+-team$"
+        description: "소유 팀 ({name}-team 형식)"
+        example: "platform-team"
+
+      - name: "spec.system"
+        type: string
+        description: "소속 시스템"
+        example: "core-platform"
+
+    custom:
+      - name: "metadata.annotations.saas.local/data-classification"
+        type: enum
+        values: ["O", "C", "S"]
+        description: "N2SF 데이터 등급 분류"
+        example: "O"
+
+      - name: "metadata.annotations.saas.local/csap-controls"
+        type: string
+        pattern: "^D-[0-9]+(,D-[0-9]+)*$"
+        description: "관련 CSAP 통제항목 (쉼표 구분)"
+        example: "D-08,D-09"
+
+      - name: "metadata.annotations.saas.local/tier"
+        type: enum
+        values: ["critical", "standard", "background"]
+        description: "서비스 중요도 등급"
+        example: "critical"
+
+      - name: "metadata.annotations.saas.local/slo-target"
+        type: string
+        pattern: "^[0-9]+\\.[0-9]+%$"
+        description: "SLO 목표 (예: 99.9%)"
+        example: "99.9%"
+
+  # -----------------------------------------------------------------------
+  # 선택 필드 (8개) — 권장하지만 필수 아님
+  # -----------------------------------------------------------------------
+  optional:
+    - name: "spec.providesApis"
+      type: array
+      description: "제공 API 목록"
+      example: ["auth-api"]
+
+    - name: "spec.consumesApis"
+      type: array
+      description: "소비 API 목록"
+      example: ["user-api"]
+
+    - name: "spec.dependsOn"
+      type: array
+      description: "의존 리소스 목록"
+      example: ["resource:auth-postgresql"]
+
+    - name: "metadata.annotations.saas.local/on-call"
+      type: string
+      description: "당직 담당 팀/개인"
+      example: "platform-team"
+
+    - name: "metadata.annotations.saas.local/runbook-url"
+      type: string
+      pattern: "^https?://"
+      description: "운영 매뉴얼 URL"
+      example: "https://docs.saas.local/runbook/auth-service"
+
+    - name: "metadata.annotations.saas.local/monitoring-dashboard"
+      type: string
+      description: "Grafana 대시보드 UID"
+      example: "auth-service-overview"
+
+    - name: "metadata.annotations.saas.local/cost-center"
+      type: string
+      pattern: "^CC-[0-9]+$"
+      description: "비용 센터 코드"
+      example: "CC-001"
+
+    - name: "metadata.annotations.saas.local/last-audit-date"
+      type: string
+      pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+      description: "최종 감사일 (YYYY-MM-DD)"
+      example: "2026-04-10"
+
+  # -----------------------------------------------------------------------
+  # K8s 어노테이션 동기화 매핑 (FR-N170.4)
+  # Backstage annotations ↔ K8s Deployment annotations
+  # -----------------------------------------------------------------------
+  annotationSync:
+    - backstage: "backstage.io/kubernetes-id"
+      kubernetes: "app.kubernetes.io/name"
+      direction: "backstage-to-k8s"
+
+    - backstage: "saas.local/data-classification"
+      kubernetes: "saas.local/data-classification"
+      direction: "bidirectional"
+
+    - backstage: "saas.local/tier"
+      kubernetes: "saas.local/tier"
+      direction: "bidirectional"
+
+    - backstage: "saas.local/csap-controls"
+      kubernetes: "saas.local/csap-controls"
+      direction: "backstage-to-k8s"
+
+    - backstage: "spec.owner"
+      kubernetes: "saas.local/owner-team"
+      direction: "backstage-to-k8s"

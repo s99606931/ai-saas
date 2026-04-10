@@ -1,0 +1,139 @@
+# TraceQL 검색 템플릿 — 표준 쿼리 모음
+# Design Ref: MTU-N171.design.md §4
+# Plan SC: FR-N171.2
+# Grafana Tempo Explore에서 사용할 표준 검색 템플릿
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traceql-search-templates
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: observability-stack
+    app.kubernetes.io/component: distributed-tracing
+    mtu: N171
+data:
+  # -----------------------------------------------------------------------
+  # TraceQL 표준 검색 템플릿 v1.0
+  # Grafana Explore > Tempo 데이터소스에서 활용
+  # -----------------------------------------------------------------------
+  templates.yaml: |
+    version: "1.0.0"
+    lastUpdated: "2026-04-10"
+
+    templates:
+      # ---------------------------------------------------------------
+      # 1. 에러 트레이스 검색
+      # 사용 시나리오: 장애 발생 시 에러 트레이스 즉시 조회
+      # ---------------------------------------------------------------
+      - name: "에러 트레이스 검색"
+        description: "상태 코드가 ERROR인 모든 트레이스 조회"
+        category: "장애 분석"
+        query: |
+          {status = error}
+        variables: []
+        timeRange: "1h"
+
+      # ---------------------------------------------------------------
+      # 2. 슬로우 트레이스 (1초 초과)
+      # 사용 시나리오: 성능 저하 원인 분석
+      # ---------------------------------------------------------------
+      - name: "슬로우 트레이스"
+        description: "1초 이상 소요된 트레이스 조회"
+        category: "성능 분석"
+        query: |
+          {duration > 1s}
+        variables:
+          - name: threshold
+            default: "1s"
+            description: "지연 임계값"
+        timeRange: "6h"
+
+      # ---------------------------------------------------------------
+      # 3. 특정 서비스 경유 트레이스
+      # 사용 시나리오: 특정 서비스의 요청 흐름 추적
+      # ---------------------------------------------------------------
+      - name: "서비스별 트레이스"
+        description: "특정 서비스를 경유한 트레이스 조회"
+        category: "서비스 분석"
+        query: |
+          {resource.service.name = "${service}"}
+        variables:
+          - name: service
+            default: "auth-service"
+            description: "대상 서비스명"
+            enum:
+              - auth-service
+              - api-gateway
+              - tenant-service
+              - audit-service
+              - ai-service
+              - catalog-service
+              - user-service
+              - notification-service
+              - file-service
+              - billing-service
+        timeRange: "1h"
+
+      # ---------------------------------------------------------------
+      # 4. HTTP 5xx 에러 트레이스
+      # 사용 시나리오: 서버 에러 발생 원인 추적
+      # ---------------------------------------------------------------
+      - name: "HTTP 5xx 에러"
+        description: "HTTP 500번대 응답 트레이스 조회"
+        category: "장애 분석"
+        query: |
+          {span.http.status_code >= 500}
+        variables: []
+        timeRange: "1h"
+
+      # ---------------------------------------------------------------
+      # 5. 크로스 서비스 호출 체인
+      # 사용 시나리오: 서비스 간 호출 경로 분석
+      # ---------------------------------------------------------------
+      - name: "크로스 서비스 호출 체인"
+        description: "두 서비스 간 호출 관계가 있는 트레이스 조회"
+        category: "의존성 분석"
+        query: |
+          {resource.service.name = "${upstream}"} >> {resource.service.name = "${downstream}"}
+        variables:
+          - name: upstream
+            default: "api-gateway"
+            description: "상위 서비스"
+          - name: downstream
+            default: "auth-service"
+            description: "하위 서비스"
+        timeRange: "6h"
+
+      # ---------------------------------------------------------------
+      # 추가 고급 쿼리
+      # ---------------------------------------------------------------
+      - name: "특정 HTTP 엔드포인트 트레이스"
+        description: "특정 URL 패턴의 트레이스 조회"
+        category: "서비스 분석"
+        query: |
+          {span.http.route =~ "${route}" && resource.service.name = "${service}"}
+        variables:
+          - name: route
+            default: "/api/v1/auth/*"
+            description: "URL 패턴"
+          - name: service
+            default: "auth-service"
+            description: "서비스명"
+        timeRange: "1h"
+
+      - name: "에러 + 슬로우 복합 조건"
+        description: "에러이면서 500ms 이상 소요된 트레이스"
+        category: "장애 분석"
+        query: |
+          {status = error && duration > 500ms}
+        variables: []
+        timeRange: "1h"
+
+      - name: "데이터베이스 슬로우 쿼리 트레이스"
+        description: "DB 호출이 100ms 이상인 트레이스"
+        category: "성능 분석"
+        query: |
+          {span.db.system = "postgresql" && duration > 100ms}
+        variables: []
+        timeRange: "6h"

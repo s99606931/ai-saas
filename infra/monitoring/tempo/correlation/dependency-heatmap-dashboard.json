@@ -1,0 +1,173 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "description": "서비스 간 의존성 지연 히트맵 (MTU-N171)",
+  "editable": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 300,
+      "title": "서비스 의존성 지연 분석",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": { "mode": "continuous-GrYlRd" },
+          "custom": {
+            "scaleDistribution": { "type": "log", "log": 2 },
+            "hideFrom": { "tooltip": false, "viz": false, "legend": false }
+          }
+        }
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 1 },
+      "id": 1,
+      "title": "서비스 간 호출 지연 히트맵 (P99)",
+      "type": "heatmap",
+      "options": {
+        "calculate": false,
+        "cellGap": 1,
+        "color": { "scheme": "Spectral", "fill": "dark-orange", "reverse": true },
+        "yAxis": { "axisPlacement": "left" },
+        "tooltip": { "show": true, "yHistogram": true }
+      },
+      "targets": [
+        {
+          "expr": "sum by (le) (rate(traces_service_graph_request_server_seconds_bucket[5m]))",
+          "legendFormat": "{{ le }}",
+          "format": "heatmap"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.1 },
+              { "color": "orange", "value": 0.5 },
+              { "color": "red", "value": 1.0 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 11 },
+      "id": 2,
+      "title": "서비스 간 P99 지연 매트릭스",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "service_graph:latency_p99_5m > 0",
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "__name__": true, "job": true, "instance": true, "component": true },
+            "renameByName": {
+              "client": "호출 서비스",
+              "server": "피호출 서비스",
+              "Value": "P99 지연 (초)"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": { "fields": {}, "sort": [{ "field": "P99 지연 (초)", "desc": true }] }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 },
+      "id": 301,
+      "title": "Upstream/Downstream 분석",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "id": 3,
+      "title": "Upstream 호출 빈도 (api-gateway 기준)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "service_graph:request_rate_5m{client=\"api-gateway\"}",
+          "legendFormat": "→ {{ server }}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": { "drawStyle": "line", "fillOpacity": 20 },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "id": 4,
+      "title": "서비스 간 에러율",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "service_graph:error_rate_5m > 0",
+          "legendFormat": "{{ client }} → {{ server }}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 2 }
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 28 },
+      "id": 5,
+      "title": "서비스 간 P99 지연 추이",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "service_graph:latency_p99_5m > 0",
+          "legendFormat": "{{ client }} → {{ server }}"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["히트맵", "의존성", "지연", "MTU-N171"],
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "서비스 의존성 지연 히트맵",
+  "uid": "dependency-heatmap-n171",
+  "version": 1
+}

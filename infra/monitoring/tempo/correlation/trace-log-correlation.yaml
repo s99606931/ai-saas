@@ -1,0 +1,134 @@
+# 트레이스-로그 상관관계 규칙
+# Design Ref: MTU-N171.design.md §5
+# Plan SC: FR-N171.3
+# Grafana Tempo → Loki traceID 기반 자동 연결 설정
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trace-log-correlation-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: observability-stack
+    app.kubernetes.io/component: distributed-tracing
+    mtu: N171
+data:
+  # -----------------------------------------------------------------------
+  # 트레이스-로그 상관관계 설정
+  # Grafana에서 Tempo 트레이스 → Loki 로그 자동 연결
+  # -----------------------------------------------------------------------
+  correlation-config.yaml: |
+    version: "1.0.0"
+
+    # Tempo → Loki 상관관계 설정
+    traceToLog:
+      enabled: true
+      datasourceUid: "loki"
+
+      # 트레이스 속성에서 로그 필터 생성
+      # service.name → Loki의 app 레이블
+      tags:
+        - key: "service.name"
+          value: "app"
+
+      # 시간 범위 확장 (트레이스 전후 1분)
+      spanStartTimeShift: "-1m"
+      spanEndTimeShift: "1m"
+
+      # traceID 기반 필터링
+      filterByTraceID: true
+      filterBySpanID: false
+
+      # 로그 쿼리 템플릿
+      # Loki LogQL 쿼리에 traceID 자동 삽입
+      customQuery: |
+        {app="${__span.tags.service.name}"} |= "${__span.traceId}"
+
+    # Loki → Tempo 상관관계 설정 (역방향)
+    logToTrace:
+      enabled: true
+      datasourceUid: "tempo"
+
+      # 로그에서 traceID 추출 정규식
+      # 구조화된 JSON 로그의 traceId 필드
+      internalLink:
+        - field: "traceId"
+          url: ""
+          datasourceUid: "tempo"
+          urlDisplayLabel: "트레이스 보기"
+
+      # traceID 추출 패턴 (비구조화 로그용)
+      derivedFields:
+        - name: "TraceID"
+          matcherRegex: "traceID=([a-f0-9]+)"
+          url: "${__value.raw}"
+          datasourceUid: "tempo"
+          urlDisplayLabel: "트레이스 보기"
+
+        - name: "TraceID-JSON"
+          matcherRegex: "\"traceId\":\"([a-f0-9]+)\""
+          url: "${__value.raw}"
+          datasourceUid: "tempo"
+          urlDisplayLabel: "트레이스 보기"
+
+    # Tempo → Prometheus 상관관계
+    traceToMetrics:
+      enabled: true
+      datasourceUid: "prometheus"
+
+      # 서비스 그래프 메트릭 연결
+      tags:
+        - key: "service.name"
+          value: "service"
+      queries:
+        - name: "요청률 (5분)"
+          query: |
+            rate(traces_spanmetrics_calls_total{service="${__tags.service.name}"}[5m])
+        - name: "P95 지연"
+          query: |
+            histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{service="${__tags.service.name}"}[5m])) by (le))
+        - name: "에러율"
+          query: |
+            sum(rate(traces_spanmetrics_calls_total{service="${__tags.service.name}", status_code="STATUS_CODE_ERROR"}[5m]))
+            /
+            sum(rate(traces_spanmetrics_calls_total{service="${__tags.service.name}"}[5m]))
+
+  # -----------------------------------------------------------------------
+  # OTel Collector 트레이스 컨텍스트 전파 설정
+  # 서비스 간 traceID/spanID 자동 전파 보장
+  # -----------------------------------------------------------------------
+  propagation-config.yaml: |
+    # W3C Trace Context 전파 표준 (기본)
+    propagation:
+      type: "w3c"
+      # 추가 전파 형식 (하위 호환)
+      additionalPropagators:
+        - "b3"          # Zipkin B3 형식
+        - "b3multi"     # B3 멀티헤더
+
+    # 서비스별 트레이스 컨텍스트 주입 규칙
+    # NestJS 서비스: OpenTelemetry SDK 자동 계측
+    instrumentation:
+      nodejs:
+        propagators: ["tracecontext", "baggage"]
+        autoInstrumentedLibraries:
+          - "@opentelemetry/instrumentation-http"
+          - "@opentelemetry/instrumentation-express"
+          - "@opentelemetry/instrumentation-nestjs-core"
+          - "@opentelemetry/instrumentation-pg"
+          - "@opentelemetry/instrumentation-redis"
+          - "@opentelemetry/instrumentation-grpc"
+
+    # 트레이스 컨텍스트 전파 검증
+    # 서비스 간 호출 시 traceparent 헤더 존재 확인
+    validation:
+      enabled: true
+      # traceparent 헤더 누락 시 경고 로그
+      warnOnMissingPropagation: true
+      # 검증 대상 서비스
+      targetServices:
+        - auth-service
+        - api-gateway
+        - tenant-service
+        - audit-service
+        - ai-service

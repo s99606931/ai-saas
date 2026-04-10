@@ -1,0 +1,88 @@
+# Flux CD GitOps 동기화 Recording Rules
+# Design Ref: MTU-N172.design.md §3,§5
+# Plan SC: FR-N172.3, FR-N172.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: flux-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: gitops-monitoring
+    mtu: N172
+spec:
+  groups:
+    - name: flux.recording
+      interval: 60s
+      rules:
+        # Kustomization 동기화 상태 집계
+        - record: flux:kustomization_ready_count
+          expr: |
+            count(gotk_reconcile_condition{kind="Kustomization",type="Ready",status="True"})
+            or vector(0)
+          labels:
+            component: flux
+
+        - record: flux:kustomization_not_ready_count
+          expr: |
+            count(gotk_reconcile_condition{kind="Kustomization",type="Ready",status="False"})
+            or vector(0)
+          labels:
+            component: flux
+
+        # HelmRelease 동기화 상태 집계
+        - record: flux:helmrelease_ready_count
+          expr: |
+            count(gotk_reconcile_condition{kind="HelmRelease",type="Ready",status="True"})
+            or vector(0)
+          labels:
+            component: flux
+
+        - record: flux:helmrelease_not_ready_count
+          expr: |
+            count(gotk_reconcile_condition{kind="HelmRelease",type="Ready",status="False"})
+            or vector(0)
+          labels:
+            component: flux
+
+        # GitRepository 소스 동기화 상태
+        - record: flux:gitrepository_ready_count
+          expr: |
+            count(gotk_reconcile_condition{kind="GitRepository",type="Ready",status="True"})
+            or vector(0)
+          labels:
+            component: flux
+
+        # 리컨실 평균 소요 시간 (5분)
+        - record: flux:reconcile_duration_avg_5m
+          expr: |
+            avg by (kind) (
+              rate(gotk_reconcile_duration_seconds_sum[5m])
+              /
+              rate(gotk_reconcile_duration_seconds_count[5m])
+            )
+          labels:
+            component: flux
+
+        # 리컨실 P99 소요 시간
+        - record: flux:reconcile_duration_p99_5m
+          expr: |
+            histogram_quantile(0.99,
+              sum by (kind, le) (
+                rate(gotk_reconcile_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            component: flux
+
+        # 전체 동기화 성공률
+        - record: flux:sync_success_rate
+          expr: |
+            (
+              count(gotk_reconcile_condition{type="Ready",status="True"})
+              /
+              count(gotk_reconcile_condition{type="Ready"})
+            ) * 100
+          labels:
+            component: flux

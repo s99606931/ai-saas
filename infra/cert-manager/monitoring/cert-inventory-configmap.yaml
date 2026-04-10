@@ -1,0 +1,128 @@
+# 인증서 인벤토리 자동 수집 CronJob
+# Design Ref: MTU-N169.design.md §6
+# Plan SC: FR-N169.4
+# 전체 네임스페이스 인증서 목록을 주기적으로 수집하여 메트릭 노출
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cert-inventory-collector
+  namespace: cert-manager
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: cert-monitoring
+    mtu: N169
+spec:
+  schedule: "0 */6 * * *"  # 매 6시간마다 실행
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: cert-inventory-collector
+        spec:
+          serviceAccountName: cert-inventory-collector
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: collector
+              image: bitnami/kubectl:1.30
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] 인증서 인벤토리 수집 시작"
+
+                  # 전체 인증서 조회 (JSON 형식)
+                  INVENTORY=$(kubectl get certificates --all-namespaces \
+                    -o jsonpath='{range .items[*]}{"name="}{.metadata.name}{",namespace="}{.metadata.namespace}{",issuer="}{.spec.issuerRef.name}{",ready="}{.status.conditions[0].status}{",notAfter="}{.status.notAfter}{",renewalTime="}{.status.renewalTime}{",dnsNames="}{.spec.dnsNames[0]}{"\n"}{end}')
+
+                  TOTAL=$(echo "$INVENTORY" | grep -c "name=" || echo "0")
+                  READY=$(echo "$INVENTORY" | grep -c "ready=True" || echo "0")
+                  NOT_READY=$((TOTAL - READY))
+
+                  echo "전체 인증서: $TOTAL"
+                  echo "Ready: $READY"
+                  echo "NotReady: $NOT_READY"
+
+                  # ConfigMap에 인벤토리 저장
+                  kubectl create configmap cert-inventory \
+                    --namespace=monitoring \
+                    --from-literal=total="$TOTAL" \
+                    --from-literal=ready="$READY" \
+                    --from-literal=not-ready="$NOT_READY" \
+                    --from-literal=last-updated="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                    --from-literal=inventory="$INVENTORY" \
+                    --dry-run=client -o yaml | kubectl apply -f -
+
+                  echo "인벤토리 상세:"
+                  echo "$INVENTORY" | while IFS= read -r line; do
+                    echo "  $line"
+                  done
+
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] 인증서 인벤토리 수집 완료"
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 50m
+                  memory: 64Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop:
+                    - ALL
+
+---
+# ServiceAccount + RBAC
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cert-inventory-collector
+  namespace: cert-manager
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    mtu: N169
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cert-inventory-collector
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    mtu: N169
+rules:
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificates", "clusterissuers", "issuers"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "create", "update", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cert-inventory-collector
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    mtu: N169
+subjects:
+  - kind: ServiceAccount
+    name: cert-inventory-collector
+    namespace: cert-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cert-inventory-collector

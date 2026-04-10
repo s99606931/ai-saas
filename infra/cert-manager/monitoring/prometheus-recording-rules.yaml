@@ -1,0 +1,101 @@
+# cert-manager 인증서 갱신 모니터링 Recording Rules
+# Design Ref: MTU-N169.design.md §4
+# Plan SC: FR-N169.2
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cert-manager-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: cert-monitoring
+spec:
+  groups:
+    # -----------------------------------------------------------------------
+    # 인증서 수명주기 Recording Rules
+    # FR-N169.2: 갱신 이력 추적 메트릭
+    # -----------------------------------------------------------------------
+    - name: cert-manager.recording
+      interval: 60s
+      rules:
+        # 인증서 만료까지 남은 일수
+        # Design Ref: §4 cert:days_until_expiry
+        - record: cert:days_until_expiry
+          expr: |
+            (
+              certmanager_certificate_expiration_timestamp_seconds
+              - time()
+            ) / 86400
+          labels:
+            component: cert-manager
+
+        # 전체 인증서 수 (Ready/NotReady 포함)
+        # Design Ref: §4 cert:total_certificates
+        - record: cert:total_certificates
+          expr: |
+            count(certmanager_certificate_ready_status)
+          labels:
+            component: cert-manager
+
+        # 미준비 인증서 수
+        # Design Ref: §4 cert:not_ready_count
+        - record: cert:not_ready_count
+          expr: |
+            count(
+              certmanager_certificate_ready_status{condition="False"}
+              == 1
+            ) or vector(0)
+          labels:
+            component: cert-manager
+
+        # 갱신 성공률 (5분 이동 평균)
+        # Design Ref: §4 cert:renewal_success_rate_5m
+        - record: cert:renewal_success_rate_5m
+          expr: |
+            (
+              rate(certmanager_controller_sync_call_count{controller="certificates-trigger"}[5m])
+              /
+              (rate(certmanager_controller_sync_call_count{controller="certificates-trigger"}[5m]) + rate(certmanager_controller_sync_call_count{controller="certificates-trigger"}[5m]) + 1)
+            ) * 100
+          labels:
+            component: cert-manager
+
+        # 인증서별 갱신까지 남은 일수
+        - record: cert:days_until_renewal
+          expr: |
+            (
+              certmanager_certificate_renewal_timestamp_seconds
+              - time()
+            ) / 86400
+          labels:
+            component: cert-manager
+
+        # cert-manager 컨트롤러 동기화 지연
+        - record: cert:controller_sync_duration_p99
+          expr: |
+            histogram_quantile(0.99,
+              rate(certmanager_controller_sync_call_count[5m])
+            )
+          labels:
+            component: cert-manager
+
+        # 네임스페이스별 인증서 현황
+        - record: cert:certificates_by_namespace
+          expr: |
+            count by (namespace) (
+              certmanager_certificate_ready_status
+            )
+          labels:
+            component: cert-manager
+
+        # 만료 30일 이내 인증서 수
+        - record: cert:expiring_within_30d
+          expr: |
+            count(
+              (certmanager_certificate_expiration_timestamp_seconds - time()) < 30 * 86400
+              and
+              (certmanager_certificate_expiration_timestamp_seconds - time()) > 0
+            ) or vector(0)
+          labels:
+            component: cert-manager

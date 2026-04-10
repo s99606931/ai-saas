@@ -1,0 +1,166 @@
+# Flux GitOps 드리프트 감지 CronJob
+# Design Ref: MTU-N172.design.md §6
+# Plan SC: FR-N172.4
+# 실제 K8s 상태 vs Git 기대 상태 비교
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: flux-drift-detector
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: gitops-monitoring
+    mtu: N172
+spec:
+  schedule: "0 */4 * * *"  # 매 4시간마다
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: flux-drift-detector
+        spec:
+          serviceAccountName: flux-drift-detector
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: detector
+              image: bitnami/kubectl:1.30
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Flux 드리프트 감지 시작"
+
+                  DRIFT_COUNT=0
+                  TOTAL=0
+
+                  # 모든 Kustomization 상태 확인
+                  echo "=== Kustomization 상태 ==="
+                  KUSTOMIZATIONS=$(kubectl get kustomizations -A -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}:{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' 2>/dev/null)
+
+                  echo "$KUSTOMIZATIONS" | while IFS=':' read -r name status; do
+                    if [ -n "$name" ]; then
+                      TOTAL=$((TOTAL + 1))
+                      if [ "$status" != "True" ]; then
+                        echo "  드리프트: $name (상태: $status)"
+                        DRIFT_COUNT=$((DRIFT_COUNT + 1))
+                      else
+                        echo "  정상: $name"
+                      fi
+                    fi
+                  done
+
+                  # 모든 HelmRelease 상태 확인
+                  echo ""
+                  echo "=== HelmRelease 상태 ==="
+                  HELMRELEASES=$(kubectl get helmreleases -A -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}:{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' 2>/dev/null)
+
+                  echo "$HELMRELEASES" | while IFS=':' read -r name status; do
+                    if [ -n "$name" ]; then
+                      TOTAL=$((TOTAL + 1))
+                      if [ "$status" != "True" ]; then
+                        echo "  드리프트: $name (상태: $status)"
+                        DRIFT_COUNT=$((DRIFT_COUNT + 1))
+                      else
+                        echo "  정상: $name"
+                      fi
+                    fi
+                  done
+
+                  # 소스 컨트롤러 상태 확인
+                  echo ""
+                  echo "=== GitRepository 상태 ==="
+                  GITREPOS=$(kubectl get gitrepositories -A -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}:{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' 2>/dev/null)
+
+                  echo "$GITREPOS" | while IFS=':' read -r name status; do
+                    if [ -n "$name" ]; then
+                      TOTAL=$((TOTAL + 1))
+                      if [ "$status" != "True" ]; then
+                        echo "  드리프트: $name (상태: $status)"
+                        DRIFT_COUNT=$((DRIFT_COUNT + 1))
+                      else
+                        echo "  정상: $name"
+                      fi
+                    fi
+                  done
+
+                  # 결과 저장
+                  kubectl create configmap flux-drift-status \
+                    --namespace=monitoring \
+                    --from-literal=total="$TOTAL" \
+                    --from-literal=drift-count="$DRIFT_COUNT" \
+                    --from-literal=last-checked="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                    --dry-run=client -o yaml | kubectl apply -f -
+
+                  echo ""
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] 드리프트 감지 완료"
+
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 50m
+                  memory: 64Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flux-drift-detector
+  namespace: flux-system
+  labels:
+    mtu: N172
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: flux-drift-detector
+  labels:
+    mtu: N172
+rules:
+  - apiGroups: ["kustomize.toolkit.fluxcd.io"]
+    resources: ["kustomizations"]
+    verbs: ["get", "list"]
+  - apiGroups: ["helm.toolkit.fluxcd.io"]
+    resources: ["helmreleases"]
+    verbs: ["get", "list"]
+  - apiGroups: ["source.toolkit.fluxcd.io"]
+    resources: ["gitrepositories", "helmrepositories"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "create", "update", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: flux-drift-detector
+  labels:
+    mtu: N172
+subjects:
+  - kind: ServiceAccount
+    name: flux-drift-detector
+    namespace: flux-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: flux-drift-detector

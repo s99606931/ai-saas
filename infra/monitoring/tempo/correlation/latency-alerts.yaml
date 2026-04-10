@@ -1,0 +1,142 @@
+# 지연 병목 자동 탐지 알림 규칙
+# Design Ref: MTU-N171.design.md §7
+# Plan SC: FR-N171.5
+# P99 지연 및 에러율 기반 자동 알림
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tempo-latency-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+    app.kubernetes.io/component: distributed-tracing
+    mtu: N171
+spec:
+  groups:
+    - name: tempo.latency.alerts
+      rules:
+        # ---------------------------------------------------------------
+        # 서비스 P99 지연 임계값 초과
+        # Critical 서비스: 500ms, Standard: 1s, Background: 3s
+        # ---------------------------------------------------------------
+        - alert: ServiceLatencyP99Critical
+          expr: |
+            service:latency_p99_5m{service=~"auth-service|api-gateway|tenant-service|audit-service"} > 0.5
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            csap: D-06
+            mtu: N171
+          annotations:
+            summary: "Critical 서비스 P99 지연 초과: {{ $labels.service }}"
+            description: |
+              서비스 {{ $labels.service }}의 P99 지연이
+              {{ $value | humanizeDuration }} (임계값: 500ms)입니다.
+              트레이스를 확인하여 병목 원인을 분석하십시오.
+            dashboard_url: "https://grafana.saas.local/d/tracing-correlation-n171"
+
+        - alert: ServiceLatencyP99Standard
+          expr: |
+            service:latency_p99_5m{service=~"catalog-service|user-service|billing-service|file-service|ai-service"} > 1.0
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            csap: D-06
+            mtu: N171
+          annotations:
+            summary: "Standard 서비스 P99 지연 초과: {{ $labels.service }}"
+            description: |
+              서비스 {{ $labels.service }}의 P99 지연이
+              {{ $value | humanizeDuration }} (임계값: 1s)입니다.
+
+        # ---------------------------------------------------------------
+        # 서비스 에러율 임계값 초과
+        # ---------------------------------------------------------------
+        - alert: ServiceErrorRateHigh
+          expr: |
+            service:error_rate_5m > 5
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            csap: D-06
+            mtu: N171
+          annotations:
+            summary: "서비스 에러율 5% 초과: {{ $labels.service }}"
+            description: |
+              서비스 {{ $labels.service }}의 에러율이 {{ $value | printf "%.1f" }}% 입니다.
+              TraceQL 쿼리로 에러 트레이스를 확인하십시오:
+              {resource.service.name="{{ $labels.service }}" && status=error}
+
+        - alert: ServiceErrorRateCritical
+          expr: |
+            service:error_rate_5m > 10
+          for: 3m
+          labels:
+            severity: critical
+            team: sre
+            csap: D-06
+            mtu: N171
+          annotations:
+            summary: "서비스 에러율 긴급: {{ $labels.service }}"
+            description: |
+              서비스 {{ $labels.service }}의 에러율이 {{ $value | printf "%.1f" }}%로
+              긴급 수준을 초과했습니다. 즉시 대응이 필요합니다.
+
+        # ---------------------------------------------------------------
+        # 서비스 간 호출 지연 이상
+        # ---------------------------------------------------------------
+        - alert: ServiceGraphLatencyAnomaly
+          expr: |
+            service_graph:latency_p99_5m > 2.0
+          for: 10m
+          labels:
+            severity: warning
+            team: sre
+            csap: D-06
+            mtu: N171
+          annotations:
+            summary: "서비스 간 호출 지연 이상: {{ $labels.client }} → {{ $labels.server }}"
+            description: |
+              {{ $labels.client }} → {{ $labels.server }} 호출의 P99 지연이
+              {{ $value | humanizeDuration }} 입니다.
+              네트워크 또는 하위 서비스 병목을 확인하십시오.
+
+        # ---------------------------------------------------------------
+        # 서비스 간 에러율 이상
+        # ---------------------------------------------------------------
+        - alert: ServiceGraphErrorRateHigh
+          expr: |
+            service_graph:error_rate_5m > 10
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            csap: D-06
+            mtu: N171
+          annotations:
+            summary: "서비스 간 에러율 10% 초과: {{ $labels.client }} → {{ $labels.server }}"
+            description: |
+              {{ $labels.client }} → {{ $labels.server }} 호출의 에러율이
+              {{ $value | printf "%.1f" }}% 입니다.
+
+        # ---------------------------------------------------------------
+        # Tempo 서비스 그래프 데이터 부재
+        # ---------------------------------------------------------------
+        - alert: TempoServiceGraphAbsent
+          expr: |
+            absent(traces_service_graph_request_total)
+          for: 15m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N171
+          annotations:
+            summary: "Tempo 서비스 그래프 메트릭 부재"
+            description: |
+              Tempo metrics_generator의 서비스 그래프 메트릭이
+              15분 이상 수집되지 않고 있습니다.
+              Tempo 및 OTel Collector 상태를 확인하십시오.

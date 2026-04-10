@@ -1,0 +1,192 @@
+# 인증서 체인 유효성 검증 CronJob
+# Design Ref: MTU-N169.design.md §8
+# Plan SC: FR-N169.6
+# Root CA -> Intermediate -> Leaf 체인 검증
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cert-chain-validator
+  namespace: cert-manager
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: cert-validation
+    mtu: N169
+spec:
+  schedule: "0 */4 * * *"  # 매 4시간마다 실행
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: cert-chain-validator
+          annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "9100"
+            prometheus.io/path: "/metrics"
+        spec:
+          serviceAccountName: cert-chain-validator
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: validator
+              image: alpine/openssl:latest
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  apk add --no-cache kubectl curl > /dev/null 2>&1
+
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] 인증서 체인 검증 시작"
+
+                  METRICS_FILE="/tmp/metrics"
+                  echo "# HELP cert_chain_validation_status 인증서 체인 검증 상태 (1=유효, 0=실패)" > "$METRICS_FILE"
+                  echo "# TYPE cert_chain_validation_status gauge" >> "$METRICS_FILE"
+
+                  TOTAL=0
+                  VALID=0
+                  INVALID=0
+
+                  # 모든 TLS 시크릿에서 인증서 체인 검증
+                  SECRETS=$(kubectl get secrets --all-namespaces \
+                    -l "cert-manager.io/certificate-name" \
+                    -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}{"\n"}{end}')
+
+                  echo "$SECRETS" | while IFS='/' read -r ns name; do
+                    if [ -z "$ns" ] || [ -z "$name" ]; then
+                      continue
+                    fi
+
+                    TOTAL=$((TOTAL + 1))
+                    CERT_NAME=$(kubectl get secret "$name" -n "$ns" \
+                      -o jsonpath='{.metadata.labels.cert-manager\.io/certificate-name}' 2>/dev/null)
+
+                    # TLS 인증서 추출
+                    TLS_CRT=$(kubectl get secret "$name" -n "$ns" \
+                      -o jsonpath='{.data.tls\.crt}' 2>/dev/null | base64 -d 2>/dev/null)
+                    TLS_CA=$(kubectl get secret "$name" -n "$ns" \
+                      -o jsonpath='{.data.ca\.crt}' 2>/dev/null | base64 -d 2>/dev/null)
+
+                    if [ -z "$TLS_CRT" ]; then
+                      echo "  경고: $ns/$name - 인증서 데이터 없음"
+                      echo "cert_chain_validation_status{namespace=\"$ns\",certificate=\"$CERT_NAME\",secret=\"$name\"} 0" >> "$METRICS_FILE"
+                      INVALID=$((INVALID + 1))
+                      continue
+                    fi
+
+                    # 인증서 정보 출력
+                    SUBJECT=$(echo "$TLS_CRT" | openssl x509 -noout -subject 2>/dev/null | sed 's/subject=//')
+                    EXPIRY=$(echo "$TLS_CRT" | openssl x509 -noout -enddate 2>/dev/null | sed 's/notAfter=//')
+                    ISSUER=$(echo "$TLS_CRT" | openssl x509 -noout -issuer 2>/dev/null | sed 's/issuer=//')
+
+                    # 체인 검증
+                    if [ -n "$TLS_CA" ]; then
+                      # CA 인증서가 있으면 체인 검증
+                      echo "$TLS_CA" > /tmp/ca.crt
+                      echo "$TLS_CRT" > /tmp/cert.crt
+                      VERIFY_RESULT=$(openssl verify -CAfile /tmp/ca.crt /tmp/cert.crt 2>&1)
+                    else
+                      # 자체 서명 인증서는 자체 검증
+                      echo "$TLS_CRT" > /tmp/cert.crt
+                      VERIFY_RESULT=$(openssl verify -check_ss_sig /tmp/cert.crt 2>&1)
+                    fi
+
+                    if echo "$VERIFY_RESULT" | grep -q "OK"; then
+                      echo "  유효: $ns/$CERT_NAME (만료: $EXPIRY)"
+                      echo "cert_chain_validation_status{namespace=\"$ns\",certificate=\"$CERT_NAME\",secret=\"$name\"} 1" >> "$METRICS_FILE"
+                      VALID=$((VALID + 1))
+                    else
+                      echo "  실패: $ns/$CERT_NAME - $VERIFY_RESULT"
+                      echo "cert_chain_validation_status{namespace=\"$ns\",certificate=\"$CERT_NAME\",secret=\"$name\"} 0" >> "$METRICS_FILE"
+                      INVALID=$((INVALID + 1))
+                    fi
+
+                    rm -f /tmp/ca.crt /tmp/cert.crt
+                  done
+
+                  echo ""
+                  echo "# HELP cert_chain_validation_total 체인 검증 전체 결과" >> "$METRICS_FILE"
+                  echo "# TYPE cert_chain_validation_total gauge" >> "$METRICS_FILE"
+                  echo "cert_chain_validation_total{result=\"valid\"} $VALID" >> "$METRICS_FILE"
+                  echo "cert_chain_validation_total{result=\"invalid\"} $INVALID" >> "$METRICS_FILE"
+                  echo "cert_chain_validation_total{result=\"total\"} $TOTAL" >> "$METRICS_FILE"
+
+                  # 결과를 ConfigMap에 저장 (Prometheus Pushgateway 대안)
+                  kubectl create configmap cert-chain-validation-result \
+                    --namespace=monitoring \
+                    --from-file=metrics="$METRICS_FILE" \
+                    --from-literal=last-validated="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                    --from-literal=valid="$VALID" \
+                    --from-literal=invalid="$INVALID" \
+                    --dry-run=client -o yaml | kubectl apply -f -
+
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] 체인 검증 완료: 유효=$VALID, 실패=$INVALID, 전체=$TOTAL"
+
+                  # 실패 인증서 있으면 종료 코드 1 (Job 실패 → 알림)
+                  if [ "$INVALID" -gt 0 ]; then
+                    exit 1
+                  fi
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop:
+                    - ALL
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cert-chain-validator
+  namespace: cert-manager
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    mtu: N169
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cert-chain-validator
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    mtu: N169
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "create", "update", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cert-chain-validator
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    mtu: N169
+subjects:
+  - kind: ServiceAccount
+    name: cert-chain-validator
+    namespace: cert-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cert-chain-validator

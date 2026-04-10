@@ -1,0 +1,141 @@
+# cert-manager 강화 알림 규칙
+# Design Ref: MTU-N169.design.md §7
+# Plan SC: FR-N169.5
+# 기존 alerting-rules.yaml 보존, 추가 알림만 정의
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cert-manager-enhanced-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: cert-monitoring
+spec:
+  groups:
+    - name: cert-manager-enhanced.rules
+      rules:
+        # ---------------------------------------------------------------
+        # FR-N169.5: Issuer 상태 모니터링
+        # ---------------------------------------------------------------
+
+        # ClusterIssuer/Issuer 비정상 상태 10분 이상
+        - alert: CertIssuerNotReady
+          expr: |
+            certmanager_clusterissuer_condition{condition="Ready",status="True"} == 0
+            or
+            certmanager_issuer_condition{condition="Ready",status="True"} == 0
+          for: 10m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-09
+            mtu: N169
+          annotations:
+            summary: "인증서 발급자 비정상: {{ $labels.name }}"
+            description: |
+              인증서 발급자 {{ $labels.name }} ({{ $labels.namespace }})이
+              10분 이상 Ready 상태가 아닙니다.
+              인증서 갱신이 불가능한 상태입니다.
+            runbook_url: "https://docs.saas.local/runbook/cert-issuer-not-ready"
+
+        # ---------------------------------------------------------------
+        # FR-N169.3: 갱신 재시도 초과 알림
+        # ---------------------------------------------------------------
+
+        # CertificateRequest 재시도 3회 초과 (경고)
+        - alert: CertRenewalRetryWarning
+          expr: |
+            increase(certmanager_controller_sync_call_count{controller="certificaterequests-issuer-acme"}[30m]) > 3
+            and
+            certmanager_certificate_ready_status{condition="True"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-09
+            mtu: N169
+          annotations:
+            summary: "인증서 갱신 재시도 3회 초과: {{ $labels.name }}"
+            description: |
+              인증서 {{ $labels.name }}의 갱신 시도가 30분 내 3회를 초과했습니다.
+              발급자 또는 ACME 서버 문제를 확인하십시오.
+
+        # CertificateRequest 재시도 5회 초과 (긴급)
+        - alert: CertRenewalBackoffExceeded
+          expr: |
+            increase(certmanager_controller_sync_call_count{controller="certificaterequests-issuer-acme"}[1h]) > 5
+            and
+            certmanager_certificate_ready_status{condition="True"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-09
+            mtu: N169
+          annotations:
+            summary: "인증서 갱신 백오프 초과: {{ $labels.name }}"
+            description: |
+              인증서 {{ $labels.name }}의 갱신 시도가 1시간 내 5회를 초과했습니다.
+              수동 개입이 필요합니다.
+            runbook_url: "https://docs.saas.local/runbook/cert-renewal-backoff"
+
+        # ---------------------------------------------------------------
+        # FR-N169.6: 체인 검증 실패 알림
+        # ---------------------------------------------------------------
+        - alert: CertChainValidationFailed
+          expr: |
+            cert_chain_validation_status == 0
+          for: 5m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-09
+            mtu: N169
+          annotations:
+            summary: "인증서 체인 검증 실패: {{ $labels.certificate }}"
+            description: |
+              인증서 {{ $labels.certificate }} ({{ $labels.namespace }})의
+              TLS 체인 검증이 실패했습니다.
+              Root CA → Intermediate → Leaf 체인을 확인하십시오.
+
+        # ---------------------------------------------------------------
+        # FR-N169.4: 인벤토리 드리프트 감지
+        # ---------------------------------------------------------------
+        - alert: CertInventoryDrift
+          expr: |
+            abs(
+              cert:total_certificates
+              -
+              cert:total_certificates offset 6h
+            ) > 2
+          for: 30m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-09
+            mtu: N169
+          annotations:
+            summary: "인증서 인벤토리 변동 감지"
+            description: |
+              최근 6시간 동안 인증서 수가 2개 이상 변동되었습니다.
+              예상치 못한 인증서 생성 또는 삭제를 확인하십시오.
+
+        # ---------------------------------------------------------------
+        # 인증서 만료 후 미갱신 (중복 보호)
+        # ---------------------------------------------------------------
+        - alert: CertManagerCertExpired
+          expr: |
+            certmanager_certificate_expiration_timestamp_seconds - time() < 0
+          for: 1m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-09
+            mtu: N169
+          annotations:
+            summary: "인증서 만료됨: {{ $labels.name }}"
+            description: |
+              인증서 {{ $labels.name }} ({{ $labels.namespace }})이 이미 만료되었습니다.
+              TLS 통신이 실패할 수 있습니다. 즉시 갱신이 필요합니다.
+            runbook_url: "https://docs.saas.local/runbook/cert-expired"

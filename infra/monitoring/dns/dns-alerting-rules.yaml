@@ -1,0 +1,127 @@
+# CoreDNS 해석 알림 규칙
+# Design Ref: MTU-N174.design.md
+# Plan SC: FR-N174.2
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: dns-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: dns-monitoring
+    mtu: N174
+spec:
+  groups:
+    - name: dns.alerts
+      rules:
+        # DNS 에러율 5% 초과
+        - alert: DNSErrorRateHigh
+          expr: |
+            dns:error_rate_5m > 5
+          for: 5m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-08
+            mtu: N174
+          annotations:
+            summary: "DNS 에러율 5% 초과"
+            description: |
+              CoreDNS 에러율이 {{ $value | printf "%.1f" }}%입니다.
+              SERVFAIL/REFUSED 응답이 증가하고 있습니다.
+              서비스 간 통신에 영향이 있을 수 있습니다.
+
+        # DNS 에러율 10% 초과 (긴급)
+        - alert: DNSErrorRateCritical
+          expr: |
+            dns:error_rate_5m > 10
+          for: 3m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-08
+            mtu: N174
+          annotations:
+            summary: "DNS 에러율 긴급: {{ $value | printf \"%.1f\" }}%"
+            description: |
+              CoreDNS 에러율이 10%를 초과했습니다.
+              서비스 간 통신 장애가 발생할 수 있습니다.
+              CoreDNS 파드 상태를 즉시 확인하십시오.
+
+        # DNS 해석 지연 P99 > 100ms
+        - alert: DNSLatencyHigh
+          expr: |
+            dns:latency_p99_5m > 0.1
+          for: 10m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N174
+          annotations:
+            summary: "DNS P99 지연 100ms 초과"
+            description: |
+              CoreDNS P99 해석 시간이 {{ $value | humanizeDuration }}입니다.
+              캐시 효율성 또는 upstream DNS 상태를 확인하십시오.
+
+        # DNS 해석 지연 P99 > 500ms (긴급)
+        - alert: DNSLatencyCritical
+          expr: |
+            dns:latency_p99_5m > 0.5
+          for: 5m
+          labels:
+            severity: critical
+            team: infra
+            mtu: N174
+          annotations:
+            summary: "DNS P99 지연 긴급: {{ $value | humanizeDuration }}"
+            description: |
+              CoreDNS P99 해석 시간이 500ms를 초과했습니다.
+              모든 서비스의 응답 지연에 영향을 미칩니다.
+
+        # NXDOMAIN 비율 이상 (10% 초과)
+        - alert: DNSNXDomainRateHigh
+          expr: |
+            dns:nxdomain_rate_5m > 10
+          for: 15m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N174
+          annotations:
+            summary: "DNS NXDOMAIN 비율 10% 초과"
+            description: |
+              NXDOMAIN 응답 비율이 {{ $value | printf "%.1f" }}%입니다.
+              잘못된 서비스 디스커버리 설정 또는 잘못된 DNS 쿼리가
+              대량 발생하고 있을 수 있습니다.
+
+        # DNS 캐시 히트율 저하 (50% 미만)
+        - alert: DNSCacheHitRateLow
+          expr: |
+            dns:cache_hit_rate_5m < 50
+          for: 15m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N174
+          annotations:
+            summary: "DNS 캐시 히트율 저하: {{ $value | printf \"%.1f\" }}%"
+            description: |
+              CoreDNS 캐시 히트율이 50% 미만입니다.
+              캐시 크기 조정 또는 TTL 설정을 검토하십시오.
+
+        # CoreDNS 파드 다운
+        - alert: CoreDNSDown
+          expr: |
+            absent(coredns_dns_requests_total)
+          for: 5m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-08
+            mtu: N174
+          annotations:
+            summary: "CoreDNS 메트릭 부재 — 파드 다운 가능"
+            description: |
+              CoreDNS 메트릭이 5분 이상 수집되지 않습니다.
+              kube-system 네임스페이스의 CoreDNS 파드를 확인하십시오.

@@ -1,0 +1,113 @@
+# Flux CD GitOps 동기화 알림 규칙
+# Design Ref: MTU-N172.design.md §4
+# Plan SC: FR-N172.2
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: flux-sync-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: gitops-monitoring
+    mtu: N172
+spec:
+  groups:
+    - name: flux.sync.alerts
+      rules:
+        # Kustomization 동기화 실패 5분 이상
+        - alert: FluxKustomizationNotReady
+          expr: |
+            gotk_reconcile_condition{kind="Kustomization",type="Ready",status="False"} == 1
+          for: 5m
+          labels:
+            severity: critical
+            team: devops
+            csap: D-12
+            mtu: N172
+          annotations:
+            summary: "Flux Kustomization 동기화 실패: {{ $labels.name }}"
+            description: |
+              Kustomization {{ $labels.name }} ({{ $labels.namespace }})이
+              5분 이상 Ready 상태가 아닙니다.
+              GitOps 동기화가 중단되어 배포 드리프트가 발생할 수 있습니다.
+            runbook_url: "https://docs.saas.local/runbook/flux-kustomization-failed"
+
+        # HelmRelease 동기화 실패 5분 이상
+        - alert: FluxHelmReleaseNotReady
+          expr: |
+            gotk_reconcile_condition{kind="HelmRelease",type="Ready",status="False"} == 1
+          for: 5m
+          labels:
+            severity: critical
+            team: devops
+            csap: D-12
+            mtu: N172
+          annotations:
+            summary: "Flux HelmRelease 동기화 실패: {{ $labels.name }}"
+            description: |
+              HelmRelease {{ $labels.name }} ({{ $labels.namespace }})이
+              5분 이상 Ready 상태가 아닙니다.
+
+        # GitRepository 소스 접근 실패
+        - alert: FluxGitRepositoryNotReady
+          expr: |
+            gotk_reconcile_condition{kind="GitRepository",type="Ready",status="False"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            team: devops
+            csap: D-12
+            mtu: N172
+          annotations:
+            summary: "Flux Git 소스 접근 실패: {{ $labels.name }}"
+            description: |
+              GitRepository {{ $labels.name }}에 접근할 수 없습니다.
+              Git 서버 (Gitea) 상태 또는 인증 정보를 확인하십시오.
+
+        # 리컨실 시간 5분 초과
+        - alert: FluxReconcileDurationHigh
+          expr: |
+            flux:reconcile_duration_p99_5m > 300
+          for: 10m
+          labels:
+            severity: warning
+            team: devops
+            mtu: N172
+          annotations:
+            summary: "Flux 리컨실 시간 초과: {{ $labels.kind }}"
+            description: |
+              {{ $labels.kind }} 리소스의 리컨실 P99 시간이
+              {{ $value | humanizeDuration }}로 5분을 초과합니다.
+              리소스 수 과다 또는 의존성 문제를 확인하십시오.
+
+        # 전체 동기화 성공률 90% 미만
+        - alert: FluxSyncSuccessRateLow
+          expr: |
+            flux:sync_success_rate < 90
+          for: 15m
+          labels:
+            severity: critical
+            team: devops
+            csap: D-12
+            mtu: N172
+          annotations:
+            summary: "Flux 전체 동기화 성공률 저하"
+            description: |
+              Flux 전체 동기화 성공률이 {{ $value | printf "%.1f" }}%로
+              90% 미만입니다. 다수의 리소스가 동기화 실패 상태입니다.
+
+        # Flux 컨트롤러 다운
+        - alert: FluxControllerAbsent
+          expr: |
+            absent(gotk_reconcile_condition)
+          for: 10m
+          labels:
+            severity: critical
+            team: devops
+            mtu: N172
+          annotations:
+            summary: "Flux 컨트롤러 메트릭 부재"
+            description: |
+              Flux 컨트롤러 메트릭이 10분 이상 수집되지 않습니다.
+              flux-system 네임스페이스의 컨트롤러 상태를 확인하십시오.
