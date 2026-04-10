@@ -10,9 +10,9 @@ import type { DataGrade } from '@public-saas/types';
 import { maskPII } from '../lib/pii-masking.js';
 import { runAgent } from '../lib/ai-agent.js';
 import { TOOL_DEFINITIONS, createToolExecutors } from '../lib/ai-tools.js';
-import { generateEmbedding } from '../lib/rag-engine.js';
+import { generateEmbedding, runRAG } from '../lib/rag-engine.js';
 import { prisma } from '../lib/prisma.js';
-import { getLLMConfig, createLLMProvider } from '../lib/llm-provider.js';
+import { getLLMConfig, buildLLMConfig, createLLMProvider } from '../lib/llm-provider.js';
 
 const agentSchema = z.object({
   tenantId: z.string().uuid(),
@@ -63,7 +63,7 @@ export async function agentHandler(
 
     // LLM 인스턴스 생성 (summarize/classify용)
     const llmConfig = modelConfig
-      ? (await import('../lib/llm-provider.js')).buildLLMConfig(modelConfig)
+      ? buildLLMConfig(modelConfig)
       : getLLMConfig();
     const provider = await createLLMProvider(llmConfig);
 
@@ -71,7 +71,6 @@ export async function agentHandler(
     const executors = createToolExecutors({
       ragSearch: async (query: string, tenantId: string) => {
         const embedding = await generateEmbedding(query);
-        const { runRAG } = await import('../lib/rag-engine.js');
         const rag = await runRAG(tenantId, query, embedding, { topK: 3, minScore: 0.25 });
         return rag.answer;
       },
