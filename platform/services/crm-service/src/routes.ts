@@ -1,6 +1,7 @@
 // CRM 서비스 라우트
 // Design Ref: DESIGN-MTU-P09
 // Plan SC: FR-P09.1~FR-P09.5
+// CSAP: D-08-06 Rate Limiting, D-10 네트워크 보안
 
 import type { FastifyInstance } from 'fastify';
 import {
@@ -15,6 +16,7 @@ import {
   updateContractHandler,
   pipelineHandler,
 } from './handlers/crm.handler.js';
+import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   // C-03 수정 (CSAP D-08): 서비스 간 내부 인증 — API 게이트웨이 우회 차단
@@ -36,14 +38,25 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     });
   }
 
-  app.get('/crm/customers', listCustomersHandler);
-  app.get('/crm/customers/:id', getCustomerHandler);
-  app.post('/crm/customers', createCustomerHandler);
-  app.put('/crm/customers/:id', updateCustomerHandler);
-  app.get('/crm/customers/:id/contacts', listContactsHandler);
-  app.post('/crm/customers/:id/contacts', createContactHandler);
-  app.get('/crm/contracts', listContractsHandler);
-  app.post('/crm/contracts', createContractHandler);
-  app.put('/crm/contracts/:id', updateContractHandler);
-  app.get('/crm/pipeline', pipelineHandler);
+  // CSAP D-08-06: Rate Limiting (읽기/쓰기 분리)
+  const readLimiter = createRateLimiter(100, 60, 'rl:crm:read');
+  const writeLimiter = createRateLimiter(30, 60, 'rl:crm:write');
+
+  // FR-P09.1: 고객사 CRUD
+  app.get('/crm/customers', { preHandler: readLimiter }, listCustomersHandler as never);
+  app.get('/crm/customers/:id', { preHandler: readLimiter }, getCustomerHandler as never);
+  app.post('/crm/customers', { preHandler: writeLimiter }, createCustomerHandler as never);
+  app.put('/crm/customers/:id', { preHandler: writeLimiter }, updateCustomerHandler as never);
+
+  // FR-P09.2: 담당자 CRUD
+  app.get('/crm/customers/:id/contacts', { preHandler: readLimiter }, listContactsHandler as never);
+  app.post('/crm/customers/:id/contacts', { preHandler: writeLimiter }, createContactHandler as never);
+
+  // FR-P09.3: 계약 CRUD
+  app.get('/crm/contracts', { preHandler: readLimiter }, listContractsHandler as never);
+  app.post('/crm/contracts', { preHandler: writeLimiter }, createContractHandler as never);
+  app.put('/crm/contracts/:id', { preHandler: writeLimiter }, updateContractHandler as never);
+
+  // FR-P09.4: 영업 파이프라인
+  app.get('/crm/pipeline', { preHandler: readLimiter }, pipelineHandler as never);
 }

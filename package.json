@@ -1,6 +1,13 @@
 {
   "name": "@public-saas/workspace",
   "private": true,
+  "scripts": {
+    "audit:security": "bash scripts/security-audit.sh",
+    "audit:dead-code": "node scripts/audit-dead-code.mjs",
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck",
+    "build": "pnpm -r run build"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.59.1",

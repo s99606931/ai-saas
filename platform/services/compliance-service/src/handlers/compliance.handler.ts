@@ -1,10 +1,16 @@
 // 준수 현황 대시보드 핸들러
 // Design Ref: DESIGN-MTU-P14 §2
 // Plan SC: FR-P14.1~FR-P14.4
-// CSAP: D-06, N-01
+// CSAP: D-06, N-01, D-12 (입력 검증)
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import { z } from 'zod';
 import { logComplianceEvent } from '../lib/audit.js';
+
+// Zod 스키마: 이력 조회 쿼리 파라미터 (CSAP D-12: 입력 검증)
+const historyQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
 
 // --- CSAP 79항목 체크리스트 + 동적 준수 상태 ---
 // Design Ref: DESIGN-MTU-P14 §2
@@ -246,13 +252,25 @@ function getGapRecommendation(domainId: string): string {
 
 /**
  * FR-COMP.3: 준수율 스냅샷 이력
- * GET /compliance/history
+ * GET /compliance/history?limit=20
  * Design Ref: SVC-COMP-R1 DESIGN
+ * CSAP D-12: Zod 입력 검증
  */
 export async function complianceHistoryHandler(
-  _request: FastifyRequest,
+  request: FastifyRequest<{ Querystring: { limit?: string } }>,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-12: 쿼리 파라미터 검증
+  const parseResult = historyQuerySchema.safeParse(request.query);
+  if (!parseResult.success) {
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: parseResult.error.issues.map((i) => i.message).join(', ') },
+    });
+    return;
+  }
+  const { limit } = parseResult.data;
+
   // 현재 스냅샷 자동 생성
   const csapTotalPass = CSAP_DOMAINS.reduce((sum, d) => sum + d.implementedItems, 0);
   const csapRate = Math.round((csapTotalPass / 79) * 100);
@@ -280,7 +298,7 @@ export async function complianceHistoryHandler(
   await reply.send({
     success: true,
     data: {
-      snapshots: snapshotHistory.slice(-20), // 최근 20개
+      snapshots: snapshotHistory.slice(-limit),
       total: snapshotHistory.length,
       latest: snapshot,
     },
