@@ -221,6 +221,9 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/rate-limit':
+        specifier: workspace:*
+        version: link:../../packages/rate-limit
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -310,6 +313,9 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/rate-limit':
+        specifier: workspace:*
+        version: link:../../packages/rate-limit
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -698,6 +704,9 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/rate-limit':
+        specifier: workspace:*
+        version: link:../../packages/rate-limit
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -769,6 +778,9 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/rate-limit':
+        specifier: workspace:*
+        version: link:../../packages/rate-limit
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types

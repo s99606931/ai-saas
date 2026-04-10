@@ -1,5 +1,6 @@
 // 테넌트 관리 라우트
 // Design Ref: DESIGN-MTU-P03 API 설계
+// CSAP: D-08-06 Rate Limiting, D-10 네트워크 보안
 
 import type { FastifyInstance } from 'fastify';
 import {
@@ -13,6 +14,7 @@ import {
   updateTenantConfigHandler,
 } from './handlers/tenant.handler.js';
 import { getTenantUsageHandler } from './handlers/tenant-usage.handler.js';
+import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerTenantRoutes(app: FastifyInstance): Promise<void> {
   // C-03 수정 (CSAP D-08): 서비스 간 내부 인증 — API 게이트웨이 우회 차단
@@ -34,17 +36,21 @@ export async function registerTenantRoutes(app: FastifyInstance): Promise<void> 
     });
   }
 
-  app.get('/tenants', listTenantsHandler);
-  app.get('/tenants/:id', getTenantHandler);
-  app.post('/tenants', createTenantHandler);
-  app.put('/tenants/:id', updateTenantHandler);
-  app.put('/tenants/:id/status', updateTenantStatusHandler);
-  app.delete('/tenants/:id', deleteTenantHandler);
+  // CSAP D-08-06: Rate Limiting (읽기/쓰기 분리)
+  const readLimiter = createRateLimiter(100, 60, 'rl:tenant:read');
+  const writeLimiter = createRateLimiter(30, 60, 'rl:tenant:write');
+
+  app.get('/tenants', { preHandler: readLimiter }, listTenantsHandler as never);
+  app.get('/tenants/:id', { preHandler: readLimiter }, getTenantHandler as never);
+  app.post('/tenants', { preHandler: writeLimiter }, createTenantHandler as never);
+  app.put('/tenants/:id', { preHandler: writeLimiter }, updateTenantHandler as never);
+  app.put('/tenants/:id/status', { preHandler: writeLimiter }, updateTenantStatusHandler as never);
+  app.delete('/tenants/:id', { preHandler: writeLimiter }, deleteTenantHandler as never);
 
   // FR-TENANT.1: 리소스 사용량 조회
-  app.get('/tenants/:id/usage', getTenantUsageHandler);
+  app.get('/tenants/:id/usage', { preHandler: readLimiter }, getTenantUsageHandler as never);
 
   // FR-TENANT.4: 테넌트 설정 관리
-  app.get('/tenants/:id/config', getTenantConfigHandler);
-  app.put('/tenants/:id/config', updateTenantConfigHandler);
+  app.get('/tenants/:id/config', { preHandler: readLimiter }, getTenantConfigHandler as never);
+  app.put('/tenants/:id/config', { preHandler: writeLimiter }, updateTenantConfigHandler as never);
 }

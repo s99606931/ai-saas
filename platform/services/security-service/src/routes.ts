@@ -1,5 +1,6 @@
 // 보안 모니터링 서비스 라우트
 // Design Ref: DESIGN-MTU-P15 §2
+// CSAP: D-08-06 Rate Limiting, D-10 네트워크 보안
 
 import type { FastifyInstance } from 'fastify';
 import {
@@ -10,6 +11,7 @@ import {
   removeIpBlocklistHandler,
   securityAlertsHandler,
 } from './handlers/security.handler.js';
+import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   // C-03 수정 (CSAP D-08): 서비스 간 내부 인증 — API 게이트웨이 우회 차단
@@ -31,17 +33,21 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     });
   }
 
+  // CSAP D-08-06: Rate Limiting (보안 API는 엄격 제한)
+  const readLimiter = createRateLimiter(60, 60, 'rl:sec:read');
+  const writeLimiter = createRateLimiter(20, 60, 'rl:sec:write');
+
   // FR-P15.1: 로그인 실패 패턴 탐지
-  app.get('/security/login-failures', loginFailuresHandler);
+  app.get('/security/login-failures', { preHandler: readLimiter }, loginFailuresHandler);
 
   // FR-P15.2: 이상 접근 패턴 탐지
-  app.get('/security/anomalies', anomaliesHandler);
+  app.get('/security/anomalies', { preHandler: readLimiter }, anomaliesHandler);
 
   // FR-P15.3: IP 차단 목록 관리
-  app.get('/security/ip-blocklist', getIpBlocklistHandler);
-  app.post('/security/ip-blocklist', addIpBlocklistHandler);
-  app.delete('/security/ip-blocklist/:ip', removeIpBlocklistHandler);
+  app.get('/security/ip-blocklist', { preHandler: readLimiter }, getIpBlocklistHandler);
+  app.post('/security/ip-blocklist', { preHandler: writeLimiter }, addIpBlocklistHandler);
+  app.delete('/security/ip-blocklist/:ip', { preHandler: writeLimiter }, removeIpBlocklistHandler);
 
   // FR-P15.4: 보안 이벤트 알림
-  app.get('/security/alerts', securityAlertsHandler);
+  app.get('/security/alerts', { preHandler: readLimiter }, securityAlertsHandler);
 }

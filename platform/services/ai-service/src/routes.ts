@@ -1,6 +1,7 @@
 // AI 서비스 라우트
 // Design Ref: DESIGN-MTU-P10
 // Plan SC: FR-P10.1~FR-P10.6
+// CSAP: D-08-06 Rate Limiting, D-10 네트워크 보안
 
 import type { FastifyInstance } from 'fastify';
 import {
@@ -11,6 +12,7 @@ import {
   usageHandler,
   costHandler,
 } from './handlers/ai.handler.js';
+import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   // C-03 수정 (CSAP D-08): 서비스 간 내부 인증 — API 게이트웨이 우회 차단
@@ -32,10 +34,15 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     });
   }
 
-  app.get('/ai/models', listModelsHandler);
-  app.post('/ai/models', createModelHandler);
-  app.put('/ai/models/:id', updateModelHandler);
-  app.post('/ai/chat', chatHandler);
-  app.get('/ai/usage', usageHandler);
-  app.get('/ai/cost', costHandler);
+  // CSAP D-08-06: Rate Limiting (AI 채팅은 비용 보호 목적 더 엄격)
+  const readLimiter = createRateLimiter(100, 60, 'rl:ai:read');
+  const writeLimiter = createRateLimiter(20, 60, 'rl:ai:write');
+  const chatLimiter = createRateLimiter(10, 60, 'rl:ai:chat');
+
+  app.get('/ai/models', { preHandler: readLimiter }, listModelsHandler as never);
+  app.post('/ai/models', { preHandler: writeLimiter }, createModelHandler as never);
+  app.put('/ai/models/:id', { preHandler: writeLimiter }, updateModelHandler as never);
+  app.post('/ai/chat', { preHandler: chatLimiter }, chatHandler as never);
+  app.get('/ai/usage', { preHandler: readLimiter }, usageHandler as never);
+  app.get('/ai/cost', { preHandler: readLimiter }, costHandler as never);
 }
