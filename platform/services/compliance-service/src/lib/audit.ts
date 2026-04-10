@@ -16,7 +16,7 @@ export async function logComplianceEvent(action: string, metadata?: Record<strin
     target: 'compliance',
     targetType: 'compliance',
     tenantId: 'system',
-    ip: '127.0.0.1',
+    ip: process.env.SERVICE_IP || '0.0.0.0',
     userAgent: 'compliance-service/1.0',
     metadata,
   });

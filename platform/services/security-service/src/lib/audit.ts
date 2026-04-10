@@ -16,7 +16,7 @@ export async function logSecurityEvent(action: string, metadata?: Record<string,
     target: 'security',
     targetType: 'security',
     tenantId: 'system',
-    ip: '127.0.0.1',
+    ip: process.env.SERVICE_IP || '0.0.0.0',
     userAgent: 'security-service/1.0',
     metadata,
   });
