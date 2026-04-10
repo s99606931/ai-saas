@@ -1,0 +1,173 @@
+# =============================================================================
+# DORA 4대 메트릭 Recording Rules
+# Design Ref: MTU-N126 Design
+# Plan SC: FR-N126.2
+# CSAP: D-06(침해사고 관리 -- DevOps 성숙도 측정)
+#
+# 적용: kubectl apply -f infra/monitoring/dora-metrics-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: dora-metrics-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 -- DORA 메트릭 기반 DevOps 성숙도 측정"
+spec:
+  groups:
+    # ---------------------------------------------------------------
+    # 그룹 1: 배포 빈도 (Deployment Frequency)
+    # ---------------------------------------------------------------
+    - name: dora:deployment_frequency
+      interval: 5m
+      rules:
+        # 일간 배포 횟수 (24시간 윈도우)
+        - record: dora:deployment_frequency:daily
+          expr: |
+            sum(increase(
+              kube_deployment_status_observed_generation[24h]
+            )) or vector(0)
+
+        # 주간 배포 횟수 (7일 윈도우)
+        - record: dora:deployment_frequency:weekly
+          expr: |
+            sum(increase(
+              kube_deployment_status_observed_generation[7d]
+            )) or vector(0)
+
+        # 네임스페이스별 일간 배포
+        - record: dora:deployment_frequency:daily_by_namespace
+          expr: |
+            sum by (namespace) (increase(
+              kube_deployment_status_observed_generation[24h]
+            )) or vector(0)
+
+    # ---------------------------------------------------------------
+    # 그룹 2: 변경 리드 타임 (Change Lead Time)
+    # ---------------------------------------------------------------
+    - name: dora:change_lead_time
+      interval: 5m
+      rules:
+        # CI 파이프라인 평균 실행 시간 (분) -- 리드 타임 프록시
+        - record: dora:change_lead_time:pipeline_duration_avg
+          expr: |
+            avg(
+              time() - kube_job_status_start_time{
+                job_name=~".*-pipeline-.*"
+              }
+            ) / 60 or vector(0)
+
+        # 배포 대기 중인 변경 수
+        - record: dora:change_lead_time:pending_changes
+          expr: |
+            count(
+              kube_deployment_status_observed_generation
+              != kube_deployment_metadata_generation
+            ) or vector(0)
+
+    # ---------------------------------------------------------------
+    # 그룹 3: 변경 실패율 (Change Failure Rate)
+    # ---------------------------------------------------------------
+    - name: dora:change_failure_rate
+      interval: 5m
+      rules:
+        # 롤백 이벤트 횟수 (24시간)
+        - record: dora:change_failure:rollback_count_daily
+          expr: |
+            sum(increase(
+              kube_deployment_status_observed_generation{} [24h]
+            ) < 0) or vector(0)
+
+        # 실패 배포 수 (파드 CrashLoopBackOff)
+        - record: dora:change_failure:crashloop_count
+          expr: |
+            count(
+              kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"}
+            ) or vector(0)
+
+        # 변경 실패율 (%) -- 실패 / 전체 배포
+        - record: dora:change_failure_rate:ratio
+          expr: |
+            (
+              dora:change_failure:crashloop_count
+              / clamp_min(dora:deployment_frequency:daily, 1)
+            ) * 100 or vector(0)
+
+    # ---------------------------------------------------------------
+    # 그룹 4: 서비스 복구 시간 (MTTR)
+    # ---------------------------------------------------------------
+    - name: dora:mttr
+      interval: 5m
+      rules:
+        # 현재 활성 인시던트 평균 지속 시간 (분)
+        - record: dora:mttr:active_incident_duration_avg
+          expr: |
+            avg(
+              time() - ALERTS_FOR_STATE{alertstate="firing", severity=~"critical|warning"}
+            ) / 60 or vector(0)
+
+        # P1 인시던트 MTTR (7일 윈도우, 분)
+        - record: dora:mttr:p1_7d_avg
+          expr: |
+            avg(
+              time() - ALERTS_FOR_STATE{alertstate="firing", severity="critical"}
+            ) / 60 or vector(0)
+
+        # 감지 시간 (MTTD) -- 알림 발생까지 소요 시간
+        - record: dora:mttd:detection_delay_avg
+          expr: |
+            avg(
+              ALERTS_FOR_STATE{alertstate="firing"}
+              - on(alertname)
+              group_left()
+              ALERTS_FOR_STATE{alertstate="pending"}
+            ) / 60 or vector(0)
+
+    # ---------------------------------------------------------------
+    # 그룹 5: DORA 등급 판정 알림
+    # ---------------------------------------------------------------
+    - name: dora:alerts
+      rules:
+        # 배포 빈도 저하 경고
+        - alert: DORADeploymentFrequencyLow
+          expr: dora:deployment_frequency:weekly < 1
+          for: 24h
+          labels:
+            severity: warning
+            category: devops
+          annotations:
+            summary: "DORA: 주간 배포 빈도 {{ $value }}회 -- Low 등급"
+            description: |
+              주간 배포 빈도가 1회 미만입니다.
+              DORA 분류 기준 Low 등급에 해당합니다.
+              분석: scripts/generate-dora-report.sh --dry-run
+
+        # 변경 실패율 높음 경고
+        - alert: DORAChangeFailureRateHigh
+          expr: dora:change_failure_rate:ratio > 15
+          for: 1h
+          labels:
+            severity: warning
+            category: devops
+          annotations:
+            summary: "DORA: 변경 실패율 {{ $value }}% -- Low 등급"
+            description: |
+              변경 실패율이 15%를 초과했습니다.
+              배포 파이프라인 및 테스트 커버리지 개선이 필요합니다.
+
+        # MTTR 높음 경고
+        - alert: DORAMTTRHigh
+          expr: dora:mttr:p1_7d_avg > 1440
+          for: 30m
+          labels:
+            severity: warning
+            category: sre
+          annotations:
+            summary: "DORA: P1 평균 MTTR {{ $value }}분 -- 24시간 초과"
+            description: |
+              P1 인시던트 평균 복구 시간이 24시간을 초과했습니다.
+              인시던트 대응 프로세스 개선이 필요합니다.

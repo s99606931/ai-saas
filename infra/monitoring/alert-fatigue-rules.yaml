@@ -1,0 +1,93 @@
+# =============================================================================
+# 알림 피로도 분석용 Recording Rules
+# Design Ref: MTU-N125 Design
+# Plan SC: FR-N125.2
+# CSAP: D-06(침해사고 관리 -- 알림 효과성 측정)
+#
+# 적용: kubectl apply -f infra/monitoring/alert-fatigue-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: alert-fatigue-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 -- 알림 피로도 측정 메트릭"
+spec:
+  groups:
+    - name: alert_fatigue:metrics
+      interval: 5m
+      rules:
+        # 총 활성 알림 수
+        - record: alert_fatigue:active_total
+          expr: |
+            count(ALERTS{alertstate="firing"}) or vector(0)
+
+        # 심각도별 활성 알림 수
+        - record: alert_fatigue:active_by_severity
+          expr: |
+            count by (severity) (ALERTS{alertstate="firing"}) or vector(0)
+
+        # 일간 알림 발생 횟수 (24시간 윈도우)
+        - record: alert_fatigue:daily_firing_count
+          expr: |
+            sum(changes(ALERTS_FOR_STATE{alertstate="firing"}[24h])) or vector(0)
+
+        # SNR: Critical+Warning / 전체
+        - record: alert_fatigue:snr_ratio
+          expr: |
+            (
+              count(ALERTS{alertstate="firing", severity=~"critical|warning"}) or vector(0)
+            )
+            / clamp_min(
+              count(ALERTS{alertstate="firing"}) or vector(1), 1
+            )
+
+        # 반복 알림 (7일 내 동일 alertname 3회 이상)
+        - record: alert_fatigue:repeated_alerts_count
+          expr: |
+            count(
+              count by (alertname) (
+                count_over_time(ALERTS{alertstate="firing"}[7d])
+              ) >= 3
+            ) or vector(0)
+
+        # 평균 알림 지속 시간 (분)
+        - record: alert_fatigue:avg_duration_minutes
+          expr: |
+            avg(
+              time() - ALERTS_FOR_STATE{alertstate="firing"}
+            ) / 60 or vector(0)
+
+    - name: alert_fatigue:alerts
+      rules:
+        # 알림 피로도 HIGH 경고
+        - alert: AlertFatigueHigh
+          expr: alert_fatigue:daily_firing_count > 30
+          for: 1h
+          labels:
+            severity: warning
+            category: sre
+          annotations:
+            summary: "알림 피로도 HIGH -- 일간 알림 {{ $value }}건 초과"
+            description: |
+              일간 알림 발생 수가 30건을 초과했습니다.
+              온콜 담당자 피로도가 높아질 수 있습니다.
+              분석: scripts/analyze-alert-fatigue.sh --dry-run
+
+        # SNR 낮음 경고
+        - alert: AlertSNRLow
+          expr: alert_fatigue:snr_ratio < 0.5
+          for: 30m
+          labels:
+            severity: info
+            category: sre
+          annotations:
+            summary: "알림 SNR 50% 미만 -- 노이즈 알림 비율 높음"
+            description: |
+              실제 조치가 필요한 알림(Critical+Warning) 비율이 50% 미만입니다.
+              Info 등급 알림 임계값 재검토가 필요합니다.
