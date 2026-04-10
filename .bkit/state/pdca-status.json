@@ -1,6 +1,6 @@
 {
   "version": "3.0",
-  "lastUpdated": "2026-04-10T11:51:25.770Z",
+  "lastUpdated": "2026-04-10T11:53:15.953Z",
   "activeFeatures": [
     "public-saas-framework",
     "scripts",
@@ -1326,9 +1326,79 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-10T11:49:49.001Z",
-        "lastUpdated": "2026-04-10T11:51:25.767Z"
+        "lastUpdated": "2026-04-10T11:53:15.951Z"
       },
-      "lastFile": "/data/ai-saas/platform/packages/rate-limit-advanced/tests/sliding-window.test.ts"
+      "lastFile": "/data/ai-saas/platform/packages/rate-limit-advanced/src/sliding-window.ts"
+    },
+    "MTU-N149": {
+      "phase": "archived",
+      "matchRate": "100%",
+      "round": 12,
+      "name": "Cluster API 수명주기 자동화",
+      "archivedAt": "2026-04-10T11:52:56.016638Z"
+    },
+    "MTU-N150": {
+      "phase": "archived",
+      "matchRate": "100%",
+      "round": 12,
+      "name": "DB 마이그레이션 자동화",
+      "archivedAt": "2026-04-10T11:52:56.016654Z"
+    },
+    "MTU-N151": {
+      "phase": "archived",
+      "matchRate": "100%",
+      "round": 12,
+      "name": "백업 자동 검증 파이프라인",
+      "archivedAt": "2026-04-10T11:52:56.016662Z"
+    },
+    "MTU-N152": {
+      "phase": "archived",
+      "matchRate": "100%",
+      "round": 12,
+      "name": "Cilium L7 Zero Trust",
+      "archivedAt": "2026-04-10T11:52:56.016666Z"
+    },
+    "MTU-N153": {
+      "phase": "archived",
+      "matchRate": "100%",
+      "round": 12,
+      "name": "개인정보보호법 준수 자동 검증",
+      "archivedAt": "2026-04-10T11:52:56.016669Z"
+    },
+    "MTU-N154": {
+      "phase": "archived",
+      "matchRate": "100%",
+      "round": 12,
+      "name": "CSAP 갱신 인증 준비 자동화",
+      "archivedAt": "2026-04-10T11:52:56.016674Z"
+    },
+    "MTU-N155": {
+      "phase": "archived",
+      "matchRate": "100%",
+      "round": 12,
+      "name": "데이터 품질 검증 파이프라인",
+      "archivedAt": "2026-04-10T11:52:56.016684Z"
+    },
+    "MTU-N156": {
+      "phase": "archived",
+      "matchRate": "100%",
+      "round": 12,
+      "name": "JVM/Node.js 런타임 자동 튜닝",
+      "archivedAt": "2026-04-10T11:52:56.016689Z"
+    },
+    "MTU-N157": {
+      "phase": "archived",
+      "matchRate": "100%",
+      "round": 12,
+      "name": "보안 카오스 엔지니어링",
+      "archivedAt": "2026-04-10T11:52:56.016693Z"
+    },
+    "MTU-N158": {
+      "phase": "archived",
+      "matchRate": "100%",
+      "round": 12,
+      "name": "12라운드 통합 검증",
+      "archivedAt": "2026-04-10T11:52:56.016698Z"
     }
   },
   "pipeline": {
@@ -1339,7 +1409,7 @@
   "session": {
     "startedAt": "2026-04-05T05:33:14.156Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-04-10T11:51:25.770Z"
+    "lastActivity": "2026-04-10T11:53:15.953Z"
   },
   "history": [
     {
@@ -11136,6 +11206,24 @@
     },
     {
       "timestamp": "2026-04-10T11:51:25.769Z",
+      "feature": "rate-limit-advanced",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T11:51:59.188Z",
+      "feature": "rate-limit-advanced",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T11:52:27.716Z",
+      "feature": "rate-limit-advanced",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T11:53:15.952Z",
       "feature": "rate-limit-advanced",
       "phase": "do",
       "action": "updated"

@@ -10089,3 +10089,21 @@
 {"timestamp":"2026-04-10T13:30:00Z","action":"MTU_COMPLETED","mtu":"MTU-N158","name":"12라운드 통합 검증","matchRate":"100%","tests":"67/67","round":12}
 {"timestamp":"2026-04-10T13:30:00Z","action":"ROUND_COMPLETED","round":12,"mtus_completed":10,"total_tests_passed":"210/210"}
 {"timestamp":"2026-04-10T11:51:45Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T11:51:48Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T11:51:55Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T11:51:59Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T11:52:25Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T11:52:27Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T11:52:56Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T11:52:59Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T11:53:06Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T11:53:11Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T11:53:16Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-10T11:53:17Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T11:53:27Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T11:53:32Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T11:53:45Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T11:53:52Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T11:54:00Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-10T11:54:04Z","event":"session-end"}
+{"timestamp":"2026-04-10T11:54:11Z","tool":"Bash","user":"kunkin"}
