@@ -1,0 +1,84 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "description": "MTU-N207: Garbage Collection 모니터링 대시보드 - GC 레이턴시, 빈도, 힙 메모리, 고루틴",
+  "editable": true,
+  "panels": [
+    {
+      "title": "GC 레이턴시 (p50/p90/p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [
+        { "expr": "gc_perf:gc_duration_p50", "legendFormat": "p50 - {{ job }}" },
+        { "expr": "gc_perf:gc_duration_p90", "legendFormat": "p90 - {{ job }}" },
+        { "expr": "gc_perf:gc_duration_p99", "legendFormat": "p99 - {{ job }}" }
+      ]
+    },
+    {
+      "title": "GC 빈도 (초당)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "targets": [
+        { "expr": "gc_perf:gc_rate", "legendFormat": "{{ job }}" }
+      ]
+    },
+    {
+      "title": "힙 메모리 사용량",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "targets": [
+        { "expr": "gc_perf:heap_inuse_bytes", "legendFormat": "{{ job }} - {{ instance }}" }
+      ]
+    },
+    {
+      "title": "RSS 메모리",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "targets": [
+        { "expr": "gc_perf:resident_memory_bytes", "legendFormat": "{{ job }} - {{ instance }}" }
+      ]
+    },
+    {
+      "title": "힙 할당율",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "Bps" } },
+      "targets": [
+        { "expr": "gc_perf:heap_alloc_rate", "legendFormat": "{{ job }}" }
+      ]
+    },
+    {
+      "title": "고루틴 수",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [
+        { "expr": "gc_perf:goroutines_count", "legendFormat": "{{ job }} - {{ instance }}" }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["gc", "go-runtime", "mtu-n207", "csap-d10"],
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus" }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Garbage Collection 모니터링",
+  "uid": "gc-monitoring-n207",
+  "version": 1
+}

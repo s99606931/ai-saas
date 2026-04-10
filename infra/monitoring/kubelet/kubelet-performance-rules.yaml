@@ -1,0 +1,129 @@
+# MTU-N203: Kubelet 성능 모니터링 Recording Rules
+# Design Ref: docs/02-design/mtus/MTU-N203-kubelet-performance.design.md
+# Plan SC: FR-N203.1, FR-N203.2, FR-N203.3
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kubelet-performance-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: kubelet-performance
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: kubelet-performance.recording
+      interval: 30s
+      rules:
+        # ── FR-N203.1: Pod 기동 시간 퍼센타일 ──
+        - record: kubelet_perf:pod_start_duration_p50
+          expr: |
+            histogram_quantile(0.50,
+              sum by (instance, le) (
+                rate(kubelet_pod_start_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.50"
+            mtu: "N203"
+
+        - record: kubelet_perf:pod_start_duration_p90
+          expr: |
+            histogram_quantile(0.90,
+              sum by (instance, le) (
+                rate(kubelet_pod_start_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.90"
+            mtu: "N203"
+
+        - record: kubelet_perf:pod_start_duration_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (instance, le) (
+                rate(kubelet_pod_start_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.99"
+            mtu: "N203"
+
+        # ── FR-N203.2: PLEG Relist 레이턴시 퍼센타일 ──
+        - record: kubelet_perf:pleg_relist_duration_p50
+          expr: |
+            histogram_quantile(0.50,
+              sum by (instance, le) (
+                rate(kubelet_pleg_relist_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.50"
+            mtu: "N203"
+
+        - record: kubelet_perf:pleg_relist_duration_p90
+          expr: |
+            histogram_quantile(0.90,
+              sum by (instance, le) (
+                rate(kubelet_pleg_relist_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.90"
+            mtu: "N203"
+
+        - record: kubelet_perf:pleg_relist_duration_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (instance, le) (
+                rate(kubelet_pleg_relist_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.99"
+            mtu: "N203"
+
+        # ── FR-N203.3: 컨테이너 런타임 작업 레이턴시 ──
+        - record: kubelet_perf:runtime_operations_duration_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (instance, operation_type, le) (
+                rate(kubelet_runtime_operations_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.99"
+            mtu: "N203"
+
+        - record: kubelet_perf:runtime_operations_errors_rate
+          expr: |
+            sum by (instance, operation_type) (
+              rate(kubelet_runtime_operations_errors_total[5m])
+            )
+            /
+            (
+              sum by (instance, operation_type) (
+                rate(kubelet_runtime_operations_total[5m])
+              ) > 0
+            )
+          labels:
+            mtu: "N203"
+
+        # ── 보조 메트릭: 실행 중 Pod/컨테이너 수 ──
+        - record: kubelet_perf:running_pods_count
+          expr: |
+            sum by (instance) (
+              kubelet_running_pods
+            )
+          labels:
+            mtu: "N203"
+
+        - record: kubelet_perf:running_containers_count
+          expr: |
+            sum by (instance) (
+              kubelet_running_containers{container_state="running"}
+            )
+          labels:
+            mtu: "N203"

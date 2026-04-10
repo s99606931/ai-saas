@@ -1,0 +1,97 @@
+# MTU-N203: Kubelet 성능 모니터링 Alerting Rules
+# Design Ref: docs/02-design/mtus/MTU-N203-kubelet-performance.design.md
+# Plan SC: FR-N203.4, FR-N203.5
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kubelet-performance-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: kubelet-performance
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: kubelet-performance.alerts
+      rules:
+        # ── FR-N203.4: Pod 기동 시간 SLO 위반 ──
+        - alert: KubeletPodStartSlow
+          expr: kubelet_perf:pod_start_duration_p99 > 30
+          for: 5m
+          labels:
+            severity: warning
+            category: kubelet
+            csap: "D-10"
+            mtu: "N203"
+          annotations:
+            summary: "Kubelet Pod 기동 시간 느림 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}에서 Pod 기동 p99 레이턴시가
+              {{ $value | printf "%.1f" }}초로 SLO 임계값 30초를 초과했습니다.
+            runbook_url: "https://wiki.internal/runbooks/kubelet-pod-start-slow"
+
+        - alert: KubeletPodStartVerySlow
+          expr: kubelet_perf:pod_start_duration_p99 > 60
+          for: 5m
+          labels:
+            severity: critical
+            category: kubelet
+            csap: "D-10"
+            mtu: "N203"
+          annotations:
+            summary: "Kubelet Pod 기동 시간 심각하게 느림 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}에서 Pod 기동 p99 레이턴시가
+              {{ $value | printf "%.1f" }}초로 긴급 임계값 60초를 초과했습니다.
+              이미지 풀 지연 또는 리소스 부족을 확인하십시오.
+            runbook_url: "https://wiki.internal/runbooks/kubelet-pod-start-critical"
+
+        # ── FR-N203.5: PLEG Relist 레이턴시 급등 ──
+        - alert: KubeletPLEGRelistSlow
+          expr: kubelet_perf:pleg_relist_duration_p99 > 5
+          for: 5m
+          labels:
+            severity: warning
+            category: kubelet
+            csap: "D-10"
+            mtu: "N203"
+          annotations:
+            summary: "Kubelet PLEG relist 느림 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}에서 PLEG relist p99 레이턴시가
+              {{ $value | printf "%.1f" }}초로 임계값 5초를 초과했습니다.
+              컨테이너 런타임 상태를 확인하십시오.
+            runbook_url: "https://wiki.internal/runbooks/kubelet-pleg-slow"
+
+        - alert: KubeletPLEGRelistStuck
+          expr: kubelet_perf:pleg_relist_duration_p99 > 10
+          for: 5m
+          labels:
+            severity: critical
+            category: kubelet
+            csap: "D-10"
+            mtu: "N203"
+          annotations:
+            summary: "Kubelet PLEG relist 정체 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}에서 PLEG relist p99 레이턴시가
+              {{ $value | printf "%.1f" }}초로 긴급 임계값 10초를 초과했습니다.
+              노드 재시작을 고려하십시오.
+            runbook_url: "https://wiki.internal/runbooks/kubelet-pleg-stuck"
+
+        - alert: KubeletRuntimeOperationErrors
+          expr: kubelet_perf:runtime_operations_errors_rate > 0.01
+          for: 5m
+          labels:
+            severity: warning
+            category: kubelet
+            csap: "D-10"
+            mtu: "N203"
+          annotations:
+            summary: "Kubelet 런타임 작업 에러 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}에서 {{ $labels.operation_type }} 작업의
+              에러율이 {{ $value | printf "%.2f" }}으로 1%를 초과했습니다.
+            runbook_url: "https://wiki.internal/runbooks/kubelet-runtime-errors"

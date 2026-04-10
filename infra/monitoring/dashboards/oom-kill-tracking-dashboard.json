@@ -1,0 +1,113 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "description": "MTU-N210: OOM Kill 이벤트 추적 대시보드",
+  "editable": true,
+  "panels": [
+    {
+      "title": "OOM Kill 횟수 (네임스페이스별)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "oom:kill_count_by_namespace", "legendFormat": "{{ namespace }}" }
+      ]
+    },
+    {
+      "title": "반복 OOM Kill 워크로드",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "oom:recurring_kills >= 1", "legendFormat": "{{ namespace }}/{{ pod }}" }
+      ]
+    },
+    {
+      "title": "limit 90%+ 컨테이너 수",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "oom:containers_near_limit", "legendFormat": "{{ namespace }}" }
+      ]
+    },
+    {
+      "title": "OOM Kill 워크로드 상세",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "oom:kill_count_by_workload > 0", "legendFormat": "{{ namespace }}/{{ pod }}/{{ container }}", "format": "table", "instant": true }
+      ]
+    },
+    {
+      "title": "메모리 limit 대비 사용률 (Top 10)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "targets": [
+        { "expr": "topk(10, oom:memory_near_limit_ratio)", "legendFormat": "{{ namespace }}/{{ pod }}/{{ container }}" }
+      ]
+    },
+    {
+      "title": "OOM Kill 타임라인",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [
+        { "expr": "sum by (namespace) (increase(kube_pod_container_status_restarts_total[1h]) * on(namespace,pod,container) group_left kube_pod_container_status_last_terminated_reason{reason=\"OOMKilled\"})", "legendFormat": "{{ namespace }}" }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["oom", "memory", "mtu-n210", "csap-d10"],
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus" }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "title": "OOM Kill 이벤트 추적",
+  "uid": "oom-kill-tracking-n210",
+  "version": 1
+}

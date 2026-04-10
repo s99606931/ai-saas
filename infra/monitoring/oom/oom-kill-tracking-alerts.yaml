@@ -1,0 +1,66 @@
+# MTU-N210: OOM Kill 이벤트 추적 Alerting Rules
+# Design Ref: docs/02-design/mtus/MTU-N210-oom-kill-tracking.design.md
+# Plan SC: FR-N210.4, FR-N210.5
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: oom-kill-tracking-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: oom-kill-tracking
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: oom-kill-tracking.alerts
+      rules:
+        - alert: OOMKillDetected
+          expr: |
+            kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+          for: 0m
+          labels:
+            severity: warning
+            category: oom
+            csap: "D-10"
+            mtu: "N210"
+          annotations:
+            summary: "OOM Kill 감지 ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: |
+              컨테이너 {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}가
+              OOM Kill로 종료되었습니다.
+              메모리 제한(limit) 상향 또는 메모리 누수 조사가 필요합니다.
+            runbook_url: "https://wiki.internal/runbooks/oom-kill-detected"
+
+        - alert: OOMKillRecurring
+          expr: oom:recurring_kills >= 2
+          for: 5m
+          labels:
+            severity: critical
+            category: oom
+            csap: "D-10"
+            mtu: "N210"
+          annotations:
+            summary: "반복 OOM Kill ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: |
+              컨테이너 {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}가
+              1시간 내 {{ $value | printf "%.0f" }}회 OOM Kill 재발.
+              즉시 메모리 제한 조정 또는 근본 원인 분석이 필요합니다.
+            runbook_url: "https://wiki.internal/runbooks/oom-kill-recurring"
+
+        - alert: MemoryNearLimit
+          expr: oom:memory_near_limit_ratio > 0.95
+          for: 5m
+          labels:
+            severity: warning
+            category: oom
+            csap: "D-10"
+            mtu: "N210"
+          annotations:
+            summary: "메모리 limit 근접 ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: |
+              컨테이너 {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}의
+              메모리 사용률이 limit 대비 {{ $value | printf "%.0f" }}%입니다.
+              OOM Kill 위험이 높으므로 메모리 제한 상향을 권고합니다.
+            runbook_url: "https://wiki.internal/runbooks/memory-near-limit"

@@ -1,0 +1,94 @@
+# MTU-N207: Garbage Collection 모니터링 Recording Rules
+# Design Ref: docs/02-design/mtus/MTU-N207-gc-monitoring.design.md
+# Plan SC: FR-N207.1, FR-N207.2, FR-N207.3
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: gc-monitoring-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: gc-monitoring
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: gc-monitoring.recording
+      interval: 30s
+      rules:
+        # ── FR-N207.1: GC 레이턴시 퍼센타일 ──
+        - record: gc_perf:gc_duration_p50
+          expr: |
+            histogram_quantile(0.50,
+              sum by (job, le) (
+                rate(go_gc_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.50"
+            mtu: "N207"
+
+        - record: gc_perf:gc_duration_p90
+          expr: |
+            histogram_quantile(0.90,
+              sum by (job, le) (
+                rate(go_gc_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.90"
+            mtu: "N207"
+
+        - record: gc_perf:gc_duration_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (job, le) (
+                rate(go_gc_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.99"
+            mtu: "N207"
+
+        # ── FR-N207.2: GC 빈도 (초당 횟수) ──
+        - record: gc_perf:gc_rate
+          expr: |
+            sum by (job) (
+              rate(go_gc_duration_seconds_count[5m])
+            )
+          labels:
+            mtu: "N207"
+
+        # ── FR-N207.3: 힙 메모리 사용량 ──
+        - record: gc_perf:heap_inuse_bytes
+          expr: |
+            sum by (job, instance) (
+              go_memstats_heap_inuse_bytes
+            )
+          labels:
+            mtu: "N207"
+
+        - record: gc_perf:heap_alloc_rate
+          expr: |
+            sum by (job) (
+              rate(go_memstats_alloc_bytes_total[5m])
+            )
+          labels:
+            mtu: "N207"
+
+        - record: gc_perf:resident_memory_bytes
+          expr: |
+            sum by (job, instance) (
+              process_resident_memory_bytes
+            )
+          labels:
+            mtu: "N207"
+
+        - record: gc_perf:goroutines_count
+          expr: |
+            sum by (job, instance) (
+              go_goroutines
+            )
+          labels:
+            mtu: "N207"

@@ -1,0 +1,83 @@
+# MTU-N204: Scheduler 성능 모니터링 Alerting Rules
+# Design Ref: docs/02-design/mtus/MTU-N204-scheduler-performance.design.md
+# Plan SC: FR-N204.4, FR-N204.5
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: scheduler-performance-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: scheduler-performance
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: scheduler-performance.alerts
+      rules:
+        # ── FR-N204.4: 스케줄링 레이턴시 SLO 위반 ──
+        - alert: SchedulerLatencyHigh
+          expr: scheduler_perf:algorithm_duration_p99 > 1
+          for: 5m
+          labels:
+            severity: warning
+            category: scheduler
+            csap: "D-10"
+            mtu: "N204"
+          annotations:
+            summary: "Scheduler 알고리즘 레이턴시 높음"
+            description: |
+              스케줄링 알고리즘 p99 레이턴시가 {{ $value | printf "%.2f" }}초로
+              SLO 임계값 1초를 초과했습니다.
+              노드 리소스 부족 또는 복잡한 어피니티 규칙을 확인하십시오.
+            runbook_url: "https://wiki.internal/runbooks/scheduler-latency-high"
+
+        - alert: SchedulerLatencyCritical
+          expr: scheduler_perf:algorithm_duration_p99 > 5
+          for: 5m
+          labels:
+            severity: critical
+            category: scheduler
+            csap: "D-10"
+            mtu: "N204"
+          annotations:
+            summary: "Scheduler 알고리즘 레이턴시 심각"
+            description: |
+              스케줄링 알고리즘 p99 레이턴시가 {{ $value | printf "%.2f" }}초로
+              긴급 임계값 5초를 초과했습니다.
+              즉시 클러스터 리소스 상태를 확인하십시오.
+            runbook_url: "https://wiki.internal/runbooks/scheduler-latency-critical"
+
+        # ── FR-N204.5: 대기 Pod 누적 ──
+        - alert: SchedulerPendingPodsHigh
+          expr: sum(scheduler_perf:pending_pods_by_queue) > 10
+          for: 10m
+          labels:
+            severity: warning
+            category: scheduler
+            csap: "D-10"
+            mtu: "N204"
+          annotations:
+            summary: "대기 Pod 누적 ({{ $value }}개)"
+            description: |
+              스케줄링 대기 Pod가 {{ $value | printf "%.0f" }}개로
+              임계값 10개를 초과했습니다.
+              클러스터 용량 확장 또는 리소스 요청 조정을 검토하십시오.
+            runbook_url: "https://wiki.internal/runbooks/scheduler-pending-pods"
+
+        - alert: SchedulerFailureRateHigh
+          expr: scheduler_perf:schedule_failure_rate > 0.05
+          for: 5m
+          labels:
+            severity: critical
+            category: scheduler
+            csap: "D-10"
+            mtu: "N204"
+          annotations:
+            summary: "Scheduler 실패율 높음 ({{ $value | printf \"%.1f\" }}%)"
+            description: |
+              스케줄링 실패율이 {{ $value | printf "%.2f" }}으로
+              임계값 5%를 초과했습니다.
+              unschedulable Pod 원인을 분석하십시오.
+            runbook_url: "https://wiki.internal/runbooks/scheduler-failure-rate"

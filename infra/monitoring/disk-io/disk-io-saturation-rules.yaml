@@ -1,0 +1,74 @@
+# MTU-N208: 노드 디스크 I/O 포화도 Recording Rules
+# Design Ref: docs/02-design/mtus/MTU-N208-disk-io-saturation.design.md
+# Plan SC: FR-N208.1, FR-N208.2, FR-N208.3
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: disk-io-saturation-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: disk-io-saturation
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: disk-io-saturation.recording
+      interval: 30s
+      rules:
+        # ── FR-N208.1: 디스크 I/O 포화도 ──
+        - record: disk_io:utilization_percent
+          expr: |
+            rate(node_disk_io_time_seconds_total[5m]) * 100
+          labels:
+            mtu: "N208"
+
+        - record: disk_io:io_weighted_time
+          expr: |
+            rate(node_disk_io_time_weighted_seconds_total[5m])
+          labels:
+            mtu: "N208"
+
+        # ── FR-N208.2: 디스크 읽기/쓰기 처리량 ──
+        - record: disk_io:read_throughput_bytes
+          expr: |
+            rate(node_disk_read_bytes_total[5m])
+          labels:
+            mtu: "N208"
+
+        - record: disk_io:write_throughput_bytes
+          expr: |
+            rate(node_disk_written_bytes_total[5m])
+          labels:
+            mtu: "N208"
+
+        # ── FR-N208.3: IOPS ──
+        - record: disk_io:read_iops
+          expr: |
+            rate(node_disk_reads_completed_total[5m])
+          labels:
+            mtu: "N208"
+
+        - record: disk_io:write_iops
+          expr: |
+            rate(node_disk_writes_completed_total[5m])
+          labels:
+            mtu: "N208"
+
+        # 평균 레이턴시
+        - record: disk_io:avg_read_latency
+          expr: |
+            rate(node_disk_read_time_seconds_total[5m])
+            /
+            (rate(node_disk_reads_completed_total[5m]) > 0)
+          labels:
+            mtu: "N208"
+
+        - record: disk_io:avg_write_latency
+          expr: |
+            rate(node_disk_write_time_seconds_total[5m])
+            /
+            (rate(node_disk_writes_completed_total[5m]) > 0)
+          labels:
+            mtu: "N208"

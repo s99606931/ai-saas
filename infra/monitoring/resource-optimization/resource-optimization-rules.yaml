@@ -1,0 +1,162 @@
+# MTU-N206: 리소스 요청/제한 최적화 권고 Recording Rules
+# Design Ref: docs/02-design/mtus/MTU-N206-resource-optimization.design.md
+# Plan SC: FR-N206.1, FR-N206.2, FR-N206.3, FR-N206.4
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: resource-optimization-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: resource-optimization
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: resource-optimization.recording
+      interval: 60s
+      rules:
+        # ── FR-N206.1: CPU 효율 (실사용 / 요청) ──
+        - record: resource_opt:cpu_utilization_ratio
+          expr: |
+            sum by (namespace, pod, container) (
+              rate(container_cpu_usage_seconds_total{container!="", container!="POD"}[5m])
+            )
+            /
+            sum by (namespace, pod, container) (
+              kube_pod_container_resource_requests{resource="cpu", container!=""}
+            )
+          labels:
+            mtu: "N206"
+
+        - record: resource_opt:cpu_request_vs_usage
+          expr: |
+            sum by (namespace, pod, container) (
+              kube_pod_container_resource_requests{resource="cpu", container!=""}
+            )
+            -
+            sum by (namespace, pod, container) (
+              rate(container_cpu_usage_seconds_total{container!="", container!="POD"}[5m])
+            )
+          labels:
+            mtu: "N206"
+
+        # ── FR-N206.2: 메모리 효율 (실사용 / 요청) ──
+        - record: resource_opt:memory_utilization_ratio
+          expr: |
+            sum by (namespace, pod, container) (
+              container_memory_working_set_bytes{container!="", container!="POD"}
+            )
+            /
+            sum by (namespace, pod, container) (
+              kube_pod_container_resource_requests{resource="memory", container!=""}
+            )
+          labels:
+            mtu: "N206"
+
+        - record: resource_opt:memory_request_vs_usage
+          expr: |
+            sum by (namespace, pod, container) (
+              kube_pod_container_resource_requests{resource="memory", container!=""}
+            )
+            -
+            sum by (namespace, pod, container) (
+              container_memory_working_set_bytes{container!="", container!="POD"}
+            )
+          labels:
+            mtu: "N206"
+
+        # ── FR-N206.3: Over-provisioning 탐지 (요청 > 실사용 200%) ──
+        - record: resource_opt:cpu_over_provisioned_containers
+          expr: |
+            count by (namespace) (
+              (
+                sum by (namespace, pod, container) (
+                  kube_pod_container_resource_requests{resource="cpu", container!=""}
+                )
+                /
+                (
+                  sum by (namespace, pod, container) (
+                    rate(container_cpu_usage_seconds_total{container!="", container!="POD"}[1h])
+                  ) > 0
+                )
+              ) > 2
+            )
+          labels:
+            mtu: "N206"
+
+        - record: resource_opt:memory_over_provisioned_containers
+          expr: |
+            count by (namespace) (
+              (
+                sum by (namespace, pod, container) (
+                  kube_pod_container_resource_requests{resource="memory", container!=""}
+                )
+                /
+                (
+                  sum by (namespace, pod, container) (
+                    container_memory_working_set_bytes{container!="", container!="POD"}
+                  ) > 0
+                )
+              ) > 2
+            )
+          labels:
+            mtu: "N206"
+
+        # ── FR-N206.4: Under-provisioning 탐지 (실사용 > 요청 90%) ──
+        - record: resource_opt:cpu_under_provisioned_containers
+          expr: |
+            count by (namespace) (
+              resource_opt:cpu_utilization_ratio > 0.9
+            )
+          labels:
+            mtu: "N206"
+
+        - record: resource_opt:memory_under_provisioned_containers
+          expr: |
+            count by (namespace) (
+              resource_opt:memory_utilization_ratio > 0.9
+            )
+          labels:
+            mtu: "N206"
+
+        # CPU 스로틀링 비율
+        - record: resource_opt:cpu_throttle_ratio
+          expr: |
+            sum by (namespace, pod, container) (
+              rate(container_cpu_cfs_throttled_periods_total{container!=""}[5m])
+            )
+            /
+            (
+              sum by (namespace, pod, container) (
+                rate(container_cpu_cfs_periods_total{container!=""}[5m])
+              ) > 0
+            )
+          labels:
+            mtu: "N206"
+
+        # 네임스페이스별 효율 집계
+        - record: resource_opt:namespace_cpu_efficiency
+          expr: |
+            sum by (namespace) (
+              rate(container_cpu_usage_seconds_total{container!="", container!="POD"}[5m])
+            )
+            /
+            sum by (namespace) (
+              kube_pod_container_resource_requests{resource="cpu", container!=""}
+            )
+          labels:
+            mtu: "N206"
+
+        - record: resource_opt:namespace_memory_efficiency
+          expr: |
+            sum by (namespace) (
+              container_memory_working_set_bytes{container!="", container!="POD"}
+            )
+            /
+            sum by (namespace) (
+              kube_pod_container_resource_requests{resource="memory", container!=""}
+            )
+          labels:
+            mtu: "N206"

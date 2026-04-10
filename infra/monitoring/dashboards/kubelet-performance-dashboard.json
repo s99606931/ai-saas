@@ -1,0 +1,201 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "annotations": { "list": [] },
+  "description": "MTU-N203: Kubelet 성능 모니터링 대시보드 - Pod 기동 시간, PLEG 레이턴시, 런타임 작업",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "Pod 기동 시간 (p50/p90/p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "kubelet_perf:pod_start_duration_p50",
+          "legendFormat": "p50 - {{ instance }}"
+        },
+        {
+          "expr": "kubelet_perf:pod_start_duration_p90",
+          "legendFormat": "p90 - {{ instance }}"
+        },
+        {
+          "expr": "kubelet_perf:pod_start_duration_p99",
+          "legendFormat": "p99 - {{ instance }}"
+        }
+      ]
+    },
+    {
+      "title": "PLEG Relist 레이턴시 (p50/p90/p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "kubelet_perf:pleg_relist_duration_p50",
+          "legendFormat": "p50 - {{ instance }}"
+        },
+        {
+          "expr": "kubelet_perf:pleg_relist_duration_p90",
+          "legendFormat": "p90 - {{ instance }}"
+        },
+        {
+          "expr": "kubelet_perf:pleg_relist_duration_p99",
+          "legendFormat": "p99 - {{ instance }}"
+        }
+      ]
+    },
+    {
+      "title": "런타임 작업 에러율 (operation_type별)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.005 },
+              { "color": "red", "value": 0.01 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "kubelet_perf:runtime_operations_errors_rate",
+          "legendFormat": "{{ operation_type }} - {{ instance }}"
+        }
+      ]
+    },
+    {
+      "title": "런타임 작업 레이턴시 p99 (operation_type별)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 16, "x": 8, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "kubelet_perf:runtime_operations_duration_p99",
+          "legendFormat": "{{ operation_type }} - {{ instance }}"
+        }
+      ]
+    },
+    {
+      "title": "실행 중 Pod 수",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [
+        {
+          "expr": "kubelet_perf:running_pods_count",
+          "legendFormat": "{{ instance }}"
+        }
+      ]
+    },
+    {
+      "title": "실행 중 컨테이너 수",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [
+        {
+          "expr": "kubelet_perf:running_containers_count",
+          "legendFormat": "{{ instance }}"
+        }
+      ]
+    },
+    {
+      "title": "Pod 기동 SLO 현황 (30s 목표)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 20 },
+              { "color": "red", "value": 30 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "max(kubelet_perf:pod_start_duration_p99)",
+          "legendFormat": "Pod Start p99"
+        }
+      ]
+    },
+    {
+      "title": "PLEG Relist SLO 현황 (5s 목표)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "max(kubelet_perf:pleg_relist_duration_p99)",
+          "legendFormat": "PLEG Relist p99"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["kubelet", "performance", "mtu-n203", "csap-d10"],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Kubelet 성능 모니터링",
+  "uid": "kubelet-performance-n203",
+  "version": 1
+}

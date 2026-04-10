@@ -1,0 +1,62 @@
+# MTU-N208: 노드 디스크 I/O 포화도 Alerting Rules
+# Design Ref: docs/02-design/mtus/MTU-N208-disk-io-saturation.design.md
+# Plan SC: FR-N208.4
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: disk-io-saturation-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: disk-io-saturation
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: disk-io-saturation.alerts
+      rules:
+        - alert: DiskIOSaturationHigh
+          expr: disk_io:utilization_percent > 80
+          for: 5m
+          labels:
+            severity: warning
+            category: disk-io
+            csap: "D-10"
+            mtu: "N208"
+          annotations:
+            summary: "디스크 I/O 포화도 높음 ({{ $labels.instance }}/{{ $labels.device }})"
+            description: |
+              노드 {{ $labels.instance }}의 디스크 {{ $labels.device }} I/O 사용률이
+              {{ $value | printf "%.1f" }}%로 임계값 80%를 초과했습니다.
+            runbook_url: "https://wiki.internal/runbooks/disk-io-saturation"
+
+        - alert: DiskIOSaturationCritical
+          expr: disk_io:utilization_percent > 95
+          for: 5m
+          labels:
+            severity: critical
+            category: disk-io
+            csap: "D-10"
+            mtu: "N208"
+          annotations:
+            summary: "디스크 I/O 포화 심각 ({{ $labels.instance }}/{{ $labels.device }})"
+            description: |
+              노드 {{ $labels.instance }}의 디스크 {{ $labels.device }} I/O 사용률이
+              {{ $value | printf "%.1f" }}%로 긴급 임계값 95%를 초과했습니다.
+            runbook_url: "https://wiki.internal/runbooks/disk-io-critical"
+
+        - alert: DiskWriteLatencyHigh
+          expr: disk_io:avg_write_latency > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            category: disk-io
+            csap: "D-10"
+            mtu: "N208"
+          annotations:
+            summary: "디스크 쓰기 레이턴시 높음 ({{ $labels.instance }}/{{ $labels.device }})"
+            description: |
+              노드 {{ $labels.instance }}의 디스크 {{ $labels.device }} 평균 쓰기 레이턴시가
+              {{ $value | printf "%.3f" }}초로 임계값 100ms를 초과했습니다.
+            runbook_url: "https://wiki.internal/runbooks/disk-write-latency"

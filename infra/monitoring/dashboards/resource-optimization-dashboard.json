@@ -1,0 +1,192 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "description": "MTU-N206: 리소스 요청/제한 최적화 권고 대시보드 - CPU/메모리 효율, over/under-provisioning, 스로틀링",
+  "editable": true,
+  "panels": [
+    {
+      "title": "네임스페이스별 CPU 효율 (%)",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1.5,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.3 },
+              { "color": "green", "value": 0.5 },
+              { "color": "yellow", "value": 0.9 },
+              { "color": "red", "value": 1.0 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "resource_opt:namespace_cpu_efficiency", "legendFormat": "{{ namespace }}" }
+      ]
+    },
+    {
+      "title": "네임스페이스별 메모리 효율 (%)",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1.5,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.3 },
+              { "color": "green", "value": 0.5 },
+              { "color": "yellow", "value": 0.9 },
+              { "color": "red", "value": 1.0 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "resource_opt:namespace_memory_efficiency", "legendFormat": "{{ namespace }}" }
+      ]
+    },
+    {
+      "title": "Over-provisioned 컨테이너 수 (CPU, 네임스페이스별)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "resource_opt:cpu_over_provisioned_containers", "legendFormat": "{{ namespace }}" }
+      ]
+    },
+    {
+      "title": "Over-provisioned 컨테이너 수 (메모리, 네임스페이스별)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "resource_opt:memory_over_provisioned_containers", "legendFormat": "{{ namespace }}" }
+      ]
+    },
+    {
+      "title": "Under-provisioned 컨테이너 수 (CPU)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "resource_opt:cpu_under_provisioned_containers", "legendFormat": "{{ namespace }}" }
+      ]
+    },
+    {
+      "title": "Under-provisioned 컨테이너 수 (메모리)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "resource_opt:memory_under_provisioned_containers", "legendFormat": "{{ namespace }}" }
+      ]
+    },
+    {
+      "title": "CPU 스로틀링 비율 (Top 10 컨테이너)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "topk(10, resource_opt:cpu_throttle_ratio)",
+          "legendFormat": "{{ namespace }}/{{ pod }}/{{ container }}"
+        }
+      ]
+    },
+    {
+      "title": "CPU 요청 대비 미사용량 (Top 10)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "bars", "fillOpacity": 50 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "topk(10, resource_opt:cpu_request_vs_usage > 0)",
+          "legendFormat": "{{ namespace }}/{{ pod }}"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["resource-optimization", "finops", "mtu-n206", "csap-d10"],
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus" }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "리소스 요청/제한 최적화 권고",
+  "uid": "resource-optimization-n206",
+  "version": 1
+}

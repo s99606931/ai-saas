@@ -1,0 +1,121 @@
+# MTU-N206: 리소스 요청/제한 최적화 권고 Alerting Rules
+# Design Ref: docs/02-design/mtus/MTU-N206-resource-optimization.design.md
+# Plan SC: FR-N206.5, FR-N206.6
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: resource-optimization-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: resource-optimization
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: resource-optimization.alerts
+      rules:
+        # ── FR-N206.5: Over-provisioning 알림 ──
+        - alert: ResourceCPUOverProvisioned
+          expr: |
+            (
+              sum by (namespace, pod, container) (
+                kube_pod_container_resource_requests{resource="cpu", container!=""}
+              )
+              /
+              (
+                sum by (namespace, pod, container) (
+                  rate(container_cpu_usage_seconds_total{container!="", container!="POD"}[1h])
+                ) > 0
+              )
+            ) > 3
+          for: 1h
+          labels:
+            severity: warning
+            category: resource-optimization
+            csap: "D-10"
+            mtu: "N206"
+          annotations:
+            summary: "CPU over-provisioning ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: |
+              컨테이너 {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}의
+              CPU 요청이 실사용량 대비 {{ $value | printf "%.1f" }}배입니다.
+              리소스 요청 하향 조정을 권고합니다.
+            runbook_url: "https://wiki.internal/runbooks/resource-cpu-over-provisioned"
+
+        - alert: ResourceMemoryOverProvisioned
+          expr: |
+            (
+              sum by (namespace, pod, container) (
+                kube_pod_container_resource_requests{resource="memory", container!=""}
+              )
+              /
+              (
+                sum by (namespace, pod, container) (
+                  avg_over_time(container_memory_working_set_bytes{container!="", container!="POD"}[1h])
+                ) > 0
+              )
+            ) > 3
+          for: 1h
+          labels:
+            severity: warning
+            category: resource-optimization
+            csap: "D-10"
+            mtu: "N206"
+          annotations:
+            summary: "메모리 over-provisioning ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: |
+              컨테이너 {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}의
+              메모리 요청이 실사용량 대비 {{ $value | printf "%.1f" }}배입니다.
+              리소스 요청 하향 조정을 권고합니다.
+            runbook_url: "https://wiki.internal/runbooks/resource-memory-over-provisioned"
+
+        # ── FR-N206.6: Under-provisioning / 스로틀링 알림 ──
+        - alert: ResourceCPUUnderProvisioned
+          expr: resource_opt:cpu_utilization_ratio > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            category: resource-optimization
+            csap: "D-10"
+            mtu: "N206"
+          annotations:
+            summary: "CPU under-provisioning ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: |
+              컨테이너 {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}의
+              CPU 사용률이 요청 대비 {{ $value | printf "%.0f" }}%입니다.
+              리소스 요청 상향 조정을 권고합니다.
+            runbook_url: "https://wiki.internal/runbooks/resource-cpu-under-provisioned"
+
+        - alert: ResourceMemoryUnderProvisioned
+          expr: resource_opt:memory_utilization_ratio > 0.9
+          for: 5m
+          labels:
+            severity: critical
+            category: resource-optimization
+            csap: "D-10"
+            mtu: "N206"
+          annotations:
+            summary: "메모리 under-provisioning ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: |
+              컨테이너 {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}의
+              메모리 사용률이 요청 대비 {{ $value | printf "%.0f" }}%입니다.
+              OOM 위험이 있으므로 리소스 요청 상향 조정이 필요합니다.
+            runbook_url: "https://wiki.internal/runbooks/resource-memory-under-provisioned"
+
+        - alert: ResourceCPUThrottlingHigh
+          expr: resource_opt:cpu_throttle_ratio > 0.25
+          for: 5m
+          labels:
+            severity: warning
+            category: resource-optimization
+            csap: "D-10"
+            mtu: "N206"
+          annotations:
+            summary: "CPU 스로틀링 빈번 ({{ $labels.namespace }}/{{ $labels.pod }})"
+            description: |
+              컨테이너 {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}의
+              CPU 스로틀링 비율이 {{ $value | printf "%.0f" }}%입니다.
+              CPU 제한(limit) 상향 조정을 권고합니다.
+            runbook_url: "https://wiki.internal/runbooks/resource-cpu-throttling"

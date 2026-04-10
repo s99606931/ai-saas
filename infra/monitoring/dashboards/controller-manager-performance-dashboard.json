@@ -1,0 +1,153 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "description": "MTU-N205: Controller Manager 성능 모니터링 대시보드 - 워크큐 깊이, 처리 레이턴시, 재시도율",
+  "editable": true,
+  "panels": [
+    {
+      "title": "워크큐 깊이 (Top 10 컨트롤러)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "topk(10, controller_mgr_perf:workqueue_depth_by_name)",
+          "legendFormat": "{{ name }}"
+        }
+      ]
+    },
+    {
+      "title": "워크큐 전체 깊이",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 100 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "controller_mgr_perf:workqueue_depth_total", "legendFormat": "전체 깊이" }
+      ]
+    },
+    {
+      "title": "최장 실행 프로세서 (초)",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "red", "value": 60 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "max(controller_mgr_perf:longest_running_processor)", "legendFormat": "최장 프로세서" }
+      ]
+    },
+    {
+      "title": "워크큐 처리 레이턴시 (p50/p90/p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "expr": "avg(controller_mgr_perf:work_duration_p50)", "legendFormat": "p50 평균" },
+        { "expr": "avg(controller_mgr_perf:work_duration_p90)", "legendFormat": "p90 평균" },
+        { "expr": "avg(controller_mgr_perf:work_duration_p99)", "legendFormat": "p99 평균" }
+      ]
+    },
+    {
+      "title": "워크큐 대기 레이턴시 (p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "topk(10, controller_mgr_perf:queue_duration_p99)",
+          "legendFormat": "{{ name }}"
+        }
+      ]
+    },
+    {
+      "title": "재시도율 (Top 10 컨트롤러)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "topk(10, controller_mgr_perf:retries_rate)",
+          "legendFormat": "{{ name }}"
+        }
+      ]
+    },
+    {
+      "title": "워크큐 추가율 (Top 10 컨트롤러)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        {
+          "expr": "topk(10, controller_mgr_perf:adds_rate)",
+          "legendFormat": "{{ name }}"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["controller-manager", "performance", "mtu-n205", "csap-d10"],
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus" }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Controller Manager 성능 모니터링",
+  "uid": "controller-manager-perf-n205",
+  "version": 1
+}

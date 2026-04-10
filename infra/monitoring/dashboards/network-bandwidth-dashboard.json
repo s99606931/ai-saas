@@ -1,0 +1,85 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "description": "MTU-N209: 네트워크 대역폭 사용량 대시보드",
+  "editable": true,
+  "panels": [
+    {
+      "title": "노드 수신/송신 대역폭",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "Bps" } },
+      "targets": [
+        { "expr": "net_bw:node_receive_bytes_rate", "legendFormat": "수신 {{ instance }}" },
+        { "expr": "net_bw:node_transmit_bytes_rate", "legendFormat": "송신 {{ instance }}" }
+      ]
+    },
+    {
+      "title": "네트워크 에러율",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "targets": [
+        { "expr": "net_bw:node_receive_errors_rate", "legendFormat": "수신에러 {{ instance }}" },
+        { "expr": "net_bw:node_transmit_errors_rate", "legendFormat": "송신에러 {{ instance }}" }
+      ]
+    },
+    {
+      "title": "네트워크 드롭율",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "targets": [
+        { "expr": "net_bw:node_receive_drop_rate", "legendFormat": "수신드롭 {{ instance }}" },
+        { "expr": "net_bw:node_transmit_drop_rate", "legendFormat": "송신드롭 {{ instance }}" }
+      ]
+    },
+    {
+      "title": "네임스페이스별 총 대역폭",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "Bps" } },
+      "targets": [
+        { "expr": "topk(10, net_bw:namespace_total_bandwidth)", "legendFormat": "{{ namespace }}" }
+      ]
+    },
+    {
+      "title": "Pod 수신 대역폭 Top 10",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "Bps" } },
+      "targets": [
+        { "expr": "topk(10, net_bw:pod_receive_bytes_rate)", "legendFormat": "{{ namespace }}/{{ pod }}" }
+      ]
+    },
+    {
+      "title": "Pod 송신 대역폭 Top 10",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "Bps" } },
+      "targets": [
+        { "expr": "topk(10, net_bw:pod_transmit_bytes_rate)", "legendFormat": "{{ namespace }}/{{ pod }}" }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["network", "bandwidth", "mtu-n209", "csap-d10"],
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus" }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "네트워크 대역폭 사용량 모니터링",
+  "uid": "network-bandwidth-n209",
+  "version": 1
+}

@@ -1,0 +1,75 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "description": "MTU-N208: 노드 디스크 I/O 포화도 대시보드",
+  "editable": true,
+  "panels": [
+    {
+      "title": "디스크 I/O 사용률 (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "percent" } },
+      "targets": [
+        { "expr": "disk_io:utilization_percent", "legendFormat": "{{ instance }}/{{ device }}" }
+      ]
+    },
+    {
+      "title": "I/O 가중 시간",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [
+        { "expr": "disk_io:io_weighted_time", "legendFormat": "{{ instance }}/{{ device }}" }
+      ]
+    },
+    {
+      "title": "읽기/쓰기 처리량",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "Bps" } },
+      "targets": [
+        { "expr": "disk_io:read_throughput_bytes", "legendFormat": "읽기 {{ instance }}/{{ device }}" },
+        { "expr": "disk_io:write_throughput_bytes", "legendFormat": "쓰기 {{ instance }}/{{ device }}" }
+      ]
+    },
+    {
+      "title": "IOPS (읽기/쓰기)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "iops" } },
+      "targets": [
+        { "expr": "disk_io:read_iops", "legendFormat": "읽기 {{ instance }}/{{ device }}" },
+        { "expr": "disk_io:write_iops", "legendFormat": "쓰기 {{ instance }}/{{ device }}" }
+      ]
+    },
+    {
+      "title": "평균 읽기/쓰기 레이턴시",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [
+        { "expr": "disk_io:avg_read_latency", "legendFormat": "읽기 {{ instance }}/{{ device }}" },
+        { "expr": "disk_io:avg_write_latency", "legendFormat": "쓰기 {{ instance }}/{{ device }}" }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["disk-io", "saturation", "mtu-n208", "csap-d10"],
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus" }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "노드 디스크 I/O 포화도 모니터링",
+  "uid": "disk-io-saturation-n208",
+  "version": 1
+}

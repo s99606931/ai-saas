@@ -1,0 +1,67 @@
+# MTU-N209: 네트워크 대역폭 사용량 Alerting Rules
+# Design Ref: docs/02-design/mtus/MTU-N209-network-bandwidth.design.md
+# Plan SC: FR-N209.4, FR-N209.5
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: network-bandwidth-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: network-bandwidth
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: network-bandwidth.alerts
+      rules:
+        - alert: NetworkBandwidthHigh
+          expr: |
+            (net_bw:node_receive_bytes_rate + net_bw:node_transmit_bytes_rate)
+            > 1e9 * 0.8
+          for: 5m
+          labels:
+            severity: warning
+            category: network
+            csap: "D-10"
+            mtu: "N209"
+          annotations:
+            summary: "네트워크 대역폭 높음 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}의 총 네트워크 대역폭이
+              {{ $value | humanize }}B/s로 1Gbps의 80%를 초과했습니다.
+            runbook_url: "https://wiki.internal/runbooks/network-bandwidth-high"
+
+        - alert: NetworkErrorsHigh
+          expr: |
+            (net_bw:node_receive_errors_rate + net_bw:node_transmit_errors_rate) > 100
+          for: 5m
+          labels:
+            severity: warning
+            category: network
+            csap: "D-10"
+            mtu: "N209"
+          annotations:
+            summary: "네트워크 에러 빈번 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}의 네트워크 에러율이
+              {{ $value | printf "%.1f" }}/s로 높습니다.
+            runbook_url: "https://wiki.internal/runbooks/network-errors-high"
+
+        - alert: NetworkDropsHigh
+          expr: |
+            (net_bw:node_receive_drop_rate + net_bw:node_transmit_drop_rate) > 10
+          for: 5m
+          labels:
+            severity: critical
+            category: network
+            csap: "D-10"
+            mtu: "N209"
+          annotations:
+            summary: "네트워크 패킷 드롭 빈번 ({{ $labels.instance }})"
+            description: |
+              노드 {{ $labels.instance }}의 패킷 드롭율이
+              {{ $value | printf "%.1f" }}/s로 높습니다.
+              네트워크 인터페이스 또는 버퍼 설정을 확인하십시오.
+            runbook_url: "https://wiki.internal/runbooks/network-drops-high"

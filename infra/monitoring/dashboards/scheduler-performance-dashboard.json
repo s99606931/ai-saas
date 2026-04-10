@@ -1,0 +1,149 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "description": "MTU-N204: Scheduler 성능 모니터링 대시보드 - 스케줄링 레이턴시, 대기 Pod, 실패율",
+  "editable": true,
+  "panels": [
+    {
+      "title": "스케줄링 알고리즘 레이턴시 (p50/p90/p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "expr": "scheduler_perf:algorithm_duration_p50", "legendFormat": "p50" },
+        { "expr": "scheduler_perf:algorithm_duration_p90", "legendFormat": "p90" },
+        { "expr": "scheduler_perf:algorithm_duration_p99", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "title": "E2E 스케줄링 레이턴시 (p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "expr": "scheduler_perf:e2e_scheduling_duration_p99", "legendFormat": "E2E p99" }
+      ]
+    },
+    {
+      "title": "대기 Pod 수 (queue별)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "drawStyle": "bars", "fillOpacity": 50 }
+        }
+      },
+      "targets": [
+        { "expr": "scheduler_perf:pending_pods_by_queue", "legendFormat": "{{ queue }}" }
+      ]
+    },
+    {
+      "title": "스케줄링 시도율 (result별)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }
+        }
+      },
+      "targets": [
+        { "expr": "scheduler_perf:schedule_attempts_rate", "legendFormat": "{{ result }}" }
+      ]
+    },
+    {
+      "title": "스케줄링 실패율",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.02 },
+              { "color": "red", "value": 0.05 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "scheduler_perf:schedule_failure_rate", "legendFormat": "실패율" }
+      ]
+    },
+    {
+      "title": "Unschedulable Pod 수",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "scheduler_perf:unschedulable_pods_count", "legendFormat": "Unschedulable" }
+      ]
+    },
+    {
+      "title": "스케줄링 SLO 현황 (1s 목표)",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "max": 5,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        { "expr": "scheduler_perf:algorithm_duration_p99", "legendFormat": "Algorithm p99" }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["scheduler", "performance", "mtu-n204", "csap-d10"],
+  "templating": {
+    "list": [
+      { "name": "datasource", "type": "datasource", "query": "prometheus" }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Scheduler 성능 모니터링",
+  "uid": "scheduler-performance-n204",
+  "version": 1
+}

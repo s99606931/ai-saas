@@ -1,0 +1,70 @@
+# MTU-N210: OOM Kill 이벤트 추적 Recording Rules
+# Design Ref: docs/02-design/mtus/MTU-N210-oom-kill-tracking.design.md
+# Plan SC: FR-N210.1, FR-N210.2, FR-N210.3
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: oom-kill-tracking-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: oom-kill-tracking
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: oom-kill-tracking.recording
+      interval: 30s
+      rules:
+        # ── FR-N210.1: 네임스페이스/워크로드별 OOM Kill 횟수 ──
+        - record: oom:kill_count_by_namespace
+          expr: |
+            sum by (namespace) (
+              kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}
+            )
+          labels:
+            mtu: "N210"
+
+        - record: oom:kill_count_by_workload
+          expr: |
+            sum by (namespace, pod, container) (
+              kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}
+            )
+          labels:
+            mtu: "N210"
+
+        # ── FR-N210.2: 반복 OOM Kill (1시간 내 증가) ──
+        - record: oom:recurring_kills
+          expr: |
+            sum by (namespace, pod, container) (
+              increase(kube_pod_container_status_restarts_total[1h])
+            )
+            *
+            on(namespace, pod, container) group_left
+            (
+              kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+            )
+          labels:
+            mtu: "N210"
+
+        # ── FR-N210.3: limit 대비 메모리 사용률 ──
+        - record: oom:memory_near_limit_ratio
+          expr: |
+            sum by (namespace, pod, container) (
+              container_memory_working_set_bytes{container!="", container!="POD"}
+            )
+            /
+            sum by (namespace, pod, container) (
+              kube_pod_container_resource_limits{resource="memory", container!=""}
+            )
+          labels:
+            mtu: "N210"
+
+        - record: oom:containers_near_limit
+          expr: |
+            count by (namespace) (
+              oom:memory_near_limit_ratio > 0.9
+            )
+          labels:
+            mtu: "N210"

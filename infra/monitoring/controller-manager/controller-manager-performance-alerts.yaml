@@ -1,0 +1,82 @@
+# MTU-N205: Controller Manager 성능 모니터링 Alerting Rules
+# Design Ref: docs/02-design/mtus/MTU-N205-controller-manager-performance.design.md
+# Plan SC: FR-N205.4, FR-N205.5
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: controller-manager-performance-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: controller-manager-performance
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: controller-manager-performance.alerts
+      rules:
+        # ── FR-N205.4: 워크큐 깊이 급등 ──
+        - alert: ControllerManagerQueueDepthHigh
+          expr: controller_mgr_perf:workqueue_depth_by_name > 100
+          for: 5m
+          labels:
+            severity: warning
+            category: controller-manager
+            csap: "D-10"
+            mtu: "N205"
+          annotations:
+            summary: "Controller Manager 워크큐 깊이 높음 ({{ $labels.name }})"
+            description: |
+              컨트롤러 {{ $labels.name }}의 워크큐 깊이가
+              {{ $value | printf "%.0f" }}으로 임계값 100을 초과했습니다.
+              리소스 조정 지연이 발생할 수 있습니다.
+            runbook_url: "https://wiki.internal/runbooks/controller-manager-queue-depth"
+
+        - alert: ControllerManagerQueueDepthCritical
+          expr: controller_mgr_perf:workqueue_depth_by_name > 500
+          for: 5m
+          labels:
+            severity: critical
+            category: controller-manager
+            csap: "D-10"
+            mtu: "N205"
+          annotations:
+            summary: "Controller Manager 워크큐 깊이 심각 ({{ $labels.name }})"
+            description: |
+              컨트롤러 {{ $labels.name }}의 워크큐 깊이가
+              {{ $value | printf "%.0f" }}으로 긴급 임계값 500을 초과했습니다.
+              즉시 원인을 분석하십시오.
+            runbook_url: "https://wiki.internal/runbooks/controller-manager-queue-critical"
+
+        # ── FR-N205.5: 워크큐 처리 레이턴시 SLO 위반 ──
+        - alert: ControllerManagerWorkDurationHigh
+          expr: controller_mgr_perf:work_duration_p99 > 1
+          for: 5m
+          labels:
+            severity: warning
+            category: controller-manager
+            csap: "D-10"
+            mtu: "N205"
+          annotations:
+            summary: "Controller Manager 처리 레이턴시 높음 ({{ $labels.name }})"
+            description: |
+              컨트롤러 {{ $labels.name }}의 워크큐 처리 p99 레이턴시가
+              {{ $value | printf "%.2f" }}초로 SLO 임계값 1초를 초과했습니다.
+            runbook_url: "https://wiki.internal/runbooks/controller-manager-work-duration"
+
+        - alert: ControllerManagerRetriesHigh
+          expr: controller_mgr_perf:retries_rate > 10
+          for: 5m
+          labels:
+            severity: warning
+            category: controller-manager
+            csap: "D-10"
+            mtu: "N205"
+          annotations:
+            summary: "Controller Manager 재시도 빈번 ({{ $labels.name }})"
+            description: |
+              컨트롤러 {{ $labels.name }}의 재시도율이
+              {{ $value | printf "%.1f" }}/s로 임계값 10/s를 초과했습니다.
+              조정 대상 리소스에 문제가 있을 수 있습니다.
+            runbook_url: "https://wiki.internal/runbooks/controller-manager-retries"

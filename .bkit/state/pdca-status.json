@@ -1,6 +1,6 @@
 {
   "version": "3.0",
-  "lastUpdated": "2026-04-10T11:59:26Z",
+  "lastUpdated": "2026-04-10T18:30:00.000Z",
   "activeFeatures": [
     "public-saas-framework",
     "scripts",
@@ -75,7 +75,18 @@
     "cilium-zero-trust",
     "privacy",
     "privacy-compliance",
-    "rate-limit-advanced"
+    "rate-limit-advanced",
+    "workflow-engine",
+    "dora-exporter",
+    "validation",
+    "keycloak",
+    "performance",
+    "promotion",
+    "ml-pipeline",
+    "tech-debt-scanner",
+    "slo-escalation",
+    "audit-collector",
+    "monitoring"
   ],
   "primaryFeature": "public-saas-framework",
   "features": {
@@ -307,10 +318,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:47:08.863Z",
-        "lastUpdated": "2026-04-10T11:47:30.686Z",
+        "lastUpdated": "2026-04-10T12:05:48.919Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/ai-service/scripts/test-lmstudio.ts"
+      "lastFile": "/data/ai-saas/platform/services/ai-service/tests/unit/model-router.test.ts"
     },
     "audit-service": {
       "phase": "do",
@@ -716,9 +727,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-05T21:16:18.587Z",
-        "lastUpdated": "2026-04-10T11:50:34.155Z"
+        "lastUpdated": "2026-04-10T12:25:50.421Z"
       },
-      "lastFile": "/data/ai-saas/tests/e2e/round12-integration.test.sh"
+      "lastFile": "/data/ai-saas/tests/e2e/round16-integration.test.ts"
     },
     "mtu-q1-api-gateway-quality": {
       "phase": "archived",
@@ -910,9 +921,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-07T16:03:28.484Z",
-        "lastUpdated": "2026-04-10T11:40:34.431Z"
+        "lastUpdated": "2026-04-10T12:12:28.887Z"
       },
-      "lastFile": "/data/ai-saas/platform/tests/e2e/scenarios/gateway-routing.e2e.test.ts"
+      "lastFile": "/data/ai-saas/tests/performance/scenarios/soak.js"
     },
     "MTU-N21": {
       "phase": "archived",
@@ -1399,6 +1410,149 @@
       "round": 12,
       "name": "12라운드 통합 검증",
       "archivedAt": "2026-04-10T11:52:56.016698Z"
+    },
+    "workflow-engine": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-10T12:01:33.818Z",
+        "lastUpdated": "2026-04-10T12:05:39.536Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/workflow-engine/tests/workflow-plugin.test.ts"
+    },
+    "dora-exporter": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-10T12:04:01.378Z",
+        "lastUpdated": "2026-04-10T12:05:43.058Z"
+      },
+      "lastFile": "/data/ai-saas/packages/dora-exporter/tests/mttr-tracker.test.ts"
+    },
+    "validation": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-10T12:08:07.291Z",
+        "lastUpdated": "2026-04-10T12:08:07.291Z"
+      },
+      "lastFile": "/data/ai-saas/infra/backstage/validation/validate-metadata.sh"
+    },
+    "keycloak": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-10T12:10:01.017Z",
+        "lastUpdated": "2026-04-10T12:10:09.412Z"
+      },
+      "lastFile": "/data/ai-saas/scripts/keycloak/realm-import.sh"
+    },
+    "performance": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-10T12:11:58.397Z",
+        "lastUpdated": "2026-04-10T12:12:01.950Z"
+      },
+      "lastFile": "/data/ai-saas/tests/performance/lib/baselines.js"
+    },
+    "promotion": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-10T12:14:26.836Z",
+        "lastUpdated": "2026-04-10T12:14:42.304Z"
+      },
+      "lastFile": "/data/ai-saas/scripts/promotion/promote-to-prod.sh"
+    },
+    "ml-pipeline": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-10T12:17:32.653Z",
+        "lastUpdated": "2026-04-10T12:17:39.231Z"
+      },
+      "lastFile": "/data/ai-saas/packages/ml-pipeline/tests/model-ci.test.ts"
+    },
+    "tech-debt-scanner": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-10T12:22:44.605Z",
+        "lastUpdated": "2026-04-10T12:22:53.871Z"
+      },
+      "lastFile": "/data/ai-saas/packages/tech-debt-scanner/tests/scanner.test.ts"
+    },
+    "slo-escalation": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-10T12:23:51.074Z",
+        "lastUpdated": "2026-04-10T12:24:02.089Z"
+      },
+      "lastFile": "/data/ai-saas/packages/slo-escalation/tests/escalation.test.ts"
+    },
+    "audit-collector": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-10T12:25:01.358Z",
+        "lastUpdated": "2026-04-10T12:25:13.973Z"
+      },
+      "lastFile": "/data/ai-saas/packages/audit-collector/tests/collector.test.ts"
+    },
+    "monitoring": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-10T12:28:18.301Z",
+        "lastUpdated": "2026-04-10T13:49:39.055Z"
+      },
+      "lastFile": "/data/ai-saas/tests/monitoring/test-mtu-n210-oom-kill-tracking.sh"
     }
   },
   "pipeline": {
@@ -1409,7 +1563,7 @@
   "session": {
     "startedAt": "2026-04-05T05:33:14.156Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-04-10T11:58:46.922Z"
+    "lastActivity": "2026-04-10T13:49:39.056Z"
   },
   "history": [
     {
@@ -11249,6 +11403,486 @@
     {
       "timestamp": "2026-04-10T11:58:46.922Z",
       "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:01:33.835Z",
+      "feature": "workflow-engine",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:01:38.210Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:02:09.533Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:02:34.205Z",
+      "feature": "workflow-engine",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:02:38.826Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:03:00.901Z",
+      "feature": "workflow-engine",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:03:11.457Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:03:16.499Z",
+      "feature": "workflow-engine",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:03:28.732Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:03:34.770Z",
+      "feature": "workflow-engine",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:03:45.111Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:04:01.007Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:04:01.381Z",
+      "feature": "dora-exporter",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:04:18.607Z",
+      "feature": "dora-exporter",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:04:27.879Z",
+      "feature": "dora-exporter",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:04:40.063Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:04:41.988Z",
+      "feature": "dora-exporter",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:04:52.252Z",
+      "feature": "workflow-engine",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:04:53.245Z",
+      "feature": "dora-exporter",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:05:22.972Z",
+      "feature": "dora-exporter",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:05:31.992Z",
+      "feature": "dora-exporter",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:05:39.537Z",
+      "feature": "workflow-engine",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:05:43.063Z",
+      "feature": "dora-exporter",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:05:48.921Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:08:07.293Z",
+      "feature": "validation",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:10:01.018Z",
+      "feature": "keycloak",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:10:09.413Z",
+      "feature": "keycloak",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:10:39.096Z",
+      "feature": "e2e",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:11:58.398Z",
+      "feature": "performance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:12:01.951Z",
+      "feature": "performance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:12:10.470Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:12:20.564Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:12:28.889Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:14:26.838Z",
+      "feature": "promotion",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:14:42.306Z",
+      "feature": "promotion",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:15:18.070Z",
+      "feature": "e2e",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:17:32.655Z",
+      "feature": "ml-pipeline",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:17:39.232Z",
+      "feature": "ml-pipeline",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:18:47.149Z",
+      "feature": "e2e",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:22:44.606Z",
+      "feature": "tech-debt-scanner",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:22:53.874Z",
+      "feature": "tech-debt-scanner",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:23:51.075Z",
+      "feature": "slo-escalation",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:24:02.091Z",
+      "feature": "slo-escalation",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:25:01.360Z",
+      "feature": "audit-collector",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:25:13.974Z",
+      "feature": "audit-collector",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:25:50.423Z",
+      "feature": "e2e",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:28:18.302Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:31:48.805Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:35:30.897Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:39:10.962Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:42:05.124Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:43:16.107Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:49:37.078Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:50:14.299Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:50:33.946Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:53:14.298Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:55:54.265Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T12:58:06.915Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:00:43.133Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:04:15.678Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:06:05.233Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:08:39.356Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:13:33.839Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:15:47.387Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:18:04.332Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:20:25.647Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:22:19.287Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:24:18.614Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:26:16.096Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:29:25.135Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:31:25.557Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:35:48.224Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:36:26.518Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:38:25.032Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:40:30.100Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:42:49.800Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:44:38.872Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:46:16.508Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:47:54.935Z",
+      "feature": "monitoring",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-10T13:49:39.056Z",
+      "feature": "monitoring",
       "phase": "do",
       "action": "updated"
     }

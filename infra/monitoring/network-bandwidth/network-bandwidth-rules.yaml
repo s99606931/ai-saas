@@ -1,0 +1,96 @@
+# MTU-N209: 네트워크 대역폭 사용량 Recording Rules
+# Design Ref: docs/02-design/mtus/MTU-N209-network-bandwidth.design.md
+# Plan SC: FR-N209.1, FR-N209.2, FR-N209.3
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: network-bandwidth-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: network-bandwidth
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: network-bandwidth.recording
+      interval: 30s
+      rules:
+        # ── FR-N209.1: 노드별 수신/송신 대역폭 ──
+        - record: net_bw:node_receive_bytes_rate
+          expr: |
+            sum by (instance) (
+              rate(node_network_receive_bytes_total{device!~"lo|veth.*|cali.*|flannel.*"}[5m])
+            )
+          labels:
+            mtu: "N209"
+
+        - record: net_bw:node_transmit_bytes_rate
+          expr: |
+            sum by (instance) (
+              rate(node_network_transmit_bytes_total{device!~"lo|veth.*|cali.*|flannel.*"}[5m])
+            )
+          labels:
+            mtu: "N209"
+
+        # ── FR-N209.2: 에러/드롭 비율 ──
+        - record: net_bw:node_receive_errors_rate
+          expr: |
+            sum by (instance) (
+              rate(node_network_receive_errs_total[5m])
+            )
+          labels:
+            mtu: "N209"
+
+        - record: net_bw:node_transmit_errors_rate
+          expr: |
+            sum by (instance) (
+              rate(node_network_transmit_errs_total[5m])
+            )
+          labels:
+            mtu: "N209"
+
+        - record: net_bw:node_receive_drop_rate
+          expr: |
+            sum by (instance) (
+              rate(node_network_receive_drop_total[5m])
+            )
+          labels:
+            mtu: "N209"
+
+        - record: net_bw:node_transmit_drop_rate
+          expr: |
+            sum by (instance) (
+              rate(node_network_transmit_drop_total[5m])
+            )
+          labels:
+            mtu: "N209"
+
+        # ── FR-N209.3: Pod별 네트워크 대역폭 ──
+        - record: net_bw:pod_receive_bytes_rate
+          expr: |
+            sum by (namespace, pod) (
+              rate(container_network_receive_bytes_total[5m])
+            )
+          labels:
+            mtu: "N209"
+
+        - record: net_bw:pod_transmit_bytes_rate
+          expr: |
+            sum by (namespace, pod) (
+              rate(container_network_transmit_bytes_total[5m])
+            )
+          labels:
+            mtu: "N209"
+
+        # 네임스페이스별 총 대역폭
+        - record: net_bw:namespace_total_bandwidth
+          expr: |
+            sum by (namespace) (
+              rate(container_network_receive_bytes_total[5m])
+              +
+              rate(container_network_transmit_bytes_total[5m])
+            )
+          labels:
+            mtu: "N209"

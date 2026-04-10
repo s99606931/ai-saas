@@ -1,0 +1,102 @@
+# MTU-N204: Scheduler 성능 모니터링 Recording Rules
+# Design Ref: docs/02-design/mtus/MTU-N204-scheduler-performance.design.md
+# Plan SC: FR-N204.1, FR-N204.2, FR-N204.3
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: scheduler-performance-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: scheduler-performance
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: scheduler-performance.recording
+      interval: 30s
+      rules:
+        # ── FR-N204.1: 스케줄링 알고리즘 레이턴시 퍼센타일 ──
+        - record: scheduler_perf:algorithm_duration_p50
+          expr: |
+            histogram_quantile(0.50,
+              sum by (le) (
+                rate(scheduler_scheduling_algorithm_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.50"
+            mtu: "N204"
+
+        - record: scheduler_perf:algorithm_duration_p90
+          expr: |
+            histogram_quantile(0.90,
+              sum by (le) (
+                rate(scheduler_scheduling_algorithm_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.90"
+            mtu: "N204"
+
+        - record: scheduler_perf:algorithm_duration_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (le) (
+                rate(scheduler_scheduling_algorithm_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.99"
+            mtu: "N204"
+
+        # ── FR-N204.1 추가: E2E 스케줄링 레이턴시 ──
+        - record: scheduler_perf:e2e_scheduling_duration_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (le) (
+                rate(scheduler_e2e_scheduling_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            quantile: "0.99"
+            mtu: "N204"
+
+        # ── FR-N204.2: 대기 Pod 수 (queue별) ──
+        - record: scheduler_perf:pending_pods_by_queue
+          expr: |
+            sum by (queue) (
+              scheduler_pending_pods
+            )
+          labels:
+            mtu: "N204"
+
+        # ── FR-N204.3: 스케줄링 시도/실패 비율 ──
+        - record: scheduler_perf:schedule_attempts_rate
+          expr: |
+            sum by (result) (
+              rate(scheduler_schedule_attempts_total[5m])
+            )
+          labels:
+            mtu: "N204"
+
+        - record: scheduler_perf:schedule_failure_rate
+          expr: |
+            (
+              sum(rate(scheduler_schedule_attempts_total{result="error"}[5m]))
+              +
+              sum(rate(scheduler_schedule_attempts_total{result="unschedulable"}[5m]))
+            )
+            /
+            (
+              sum(rate(scheduler_schedule_attempts_total[5m])) > 0
+            )
+          labels:
+            mtu: "N204"
+
+        - record: scheduler_perf:unschedulable_pods_count
+          expr: |
+            sum(scheduler_pending_pods{queue="unschedulable"})
+          labels:
+            mtu: "N204"

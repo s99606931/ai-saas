@@ -1,0 +1,87 @@
+# MTU-N207: Garbage Collection 모니터링 Alerting Rules
+# Design Ref: docs/02-design/mtus/MTU-N207-gc-monitoring.design.md
+# Plan SC: FR-N207.4, FR-N207.5
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: gc-monitoring-alerting-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: gc-monitoring
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: alerting-rules
+spec:
+  groups:
+    - name: gc-monitoring.alerts
+      rules:
+        # ── FR-N207.4: GC 레이턴시 SLO 위반 ──
+        - alert: GCDurationHigh
+          expr: gc_perf:gc_duration_p99 > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            category: gc
+            csap: "D-10"
+            mtu: "N207"
+          annotations:
+            summary: "GC 레이턴시 높음 ({{ $labels.job }})"
+            description: |
+              {{ $labels.job }}의 GC p99 레이턴시가
+              {{ $value | printf "%.3f" }}초로 SLO 임계값 100ms를 초과했습니다.
+            runbook_url: "https://wiki.internal/runbooks/gc-duration-high"
+
+        - alert: GCRateHigh
+          expr: gc_perf:gc_rate > 10
+          for: 5m
+          labels:
+            severity: warning
+            category: gc
+            csap: "D-10"
+            mtu: "N207"
+          annotations:
+            summary: "GC 빈도 높음 ({{ $labels.job }})"
+            description: |
+              {{ $labels.job }}의 GC 빈도가 {{ $value | printf "%.1f" }}/s로
+              임계값 10/s를 초과했습니다. 메모리 할당 패턴을 검토하십시오.
+            runbook_url: "https://wiki.internal/runbooks/gc-rate-high"
+
+        # ── FR-N207.5: 메모리 누수 의심 ──
+        - alert: MemoryLeakSuspected
+          expr: |
+            (
+              process_resident_memory_bytes
+              -
+              process_resident_memory_bytes offset 1h
+            )
+            /
+            (process_resident_memory_bytes offset 1h > 0)
+            > 0.2
+          for: 30m
+          labels:
+            severity: warning
+            category: gc
+            csap: "D-10"
+            mtu: "N207"
+          annotations:
+            summary: "메모리 누수 의심 ({{ $labels.job }})"
+            description: |
+              {{ $labels.job }}의 RSS 메모리가 1시간 동안 20% 이상 증가했습니다.
+              메모리 누수 가능성을 조사하십시오.
+            runbook_url: "https://wiki.internal/runbooks/memory-leak-suspected"
+
+        - alert: HeapAllocRateHigh
+          expr: gc_perf:heap_alloc_rate > 500e6
+          for: 5m
+          labels:
+            severity: warning
+            category: gc
+            csap: "D-10"
+            mtu: "N207"
+          annotations:
+            summary: "힙 할당율 급등 ({{ $labels.job }})"
+            description: |
+              {{ $labels.job }}의 힙 할당율이 {{ $value | humanize1024 }}B/s로
+              임계값 500MB/s를 초과했습니다.
+            runbook_url: "https://wiki.internal/runbooks/heap-alloc-rate-high"

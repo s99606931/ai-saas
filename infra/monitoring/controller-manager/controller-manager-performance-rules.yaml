@@ -1,0 +1,106 @@
+# MTU-N205: Controller Manager 성능 모니터링 Recording Rules
+# Design Ref: docs/02-design/mtus/MTU-N205-controller-manager-performance.design.md
+# Plan SC: FR-N205.1, FR-N205.2, FR-N205.3
+# CSAP: D-10 서비스 가용성
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: controller-manager-performance-recording-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/component: controller-manager-performance
+    app.kubernetes.io/part-of: saas-monitoring
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: controller-manager-performance.recording
+      interval: 30s
+      rules:
+        # ── FR-N205.1: 워크큐 깊이 (컨트롤러별) ──
+        - record: controller_mgr_perf:workqueue_depth_by_name
+          expr: |
+            sum by (name) (
+              workqueue_depth{job="kube-controller-manager"}
+            )
+          labels:
+            mtu: "N205"
+
+        - record: controller_mgr_perf:workqueue_depth_total
+          expr: |
+            sum(
+              workqueue_depth{job="kube-controller-manager"}
+            )
+          labels:
+            mtu: "N205"
+
+        # ── FR-N205.2: 워크큐 처리 레이턴시 퍼센타일 ──
+        - record: controller_mgr_perf:work_duration_p50
+          expr: |
+            histogram_quantile(0.50,
+              sum by (name, le) (
+                rate(workqueue_work_duration_seconds_bucket{job="kube-controller-manager"}[5m])
+              )
+            )
+          labels:
+            quantile: "0.50"
+            mtu: "N205"
+
+        - record: controller_mgr_perf:work_duration_p90
+          expr: |
+            histogram_quantile(0.90,
+              sum by (name, le) (
+                rate(workqueue_work_duration_seconds_bucket{job="kube-controller-manager"}[5m])
+              )
+            )
+          labels:
+            quantile: "0.90"
+            mtu: "N205"
+
+        - record: controller_mgr_perf:work_duration_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (name, le) (
+                rate(workqueue_work_duration_seconds_bucket{job="kube-controller-manager"}[5m])
+              )
+            )
+          labels:
+            quantile: "0.99"
+            mtu: "N205"
+
+        # 워크큐 대기 레이턴시 p99
+        - record: controller_mgr_perf:queue_duration_p99
+          expr: |
+            histogram_quantile(0.99,
+              sum by (name, le) (
+                rate(workqueue_queue_duration_seconds_bucket{job="kube-controller-manager"}[5m])
+              )
+            )
+          labels:
+            quantile: "0.99"
+            mtu: "N205"
+
+        # ── FR-N205.3: 워크큐 재시도/추가 비율 ──
+        - record: controller_mgr_perf:retries_rate
+          expr: |
+            sum by (name) (
+              rate(workqueue_retries_total{job="kube-controller-manager"}[5m])
+            )
+          labels:
+            mtu: "N205"
+
+        - record: controller_mgr_perf:adds_rate
+          expr: |
+            sum by (name) (
+              rate(workqueue_adds_total{job="kube-controller-manager"}[5m])
+            )
+          labels:
+            mtu: "N205"
+
+        - record: controller_mgr_perf:longest_running_processor
+          expr: |
+            max by (name) (
+              workqueue_longest_running_processor_seconds{job="kube-controller-manager"}
+            )
+          labels:
+            mtu: "N205"
