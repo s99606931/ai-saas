@@ -12,6 +12,7 @@ import {
 } from './handlers/audit.handler.js';
 import { retentionStatsHandler, retentionCleanupHandler } from './handlers/retention.handler.js';
 import { analyticsHandler, topActorsHandler, topActionsHandler } from './handlers/analytics.handler.js';
+import { eventTrendHandler, anomalyDetectionHandler } from './handlers/trend.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
@@ -65,4 +66,10 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   // FR-AUDIT.2: Top-N 통계
   app.get('/audit/analytics/top-actors', { preHandler: readLimiter }, topActorsHandler);
   app.get('/audit/analytics/top-actions', { preHandler: readLimiter }, topActionsHandler);
+
+  // FR-AUDIT.3: 일별 이벤트 추이
+  app.get('/audit/analytics/trend', { preHandler: readLimiter }, eventTrendHandler as never);
+
+  // FR-AUDIT.4: 이상 행위 탐지
+  app.get('/audit/analytics/anomalies', { preHandler: readLimiter }, anomalyDetectionHandler as never);
 }

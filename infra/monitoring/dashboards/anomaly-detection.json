@@ -1,0 +1,188 @@
+{
+  "annotations": { "list": [] },
+  "description": "Z-Score 기반 이상 탐지 대시보드 — 서비스/노드별 이상 패턴 시각화",
+  "editable": false,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "id": 1,
+      "title": "서비스 요청률 Z-Score",
+      "description": "서비스별 요청률 Z-Score (|Z| > 3: 이상, |Z| > 2: 경고)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "service:http_requests_rate5m:zscore",
+          "legendFormat": "{{ service }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "thresholdsStyle": { "mode": "area" }
+          },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 3 },
+              { "color": "yellow", "value": -2 },
+              { "color": "red", "value": -3 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "서비스 지연 Z-Score",
+      "description": "서비스별 P99 지연 Z-Score",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "service:latency_p99:zscore",
+          "legendFormat": "{{ service }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "서비스 에러율 Z-Score",
+      "description": "서비스별 에러율 Z-Score",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "service:error_ratio:zscore",
+          "legendFormat": "{{ service }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "노드 CPU Z-Score",
+      "description": "노드별 CPU 사용률 Z-Score",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "node:cpu_usage:zscore",
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "요청률 + 적응형 밴드 (2/3 sigma)",
+      "description": "실제 요청률과 이동 평균 +/- 2/3 sigma 밴드 오버레이",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "service:http_requests:rate5m",
+          "legendFormat": "{{ service }} (실제)",
+          "refId": "A"
+        },
+        {
+          "expr": "service:http_requests_rate5m:avg1h",
+          "legendFormat": "{{ service }} (이동 평균)",
+          "refId": "B"
+        },
+        {
+          "expr": "service:http_requests_rate5m:avg1h + 3 * service:http_requests_rate5m:stddev1h",
+          "legendFormat": "{{ service }} (+3 sigma)",
+          "refId": "C"
+        },
+        {
+          "expr": "service:http_requests_rate5m:avg1h - 3 * service:http_requests_rate5m:stddev1h",
+          "legendFormat": "{{ service }} (-3 sigma)",
+          "refId": "D"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "이상 탐지 이벤트 현황",
+      "description": "현재 발생 중인 Z-Score 이상 알림 수",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "count(ALERTS{alertstate=\"firing\", detection=\"z-score\"}) or vector(0)",
+          "legendFormat": "발생 중 이상 알림",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["anomaly-detection", "z-score", "adaptive", "공공SaaS"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"],
+    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "7d"]
+  },
+  "timezone": "Asia/Seoul",
+  "title": "이상 탐지 (Z-Score Anomaly Detection)",
+  "uid": "anomaly-detection-zscore",
+  "version": 1
+}

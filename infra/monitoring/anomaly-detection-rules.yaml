@@ -1,0 +1,294 @@
+# =============================================================================
+# AI 기반 이상 탐지 — Z-Score 적응형 알림 규칙
+# Design Ref: MTU-N92 Design §2
+# Plan SC: FR-N92.1, FR-N92.2, FR-N92.3, FR-N92.4, FR-N92.6
+# CSAP: D-06(비정상 패턴 자동 탐지), D-08(접근 이상 감지)
+#
+# Z-Score 기반 이상 탐지 원리:
+#   Z = (현재값 - 이동평균) / 표준편차
+#   |Z| > 3 → Critical (99.7% 벗어남)
+#   |Z| > 2 → Warning (95.4% 벗어남)
+#
+# 적용: kubectl apply -f infra/monitoring/anomaly-detection-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: anomaly-detection-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 — Z-Score 기반 비정상 패턴 자동 탐지"
+    csap.ref/d08: "접근통제 — 비정상 접근 패턴 이상 탐지"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 적응형 임계값 사전 계산 (Recording Rules)
+    # Design Ref: MTU-N92 Design §2.1
+    # Plan SC: FR-N92.4
+    # =========================================================================
+    - name: anomaly:adaptive_thresholds
+      interval: 30s
+      rules:
+        # --- 서비스 요청률 통계 ---
+        # 이동 평균 (1시간)
+        - record: service:http_requests_rate5m:avg1h
+          expr: |
+            avg_over_time(service:http_requests:rate5m[1h])
+          labels:
+            anomaly: "adaptive_threshold"
+
+        # 표준편차 (1시간)
+        - record: service:http_requests_rate5m:stddev1h
+          expr: |
+            stddev_over_time(service:http_requests:rate5m[1h])
+          labels:
+            anomaly: "adaptive_threshold"
+
+        # Z-Score (실시간 계산)
+        - record: service:http_requests_rate5m:zscore
+          expr: |
+            (
+              service:http_requests:rate5m
+              - service:http_requests_rate5m:avg1h
+            )
+            / clamp_min(service:http_requests_rate5m:stddev1h, 0.001)
+          labels:
+            anomaly: "z_score"
+
+        # --- 서비스 응답 지연 통계 ---
+        # 이동 평균 (1시간)
+        - record: service:latency_p99:avg1h
+          expr: |
+            avg_over_time(service:latency_p99:seconds[1h])
+          labels:
+            anomaly: "adaptive_threshold"
+
+        # 표준편차 (1시간)
+        - record: service:latency_p99:stddev1h
+          expr: |
+            stddev_over_time(service:latency_p99:seconds[1h])
+          labels:
+            anomaly: "adaptive_threshold"
+
+        # Z-Score (실시간 계산)
+        - record: service:latency_p99:zscore
+          expr: |
+            (
+              service:latency_p99:seconds
+              - service:latency_p99:avg1h
+            )
+            / clamp_min(service:latency_p99:stddev1h, 0.0001)
+          labels:
+            anomaly: "z_score"
+
+        # --- 서비스 에러율 통계 ---
+        - record: service:error_ratio:avg1h
+          expr: |
+            avg_over_time(service:http_errors:ratio_rate5m[1h])
+          labels:
+            anomaly: "adaptive_threshold"
+
+        - record: service:error_ratio:stddev1h
+          expr: |
+            stddev_over_time(service:http_errors:ratio_rate5m[1h])
+          labels:
+            anomaly: "adaptive_threshold"
+
+        - record: service:error_ratio:zscore
+          expr: |
+            (
+              service:http_errors:ratio_rate5m
+              - service:error_ratio:avg1h
+            )
+            / clamp_min(service:error_ratio:stddev1h, 0.0001)
+          labels:
+            anomaly: "z_score"
+
+        # --- 시스템 리소스 통계 ---
+        # 노드 CPU 이동 평균/표준편차
+        - record: node:cpu_usage:avg1h
+          expr: |
+            avg_over_time(node:cpu_usage:ratio[1h])
+          labels:
+            anomaly: "adaptive_threshold"
+
+        - record: node:cpu_usage:stddev1h
+          expr: |
+            stddev_over_time(node:cpu_usage:ratio[1h])
+          labels:
+            anomaly: "adaptive_threshold"
+
+        - record: node:cpu_usage:zscore
+          expr: |
+            (
+              node:cpu_usage:ratio
+              - node:cpu_usage:avg1h
+            )
+            / clamp_min(node:cpu_usage:stddev1h, 0.001)
+          labels:
+            anomaly: "z_score"
+
+        # 노드 메모리 이동 평균/표준편차
+        - record: node:memory_usage:avg1h
+          expr: |
+            avg_over_time(node:memory_usage:ratio[1h])
+          labels:
+            anomaly: "adaptive_threshold"
+
+        - record: node:memory_usage:stddev1h
+          expr: |
+            stddev_over_time(node:memory_usage:ratio[1h])
+          labels:
+            anomaly: "adaptive_threshold"
+
+        - record: node:memory_usage:zscore
+          expr: |
+            (
+              node:memory_usage:ratio
+              - node:memory_usage:avg1h
+            )
+            / clamp_min(node:memory_usage:stddev1h, 0.001)
+          labels:
+            anomaly: "z_score"
+
+    # =========================================================================
+    # 그룹 2: Z-Score 기반 이상 탐지 알림
+    # Design Ref: MTU-N92 Design §2.2
+    # Plan SC: FR-N92.1, FR-N92.2, FR-N92.3, FR-N92.6
+    # =========================================================================
+    - name: anomaly:z_score_alerts
+      rules:
+        # --- 서비스 요청률 이상 (FR-N92.1) ---
+        - alert: AnomalyHighRequestRate
+          expr: |
+            service:http_requests_rate5m:zscore > 3
+          for: 5m
+          labels:
+            severity: warning
+            detection: z-score
+            csap_ref: "D-06"
+          annotations:
+            summary: "서비스 {{ $labels.service }} 요청률 이상 탐지 (Z-Score > 3)"
+            description: |
+              서비스 {{ $labels.service }}의 요청률이 정상 범위를 벗어났습니다.
+              Z-Score: {{ $value | printf "%.2f" }} (3 sigma 초과)
+              이동 평균 대비 비정상적으로 높은 요청률이 5분 이상 지속됩니다.
+            runbook_url: "docs/operations/runbooks/README.md"
+
+        - alert: AnomalyVeryHighRequestRate
+          expr: |
+            service:http_requests_rate5m:zscore > 5
+          for: 2m
+          labels:
+            severity: critical
+            detection: z-score
+            csap_ref: "D-06"
+          annotations:
+            summary: "서비스 {{ $labels.service }} 요청률 극심한 이상 (Z-Score > 5)"
+            description: |
+              서비스 {{ $labels.service }}의 요청률이 극심하게 비정상입니다.
+              Z-Score: {{ $value | printf "%.2f" }} (5 sigma 초과)
+              DDoS 또는 비정상 트래픽 의심. 즉시 확인 필요.
+
+        - alert: AnomalyLowRequestRate
+          expr: |
+            service:http_requests_rate5m:zscore < -3
+          for: 10m
+          labels:
+            severity: warning
+            detection: z-score
+          annotations:
+            summary: "서비스 {{ $labels.service }} 요청률 비정상 감소 (Z-Score < -3)"
+            description: |
+              서비스 {{ $labels.service }}의 요청률이 비정상적으로 낮습니다.
+              Z-Score: {{ $value | printf "%.2f" }}
+              서비스 장애 또는 트래픽 차단 의심.
+
+        # --- 응답 지연 이상 (FR-N92.2) ---
+        - alert: AnomalyHighLatency
+          expr: |
+            service:latency_p99:zscore > 3
+          for: 5m
+          labels:
+            severity: warning
+            detection: z-score
+          annotations:
+            summary: "서비스 {{ $labels.service }} 응답 지연 이상 (Z-Score > 3)"
+            description: |
+              서비스 {{ $labels.service }}의 P99 지연이 정상 범위를 벗어났습니다.
+              Z-Score: {{ $value | printf "%.2f" }}
+              데이터베이스 부하 또는 외부 의존성 지연 의심.
+            runbook_url: "docs/operations/runbooks/02-고지연--p99---1s--대응.md"
+
+        - alert: AnomalyVeryHighLatency
+          expr: |
+            service:latency_p99:zscore > 5
+          for: 2m
+          labels:
+            severity: critical
+            detection: z-score
+          annotations:
+            summary: "서비스 {{ $labels.service }} 응답 지연 극심한 이상 (Z-Score > 5)"
+            description: |
+              서비스 {{ $labels.service }}의 P99 지연이 극심하게 증가했습니다.
+              Z-Score: {{ $value | printf "%.2f" }}
+
+        # --- 에러율 이상 (FR-N92.3) ---
+        - alert: AnomalyHighErrorRate
+          expr: |
+            service:error_ratio:zscore > 3
+          for: 5m
+          labels:
+            severity: warning
+            detection: z-score
+          annotations:
+            summary: "서비스 {{ $labels.service }} 에러율 이상 (Z-Score > 3)"
+            description: |
+              서비스 {{ $labels.service }}의 에러율이 정상 범위를 벗어났습니다.
+              Z-Score: {{ $value | printf "%.2f" }}
+            runbook_url: "docs/operations/runbooks/03-에러율-급증---5---대응.md"
+
+        - alert: AnomalyVeryHighErrorRate
+          expr: |
+            service:error_ratio:zscore > 5
+          for: 2m
+          labels:
+            severity: critical
+            detection: z-score
+          annotations:
+            summary: "서비스 {{ $labels.service }} 에러율 극심한 이상 (Z-Score > 5)"
+            description: |
+              서비스 {{ $labels.service }}의 에러율이 극심하게 증가했습니다.
+              Z-Score: {{ $value | printf "%.2f" }}
+
+        # --- 시스템 리소스 이상 (FR-N92.6) ---
+        - alert: AnomalyHighCPU
+          expr: |
+            node:cpu_usage:zscore > 3
+          for: 10m
+          labels:
+            severity: warning
+            detection: z-score
+          annotations:
+            summary: "노드 {{ $labels.instance }} CPU 사용률 이상 (Z-Score > 3)"
+            description: |
+              노드 {{ $labels.instance }}의 CPU 사용률이 정상 범위를 벗어났습니다.
+              Z-Score: {{ $value | printf "%.2f" }}
+
+        - alert: AnomalyHighMemory
+          expr: |
+            node:memory_usage:zscore > 3
+          for: 10m
+          labels:
+            severity: warning
+            detection: z-score
+          annotations:
+            summary: "노드 {{ $labels.instance }} 메모리 사용률 이상 (Z-Score > 3)"
+            description: |
+              노드 {{ $labels.instance }}의 메모리 사용률이 정상 범위를 벗어났습니다.
+              Z-Score: {{ $value | printf "%.2f" }}
+            runbook_url: "docs/operations/runbooks/06-oom-킬-빈발-대응.md"
