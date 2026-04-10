@@ -1,0 +1,344 @@
+# Backstage Software Catalog -- 전체 컴포넌트 등록
+# Design Ref: MTU-N100 Design §Software Catalog
+# Plan SC: FR-N100.2
+
+---
+# System: 코어 플랫폼
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: core-platform
+  description: "공공기관 SaaS 코어 플랫폼"
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - saas
+    - public-sector
+spec:
+  owner: platform-team
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: ai-platform
+  description: "AI/LLM 연동 플랫폼"
+spec:
+  owner: ai-team
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: compliance-system
+  description: "CSAP/N2SF/ISMS-P 준수 시스템"
+spec:
+  owner: security-team
+
+---
+# Components: 마이크로서비스
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: auth-service
+  description: "인증/인가 서비스 (JWT + RBAC + MFA)"
+  tags:
+    - nestjs
+    - auth
+    - csap-d08
+  annotations:
+    backstage.io/kubernetes-id: auth-service
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: service
+  lifecycle: production
+  owner: platform-team
+  system: core-platform
+  providesApis:
+    - auth-api
+  dependsOn:
+    - resource:auth-postgresql
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: api-gateway
+  description: "API 게이트웨이 (Rate Limit + RBAC + 감사 로그)"
+  tags:
+    - nestjs
+    - gateway
+  annotations:
+    backstage.io/kubernetes-id: api-gateway
+spec:
+  type: service
+  lifecycle: production
+  owner: platform-team
+  system: core-platform
+  providesApis:
+    - gateway-api
+  consumesApis:
+    - auth-api
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ai-service
+  description: "AI/LLM 통합 서비스 (MCP + LM Studio)"
+  tags:
+    - ai
+    - llm
+    - n2sf-o
+  annotations:
+    backstage.io/kubernetes-id: ai-service
+spec:
+  type: service
+  lifecycle: production
+  owner: ai-team
+  system: ai-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: tenant-service
+  description: "테넌트 관리 서비스 (멀티테넌시)"
+  tags:
+    - nestjs
+    - multitenancy
+spec:
+  type: service
+  lifecycle: production
+  owner: platform-team
+  system: core-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: audit-service
+  description: "감사 로그 서비스 (CSAP D-06 준수)"
+  tags:
+    - nestjs
+    - audit
+    - csap-d06
+spec:
+  type: service
+  lifecycle: production
+  owner: security-team
+  system: compliance-system
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: compliance-service
+  description: "CSAP/N2SF 준수 현황 관리"
+  tags:
+    - compliance
+    - csap
+spec:
+  type: service
+  lifecycle: production
+  owner: security-team
+  system: compliance-system
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: user-service
+  description: "사용자 관리 서비스"
+  tags:
+    - nestjs
+    - user
+spec:
+  type: service
+  lifecycle: production
+  owner: platform-team
+  system: core-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: notification-service
+  description: "알림 서비스 (이메일, SMS, 웹훅)"
+  tags:
+    - nestjs
+    - notification
+spec:
+  type: service
+  lifecycle: production
+  owner: platform-team
+  system: core-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: file-service
+  description: "파일 관리 서비스 (MinIO 연동)"
+  tags:
+    - nestjs
+    - file
+    - minio
+spec:
+  type: service
+  lifecycle: production
+  owner: platform-team
+  system: core-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: billing-service
+  description: "과금/결제 서비스"
+  tags:
+    - nestjs
+    - billing
+spec:
+  type: service
+  lifecycle: production
+  owner: platform-team
+  system: core-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: catalog-service
+  description: "SaaS 카탈로그 서비스"
+  tags:
+    - nestjs
+    - catalog
+spec:
+  type: service
+  lifecycle: production
+  owner: platform-team
+  system: core-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: subscription-service
+  description: "구독 관리 서비스"
+  tags:
+    - nestjs
+    - subscription
+spec:
+  type: service
+  lifecycle: production
+  owner: platform-team
+  system: core-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: menu-service
+  description: "메뉴 관리 서비스"
+  tags:
+    - nestjs
+    - menu
+spec:
+  type: service
+  lifecycle: production
+  owner: platform-team
+  system: core-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: security-monitor-service
+  description: "보안 모니터링 서비스 (Falco + Trivy 연동)"
+  tags:
+    - security
+    - monitoring
+spec:
+  type: service
+  lifecycle: production
+  owner: security-team
+  system: compliance-system
+
+---
+# APIs
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: auth-api
+  description: "인증/인가 REST API"
+spec:
+  type: openapi
+  lifecycle: production
+  owner: platform-team
+  system: core-platform
+  definition: |
+    openapi: "3.0.0"
+    info:
+      title: Auth API
+      version: "1.0.0"
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: gateway-api
+  description: "API 게이트웨이"
+spec:
+  type: openapi
+  lifecycle: production
+  owner: platform-team
+  system: core-platform
+  definition: |
+    openapi: "3.0.0"
+    info:
+      title: Gateway API
+      version: "1.0.0"
+
+---
+# Resources
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: auth-postgresql
+  description: "인증 서비스 PostgreSQL (CNPG)"
+spec:
+  type: database
+  owner: platform-team
+  system: core-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: minio-storage
+  description: "MinIO 객체 스토리지"
+spec:
+  type: storage
+  owner: platform-team
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: harbor-registry
+  description: "Harbor 컨테이너 레지스트리"
+spec:
+  type: registry
+  owner: platform-team
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: redis-cache
+  description: "Redis 세션/캐시 저장소"
+spec:
+  type: cache
+  owner: platform-team
+  system: core-platform

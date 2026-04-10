@@ -1,0 +1,123 @@
+# Backstage IDP 설치 Helm Values
+# Design Ref: MTU-N100 Design §아키텍처
+# Plan SC: FR-N100.1
+#
+# 설치: helm install backstage backstage/backstage \
+#        -n backstage --create-namespace -f install.yaml
+
+backstage:
+  image:
+    registry: harbor.saas.go.kr
+    repository: platform/backstage
+    tag: "1.30.0"
+
+  replicas: 1
+
+  extraEnvVars:
+    - name: NODE_ENV
+      value: production
+    - name: APP_CONFIG_app_baseUrl
+      value: "https://backstage.saas.go.kr"
+    - name: APP_CONFIG_backend_baseUrl
+      value: "https://backstage.saas.go.kr"
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  podSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+
+  appConfig:
+    app:
+      title: "공공기관 SaaS 프레임워크 IDP"
+      baseUrl: "https://backstage.saas.go.kr"
+
+    backend:
+      baseUrl: "https://backstage.saas.go.kr"
+      listen:
+        port: 7007
+      database:
+        client: pg
+        connection:
+          host: ${POSTGRES_HOST}
+          port: 5432
+          user: ${POSTGRES_USER}
+          password: ${POSTGRES_PASSWORD}
+      cors:
+        origin: "https://backstage.saas.go.kr"
+
+    integrations:
+      gitea:
+        - host: gitea.saas.go.kr
+          apiBaseUrl: "https://gitea.saas.go.kr/api/v1"
+          token: ${GITEA_TOKEN}
+
+    catalog:
+      rules:
+        - allow: [Component, System, API, Resource, Location, Template]
+      locations:
+        - type: file
+          target: /catalog/*.yaml
+
+    kubernetes:
+      serviceLocatorMethod:
+        type: multiTenant
+      clusterLocatorMethods:
+        - type: config
+          clusters:
+            - url: https://kubernetes.default.svc
+              name: k3s-local
+              authProvider: serviceAccount
+              serviceAccountToken: ${K8S_SA_TOKEN}
+              skipTLSVerify: true
+
+    techdocs:
+      builder: local
+      generator:
+        runIn: local
+      publisher:
+        type: local
+
+postgresql:
+  enabled: true
+  auth:
+    database: backstage
+    existingSecret: backstage-postgresql
+  primary:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+ingress:
+  enabled: true
+  className: traefik
+  hosts:
+    - host: backstage.saas.go.kr
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: backstage-tls
+      hosts:
+        - backstage.saas.go.kr
