@@ -1,0 +1,110 @@
+{
+  "annotations": { "list": [] },
+  "description": "인시던트 관리 대시보드 — 자동 분류 + 에스컬레이션 현황",
+  "editable": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "전체 활성 인시던트",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "incident:total:active_count",
+        "legendFormat": "전체",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "P1 인시던트 (긴급)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "incident:p1:active_count",
+        "legendFormat": "P1",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "카테고리별 인시던트",
+      "type": "bargauge",
+      "gridPos": { "h": 4, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "incident:security:active_count", "legendFormat": "보안", "refId": "A" },
+        { "expr": "incident:availability:active_count", "legendFormat": "가용성", "refId": "B" },
+        { "expr": "incident:performance:active_count", "legendFormat": "성능", "refId": "C" },
+        { "expr": "incident:infrastructure:active_count", "legendFormat": "인프라", "refId": "D" },
+        { "expr": "incident:deployment:active_count", "legendFormat": "배포", "refId": "E" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "인시던트 추이 (24시간)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "incident:total:active_count", "legendFormat": "전체", "refId": "A" },
+        { "expr": "incident:p1:active_count", "legendFormat": "P1 (긴급)", "refId": "B" },
+        { "expr": "incident:security:active_count", "legendFormat": "보안", "refId": "C" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "SLO 롤백 트리거 현황",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "ALERTS{alertstate=\"firing\", auto_action=\"rollback_candidate\"}",
+        "legendFormat": "{{ alertname }} — {{ service }}",
+        "refId": "A",
+        "format": "table",
+        "instant": true
+      }]
+    },
+    {
+      "id": 6,
+      "title": "에스컬레이션 정책 참조",
+      "type": "text",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 20 },
+      "options": {
+        "mode": "markdown",
+        "content": "## 에스컬레이션 정책\n\n| 우선순위 | 응답 SLA | 해결 SLA | 에스컬레이션 |\n|---------|---------|---------|------------|\n| P1 (긴급) | 15분 | 4시간 | 15분 -> 팀 리더 -> 30분 -> CTO |\n| P2 (높음) | 30분 | 8시간 | 30분 -> 팀 리더 -> 2시간 -> CTO |\n| P3 (보통) | 2시간 | 24시간 | 2시간 -> 팀 리더 |\n| P4 (낮음) | 8시간 | 72시간 | 다음 업무일 |"
+      }
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 39,
+  "tags": ["incident", "escalation", "classification", "공공SaaS"],
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "인시던트 관리 (Incident Management)",
+  "uid": "incident-management",
+  "version": 1
+}

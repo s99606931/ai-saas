@@ -1,0 +1,201 @@
+# =============================================================================
+# 멀티테넌트 모니터링 격리 — 테넌트별 메트릭 + SLO
+# Design Ref: MTU-N96 Design §2
+# Plan SC: FR-N96.1, FR-N96.2, FR-N96.3
+# CSAP: D-08(접근통제 — 테넌트 격리), N2SF N-03(격리)
+#
+# 적용: kubectl apply -f infra/monitoring/multitenant-monitoring-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: multitenant-monitoring-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d08: "접근통제 — 테넌트별 메트릭 격리 (namespace 기반)"
+    n2sf.ref/n03: "격리 — 멀티테넌트 모니터링 데이터 분리"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 테넌트별 리소스 사용량 (FR-N96.1, FR-N96.3)
+    # =========================================================================
+    - name: tenant:resource_usage
+      interval: 30s
+      rules:
+        # 테넌트별 CPU 사용량
+        - record: tenant:cpu_usage:sum_rate5m
+          expr: |
+            sum by (namespace) (
+              rate(container_cpu_usage_seconds_total{
+                container!="", container!="POD",
+                namespace!~"kube-system|monitoring|flux-system|cert-manager"
+              }[5m])
+            )
+          labels:
+            aggregation: tenant
+
+        # 테넌트별 메모리 사용량
+        - record: tenant:memory_usage:sum_bytes
+          expr: |
+            sum by (namespace) (
+              container_memory_working_set_bytes{
+                container!="", container!="POD",
+                namespace!~"kube-system|monitoring|flux-system|cert-manager"
+              }
+            )
+          labels:
+            aggregation: tenant
+
+        # 테넌트별 CPU 쿼터 사용률
+        - record: tenant:cpu_quota_usage:ratio
+          expr: |
+            sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=""}[5m]))
+            / sum by (namespace) (kube_resourcequota{resource="limits.cpu", type="hard"})
+          labels:
+            aggregation: tenant
+
+        # 테넌트별 메모리 쿼터 사용률
+        - record: tenant:memory_quota_usage:ratio
+          expr: |
+            sum by (namespace) (container_memory_working_set_bytes{container!=""})
+            / sum by (namespace) (kube_resourcequota{resource="limits.memory", type="hard"})
+          labels:
+            aggregation: tenant
+
+        # 테넌트별 Pod 수
+        - record: tenant:pod_count:sum
+          expr: |
+            count by (namespace) (
+              kube_pod_info{namespace!~"kube-system|monitoring|flux-system|cert-manager"}
+            )
+          labels:
+            aggregation: tenant
+
+        # 테넌트별 네트워크 수신/송신
+        - record: tenant:network_receive:bytes_rate5m
+          expr: |
+            sum by (namespace) (
+              rate(container_network_receive_bytes_total{
+                namespace!~"kube-system|monitoring|flux-system|cert-manager"
+              }[5m])
+            )
+          labels:
+            aggregation: tenant
+
+        - record: tenant:network_transmit:bytes_rate5m
+          expr: |
+            sum by (namespace) (
+              rate(container_network_transmit_bytes_total{
+                namespace!~"kube-system|monitoring|flux-system|cert-manager"
+              }[5m])
+            )
+          labels:
+            aggregation: tenant
+
+    # =========================================================================
+    # 그룹 2: 테넌트별 SLO (FR-N96.2)
+    # =========================================================================
+    - name: tenant:slo_metrics
+      interval: 30s
+      rules:
+        # 테넌트별 요청률 (RPS)
+        - record: tenant:request_rate:sum_rate5m
+          expr: |
+            sum by (namespace) (
+              rate(http_requests_total{
+                namespace!~"kube-system|monitoring|flux-system"
+              }[5m])
+            )
+          labels:
+            aggregation: tenant
+
+        # 테넌트별 에러율
+        - record: tenant:error_rate:ratio_rate5m
+          expr: |
+            sum by (namespace) (rate(http_requests_total{code=~"5.."}[5m]))
+            / clamp_min(sum by (namespace) (rate(http_requests_total[5m])), 0.001)
+          labels:
+            aggregation: tenant
+
+        # 테넌트별 가용성 SLI (5분)
+        - record: tenant:availability:ratio5m
+          expr: |
+            1 - (
+              sum by (namespace) (rate(http_requests_total{code=~"5.."}[5m]))
+              / clamp_min(sum by (namespace) (rate(http_requests_total[5m])), 0.001)
+            )
+          labels:
+            aggregation: tenant
+
+        # 테넌트별 가용성 SLI (1시간)
+        - record: tenant:availability:ratio1h
+          expr: |
+            1 - (
+              sum by (namespace) (rate(http_requests_total{code=~"5.."}[1h]))
+              / clamp_min(sum by (namespace) (rate(http_requests_total[1h])), 0.001)
+            )
+          labels:
+            aggregation: tenant
+
+        # 테넌트별 P99 지연
+        - record: tenant:latency_p99:seconds
+          expr: |
+            histogram_quantile(0.99,
+              sum by (namespace, le) (
+                rate(http_request_duration_seconds_bucket{
+                  namespace!~"kube-system|monitoring|flux-system"
+                }[5m])
+              )
+            )
+          labels:
+            aggregation: tenant
+
+    # =========================================================================
+    # 그룹 3: 테넌트별 SLO 위반 알림 (FR-N96.5)
+    # =========================================================================
+    - name: tenant:slo_alerts
+      rules:
+        # 테넌트 가용성 99.9% 미만
+        - alert: TenantSLOAvailabilityBreach
+          expr: |
+            tenant:availability:ratio1h < 0.999
+            and tenant:request_rate:sum_rate5m > 0.1
+          for: 10m
+          labels:
+            severity: warning
+            category: tenant-slo
+          annotations:
+            summary: "테넌트 {{ $labels.namespace }} 가용성 SLO 위반"
+            description: |
+              테넌트 {{ $labels.namespace }}의 1시간 가용성이 99.9% 미만입니다.
+              현재 가용성: {{ $value | printf "%.4f" }}
+
+        # 테넌트 CPU 쿼터 80% 초과
+        - alert: TenantCPUQuotaHigh
+          expr: |
+            tenant:cpu_quota_usage:ratio > 0.8
+          for: 15m
+          labels:
+            severity: warning
+            category: tenant-resource
+          annotations:
+            summary: "테넌트 {{ $labels.namespace }} CPU 쿼터 80% 초과"
+            description: |
+              테넌트 {{ $labels.namespace }}의 CPU 쿼터 사용률이 {{ $value | printf "%.1f" }}%입니다.
+
+        # 테넌트 메모리 쿼터 80% 초과
+        - alert: TenantMemoryQuotaHigh
+          expr: |
+            tenant:memory_quota_usage:ratio > 0.8
+          for: 15m
+          labels:
+            severity: warning
+            category: tenant-resource
+          annotations:
+            summary: "테넌트 {{ $labels.namespace }} 메모리 쿼터 80% 초과"
+            description: |
+              테넌트 {{ $labels.namespace }}의 메모리 쿼터 사용률이 {{ $value | printf "%.1f" }}%입니다.

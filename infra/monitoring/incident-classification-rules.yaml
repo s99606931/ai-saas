@@ -1,0 +1,153 @@
+# =============================================================================
+# 인시던트 자동 분류 + 에스컬레이션 규칙
+# Design Ref: MTU-N95 Design §1, §2
+# Plan SC: FR-N95.1, FR-N95.2, FR-N95.3
+# CSAP: D-06(침해사고 관리 자동화)
+#
+# 이 규칙은 알림 레이블을 기반으로 인시던트를 자동 분류하고
+# 우선순위에 따라 에스컬레이션 정책을 적용합니다.
+#
+# 적용: kubectl apply -f infra/monitoring/incident-classification-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: incident-classification-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 — 인시던트 자동 분류 + 우선순위 기반 에스컬레이션"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: SLO 위반 자동 롤백 트리거 (FR-N95.3)
+    # Design Ref: MTU-N95 Design §3
+    # =========================================================================
+    - name: incident:slo_rollback_trigger
+      rules:
+        # 에러 예산 200% 초과 소진 (30분 burn rate)
+        - alert: SLORollbackTriggerBurnRate
+          expr: |
+            (
+              sum by (service) (rate(http_requests_total{code=~"5.."}[30m]))
+              / clamp_min(sum by (service) (rate(http_requests_total[30m])), 0.001)
+            ) > 0.02
+          for: 5m
+          labels:
+            severity: critical
+            category: availability
+            priority: P1
+            escalation: immediate
+            auto_action: rollback_candidate
+          annotations:
+            summary: "서비스 {{ $labels.service }} SLO 위반 — 자동 롤백 후보"
+            description: |
+              서비스 {{ $labels.service }}의 30분 에러율이 2%를 초과하여
+              에러 예산 소진율 200% 이상입니다.
+              자동 롤백 조건 충족 — Flux 롤백을 검토하십시오.
+            runbook_url: "docs/operations/runbooks/README.md"
+
+        # 가용성 SLI 99% 미만 (5분 연속)
+        - alert: SLORollbackTriggerAvailability
+          expr: |
+            (
+              1 - (
+                sum by (service) (rate(http_requests_total{code=~"5.."}[5m]))
+                / clamp_min(sum by (service) (rate(http_requests_total[5m])), 0.001)
+              )
+            ) < 0.99
+          for: 5m
+          labels:
+            severity: critical
+            category: availability
+            priority: P1
+            escalation: immediate
+            auto_action: rollback_candidate
+          annotations:
+            summary: "서비스 {{ $labels.service }} 가용성 99% 미만"
+            description: |
+              서비스 {{ $labels.service }}의 가용성이 5분 연속 99% 미만입니다.
+              현재 가용성: {{ $value | printf "%.4f" }}
+
+        # P99 지연 SLO 목표 3배 초과
+        - alert: SLORollbackTriggerLatency
+          expr: |
+            histogram_quantile(0.99,
+              sum by (service, le) (rate(http_request_duration_seconds_bucket[5m]))
+            ) > 3
+          for: 5m
+          labels:
+            severity: critical
+            category: performance
+            priority: P1
+            escalation: immediate
+            auto_action: rollback_candidate
+          annotations:
+            summary: "서비스 {{ $labels.service }} P99 지연 3초 초과"
+            description: |
+              서비스 {{ $labels.service }}의 P99 지연이 SLO 목표(1초)의 3배인 3초를 초과했습니다.
+              현재 P99: {{ $value | printf "%.2f" }}초
+
+    # =========================================================================
+    # 그룹 2: 인시던트 분류 Recording Rules (FR-N95.1)
+    # Design Ref: MTU-N95 Design §1.1
+    # =========================================================================
+    - name: incident:classification
+      interval: 15s
+      rules:
+        # 보안 인시던트 수 (실시간)
+        - record: incident:security:active_count
+          expr: |
+            count(ALERTS{alertstate="firing", alertname=~"Falco.*|PolicyViolation.*|Gatekeeper.*|Kyverno.*|SecurityEvent.*"}) or vector(0)
+          labels:
+            category: security
+
+        # 가용성 인시던트 수
+        - record: incident:availability:active_count
+          expr: |
+            count(ALERTS{alertstate="firing", alertname=~"ServiceDown.*|SLO.*|ErrorBudget.*|BurnRate.*"}) or vector(0)
+          labels:
+            category: availability
+
+        # 성능 인시던트 수
+        - record: incident:performance:active_count
+          expr: |
+            count(ALERTS{alertstate="firing", alertname=~"HighLatency.*|Anomaly.*|SlowQuery.*"}) or vector(0)
+          labels:
+            category: performance
+
+        # 인프라 인시던트 수
+        - record: incident:infrastructure:active_count
+          expr: |
+            count(ALERTS{alertstate="firing", alertname=~"NodeDown.*|NodeNotReady|DiskSpace.*|OOM.*|PredictDisk.*|PredictMemory.*"}) or vector(0)
+          labels:
+            category: infrastructure
+
+        # 배포 인시던트 수
+        - record: incident:deployment:active_count
+          expr: |
+            count(ALERTS{alertstate="firing", alertname=~"Flux.*|Deployment.*|Helm.*"}) or vector(0)
+          labels:
+            category: deployment
+
+        # 전체 활성 인시던트 수
+        - record: incident:total:active_count
+          expr: |
+            count(ALERTS{alertstate="firing"}) or vector(0)
+
+        # P1 인시던트 수 (critical + 가용성/보안)
+        - record: incident:p1:active_count
+          expr: |
+            count(ALERTS{alertstate="firing", severity="critical", alertname=~"ServiceDown.*|SLO.*|Falco.*|PolicyViolation.*"}) or vector(0)
+          labels:
+            priority: P1
+
+        # P2 인시던트 수 (critical 기타)
+        - record: incident:p2:active_count
+          expr: |
+            count(ALERTS{alertstate="firing", severity="critical", alertname!~"ServiceDown.*|SLO.*|Falco.*|PolicyViolation.*"}) or vector(0)
+          labels:
+            priority: P2
