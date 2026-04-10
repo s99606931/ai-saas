@@ -26,12 +26,12 @@ import { createRateLimiter } from '@public-saas/rate-limit';
 // OpenAPI JSON Schema 정의 (CSAP D-12: API 문서화)
 const successResponse = {
   type: 'object' as const,
-  properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } },
+  additionalProperties: true, properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const, additionalProperties: true } },
 } as const;
 
 const errorResponse = {
   type: 'object' as const,
-  properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } },
+  additionalProperties: true, properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const, additionalProperties: true } },
 } as const;
 
 const idParam = {

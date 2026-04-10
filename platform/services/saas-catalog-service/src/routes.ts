@@ -17,12 +17,12 @@ import { getCatalogStats } from './handlers/stats.handler.js';
 // OpenAPI JSON Schema 정의 (CSAP D-12: API 문서화)
 const successResponse = {
   type: 'object' as const,
-  properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } },
+  additionalProperties: true, properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const, additionalProperties: true } },
 } as const;
 
 const errorResponse = {
   type: 'object' as const,
-  properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } },
+  additionalProperties: true, properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const, additionalProperties: true } },
 } as const;
 
 const idParam = {
@@ -46,7 +46,20 @@ const paginationQuery = {
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   // FR-SCAT.2: 카테고리 목록 (정적, 인증 불필요)
   app.get('/saas-catalog/categories', {
-    schema: { description: 'SaaS 카테고리 목록 조회', tags: ['saas-catalog'], response: { 200: successResponse } },
+    schema: {
+      description: 'SaaS 카테고리 목록 조회',
+      tags: ['saas-catalog'],
+      response: {
+        200: {
+          type: 'object' as const,
+          additionalProperties: true,
+          properties: {
+            success: { type: 'boolean' as const },
+            data: { type: 'array' as const, items: { type: 'object' as const, additionalProperties: true } },
+          },
+        },
+      },
+    },
   }, listCategories);
 
   // FR-SCAT.5: 통계 (stats를 :id보다 먼저 등록)

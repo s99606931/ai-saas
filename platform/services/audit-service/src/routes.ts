@@ -26,12 +26,12 @@ const paginationQuery = {
 
 const successResponse = {
   type: 'object' as const,
-  properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } },
+  additionalProperties: true, properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const, additionalProperties: true } },
 } as const;
 
 const errorResponse = {
   type: 'object' as const,
-  properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } },
+  additionalProperties: true, properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const, additionalProperties: true } },
 } as const;
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
