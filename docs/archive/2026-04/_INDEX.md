@@ -141,6 +141,24 @@
 | **MTU-N76** 자동 용량 계획 + ResourceQuota/LimitRange 강화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N76-capacity-planning/` |
 | **MTU-N77** AI 기반 CI/CD 파이프라인 통합 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N77-ai-cicd/` |
 | **MTU-N78** 5라운드 통합 검증 (86/86 ALL PASS) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N78-round5-integration/` |
+| **MTU-N79** Renovate Bot 자동 의존성 관리 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N79-renovate-bot/` |
+| **MTU-N80** S2C2F Level 3 공급망 보안 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N80-s2c2f-framework/` |
+| **MTU-N81** CVE 자동 패치 파이프라인 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N81-vuln-auto-patch/` |
+| **MTU-N82** Pyroscope 연속 프로파일링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N82-pyroscope-profiling/` |
+| **MTU-N83** ML 이상탐지 (Z-Score+Prophet) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N83-anomaly-detection/` |
+| **MTU-N84** CSAP 증거 자동 수집 파이프라인 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N84-csap-evidence/` |
+| **MTU-N85** 감사 보고서 자동 생성 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N85-audit-report-gen/` |
+| **MTU-N86** IDP Golden Path 템플릿 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N86-golden-path/` |
+| **MTU-N87** DR 자동 페일오버 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N87-dr-auto-failover/` |
+| **MTU-N88** 6라운드 통합 검증 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N88-round6-integration/` |
+| **MTU-N89** 감리 산출물 완전성 보강 (T03~T07 갱신) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N89-audit-completeness/` |
+| **MTU-N90** OpenSSF Scorecard 보안 점수카드 자동화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N90-openssf-scorecard/` |
+| **MTU-N91** Semgrep SAST + 기술 부채 측정 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N91-semgrep-quality-gate/` |
+| **MTU-N92** 불변 인프라 + 프로덕션 준비 100항목 자동화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N92-immutable-infra/` |
+| **MTU-N93** Cilium eBPF + Zero Trust mTLS 완성 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N93-ebpf-zero-trust/` |
+| **MTU-N94** 릴리스 노트 + 마이그레이션 가이드 자동화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N94-release-automation/` |
+| **MTU-N95** 감리 Q-Gate 100% 자동 검증 파이프라인 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N95-qgate-100/` |
+| **MTU-N96** 7라운드 통합 검증 (7/7 ALL PASS) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N96-round7-integration/` |
 
 ## av-skill 요약
 
