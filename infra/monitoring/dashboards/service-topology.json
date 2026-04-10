@@ -1,0 +1,186 @@
+{
+  "annotations": { "list": [] },
+  "description": "서비스 의존성 토폴로지 대시보드 -- 계층별 상태 + 의존성 현황",
+  "editable": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "서비스 토폴로지 개요",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "id": 2,
+      "title": "전체 서비스 상태",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "count(up{namespace=~\"platform|database|storage|monitoring|gitea|harbor\"} == 1)",
+        "legendFormat": "정상",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "green", "value": 14 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "비정상 서비스",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "count(up{namespace=~\"platform|database|storage|monitoring|gitea|harbor\"} == 0) or vector(0)",
+        "legendFormat": "비정상",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Gateway 계층 가용성",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "1 - (sum(rate(http_requests_total{namespace=\"platform\",service=\"api-gateway\",code=~\"5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{namespace=\"platform\",service=\"api-gateway\"}[5m])), 0.001)) or vector(1)",
+        "legendFormat": "API Gateway",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0.99,
+          "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.999, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Data 계층 가용성",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "pg_up or vector(1)",
+        "legendFormat": "PostgreSQL",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 1, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Core 서비스별 요청률",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "sum by (service) (rate(http_requests_total{namespace=\"platform\"}[5m]))",
+        "legendFormat": "{{ service }}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 7,
+      "title": "서비스 간 트래픽 (Linkerd)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "sum by (dst_service, src_service) (rate(response_total{namespace=\"platform\"}[5m]))",
+        "legendFormat": "{{ src_service }} -> {{ dst_service }}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 8,
+      "title": "의존성 계층 상태",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "collapsed": false
+    },
+    {
+      "id": 9,
+      "title": "서비스별 에러율",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "sum by (service) (rate(http_requests_total{namespace=\"platform\",code=~\"5..\"}[5m])) / clamp_min(sum by (service) (rate(http_requests_total{namespace=\"platform\"}[5m])), 0.001)",
+        "legendFormat": "{{ service }}",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "서비스별 P99 지연",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "histogram_quantile(0.99, sum by (service, le) (rate(http_request_duration_seconds_bucket{namespace=\"platform\"}[5m])))",
+        "legendFormat": "{{ service }}",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    }
+  ],
+  "tags": ["topology", "service-dependency", "sre"],
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "서비스 의존성 토폴로지",
+  "uid": "service-topology-v1"
+}

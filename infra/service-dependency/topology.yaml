@@ -1,0 +1,269 @@
+# =============================================================================
+# 서비스 의존성 토폴로지 정의
+# Design Ref: MTU-N123 Design SS1
+# Plan SC: FR-N123.1
+# CSAP: D-06(장애 영향 분석 — 서비스 의존성 맵)
+#
+# 이 파일은 플랫폼 내 모든 서비스의 의존성 관계를 선언적으로 정의합니다.
+# scripts/service-topology.sh에서 이 파일을 파싱하여 의존성 분석을 수행합니다.
+#
+# 구조:
+#   services[].name: 서비스명 (k8s Service 이름과 일치)
+#   services[].namespace: 배포 네임스페이스
+#   services[].tier: 서비스 계층 (gateway/core/data/infra/monitoring)
+#   services[].slo: SLO 목표
+#   services[].dependencies: 의존하는 서비스 목록
+#   services[].dependents: 이 서비스에 의존하는 서비스 목록 (자동 계산 가능)
+# =============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: service-topology
+  namespace: platform
+  labels:
+    app: service-topology
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "장애 영향 분석 -- 서비스 의존성 토폴로지"
+data:
+  topology.yaml: |
+    version: "1.0"
+    generated_at: "2026-04-10"
+    description: "공공기관 SaaS 플랫폼 서비스 의존성 토폴로지"
+
+    # 서비스 계층 정의
+    tiers:
+      gateway:
+        description: "외부 트래픽 진입점"
+        blast_radius: "전체 서비스"
+      core:
+        description: "핵심 비즈니스 로직"
+        blast_radius: "단일 서비스 + 의존 서비스"
+      data:
+        description: "데이터 저장/처리"
+        blast_radius: "데이터 연관 서비스 전체"
+      infra:
+        description: "인프라 공통 서비스"
+        blast_radius: "전체 서비스 (공통 의존)"
+      monitoring:
+        description: "관측성 스택"
+        blast_radius: "모니터링 기능 (비즈니스 영향 없음)"
+
+    # 서비스 목록
+    services:
+      # -----------------------------------------------------------------------
+      # Gateway 계층
+      # -----------------------------------------------------------------------
+      - name: api-gateway
+        namespace: platform
+        tier: gateway
+        description: "API 게이트웨이 — 외부 트래픽 라우팅 및 인증"
+        slo:
+          availability: "99.9%"
+          latency_p99: "500ms"
+        dependencies:
+          - name: auth-service
+            type: sync
+            criticality: critical
+            description: "JWT 토큰 검증"
+          - name: tenant-service
+            type: sync
+            criticality: critical
+            description: "테넌트 라우팅"
+          - name: plugin-service
+            type: sync
+            criticality: medium
+            description: "플러그인 API 프록시"
+          - name: document-service
+            type: sync
+            criticality: medium
+            description: "문서 API 프록시"
+
+      # -----------------------------------------------------------------------
+      # Core 계층
+      # -----------------------------------------------------------------------
+      - name: auth-service
+        namespace: platform
+        tier: core
+        description: "인증/인가 서비스 — JWT, RBAC, 세션 관리"
+        slo:
+          availability: "99.95%"
+          latency_p99: "200ms"
+        dependencies:
+          - name: postgresql
+            type: sync
+            criticality: critical
+            description: "사용자/역할 데이터"
+          - name: redis
+            type: sync
+            criticality: high
+            description: "세션/토큰 캐시"
+
+      - name: tenant-service
+        namespace: platform
+        tier: core
+        description: "멀티테넌트 관리 — 테넌트 CRUD, 격리 정책"
+        slo:
+          availability: "99.9%"
+          latency_p99: "300ms"
+        dependencies:
+          - name: postgresql
+            type: sync
+            criticality: critical
+            description: "테넌트 메타데이터"
+          - name: auth-service
+            type: sync
+            criticality: high
+            description: "테넌트 관리자 인증"
+
+      - name: plugin-service
+        namespace: platform
+        tier: core
+        description: "플러그인 관리 — 설치, 제거, 버전 관리"
+        slo:
+          availability: "99.5%"
+          latency_p99: "500ms"
+        dependencies:
+          - name: postgresql
+            type: sync
+            criticality: critical
+            description: "플러그인 메타데이터"
+          - name: minio
+            type: sync
+            criticality: high
+            description: "플러그인 아티팩트 저장"
+          - name: auth-service
+            type: sync
+            criticality: high
+            description: "권한 검증"
+
+      - name: document-service
+        namespace: platform
+        tier: core
+        description: "문서 관리 — 업로드, 변환, 검색"
+        slo:
+          availability: "99.5%"
+          latency_p99: "1000ms"
+        dependencies:
+          - name: postgresql
+            type: sync
+            criticality: critical
+            description: "문서 메타데이터"
+          - name: minio
+            type: sync
+            criticality: critical
+            description: "문서 파일 저장"
+          - name: auth-service
+            type: sync
+            criticality: high
+            description: "권한 검증"
+
+      - name: audit-service
+        namespace: platform
+        tier: core
+        description: "감사 로그 서비스 — CSAP D-06 감사 추적"
+        slo:
+          availability: "99.9%"
+          latency_p99: "100ms"
+        dependencies:
+          - name: postgresql
+            type: async
+            criticality: critical
+            description: "감사 로그 저장"
+
+      # -----------------------------------------------------------------------
+      # Data 계층
+      # -----------------------------------------------------------------------
+      - name: postgresql
+        namespace: database
+        tier: data
+        description: "PostgreSQL 15 — 핵심 데이터베이스"
+        slo:
+          availability: "99.99%"
+          latency_p99: "50ms"
+        dependencies: []
+
+      - name: redis
+        namespace: database
+        tier: data
+        description: "Redis 7 — 캐시 및 세션 저장"
+        slo:
+          availability: "99.9%"
+          latency_p99: "5ms"
+        dependencies: []
+
+      - name: minio
+        namespace: storage
+        tier: data
+        description: "MinIO — S3 호환 오브젝트 스토리지"
+        slo:
+          availability: "99.9%"
+          latency_p99: "200ms"
+        dependencies: []
+
+      # -----------------------------------------------------------------------
+      # Infra 계층
+      # -----------------------------------------------------------------------
+      - name: gitea
+        namespace: gitea
+        tier: infra
+        description: "Gitea — Git 저장소 및 CI/CD"
+        slo:
+          availability: "99.5%"
+        dependencies:
+          - name: postgresql
+            type: sync
+            criticality: critical
+            description: "Gitea 메타데이터"
+
+      - name: harbor
+        namespace: harbor
+        tier: infra
+        description: "Harbor — 컨테이너 이미지 레지스트리"
+        slo:
+          availability: "99.5%"
+        dependencies:
+          - name: postgresql
+            type: sync
+            criticality: critical
+            description: "Harbor 메타데이터"
+          - name: minio
+            type: sync
+            criticality: critical
+            description: "이미지 블롭 저장"
+
+      # -----------------------------------------------------------------------
+      # Monitoring 계층
+      # -----------------------------------------------------------------------
+      - name: prometheus
+        namespace: monitoring
+        tier: monitoring
+        description: "Prometheus — 메트릭 수집 및 알림"
+        slo:
+          availability: "99.9%"
+        dependencies: []
+
+      - name: loki
+        namespace: monitoring
+        tier: monitoring
+        description: "Loki — 로그 집계"
+        slo:
+          availability: "99.5%"
+        dependencies: []
+
+      - name: grafana
+        namespace: monitoring
+        tier: monitoring
+        description: "Grafana — 모니터링 대시보드"
+        slo:
+          availability: "99.5%"
+        dependencies:
+          - name: prometheus
+            type: sync
+            criticality: high
+            description: "메트릭 데이터소스"
+          - name: loki
+            type: sync
+            criticality: medium
+            description: "로그 데이터소스"
