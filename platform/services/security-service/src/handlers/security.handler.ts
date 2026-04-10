@@ -227,7 +227,10 @@ export async function removeIpBlocklistHandler(request: FastifyRequest, reply: F
   const { ip } = request.params as { ip: string };
 
   if (!ipBlocklist.has(ip)) {
-    await reply.status(404).send({ error: '차단 목록에 없는 IP입니다' });
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'IP_NOT_FOUND', message: '차단 목록에 없는 IP입니다' },
+    });
     return;
   }
 

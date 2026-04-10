@@ -43,6 +43,15 @@ async function main(): Promise<void> {
   };
   process.on('SIGTERM', () => void shutdown('SIGTERM'));
   process.on('SIGINT', () => void shutdown('SIGINT'));
+
+  // CSAP D-07: 예기치 못한 에러 안전 처리 (무응답 방지)
+  process.on('uncaughtException', (err) => {
+    app.log.fatal({ err }, '치명적 예외 발생 — 서비스 종료');
+    void shutdown('uncaughtException');
+  });
+  process.on('unhandledRejection', (reason) => {
+    app.log.error({ reason }, '처리되지 않은 Promise rejection');
+  });
 }
 
 main().catch((err) => {

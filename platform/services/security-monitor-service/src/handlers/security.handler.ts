@@ -223,7 +223,10 @@ export async function addBlocklistHandler(request: FastifyRequest, reply: Fastif
   const parsed = ipBlockSchema.safeParse(request.body);
 
   if (!parsed.success) {
-    await reply.status(400).send({ error: '입력 검증 실패', details: parsed.error.issues });
+    await reply.status(400).send({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: '입력 검증 실패', details: parsed.error.issues },
+    });
     return;
   }
 
@@ -249,7 +252,10 @@ export async function removeBlocklistHandler(request: FastifyRequest, reply: Fas
   const { ip } = request.params as { ip: string };
 
   if (!ipBlocklist.has(ip)) {
-    await reply.status(404).send({ error: `IP ${ip}이(가) 차단 목록에 없습니다` });
+    await reply.status(404).send({
+      success: false,
+      error: { code: 'IP_NOT_FOUND', message: `IP ${ip}이(가) 차단 목록에 없습니다` },
+    });
     return;
   }
 
