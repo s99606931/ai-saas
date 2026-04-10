@@ -1,0 +1,100 @@
+# Argo Rollouts SLO 기반 자동 롤백 분석
+# Design Ref: MTU-N118
+# Plan SC: FR-N118.2
+# CSAP: D-10 부하 분산, D-06 침해사고 관리
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: slo-based-rollback
+  namespace: saas-system
+  labels:
+    csap.compliance/control: D-10
+    csap.compliance/control-2: D-06
+spec:
+  args:
+    - name: service-name
+    - name: error-rate-threshold
+      value: "1"
+    - name: latency-p95-threshold
+      value: "2000"
+  metrics:
+    # 에러율 SLO 검증 (에러율 < 1%)
+    - name: error-rate-slo
+      interval: 30s
+      count: 10
+      successCondition: result[0] < {{args.error-rate-threshold}}
+      failureLimit: 3
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring:9090
+          query: |
+            sum(rate(http_requests_total{service="{{args.service-name}}",code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{service="{{args.service-name}}"}[5m])) * 100
+
+    # P95 지연시간 SLO 검증 (< 2초)
+    - name: latency-p95-slo
+      interval: 30s
+      count: 10
+      successCondition: result[0] < {{args.latency-p95-threshold}}
+      failureLimit: 3
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring:9090
+          query: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{service="{{args.service-name}}"}[5m])) by (le)
+            ) * 1000
+
+    # 가용성 SLO 검증 (> 99.9%)
+    - name: availability-slo
+      interval: 60s
+      count: 5
+      successCondition: result[0] > 99.9
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring:9090
+          query: |
+            (1 - sum(rate(http_requests_total{service="{{args.service-name}}",code=~"5.."}[10m]))
+            /
+            sum(rate(http_requests_total{service="{{args.service-name}}"}[10m]))) * 100
+---
+# 롤백 Rollout 정책
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: api-gateway-slo-rollout
+  namespace: saas-system
+  labels:
+    csap.compliance/control: D-10
+spec:
+  strategy:
+    canary:
+      canaryService: api-gateway-canary
+      stableService: api-gateway-stable
+      steps:
+        - setWeight: 5
+        - pause: { duration: 2m }
+        - analysis:
+            templates:
+              - templateName: slo-based-rollback
+            args:
+              - name: service-name
+                value: api-gateway
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - analysis:
+            templates:
+              - templateName: slo-based-rollback
+            args:
+              - name: service-name
+                value: api-gateway
+        - setWeight: 50
+        - pause: { duration: 5m }
+        - setWeight: 100
+      # SLO 위반 시 자동 롤백
+      abortScaleDownDelaySeconds: 30
+      antiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution: {}
