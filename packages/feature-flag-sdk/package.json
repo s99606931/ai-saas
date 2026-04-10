@@ -1,0 +1,18 @@
+{
+  "name": "@saas/feature-flag-sdk",
+  "version": "1.0.0",
+  "description": "Feature Flag SDK - Unleash 연동 래퍼 (공공기관 SaaS)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "unleash-client": "^6.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}
