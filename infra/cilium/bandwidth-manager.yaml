@@ -1,0 +1,45 @@
+# Cilium Bandwidth Manager 설정
+# Design Ref: MTU-N98 Design §아키텍처
+# Plan SC: FR-N98.1, FR-N98.2
+#
+# 적용: helm upgrade cilium cilium/cilium -f bandwidth-manager.yaml -n kube-system
+
+bandwidthManager:
+  enabled: true
+  bbr: true  # BBR 혼잡 제어 활성화
+
+# EDT (Earliest Departure Time) 기반 rate limiting
+# tc-based HTB 대비 높은 정확도와 낮은 오버헤드
+bpf:
+  masquerade: true
+  hostLegacyRouting: false  # eBPF host routing 활성화 (최고 성능)
+  tproxy: true
+
+# netkit 디바이스 (Pod 연결 최적화)
+routingMode: native
+ipv4NativeRoutingCIDR: "10.42.0.0/16"
+
+# kube-proxy 대체 (eBPF 기반 로드밸런싱)
+kubeProxyReplacement: true
+
+# 대역폭 관련 sysctl 설정
+sysctlFix:
+  enabled: true
+
+# Hubble 대역폭 메트릭 수집
+hubble:
+  enabled: true
+  metrics:
+    enabled:
+      - dns
+      - drop
+      - tcp
+      - flow
+      - icmp
+      - httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction
+      - "policy:sourceContext=app|workload-name|pod|reserved-identity;destinationContext=app|workload-name|pod|dns|reserved-identity;labelsContext=source_namespace,destination_namespace"
+    dashboards:
+      enabled: true
+      namespace: monitoring
+      annotations:
+        grafana_folder: "Cilium"

@@ -391,3 +391,15 @@
 > MTU-N61 추가 (2026-04-10): CSAP/테넌트/보안 대시보드 3종 — 22 tests ALL PASS | PM Lead (Opus)
 > MTU-N69 추가 (2026-04-10): LogQL 10종 + TraceQL 8종 + Loki 알림 7개 — 15 tests ALL PASS | PM Lead (Opus)
 > MTU-N70 추가 (2026-04-10): 모니터링 E2E 41건 ALL PASS + SLO Error Budget MWMBR 6개 | PM Lead (Opus)
+| **MTU-N89** VictoriaMetrics 장기 메트릭 저장소 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N89-victoriametrics-storage/` |
+| **MTU-N90** Grafana 대시보드 성능 최적화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N90-grafana-performance/` |
+| **MTU-N91** 알림 노이즈 감소 (Grouping/Inhibition) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N91-alert-noise-reduction/` |
+| **MTU-N92** AI 기반 이상 탐지 (Z-Score Adaptive) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N92-anomaly-detection-adaptive/` |
+| **MTU-N93** 예측적 스케일링 메트릭 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N93-predictive-scaling/` |
+| **MTU-N94** Runbook 자동화 (자동 진단) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N94-runbook-automation/` |
+| **MTU-N95** 인시던트 자동 분류 + 에스컬레이션 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N95-incident-classification/` |
+| **MTU-N96** 멀티테넌트 모니터링 격리 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N96-multitenant-monitoring/` |
+| **MTU-N97** FinOps 비용 분석 대시보드 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N97-finops-dashboard/` |
+| **MTU-N98** 모니터링 스택 E2E 통합 테스트 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N98-monitoring-e2e-test/` |
+| **MTU-N99** CSAP D-06 감사 로그 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N99-csap-audit-monitoring/` |
+| **MTU-N100** Round 7 통합 검증 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N100-round7-integration/` |
