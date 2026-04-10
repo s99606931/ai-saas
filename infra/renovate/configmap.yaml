@@ -1,0 +1,172 @@
+# Design Ref: MTU-N79 §renovate.json5 주요 설정
+# Plan SC: FR-N79.2, FR-N79.3, FR-N79.4, FR-N79.5, FR-N79.7
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: renovate-config
+  namespace: renovate-system
+  labels:
+    app.kubernetes.io/name: renovate
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: saas-platform
+data:
+  gitea-endpoint: "http://gitea-http.gitea.svc.cluster.local:3000/api/v1"
+  renovate.json5: |
+    {
+      "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+      "description": "공공기관 SaaS 프레임워크 — Renovate 전역 설정",
+      "platform": "gitea",
+      "extends": [
+        "config:recommended",
+        ":dependencyDashboard",
+        ":semanticCommits"
+      ],
+      "timezone": "Asia/Seoul",
+      "schedule": ["before 6am on monday"],
+      "prHourlyLimit": 5,
+      "prConcurrentLimit": 10,
+      "labels": ["dependency-update", "automated"],
+      "assignees": [],
+      "reviewers": [],
+      "branchPrefix": "renovate/",
+      "commitMessagePrefix": "chore(deps):",
+      "commitMessageAction": "update",
+      "gitAuthor": "Renovate Bot <renovate@saas-platform.local>",
+
+      // Helm Chart 관리
+      "helm-values": {
+        "fileMatch": ["infra/.+/values\\.yaml$"]
+      },
+      "helmv3": {
+        "fileMatch": ["infra/.+/Chart\\.yaml$"]
+      },
+
+      // Kubernetes 매니페스트 관리
+      "kubernetes": {
+        "fileMatch": ["infra/.+\\.yaml$"]
+      },
+
+      // Docker 관리
+      "docker-compose": {
+        "fileMatch": ["docker-compose\\.ya?ml$", "infra/.+/docker-compose\\.ya?ml$"]
+      },
+
+      // 패키지 규칙
+      "packageRules": [
+        // 그룹 1: Helm Chart 업데이트
+        {
+          "description": "Helm Chart 버전 업데이트 그룹화",
+          "matchManagers": ["helm-values", "helmv3"],
+          "groupName": "helm-charts-weekly",
+          "schedule": ["before 6am on monday"],
+          "automerge": false,
+          "labels": ["helm-update"]
+        },
+
+        // 그룹 2: Docker 이미지 패치 — 자동머지
+        {
+          "description": "Docker 이미지 패치 버전 자동머지",
+          "matchManagers": ["dockerfile", "docker-compose", "kubernetes"],
+          "matchDatasources": ["docker"],
+          "matchUpdateTypes": ["patch", "digest"],
+          "automerge": true,
+          "automergeType": "pr",
+          "labels": ["docker-patch", "auto-merge"]
+        },
+
+        // 그룹 3: Docker 이미지 마이너 — 자동머지
+        {
+          "description": "Docker 이미지 마이너 버전 자동머지",
+          "matchManagers": ["dockerfile", "docker-compose", "kubernetes"],
+          "matchDatasources": ["docker"],
+          "matchUpdateTypes": ["minor"],
+          "automerge": true,
+          "automergeType": "pr",
+          "labels": ["docker-minor", "auto-merge"]
+        },
+
+        // 그룹 4: Docker 이미지 메이저 — 수동 리뷰
+        {
+          "description": "Docker 이미지 메이저 버전 수동 리뷰 필수",
+          "matchManagers": ["dockerfile", "docker-compose", "kubernetes"],
+          "matchDatasources": ["docker"],
+          "matchUpdateTypes": ["major"],
+          "automerge": false,
+          "labels": ["docker-major", "manual-review"]
+        },
+
+        // 그룹 5: npm 보안 업데이트 — 즉시 PR
+        {
+          "description": "npm 보안 패치 즉시 PR 생성",
+          "matchManagers": ["npm"],
+          "matchUpdateTypes": ["patch"],
+          "matchCategories": ["security"],
+          "schedule": ["at any time"],
+          "automerge": true,
+          "automergeType": "pr",
+          "labels": ["security-patch", "npm", "urgent"]
+        },
+
+        // 그룹 6: npm minor/major — 주간 그룹 PR
+        {
+          "description": "npm 의존성 주간 그룹 업데이트",
+          "matchManagers": ["npm"],
+          "matchUpdateTypes": ["minor", "major"],
+          "groupName": "npm-deps-weekly",
+          "schedule": ["before 6am on monday"],
+          "automerge": false,
+          "labels": ["npm-update"]
+        },
+
+        // 그룹 7: pip 보안 업데이트 — 즉시 PR
+        {
+          "description": "pip 보안 패치 즉시 PR 생성",
+          "matchManagers": ["pip_requirements", "pip_setup", "pipenv"],
+          "matchCategories": ["security"],
+          "schedule": ["at any time"],
+          "automerge": false,
+          "labels": ["security-patch", "python", "urgent"]
+        },
+
+        // 그룹 8: k3s 관련 — 수동 리뷰
+        {
+          "description": "k3s 관련 컴포넌트 수동 리뷰",
+          "matchPackageNames": ["rancher/k3s", "k3s-io/*"],
+          "automerge": false,
+          "labels": ["k3s-update", "manual-review", "infra-critical"]
+        },
+
+        // 그룹 9: 보안 도구 — 수동 리뷰
+        {
+          "description": "보안 도구 업데이트 수동 리뷰",
+          "matchPackageNames": [
+            "falcosecurity/*",
+            "aquasecurity/trivy*",
+            "sigstore/cosign*",
+            "kyverno/*"
+          ],
+          "automerge": false,
+          "labels": ["security-tooling", "manual-review"]
+        }
+      ],
+
+      // 취약점 알림
+      "vulnerabilityAlerts": {
+        "enabled": true,
+        "labels": ["security-vulnerability", "csap-d12"]
+      },
+
+      // PR 본문 설정
+      "prBodyColumns": [
+        "Package",
+        "Type",
+        "Update",
+        "Change",
+        "Pending"
+      ],
+      "prBodyNotes": [
+        "이 PR은 Renovate Bot이 자동 생성했습니다.",
+        "CSAP D-12 공급망 보안 준수를 위한 의존성 자동 갱신입니다.",
+        "보안 업데이트는 우선 검토해 주십시오."
+      ]
+    }

@@ -1,0 +1,160 @@
+# Design Ref: MTU-N80 §Kyverno 정책 설계
+# Plan SC: FR-N80.3, FR-N80.4, FR-N80.5
+# CSAP D-12: 공급망 보안 — 의존성 출처 검증
+---
+# 정책 1: 허용된 레지스트리만 사용
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: s2c2f-allowed-registries
+  labels:
+    app.kubernetes.io/name: s2c2f
+    app.kubernetes.io/component: supply-chain-policy
+    csap.compliance/control: D-12
+  annotations:
+    policies.kyverno.io/title: "S2C2F P5 - 허용된 레지스트리 강제"
+    policies.kyverno.io/category: "Supply Chain Security"
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      S2C2F Practice 5 (Enforce): 허용된 컨테이너 레지스트리에서만
+      이미지를 가져올 수 있도록 강제합니다.
+      Harbor 내부 미러 레지스트리 사용을 필수화합니다.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: validate-registry
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "saas-*"
+                - "default"
+      validate:
+        message: >-
+          S2C2F P5 위반: 허용되지 않은 레지스트리입니다.
+          Harbor 내부 미러(harbor.saas-platform.local)만 사용하십시오.
+          CSAP D-12 공급망 보안 요건을 준수해야 합니다.
+        pattern:
+          spec:
+            containers:
+              - image: "harbor.saas-platform.local/*"
+            =(initContainers):
+              - image: "harbor.saas-platform.local/*"
+---
+# 정책 2: 이미지 다이제스트 핀닝 강제
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: s2c2f-image-digest-pinning
+  labels:
+    app.kubernetes.io/name: s2c2f
+    app.kubernetes.io/component: supply-chain-policy
+    csap.compliance/control: D-12
+  annotations:
+    policies.kyverno.io/title: "S2C2F P5 - 이미지 다이제스트 핀닝"
+    policies.kyverno.io/category: "Supply Chain Security"
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      S2C2F Practice 5 (Enforce): 프로덕션 네임스페이스에서는
+      이미지 태그 대신 다이제스트(@sha256:) 사용을 강제합니다.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: require-digest
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "saas-prod"
+      validate:
+        message: >-
+          S2C2F P5 위반: 프로덕션 환경에서는 이미지 다이제스트(@sha256:)를
+          사용해야 합니다. 태그 기반 참조는 재현성을 보장하지 않습니다.
+        pattern:
+          spec:
+            containers:
+              - image: "*@sha256:*"
+---
+# 정책 3: SBOM 첨부 검증
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: s2c2f-sbom-attestation
+  labels:
+    app.kubernetes.io/name: s2c2f
+    app.kubernetes.io/component: supply-chain-policy
+    csap.compliance/control: D-12
+  annotations:
+    policies.kyverno.io/title: "S2C2F P3 - SBOM 첨부 검증"
+    policies.kyverno.io/category: "Supply Chain Security"
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      S2C2F Practice 3 (Inventory): 컨테이너 이미지에
+      SBOM attestation이 첨부되어 있는지 검증합니다.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: verify-sbom-attestation
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "saas-*"
+      verifyImages:
+        - imageReferences:
+            - "harbor.saas-platform.local/*"
+          attestations:
+            - type: CycloneDX
+              conditions:
+                - all:
+                    - key: "{{ bomFormat }}"
+                      operator: Equals
+                      value: "CycloneDX"
+---
+# 정책 4: 취약점 심각도 기반 차단
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: s2c2f-vulnerability-gate
+  labels:
+    app.kubernetes.io/name: s2c2f
+    app.kubernetes.io/component: supply-chain-policy
+    csap.compliance/control: D-12
+  annotations:
+    policies.kyverno.io/title: "S2C2F P2 - 취약점 기반 배포 차단"
+    policies.kyverno.io/category: "Supply Chain Security"
+    policies.kyverno.io/severity: critical
+    policies.kyverno.io/description: >-
+      S2C2F Practice 2 (Scan): Critical 또는 High 취약점이
+      있는 이미지의 프로덕션 배포를 차단합니다.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: check-vulnerability-scan
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "saas-prod"
+      validate:
+        message: >-
+          S2C2F P2 위반: 이 이미지에 Critical/High 취약점이
+          발견되었습니다. 취약점을 해결한 후 재배포하십시오.
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.metadata.annotations.\"security.scan/critical\" || '0' }}"
+                operator: GreaterThan
+                value: "0"

@@ -1,0 +1,43 @@
+# Design Ref: MTU-N79 §Session Guide #8
+# Plan SC: FR-N79.1
+# CSAP D-08: 네트워크 접근 통제
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: renovate-bot-netpol
+  namespace: renovate-system
+  labels:
+    app.kubernetes.io/name: renovate
+    app.kubernetes.io/component: network-policy
+    csap.compliance/control: D-08
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: renovate
+  policyTypes:
+    - Ingress
+    - Egress
+  # Ingress: 없음 (CronJob이므로 인바운드 불필요)
+  ingress: []
+  egress:
+    # Gitea 서버 통신 허용
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitea
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: gitea
+      ports:
+        - protocol: TCP
+          port: 3000
+    # DNS 조회 허용
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

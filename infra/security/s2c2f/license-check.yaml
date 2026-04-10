@@ -1,0 +1,97 @@
+# Design Ref: MTU-N80 §라이선스 호환성 검사
+# Plan SC: FR-N80.6
+# CSAP D-12: 오픈소스 라이선스 관리
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: s2c2f-license-policy
+  namespace: security-system
+  labels:
+    app.kubernetes.io/name: s2c2f
+    app.kubernetes.io/component: license-check
+    csap.compliance/control: D-12
+data:
+  license-policy.yaml: |
+    # OSS 라이선스 호환성 검사 정책
+    # S2C2F Practice 3 (Inventory) 연계
+
+    version: "1.0"
+    description: "공공기관 SaaS 프레임워크 OSS 라이선스 정책"
+
+    # SaaS 호환 라이선스 (무조건 허용)
+    allowed:
+      - id: "MIT"
+        name: "MIT License"
+        saas_compatible: true
+      - id: "Apache-2.0"
+        name: "Apache License 2.0"
+        saas_compatible: true
+      - id: "BSD-2-Clause"
+        name: "BSD 2-Clause"
+        saas_compatible: true
+      - id: "BSD-3-Clause"
+        name: "BSD 3-Clause"
+        saas_compatible: true
+      - id: "ISC"
+        name: "ISC License"
+        saas_compatible: true
+      - id: "MPL-2.0"
+        name: "Mozilla Public License 2.0"
+        saas_compatible: true
+        note: "파일 단위 copyleft, SaaS 호환"
+      - id: "CC0-1.0"
+        name: "Creative Commons Zero"
+        saas_compatible: true
+      - id: "Unlicense"
+        name: "Unlicense"
+        saas_compatible: true
+      - id: "0BSD"
+        name: "Zero-Clause BSD"
+        saas_compatible: true
+
+    # 제한적 허용 (개별 검토 필요)
+    restricted:
+      - id: "LGPL-2.1"
+        name: "GNU Lesser GPL 2.1"
+        saas_compatible: "conditional"
+        note: "동적 링크만 허용, 정적 링크 시 GPL 조건 적용"
+        review_required: true
+      - id: "LGPL-3.0"
+        name: "GNU Lesser GPL 3.0"
+        saas_compatible: "conditional"
+        note: "동적 링크만 허용"
+        review_required: true
+      - id: "EPL-1.0"
+        name: "Eclipse Public License 1.0"
+        saas_compatible: "conditional"
+        review_required: true
+      - id: "EPL-2.0"
+        name: "Eclipse Public License 2.0"
+        saas_compatible: "conditional"
+        review_required: true
+
+    # 금지 라이선스 (SaaS 비호환)
+    prohibited:
+      - id: "AGPL-3.0"
+        name: "GNU Affero GPL 3.0"
+        reason: "네트워크 사용 시 소스 공개 의무 → SaaS 비호환"
+      - id: "GPL-2.0"
+        name: "GNU GPL 2.0"
+        reason: "파생물 소스 공개 의무"
+      - id: "GPL-3.0"
+        name: "GNU GPL 3.0"
+        reason: "파생물 소스 공개 의무"
+      - id: "SSPL-1.0"
+        name: "Server Side Public License"
+        reason: "서비스 제공 시 전체 스택 공개 의무"
+      - id: "BSL-1.1"
+        name: "Business Source License"
+        reason: "상용 사용 제한 가능"
+
+    # CI 파이프라인 통합
+    ci_integration:
+      scan_tool: "syft"
+      output_format: "cyclonedx-json"
+      fail_on_prohibited: true
+      warn_on_restricted: true
+      report_path: "reports/license-audit.json"

@@ -1,0 +1,11 @@
+// Design Ref: MTU-N79 §renovate.json5 주요 설정
+// Plan SC: FR-N79.2
+// 리포지토리 레벨 Renovate 설정 (CronJob ConfigMap과 동기화)
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits"
+  ]
+}

@@ -1,0 +1,12 @@
+# Design Ref: MTU-N79 §아키텍처 설계
+# Plan SC: FR-N79.1
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: renovate-system
+  labels:
+    app.kubernetes.io/name: renovate
+    app.kubernetes.io/part-of: saas-platform
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

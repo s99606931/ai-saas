@@ -1,0 +1,46 @@
+# Design Ref: MTU-N79 §CronJob 매니페스트 설계
+# Plan SC: FR-N79.1
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: renovate-bot
+  namespace: renovate-system
+  labels:
+    app.kubernetes.io/name: renovate
+    app.kubernetes.io/component: service-account
+    app.kubernetes.io/part-of: saas-platform
+automountServiceAccountToken: false
+---
+# Renovate Bot은 Gitea API만 사용하므로 K8s RBAC 최소 권한
+# 클러스터 내부 Gitea 서버 통신만 허용
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: renovate-bot
+  namespace: renovate-system
+  labels:
+    app.kubernetes.io/name: renovate
+    app.kubernetes.io/component: rbac
+rules:
+  # ConfigMap 읽기 (설정 파일)
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
+    resourceNames: ["renovate-config"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: renovate-bot
+  namespace: renovate-system
+  labels:
+    app.kubernetes.io/name: renovate
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: renovate-bot
+subjects:
+  - kind: ServiceAccount
+    name: renovate-bot
+    namespace: renovate-system

@@ -1,0 +1,156 @@
+# Design Ref: MTU-N80 §S2C2F 8대 실천항목 매핑
+# Plan SC: FR-N80.1
+# CSAP D-12: 시스템 개발 보안 — 공급망 소비 프레임워크
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: s2c2f-policy
+  namespace: security-system
+  labels:
+    app.kubernetes.io/name: s2c2f
+    app.kubernetes.io/component: supply-chain-policy
+    app.kubernetes.io/part-of: saas-platform
+    csap.compliance/control: D-12
+data:
+  s2c2f-policy.yaml: |
+    # S2C2F (Secure Supply Chain Consumption Framework) 정책
+    # OpenSSF / Microsoft 기반
+    # 공공기관 SaaS 프레임워크 적용
+
+    framework:
+      name: "S2C2F"
+      version: "1.1"
+      target_maturity: "Level 3 - Verified Ingestion"
+      organization: "공공기관 SaaS 프레임워크"
+
+    # 8대 실천항목 정의
+    practices:
+      # P1: 의존성 인입 (Ingest)
+      ingest:
+        level: L1
+        description: "OSS 의존성 자동 감지 및 추적"
+        requirements:
+          - "모든 직접/간접 의존성 자동 감지"
+          - "신규 의존성 도입 시 보안 검토 필수"
+          - "의존성 변경 PR 자동 생성 (Renovate)"
+        tools:
+          - "renovate-bot"
+          - "npm-audit"
+          - "pip-audit"
+        automation: true
+
+      # P2: 취약점 스캔 (Scan)
+      scan:
+        level: L1
+        description: "알려진 취약점 자동 스캔"
+        requirements:
+          - "CI 파이프라인 내 취약점 스캔 필수"
+          - "Critical/High 취약점 발견 시 빌드 차단"
+          - "스캔 결과 감사 로그 기록"
+        tools:
+          - "grype"
+          - "trivy"
+          - "npm-audit"
+        thresholds:
+          block_critical: true
+          block_high: true
+          warn_medium: true
+          ignore_low: false
+
+      # P3: 의존성 목록 (Inventory)
+      inventory:
+        level: L2
+        description: "SBOM 기반 의존성 전수 목록 관리"
+        requirements:
+          - "빌드 시 SBOM 자동 생성 (CycloneDX/SPDX)"
+          - "SBOM을 컨테이너 이미지에 첨부"
+          - "SBOM 데이터베이스 중앙 관리"
+        tools:
+          - "syft"
+          - "cyclonedx-cli"
+        format: "CycloneDX 1.5+"
+
+      # P4: 자동 갱신 (Update)
+      update:
+        level: L2
+        description: "의존성 자동 갱신 및 패치 적용"
+        requirements:
+          - "보안 패치 자동 PR 생성 (Renovate)"
+          - "패치 버전 자동머지 (CI 통과 조건)"
+          - "메이저 버전 수동 리뷰 필수"
+        sla:
+          critical_cve: "4시간"
+          high_cve: "24시간"
+          medium_cve: "1주"
+          low_cve: "1개월"
+
+      # P5: 정책 강제 (Enforce)
+      enforce:
+        level: L3
+        description: "미검증 의존성 사용 차단"
+        requirements:
+          - "허용된 레지스트리만 사용 (Harbor 내부 미러)"
+          - "이미지 서명 필수 검증 (Cosign)"
+          - "SBOM 첨부 필수 검증"
+          - "취약점 기준 미충족 시 배포 차단"
+        policy_engine: "kyverno"
+        admission_control: true
+
+      # P6: 재빌드 (Rebuild)
+      rebuild:
+        level: L3
+        description: "소스에서 재빌드 가능한 환경 보장"
+        requirements:
+          - "모든 빌드 입력 명시적 선언"
+          - "빌드 환경 격리 (Gitea Actions Runner)"
+          - "빌드 재현성 검증 (동일 입력 → 동일 출력)"
+        hermetic_build: true
+
+      # P7: 수정 및 Upstream (Fix+Upstream)
+      fix_upstream:
+        level: L3
+        description: "취약점 발견 시 수정 및 업스트림 기여"
+        requirements:
+          - "CVE 자동 패치 파이프라인"
+          - "패치 적용 후 검증 자동화"
+          - "Upstream PR 생성 지원"
+
+      # P8: 감사 (Audit)
+      audit:
+        level: L2
+        description: "전수 감사 추적 및 보고"
+        requirements:
+          - "모든 의존성 변경 감사 로그 기록"
+          - "SBOM 변경 이력 추적"
+          - "월간 의존성 보안 보고서 자동 생성"
+          - "CSAP D-06 감사 요건 준수"
+        log_format: "jsonl"
+        retention: "365일"
+
+    # 허용 레지스트리
+    allowed_registries:
+      - "harbor.saas-platform.local"
+      - "registry.k3s.local"
+
+    # 라이선스 정책
+    license_policy:
+      allowed:
+        - "MIT"
+        - "Apache-2.0"
+        - "BSD-2-Clause"
+        - "BSD-3-Clause"
+        - "ISC"
+        - "MPL-2.0"
+        - "CC0-1.0"
+        - "Unlicense"
+      restricted:
+        - "LGPL-2.1"
+        - "LGPL-3.0"
+        - "EPL-1.0"
+        - "EPL-2.0"
+      prohibited:
+        - "AGPL-3.0"
+        - "GPL-2.0"
+        - "GPL-3.0"
+        - "SSPL-1.0"
+        - "BSL-1.1"

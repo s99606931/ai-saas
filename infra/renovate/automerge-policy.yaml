@@ -1,0 +1,107 @@
+# Design Ref: MTU-N79 §자동머지 정책
+# Plan SC: FR-N79.7
+# CSAP D-12: 시스템 개발 보안 — 의존성 갱신 정책
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: renovate-automerge-policy
+  namespace: renovate-system
+  labels:
+    app.kubernetes.io/name: renovate
+    app.kubernetes.io/component: policy
+    csap.compliance/control: D-12
+data:
+  policy.yaml: |
+    # 공공기관 SaaS 프레임워크 — 의존성 자동머지 정책
+    # CSAP D-12 시스템 개발 보안 준수
+
+    version: "1.0"
+    description: "Renovate Bot 자동머지 정책"
+
+    # 자동머지 허용 조건
+    automerge:
+      conditions:
+        - ci_pipeline_passed: true
+        - staging_validation_passed: true
+        - no_breaking_changes: true
+        - security_scan_clean: true
+
+    # 업데이트 유형별 정책
+    rules:
+      # 패치 버전 (x.y.Z) — 자동머지
+      patch:
+        severity: [none, low, medium]
+        automerge: true
+        wait_period: "0h"
+        required_approvals: 0
+        conditions:
+          - ci_passed
+
+      # 마이너 버전 (x.Y.z) — 조건부 자동머지
+      minor:
+        severity: [none, low]
+        automerge: true
+        wait_period: "24h"
+        required_approvals: 0
+        conditions:
+          - ci_passed
+          - staging_passed
+
+      # 마이너 버전 (보안 취약점) — 수동 리뷰
+      minor_security:
+        severity: [medium, high, critical]
+        automerge: false
+        required_approvals: 1
+        sla: "48h"
+
+      # 메이저 버전 (X.y.z) — 수동 리뷰 필수
+      major:
+        severity: [any]
+        automerge: false
+        required_approvals: 2
+        sla: "1w"
+        conditions:
+          - ci_passed
+          - staging_passed
+          - team_review
+
+      # 보안 취약점 (critical) — 긴급 대응
+      security_critical:
+        severity: [critical]
+        automerge: false
+        required_approvals: 1
+        sla: "4h"
+        escalation: true
+        notification:
+          - channel: security-team
+          - channel: devops-team
+
+      # 보안 취약점 (high) — 24시간 SLA
+      security_high:
+        severity: [high]
+        automerge: false
+        required_approvals: 1
+        sla: "24h"
+        notification:
+          - channel: security-team
+
+    # 인프라 크리티컬 컴포넌트 — 항상 수동
+    infrastructure_critical:
+      packages:
+        - "k3s*"
+        - "falcosecurity/*"
+        - "aquasecurity/trivy*"
+        - "kyverno/*"
+        - "cert-manager/*"
+        - "cloudnative-pg/*"
+        - "fluxcd/*"
+      automerge: false
+      required_approvals: 2
+
+    # 감사 로그
+    audit:
+      log_all_merges: true
+      log_all_rejections: true
+      retention_days: 365
+      format: jsonl
+      destination: "/var/log/renovate/audit.jsonl"
