@@ -1,0 +1,102 @@
+# Design Ref: MTU-N83 §보안 상관 분석 트리거
+# Plan SC: FR-N83.4
+# CSAP D-06: 실시간 보안 이벤트 상관 분석
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: security-correlation-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: anomaly-detector
+    app.kubernetes.io/component: security-correlation
+    csap.compliance/control: D-06
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: security-event-correlation
+      interval: 1m
+      rules:
+        # 보안 상관 분석 1: Falco 알림 + 네트워크 이상 동시 발생
+        - alert: CorrelatedSecurityEvent_FalcoNetworkAnomaly
+          expr: |
+            (
+              increase(falco_events{priority=~"Critical|Warning"}[10m]) > 3
+            ) and on() (
+              sum(rate(node_network_receive_bytes_total[5m]))
+              > 1.5 * avg_over_time(sum(rate(node_network_receive_bytes_total[5m]))[24h:5m])
+            )
+          for: 2m
+          labels:
+            severity: critical
+            csap_control: D-06
+            category: security-correlation
+          annotations:
+            summary: "상관 보안 이벤트: Falco 알림 + 네트워크 이상"
+            description: >-
+              Falco 보안 알림과 네트워크 트래픽 이상이 동시에 발생했습니다.
+              침해 사고 가능성이 높습니다. 즉시 조사하십시오.
+            runbook: "https://docs.saas-platform.local/runbooks/security-correlation"
+
+        # 보안 상관 분석 2: 인증 실패 급증 + API 에러 급증
+        - alert: CorrelatedSecurityEvent_AuthFailureAPIError
+          expr: |
+            (
+              sum(rate(http_requests_total{status="401"}[5m])) > 0.5
+            ) and on() (
+              sum(rate(http_requests_total{status=~"5.."}[5m])) > 0.1
+            )
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-08
+            category: security-correlation
+          annotations:
+            summary: "상관 보안 이벤트: 인증 실패 + API 에러"
+            description: >-
+              인증 실패(401)와 서버 에러(5xx)가 동시에 급증하고 있습니다.
+              무차별 대입 공격 또는 자격 증명 탈취 시도일 수 있습니다.
+
+        # 보안 상관 분석 3: 비정상 Pod 생성 + 권한 에스컬레이션 시도
+        - alert: CorrelatedSecurityEvent_PodCreationPrivEsc
+          expr: |
+            (
+              rate(kube_pod_created[5m]) > 2 * avg_over_time(rate(kube_pod_created[5m])[24h:5m])
+            ) and on() (
+              increase(falco_events{rule=~".*privilege.*|.*escalat.*"}[10m]) > 0
+            )
+          for: 2m
+          labels:
+            severity: critical
+            csap_control: D-08
+            category: security-correlation
+          annotations:
+            summary: "상관 보안 이벤트: Pod 생성 급증 + 권한 에스컬레이션"
+            description: >-
+              비정상적인 Pod 생성과 권한 에스컬레이션 시도가 동시에
+              감지되었습니다. 클러스터 침해 가능성을 조사하십시오.
+
+        # 보안 상관 분석 4: 데이터 유출 패턴
+        - alert: CorrelatedSecurityEvent_DataExfiltration
+          expr: |
+            (
+              sum(rate(node_network_transmit_bytes_total[5m]))
+              > 2 * avg_over_time(sum(rate(node_network_transmit_bytes_total[5m]))[24h:5m])
+            ) and on() (
+              increase(falco_events{priority=~"Critical|Warning"}[10m]) > 0
+            )
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-06
+            category: security-correlation
+          annotations:
+            summary: "상관 보안 이벤트: 데이터 유출 패턴 감지"
+            description: >-
+              네트워크 전송량 이상 증가와 Falco 보안 이벤트가 동시에
+              발생했습니다. 데이터 유출 가능성을 확인하십시오.
+
+        # 이상 탐지 실행 상태 기록 규칙
+        - record: anomaly:detection_runs_total
+          expr: |
+            count(anomaly_detection_last_run_timestamp) or vector(0)

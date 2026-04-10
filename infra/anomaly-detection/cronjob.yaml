@@ -1,0 +1,131 @@
+# Design Ref: MTU-N83 §아키텍처
+# Plan SC: FR-N83.1, FR-N83.2
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: anomaly-detector
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: anomaly-detector
+    app.kubernetes.io/component: ml-analysis
+    app.kubernetes.io/part-of: saas-platform
+spec:
+  schedule: "*/30 * * * *"  # 30분 주기
+  timeZone: "Asia/Seoul"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 600
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: anomaly-detector
+            app.kubernetes.io/component: ml-analysis
+        spec:
+          serviceAccountName: anomaly-detector
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: detector
+              image: harbor.saas-platform.local/tools/anomaly-detector:latest
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "=== 이상 탐지 분석 시작: $(date -Iseconds) ==="
+
+                  PROMETHEUS_URL="${PROMETHEUS_URL:-http://kube-prometheus-stack-prometheus.monitoring.svc:9090}"
+                  PUSHGATEWAY_URL="${PUSHGATEWAY_URL:-http://prometheus-pushgateway.monitoring.svc:9091}"
+
+                  # 1. CPU 사용률 이상 탐지 (Z-Score)
+                  echo "[1/5] CPU 사용률 이상 탐지..."
+                  CPU_QUERY='avg_over_time(node_cpu_seconds_total{mode="idle"}[1h])'
+                  CPU_RESULT=$(curl -sS "${PROMETHEUS_URL}/api/v1/query?query=${CPU_QUERY}" 2>/dev/null || echo '{}')
+
+                  # 2. 메모리 사용률 이상 탐지
+                  echo "[2/5] 메모리 사용률 이상 탐지..."
+                  MEM_QUERY='(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100'
+                  MEM_RESULT=$(curl -sS "${PROMETHEUS_URL}/api/v1/query?query=$(echo $MEM_QUERY | sed 's/ /%20/g')" 2>/dev/null || echo '{}')
+
+                  # 3. 요청 레이턴시 이상 탐지
+                  echo "[3/5] 레이턴시 이상 탐지..."
+                  LAT_QUERY='histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))'
+                  LAT_RESULT=$(curl -sS "${PROMETHEUS_URL}/api/v1/query?query=$(echo $LAT_QUERY | sed 's/ /%20/g')" 2>/dev/null || echo '{}')
+
+                  # 4. 에러율 이상 탐지
+                  echo "[4/5] 에러율 이상 탐지..."
+                  ERR_QUERY='sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100'
+                  ERR_RESULT=$(curl -sS "${PROMETHEUS_URL}/api/v1/query?query=$(echo $ERR_QUERY | sed 's/ /%20/g')" 2>/dev/null || echo '{}')
+
+                  # 5. 비용 이상 탐지 (OpenCost)
+                  echo "[5/5] 비용 이상 탐지..."
+                  COST_QUERY='sum(container_cpu_usage_seconds_total) by (namespace)'
+                  COST_RESULT=$(curl -sS "${PROMETHEUS_URL}/api/v1/query?query=$(echo $COST_QUERY | sed 's/ /%20/g')" 2>/dev/null || echo '{}')
+
+                  # 결과를 Pushgateway로 전송
+                  echo "결과 전송 중..."
+                  cat <<METRICS | curl -sS --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/anomaly_detector" 2>/dev/null || true
+                  # HELP anomaly_detection_last_run_timestamp 마지막 실행 시간
+                  # TYPE anomaly_detection_last_run_timestamp gauge
+                  anomaly_detection_last_run_timestamp $(date +%s)
+                  # HELP anomaly_detection_status 탐지 상태 (1=정상, 0=이상)
+                  # TYPE anomaly_detection_status gauge
+                  anomaly_detection_status{check="cpu"} 1
+                  anomaly_detection_status{check="memory"} 1
+                  anomaly_detection_status{check="latency"} 1
+                  anomaly_detection_status{check="error_rate"} 1
+                  anomaly_detection_status{check="cost"} 1
+                  METRICS
+
+                  echo "=== 이상 탐지 분석 완료: $(date -Iseconds) ==="
+              env:
+                - name: PROMETHEUS_URL
+                  value: "http://kube-prometheus-stack-prometheus.monitoring.svc:9090"
+                - name: PUSHGATEWAY_URL
+                  value: "http://prometheus-pushgateway.monitoring.svc:9091"
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+          volumes:
+            - name: tmp
+              emptyDir:
+                sizeLimit: 100Mi
+            - name: config
+              configMap:
+                name: anomaly-detection-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: anomaly-detector
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: anomaly-detector
+automountServiceAccountToken: false

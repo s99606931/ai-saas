@@ -1,0 +1,62 @@
+# Design Ref: MTU-N82 §Design Anchor
+# Plan SC: FR-N82.5
+# Pyroscope 모니터링 알림 규칙
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pyroscope-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/component: alerting
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: pyroscope-health
+      interval: 1m
+      rules:
+        # Pyroscope 서버 다운
+        - alert: PyroscopeServerDown
+          expr: |
+            up{job="pyroscope"} == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pyroscope 서버가 다운되었습니다"
+            description: "연속 프로파일링 데이터 수집이 중단될 수 있습니다."
+
+        # Pyroscope 디스크 사용량 높음
+        - alert: PyroscopeHighDiskUsage
+          expr: |
+            (pyroscope_storage_used_bytes / pyroscope_storage_total_bytes) > 0.85
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pyroscope 디스크 사용량 85% 초과"
+            description: "프로파일링 데이터 보존 기간을 줄이거나 디스크를 확장하십시오."
+
+        # Pyroscope 수집 오류율 높음
+        - alert: PyroscopeHighIngestionErrors
+          expr: |
+            rate(pyroscope_ingestion_errors_total[5m]) > 0.1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pyroscope 프로파일 수집 오류율 높음"
+            description: "eBPF 에이전트 또는 Pyroscope 서버 상태를 확인하십시오."
+
+        # Pyroscope 메모리 사용량 높음
+        - alert: PyroscopeHighMemoryUsage
+          expr: |
+            container_memory_working_set_bytes{namespace="pyroscope-system",container="pyroscope"}
+            / container_spec_memory_limit_bytes{namespace="pyroscope-system",container="pyroscope"} > 0.9
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pyroscope 메모리 사용량 90% 초과"
+            description: "OOM Kill 위험이 있습니다. 리소스 제한을 조정하십시오."

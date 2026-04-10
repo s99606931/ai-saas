@@ -1,0 +1,108 @@
+# Design Ref: MTU-N83 §이상 탐지 알고리즘
+# Plan SC: FR-N83.1, FR-N83.2, FR-N83.3
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: anomaly-detection-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: anomaly-detector
+    app.kubernetes.io/component: config
+data:
+  config.yaml: |
+    # 이상 탐지 설정
+    version: "1.0"
+
+    # 탐지 대상 메트릭
+    metrics:
+      # CPU 사용률
+      cpu:
+        query: '100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'
+        method: "zscore"
+        threshold: 3.0  # 3 시그마
+        window: "24h"    # 학습 윈도우
+        alert_name: "AnomalyCPUUsage"
+        severity: "warning"
+
+      # 메모리 사용률
+      memory:
+        query: '(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100'
+        method: "zscore"
+        threshold: 3.0
+        window: "24h"
+        alert_name: "AnomalyMemoryUsage"
+        severity: "warning"
+
+      # 요청 레이턴시 (p99)
+      latency_p99:
+        query: 'histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))'
+        method: "moving_average_deviation"
+        short_window: "1h"
+        long_window: "24h"
+        deviation_threshold: 2.0  # 2배 이상 편차
+        alert_name: "AnomalyLatency"
+        severity: "warning"
+
+      # 에러율 (5xx)
+      error_rate:
+        query: 'sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100'
+        method: "zscore"
+        threshold: 2.5
+        window: "24h"
+        alert_name: "AnomalyErrorRate"
+        severity: "critical"
+
+      # 네트워크 트래픽
+      network_traffic:
+        query: 'sum(rate(node_network_receive_bytes_total[5m]))'
+        method: "zscore"
+        threshold: 3.0
+        window: "168h"  # 1주일 (주간 패턴 반영)
+        alert_name: "AnomalyNetworkTraffic"
+        severity: "warning"
+
+    # 비용 이상 탐지
+    cost_anomaly:
+      # 일일 비용 변동
+      daily:
+        query: 'sum(container_cpu_usage_seconds_total) by (namespace)'
+        comparison: "previous_day"
+        threshold_percent: 50  # 전일 대비 50% 증가
+        alert_name: "AnomalyCostDaily"
+
+      # 주간 비용 변동
+      weekly:
+        query: 'sum(container_memory_working_set_bytes) by (namespace)'
+        comparison: "previous_week"
+        threshold_percent: 30  # 전주 대비 30% 증가
+        alert_name: "AnomalyCostWeekly"
+
+      # 네임스페이스 예산 초과
+      budget:
+        query: 'sum(container_cpu_usage_seconds_total) by (namespace)'
+        budget_configmap: "namespace-budgets"
+        threshold_percent: 80  # 예산 80% 초과 시 경고
+        alert_name: "AnomalyCostBudget"
+
+    # 보안 상관 분석 트리거
+    security_triggers:
+      # 비정상 Pod 생성 빈도
+      pod_creation_spike:
+        query: 'sum(rate(kube_pod_created[5m]))'
+        threshold: 3.0  # Z-Score
+        correlation: ["falco_alerts", "network_traffic"]
+
+      # 비정상 API 호출 패턴
+      api_anomaly:
+        query: 'sum(rate(apiserver_request_total[5m])) by (verb, resource)'
+        threshold: 3.0
+        correlation: ["error_rate", "authentication_failures"]
+
+    # 출력 설정
+    output:
+      pushgateway:
+        url: "http://prometheus-pushgateway.monitoring.svc:9091"
+        job: "anomaly_detector"
+      log:
+        format: "jsonl"
+        path: "/tmp/anomaly-results.jsonl"

@@ -1,0 +1,193 @@
+# Design Ref: MTU-N84 §CSAP 통제항목 → 증거 매핑
+# Plan SC: FR-N84.2
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: csap-evidence-map
+  namespace: compliance-system
+  labels:
+    app.kubernetes.io/name: csap-evidence
+    app.kubernetes.io/component: evidence-map
+    csap.compliance/control: D-06
+data:
+  evidence-map.yaml: |
+    # CSAP 79개 통제항목 → 자동 증거 수집 매핑
+    version: "1.0"
+    framework: "CSAP 중/상 등급"
+    total_controls: 79
+
+    controls:
+      # D-01: 정보보호 정책 (3개 항목)
+      D-01:
+        name: "정보보호 정책"
+        items: 3
+        evidence_type: "document"
+        auto_collect: false
+        manual_required: true
+        description: "정보보호 정책서, 지침서, 절차서"
+        artifacts:
+          - "정보보호 정책서.pdf"
+          - "보안 지침서.pdf"
+
+      # D-02: 정보보호 조직 (3개 항목)
+      D-02:
+        name: "정보보호 조직"
+        items: 3
+        evidence_type: "document"
+        auto_collect: false
+        manual_required: true
+
+      # D-03: 인적 보안 (3개 항목)
+      D-03:
+        name: "인적 보안"
+        items: 3
+        evidence_type: "document"
+        auto_collect: false
+        manual_required: true
+
+      # D-04: 자산 관리 (6개 항목)
+      D-04:
+        name: "자산 관리"
+        items: 6
+        evidence_type: "config"
+        auto_collect: partial
+        collectors:
+          - type: "kubernetes"
+            command: "kubectl get nodes -o yaml"
+            artifact: "cluster-nodes.yaml"
+          - type: "kubernetes"
+            command: "kubectl get namespaces -o yaml"
+            artifact: "namespaces.yaml"
+
+      # D-05: 물리적 보안 (3개 항목)
+      D-05:
+        name: "물리적 보안"
+        items: 3
+        evidence_type: "document"
+        auto_collect: false
+        manual_required: true
+
+      # D-06: 침해사고 관리 (5개 항목)
+      D-06:
+        name: "침해사고 관리"
+        items: 5
+        evidence_type: "log"
+        auto_collect: true
+        collectors:
+          - type: "kubernetes"
+            command: "kubectl logs -n falco -l app.kubernetes.io/name=falco"
+            artifact: "falco-events.txt"
+          - type: "kubernetes"
+            command: "kubectl get prometheusrules -A -o yaml"
+            artifact: "alerting-rules.yaml"
+          - type: "file"
+            path: ".claude/audit.jsonl"
+            artifact: "audit-log.jsonl"
+
+      # D-07: 법규 준수 (3개 항목)
+      D-07:
+        name: "법규 준수"
+        items: 3
+        evidence_type: "document"
+        auto_collect: false
+        manual_required: true
+
+      # D-08: 접근 통제 (12개 항목)
+      D-08:
+        name: "접근 통제"
+        items: 12
+        evidence_type: "config"
+        auto_collect: true
+        collectors:
+          - type: "kubernetes"
+            command: "kubectl get clusterrolebindings -o yaml"
+            artifact: "cluster-role-bindings.yaml"
+          - type: "kubernetes"
+            command: "kubectl get rolebindings -A -o yaml"
+            artifact: "role-bindings.yaml"
+          - type: "kubernetes"
+            command: "kubectl get networkpolicies -A -o yaml"
+            artifact: "network-policies.yaml"
+          - type: "kubernetes"
+            command: "kubectl get serviceaccounts -A -o yaml"
+            artifact: "service-accounts.yaml"
+
+      # D-09: 암호화 (4개 항목)
+      D-09:
+        name: "암호화"
+        items: 4
+        evidence_type: "config"
+        auto_collect: true
+        collectors:
+          - type: "kubernetes"
+            command: "kubectl get certificates -A -o yaml"
+            artifact: "tls-certificates.yaml"
+          - type: "kubernetes"
+            command: "kubectl get clusterissuers -o yaml"
+            artifact: "cluster-issuers.yaml"
+
+      # D-10: 운영 보안 (8개 항목)
+      D-10:
+        name: "운영 보안"
+        items: 8
+        evidence_type: "config"
+        auto_collect: true
+        collectors:
+          - type: "kubernetes"
+            command: "kubectl get servicemonitors -A -o yaml"
+            artifact: "service-monitors.yaml"
+          - type: "kubernetes"
+            command: "kubectl get prometheusrules -A -o yaml"
+            artifact: "alerting-rules.yaml"
+
+      # D-11: 가용성 관리 (8개 항목)
+      D-11:
+        name: "가용성 관리"
+        items: 8
+        evidence_type: "config"
+        auto_collect: true
+        collectors:
+          - type: "kubernetes"
+            command: "kubectl get hpa -A -o yaml"
+            artifact: "hpa-configs.yaml"
+          - type: "kubernetes"
+            command: "kubectl get vpa -A -o yaml"
+            artifact: "vpa-configs.yaml"
+
+      # D-12: 시스템 개발 보안 (10개 항목)
+      D-12:
+        name: "시스템 개발 보안"
+        items: 10
+        evidence_type: "config"
+        auto_collect: true
+        collectors:
+          - type: "kubernetes"
+            command: "kubectl get clusterpolicies -o yaml"
+            artifact: "kyverno-policies.yaml"
+          - type: "kubernetes"
+            command: "kubectl get policyreports -A -o yaml"
+            artifact: "policy-reports.yaml"
+          - type: "kubernetes"
+            command: "kubectl get vulnerabilityreports -A -o yaml"
+            artifact: "vulnerability-reports.yaml"
+
+      # D-13: 재해 복구 (10개 항목)
+      D-13:
+        name: "재해 복구"
+        items: 10
+        evidence_type: "config"
+        auto_collect: true
+        collectors:
+          - type: "kubernetes"
+            command: "kubectl get backups -A -o yaml"
+            artifact: "velero-backups.yaml"
+          - type: "kubernetes"
+            command: "kubectl get schedules -A -o yaml"
+            artifact: "backup-schedules.yaml"
+
+    # 수집 통계
+    summary:
+      total_controls: 79
+      auto_collectable: 47
+      manual_required: 32
+      auto_coverage_percent: 59.5

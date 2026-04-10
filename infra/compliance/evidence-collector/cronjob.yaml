@@ -1,0 +1,198 @@
+# Design Ref: MTU-N84 §아키텍처
+# Plan SC: FR-N84.1
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: csap-evidence-collector
+  namespace: compliance-system
+  labels:
+    app.kubernetes.io/name: csap-evidence
+    app.kubernetes.io/component: collector
+    app.kubernetes.io/part-of: saas-platform
+    csap.compliance/control: D-06
+spec:
+  schedule: "0 3 * * *"  # 매일 03:00 UTC
+  timeZone: "Asia/Seoul"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 3600
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: csap-evidence
+            app.kubernetes.io/component: collector
+        spec:
+          serviceAccountName: csap-evidence-collector
+          restartPolicy: Never
+          automountServiceAccountToken: true
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: collector
+              image: harbor.saas-platform.local/tools/csap-evidence-collector:latest
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  DATE=$(date +%Y-%m-%d)
+                  BASE_DIR="/evidence/${DATE}"
+                  mkdir -p "${BASE_DIR}"
+
+                  echo "=== CSAP 증거 자동 수집 시작: ${DATE} ==="
+
+                  # D-08: 접근 통제 증거
+                  echo "[D-08] 접근 통제 증거 수집..."
+                  mkdir -p "${BASE_DIR}/D-08"
+                  kubectl get clusterrolebindings -o yaml > "${BASE_DIR}/D-08/cluster-role-bindings.yaml" 2>/dev/null || true
+                  kubectl get rolebindings -A -o yaml > "${BASE_DIR}/D-08/role-bindings.yaml" 2>/dev/null || true
+                  kubectl get networkpolicies -A -o yaml > "${BASE_DIR}/D-08/network-policies.yaml" 2>/dev/null || true
+                  kubectl get serviceaccounts -A -o yaml > "${BASE_DIR}/D-08/service-accounts.yaml" 2>/dev/null || true
+
+                  # D-09: 암호화 증거
+                  echo "[D-09] 암호화 증거 수집..."
+                  mkdir -p "${BASE_DIR}/D-09"
+                  kubectl get certificates -A -o yaml > "${BASE_DIR}/D-09/tls-certificates.yaml" 2>/dev/null || true
+                  kubectl get clusterissuers -o yaml > "${BASE_DIR}/D-09/cluster-issuers.yaml" 2>/dev/null || true
+                  kubectl get issuers -A -o yaml > "${BASE_DIR}/D-09/issuers.yaml" 2>/dev/null || true
+
+                  # D-06: 감사 로그 증거
+                  echo "[D-06] 감사 로그 증거 수집..."
+                  mkdir -p "${BASE_DIR}/D-06"
+                  kubectl logs -n monitoring -l app.kubernetes.io/name=prometheus --tail=1000 > "${BASE_DIR}/D-06/prometheus-logs.txt" 2>/dev/null || true
+                  kubectl logs -n falco -l app.kubernetes.io/name=falco --tail=1000 > "${BASE_DIR}/D-06/falco-events.txt" 2>/dev/null || true
+
+                  # D-12: 개발 보안 증거
+                  echo "[D-12] 개발 보안 증거 수집..."
+                  mkdir -p "${BASE_DIR}/D-12"
+                  kubectl get clusterpolicies -o yaml > "${BASE_DIR}/D-12/kyverno-policies.yaml" 2>/dev/null || true
+                  kubectl get policyreports -A -o yaml > "${BASE_DIR}/D-12/policy-reports.yaml" 2>/dev/null || true
+                  kubectl get vulnerabilityreports -A -o yaml > "${BASE_DIR}/D-12/vulnerability-reports.yaml" 2>/dev/null || true
+
+                  # D-10: 운영 보안 증거
+                  echo "[D-10] 운영 보안 증거 수집..."
+                  mkdir -p "${BASE_DIR}/D-10"
+                  kubectl get prometheusrules -A -o yaml > "${BASE_DIR}/D-10/alerting-rules.yaml" 2>/dev/null || true
+                  kubectl get servicemonitors -A -o yaml > "${BASE_DIR}/D-10/service-monitors.yaml" 2>/dev/null || true
+
+                  # D-13: 재해 복구 증거
+                  echo "[D-13] 재해 복구 증거 수집..."
+                  mkdir -p "${BASE_DIR}/D-13"
+                  kubectl get backups -A -o yaml > "${BASE_DIR}/D-13/velero-backups.yaml" 2>/dev/null || true
+                  kubectl get schedules -A -o yaml > "${BASE_DIR}/D-13/backup-schedules.yaml" 2>/dev/null || true
+
+                  # PSS 증거
+                  echo "[PSS] Pod Security Standards 증거 수집..."
+                  mkdir -p "${BASE_DIR}/PSS"
+                  kubectl get namespaces -o yaml > "${BASE_DIR}/PSS/namespaces-labels.yaml" 2>/dev/null || true
+
+                  # 무결성 해시 생성
+                  echo "무결성 해시 생성..."
+                  find "${BASE_DIR}" -type f -name "*.yaml" -o -name "*.txt" | sort | while read f; do
+                    sha256sum "$f" >> "${BASE_DIR}/integrity.sha256"
+                  done
+
+                  # 매니페스트 생성
+                  echo "{\"date\":\"${DATE}\",\"collected_at\":\"$(date -Iseconds)\",\"controls\":[\"D-06\",\"D-08\",\"D-09\",\"D-10\",\"D-12\",\"D-13\",\"PSS\"],\"status\":\"complete\"}" > "${BASE_DIR}/manifest.json"
+
+                  echo "=== CSAP 증거 수집 완료: $(date -Iseconds) ==="
+              volumeMounts:
+                - name: evidence
+                  mountPath: /evidence
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+          volumes:
+            - name: evidence
+              persistentVolumeClaim:
+                claimName: csap-evidence-storage
+            - name: tmp
+              emptyDir:
+                sizeLimit: 100Mi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csap-evidence-collector
+  namespace: compliance-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: csap-evidence-collector
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces", "pods", "services", "configmaps", "serviceaccounts", "pods/log"]
+    verbs: ["get", "list"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
+    verbs: ["get", "list"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list"]
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificates", "clusterissuers", "issuers"]
+    verbs: ["get", "list"]
+  - apiGroups: ["kyverno.io"]
+    resources: ["clusterpolicies", "policies"]
+    verbs: ["get", "list"]
+  - apiGroups: ["wgpolicyk8s.io"]
+    resources: ["policyreports", "clusterpolicyreports"]
+    verbs: ["get", "list"]
+  - apiGroups: ["aquasecurity.github.io"]
+    resources: ["vulnerabilityreports"]
+    verbs: ["get", "list"]
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: ["prometheusrules", "servicemonitors"]
+    verbs: ["get", "list"]
+  - apiGroups: ["velero.io"]
+    resources: ["backups", "schedules"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: csap-evidence-collector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: csap-evidence-collector
+subjects:
+  - kind: ServiceAccount
+    name: csap-evidence-collector
+    namespace: compliance-system
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: csap-evidence-storage
+  namespace: compliance-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 20Gi

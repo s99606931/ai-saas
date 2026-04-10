@@ -1,0 +1,111 @@
+# Design Ref: MTU-N81 §SLA 정책
+# Plan SC: FR-N81.6
+# CSAP D-06: CVE 알림 규칙
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: vuln-patch-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: vuln-patch
+    app.kubernetes.io/component: alerting
+    csap.compliance/control: D-06
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: vulnerability-patch-sla
+      interval: 5m
+      rules:
+        # Critical CVE 탐지 — 즉시 알림
+        - alert: CriticalCVEDetected
+          expr: |
+            sum by (image_repository) (
+              trivy_vulnerability_id{severity="Critical"}
+            ) > 0
+          for: 0m
+          labels:
+            severity: critical
+            csap_control: D-12
+            sla: "4h"
+          annotations:
+            summary: "Critical CVE 발견 — 즉시 패치 필요"
+            description: >-
+              이미지 {{ $labels.image_repository }}에서 Critical 취약점이
+              발견되었습니다. MTTR 목표: 4시간. 자동 리빌드 트리거됩니다.
+            runbook: "https://docs.saas-platform.local/runbooks/cve-critical"
+
+        # High CVE 탐지 — 4시간 내 알림
+        - alert: HighCVEDetected
+          expr: |
+            sum by (image_repository) (
+              trivy_vulnerability_id{severity="High"}
+            ) > 0
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-12
+            sla: "24h"
+          annotations:
+            summary: "High CVE 발견 — 24시간 내 패치 필요"
+            description: >-
+              이미지 {{ $labels.image_repository }}에서 High 취약점이
+              발견되었습니다. MTTR 목표: 24시간.
+            runbook: "https://docs.saas-platform.local/runbooks/cve-high"
+
+        # SLA 위반 — Critical CVE 미패치
+        - alert: CriticalCVESLABreach
+          expr: |
+            (time() - trivy_vulnerability_first_detected{severity="Critical"}) > 14400
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-06
+          annotations:
+            summary: "Critical CVE SLA 위반 (4시간 초과)"
+            description: >-
+              Critical 취약점이 4시간 이상 미패치 상태입니다.
+              즉시 에스컬레이션이 필요합니다. CSAP D-06 위반 가능성.
+            runbook: "https://docs.saas-platform.local/runbooks/sla-breach"
+
+        # SLA 위반 — High CVE 미패치
+        - alert: HighCVESLABreach
+          expr: |
+            (time() - trivy_vulnerability_first_detected{severity="High"}) > 86400
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-06
+          annotations:
+            summary: "High CVE SLA 위반 (24시간 초과)"
+            description: >-
+              High 취약점이 24시간 이상 미패치 상태입니다.
+              에스컬레이션이 필요합니다.
+
+        # 자동 패치 파이프라인 실패
+        - alert: VulnPatchPipelineFailure
+          expr: |
+            kube_job_status_failed{namespace="security-system",job_name=~"vuln-scan-rebuild.*"} > 0
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-12
+          annotations:
+            summary: "취약점 자동 패치 파이프라인 실패"
+            description: >-
+              CVE 자동 패치 파이프라인이 실패했습니다.
+              수동 개입이 필요합니다.
+
+        # 취약점 총 개수 임계값
+        - alert: HighVulnerabilityCount
+          expr: |
+            sum(trivy_image_vulnerabilities{severity=~"Critical|High"}) > 10
+          for: 15m
+          labels:
+            severity: warning
+            csap_control: D-12
+          annotations:
+            summary: "Critical/High 취약점 10개 초과"
+            description: >-
+              클러스터 전체에서 Critical/High 취약점이 10개를 초과했습니다.
+              즉시 패치 우선순위를 결정하십시오.

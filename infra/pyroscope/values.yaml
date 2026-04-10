@@ -1,0 +1,117 @@
+# Design Ref: MTU-N82 §아키텍처
+# Plan SC: FR-N82.1, FR-N82.5
+# Grafana Pyroscope Helm Chart Values — Monolithic 모드
+
+# -- 배포 모드
+pyroscope:
+  # Monolithic 모드 (단일 노드 k3s 최적화)
+  structuredConfig:
+    storage:
+      backend: filesystem
+      filesystem:
+        dir: /data/pyroscope
+    limits:
+      max_query_length: 24h
+      max_query_lookback: 168h  # 7일
+    compactor:
+      blocks_retention_period: 168h  # 7일 보존
+
+  # 리소스 제한
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  # 보안 컨텍스트 (PSS Restricted 준수)
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    seccompProfile:
+      type: RuntimeDefault
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+
+  # 영구 스토리지
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: local-path
+    accessModes:
+      - ReadWriteOnce
+
+  # Pod 라벨
+  podLabels:
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/component: profiling-server
+    app.kubernetes.io/part-of: saas-platform
+
+  # 서비스
+  service:
+    type: ClusterIP
+    port: 4040
+
+  # Ingress (내부 전용)
+  ingress:
+    enabled: false
+
+# -- Grafana Alloy eBPF 프로파일러
+alloy:
+  enabled: true
+  alloy:
+    configMap:
+      content: |
+        discovery.kubernetes "pods" {
+          role = "pod"
+        }
+
+        discovery.kubernetes "nodes" {
+          role = "node"
+        }
+
+        pyroscope.ebpf "instance" {
+          forward_to = [pyroscope.write.endpoint.receiver]
+          targets_only = true
+          default_target = {"service_name" = "unspecified"}
+          targets = discovery.kubernetes.pods.targets
+        }
+
+        pyroscope.write "endpoint" {
+          endpoint {
+            url = "http://pyroscope.pyroscope-system.svc.cluster.local:4040"
+          }
+        }
+
+    # DaemonSet 리소스
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+    # eBPF는 호스트 커널 접근 필요
+    securityContext:
+      privileged: true  # eBPF 프로파일링에 필수
+      runAsUser: 0
+
+    # 호스트 PID 네임스페이스 접근 (eBPF 필수)
+    hostPID: true
+
+# -- 네임스페이스
+namespace: pyroscope-system
+
+# -- 글로벌 라벨
+commonLabels:
+  csap.compliance/control: D-12
+  n2sf.data/grade: O

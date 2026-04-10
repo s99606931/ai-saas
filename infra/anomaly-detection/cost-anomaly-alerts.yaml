@@ -1,0 +1,97 @@
+# Design Ref: MTU-N83 §비용 이상 탐지
+# Plan SC: FR-N83.3
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cost-anomaly-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: anomaly-detector
+    app.kubernetes.io/component: cost-alerting
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: cost-anomaly-detection
+      interval: 5m
+      rules:
+        # 일일 CPU 비용 급증
+        - alert: CostAnomalyCPUDailySpike
+          expr: |
+            (
+              sum(rate(container_cpu_usage_seconds_total{namespace=~"saas-.*"}[1h]))
+              /
+              sum(avg_over_time(rate(container_cpu_usage_seconds_total{namespace=~"saas-.*"}[1h])[24h:1h]))
+            ) > 1.5
+          for: 30m
+          labels:
+            severity: warning
+            category: finops
+          annotations:
+            summary: "CPU 비용 일일 이상 증가 (50%+)"
+            description: >-
+              SaaS 네임스페이스의 CPU 사용량이 전일 평균 대비 50% 이상
+              증가했습니다. 비정상 워크로드를 확인하십시오.
+            runbook: "https://docs.saas-platform.local/runbooks/cost-anomaly"
+
+        # 메모리 비용 급증
+        - alert: CostAnomalyMemoryDailySpike
+          expr: |
+            (
+              sum(container_memory_working_set_bytes{namespace=~"saas-.*"})
+              /
+              sum(avg_over_time(container_memory_working_set_bytes{namespace=~"saas-.*"}[24h:1h]))
+            ) > 1.5
+          for: 30m
+          labels:
+            severity: warning
+            category: finops
+          annotations:
+            summary: "메모리 비용 일일 이상 증가 (50%+)"
+            description: >-
+              SaaS 네임스페이스의 메모리 사용량이 전일 평균 대비 50% 이상
+              증가했습니다. 메모리 누수를 확인하십시오.
+
+        # 네임스페이스 리소스 쿼터 임박
+        - alert: NamespaceResourceQuotaNearLimit
+          expr: |
+            (
+              kube_resourcequota{type="used"}
+              / kube_resourcequota{type="hard"}
+            ) > 0.8
+          for: 15m
+          labels:
+            severity: warning
+            category: finops
+          annotations:
+            summary: "네임스페이스 리소스 쿼터 80% 초과"
+            description: >-
+              네임스페이스 {{ $labels.namespace }}의 리소스 쿼터
+              {{ $labels.resource }}가 80%를 초과했습니다.
+
+        # Pod 수 이상 증가
+        - alert: AnomalyPodCountSpike
+          expr: |
+            (
+              count(kube_pod_info{namespace=~"saas-.*"})
+              /
+              avg_over_time(count(kube_pod_info{namespace=~"saas-.*"})[24h:1h])
+            ) > 1.5
+          for: 15m
+          labels:
+            severity: warning
+            category: finops
+          annotations:
+            summary: "Pod 수 이상 증가 (50%+)"
+            description: "SaaS 네임스페이스의 Pod 수가 전일 평균 대비 50% 이상 증가했습니다."
+
+        # 이상 탐지 CronJob 실패
+        - alert: AnomalyDetectorJobFailed
+          expr: |
+            kube_job_status_failed{namespace="monitoring",job_name=~"anomaly-detector.*"} > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "이상 탐지 CronJob 실패"
+            description: "ML 이상 탐지 분석 작업이 실패했습니다. 수동 실행을 검토하십시오."

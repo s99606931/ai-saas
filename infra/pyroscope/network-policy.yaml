@@ -1,0 +1,51 @@
+# Design Ref: MTU-N82 §Design Anchor
+# Plan SC: FR-N82.6
+# CSAP D-08: 네트워크 접근 통제
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pyroscope-server-netpol
+  namespace: pyroscope-system
+  labels:
+    app.kubernetes.io/name: pyroscope
+    app.kubernetes.io/component: network-policy
+    csap.compliance/control: D-08
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: pyroscope
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Grafana Alloy eBPF 에이전트에서 프로파일 수신
+    - from:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alloy
+      ports:
+        - protocol: TCP
+          port: 4040
+    # Grafana에서 쿼리 요청
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
+      ports:
+        - protocol: TCP
+          port: 4040
+  egress:
+    # DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

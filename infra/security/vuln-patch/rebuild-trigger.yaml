@@ -1,0 +1,152 @@
+# Design Ref: MTU-N81 §아키텍처
+# Plan SC: FR-N81.2
+# 취약점 기반 이미지 자동 리빌드 CronJob
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vuln-scan-rebuild-trigger
+  namespace: security-system
+  labels:
+    app.kubernetes.io/name: vuln-patch
+    app.kubernetes.io/component: rebuild-trigger
+    csap.compliance/control: D-12
+spec:
+  schedule: "0 */4 * * *"  # 4시간마다 실행
+  timeZone: "Asia/Seoul"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1800
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: vuln-patch
+            app.kubernetes.io/component: rebuild-trigger
+        spec:
+          serviceAccountName: vuln-patch-scanner
+          restartPolicy: Never
+          automountServiceAccountToken: true
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: scanner
+              image: harbor.saas-platform.local/tools/vuln-scanner:latest
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "=== CVE 스캔 및 리빌드 트리거 ==="
+                  echo "시작: $(date -Iseconds)"
+
+                  # 1. VulnerabilityReport CRD에서 Critical/High 취약점 조회
+                  echo "[1/4] VulnerabilityReport 조회..."
+                  kubectl get vulnerabilityreports -A \
+                    -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}: critical={.report.summary.criticalCount} high={.report.summary.highCount}{"\n"}{end}' \
+                    > /tmp/vuln-summary.txt 2>/dev/null || true
+
+                  # 2. Critical/High 취약점이 있는 이미지 식별
+                  echo "[2/4] 취약 이미지 식별..."
+                  CRITICAL_IMAGES=$(grep -E "critical=[1-9]" /tmp/vuln-summary.txt | wc -l)
+                  HIGH_IMAGES=$(grep -E "high=[1-9]" /tmp/vuln-summary.txt | wc -l)
+
+                  echo "Critical 취약점 이미지: ${CRITICAL_IMAGES}"
+                  echo "High 취약점 이미지: ${HIGH_IMAGES}"
+
+                  # 3. 패치 가용 여부 확인 및 리빌드 트리거
+                  echo "[3/4] 리빌드 트리거 판단..."
+                  if [ "$CRITICAL_IMAGES" -gt 0 ]; then
+                    echo "CRITICAL 취약점 발견 — 즉시 리빌드 트리거"
+                    # Gitea webhook으로 리빌드 요청
+                    curl -sS -X POST \
+                      -H "Authorization: token ${GITEA_TOKEN}" \
+                      -H "Content-Type: application/json" \
+                      -d '{"ref":"main","inputs":{"trigger":"cve-critical","scan_date":"'"$(date -Iseconds)"'"}}' \
+                      "${GITEA_URL}/api/v1/repos/saas-org/saas-platform/actions/workflows/security-rebuild.yaml/dispatches" \
+                      || echo "WARNING: 리빌드 트리거 실패"
+                  fi
+
+                  # 4. 감사 로그 기록
+                  echo "[4/4] 감사 로그 기록..."
+                  echo "{\"timestamp\":\"$(date -Iseconds)\",\"action\":\"vuln-scan\",\"critical\":${CRITICAL_IMAGES},\"high\":${HIGH_IMAGES},\"status\":\"completed\"}"
+
+                  echo "=== 스캔 완료: $(date -Iseconds) ==="
+              env:
+                - name: GITEA_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vuln-patch-config
+                      key: gitea-url
+                - name: GITEA_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: vuln-patch-gitea-token
+                      key: token
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 300m
+                  memory: 256Mi
+          volumes:
+            - name: tmp
+              emptyDir:
+                sizeLimit: 100Mi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vuln-patch-scanner
+  namespace: security-system
+  labels:
+    app.kubernetes.io/name: vuln-patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vuln-patch-scanner
+  labels:
+    app.kubernetes.io/name: vuln-patch
+rules:
+  - apiGroups: ["aquasecurity.github.io"]
+    resources: ["vulnerabilityreports"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vuln-patch-scanner
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vuln-patch-scanner
+subjects:
+  - kind: ServiceAccount
+    name: vuln-patch-scanner
+    namespace: security-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vuln-patch-config
+  namespace: security-system
+data:
+  gitea-url: "http://gitea-http.gitea.svc.cluster.local:3000"

@@ -1,0 +1,126 @@
+# Design Ref: MTU-N81 §아키텍처
+# Plan SC: FR-N81.1, FR-N81.2, FR-N81.3
+# CSAP D-12: 취약점 자동 패치 워크플로우
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vuln-patch-workflow
+  namespace: security-system
+  labels:
+    app.kubernetes.io/name: vuln-patch
+    app.kubernetes.io/component: workflow
+    csap.compliance/control: D-12
+data:
+  workflow.yaml: |
+    # 취약점 자동 패치 파이프라인 워크플로우
+    # S2C2F P7 (Fix+Upstream) 구현
+
+    name: "CVE 자동 패치 파이프라인"
+    version: "1.0"
+    trigger:
+      - source: "trivy-operator"
+        event: "VulnerabilityReport"
+        filter:
+          severity: ["Critical", "High"]
+      - source: "grype-ci"
+        event: "ScanComplete"
+        filter:
+          severity: ["Critical", "High"]
+
+    stages:
+      # Stage 1: CVE 분류 및 영향 분석
+      detect:
+        name: "CVE 탐지 및 분류"
+        actions:
+          - parse_vulnerability_report
+          - classify_severity
+          - identify_affected_images
+          - check_exploit_availability
+        timeout: "5m"
+
+      # Stage 2: 패치 가용성 확인
+      assess:
+        name: "패치 가용성 평가"
+        actions:
+          - check_upstream_fix
+          - check_base_image_update
+          - evaluate_patch_options:
+              - base_image_upgrade
+              - package_update
+              - workaround_config
+          - estimate_risk_level
+        timeout: "10m"
+
+      # Stage 3: 자동 리빌드
+      rebuild:
+        name: "이미지 자동 리빌드"
+        conditions:
+          - patch_available: true
+          - auto_patch_eligible: true
+        actions:
+          - create_patch_branch:
+              prefix: "security/cve-"
+          - update_dependency_version
+          - trigger_build_pipeline
+          - sign_image_cosign
+          - generate_sbom
+          - generate_provenance
+        timeout: "30m"
+
+      # Stage 4: 스테이징 검증
+      verify:
+        name: "스테이징 환경 검증"
+        actions:
+          - deploy_to_staging
+          - run_smoke_tests
+          - run_security_scan
+          - verify_cve_resolved
+          - run_e2e_tests
+        timeout: "30m"
+        rollback_on_failure: true
+
+      # Stage 5: PR 생성 및 배포
+      deploy:
+        name: "프로덕션 배포 준비"
+        conditions:
+          - staging_tests_passed: true
+          - security_scan_clean: true
+        actions:
+          - create_pull_request:
+              title: "fix(security): CVE-{cve_id} 패치 적용"
+              labels: ["security-patch", "automated"]
+              body_template: "security-patch-pr.md"
+          - request_review:
+              critical: "immediate"
+              high: "within_4h"
+          - auto_merge:
+              enabled: true
+              conditions:
+                - ci_passed
+                - review_approved
+        timeout: "15m"
+
+      # Stage 6: 감사 기록
+      audit:
+        name: "감사 로그 기록"
+        actions:
+          - log_patch_event:
+              format: "jsonl"
+              fields:
+                - cve_id
+                - severity
+                - affected_images
+                - patch_type
+                - detection_time
+                - patch_time
+                - mttr
+                - status
+          - update_vulnerability_dashboard
+          - send_notification
+        always_run: true
+
+    # 실패 시 에스컬레이션
+    on_failure:
+      - notify_security_team
+      - create_incident_ticket
+      - log_failure_audit
