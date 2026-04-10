@@ -1,0 +1,61 @@
+# Cert-Manager 인증서 수명주기 알림 규칙
+# Design Ref: MTU-N226
+# Plan SC: FR-N226.3
+# CSAP: D-09 암호화
+---
+groups:
+  - name: certmanager_lifecycle_alerts
+    rules:
+      - alert: CertExpiring30Days
+        expr: certmanager:cert:expiry_days < 30 and certmanager:cert:expiry_days > 7
+        for: 1h
+        labels: { severity: warning, component: certmanager, csap: D-09 }
+        annotations:
+          summary: "인증서 만료 30일 이내"
+          description: "{{ $labels.name }} ({{ $labels.namespace }}) 만료까지 {{ $value | printf \"%.0f\" }}일"
+          runbook: "1. cert-manager 갱신 상태 확인 2. Issuer 유효성 점검"
+
+      - alert: CertExpiring7Days
+        expr: certmanager:cert:expiry_days < 7
+        for: 30m
+        labels: { severity: critical, component: certmanager, csap: D-09 }
+        annotations:
+          summary: "인증서 만료 7일 이내 -- 긴급"
+          description: "{{ $labels.name }} ({{ $labels.namespace }}) 만료까지 {{ $value | printf \"%.0f\" }}일"
+          runbook: "1. 즉시 수동 갱신 2. ACME 계정 확인 3. DNS 검증 상태 점검"
+
+      - alert: CertNotReady
+        expr: certmanager:cert:not_ready_count > 0
+        for: 10m
+        labels: { severity: warning, component: certmanager }
+        annotations:
+          summary: "NotReady 인증서 존재"
+          description: "{{ $value }}개 인증서 NotReady 상태"
+          runbook: "1. kubectl describe certificate 확인 2. Issuer 상태 점검 3. 이벤트 로그 분석"
+
+      - alert: CertACMEOrderFailing
+        expr: certmanager:acme:order_success_rate < 80
+        for: 15m
+        labels: { severity: warning, component: certmanager }
+        annotations:
+          summary: "ACME Order 성공률 저하"
+          description: "ACME Order 성공률 {{ $value | printf \"%.1f\" }}%"
+          runbook: "1. ACME 계정 유효성 확인 2. DNS/HTTP 챌린지 확인 3. rate limit 확인"
+
+      - alert: CertACMEChallengePending
+        expr: certmanager:acme:challenge_pending > 3
+        for: 15m
+        labels: { severity: warning, component: certmanager }
+        annotations:
+          summary: "ACME 챌린지 대기 과다"
+          description: "{{ $value }}개 챌린지 대기 중"
+          runbook: "1. DNS 전파 확인 2. HTTP 엔드포인트 접근성 3. 방화벽 설정 점검"
+
+      - alert: CertIssuerNotReady
+        expr: certmanager:issuer:ready_count == 0
+        for: 5m
+        labels: { severity: critical, component: certmanager, csap: D-09 }
+        annotations:
+          summary: "모든 Issuer NotReady"
+          description: "Ready 상태 Issuer 없음. 인증서 발급 불가."
+          runbook: "1. ClusterIssuer 상태 확인 2. ACME 서버 연결 점검 3. Secret 유효성 확인"

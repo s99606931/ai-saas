@@ -1,0 +1,129 @@
+{
+  "annotations": { "list": [] },
+  "description": "Round 23 통합 점검 대시보드 (MTU-N218~N227) (Design Ref: MTU-N228)",
+  "editable": false,
+  "graphTooltip": 2,
+  "id": null,
+  "uid": "round23-integration-n228",
+  "title": "Round 23 통합 점검",
+  "tags": ["round23", "integration", "n228"],
+  "timezone": "Asia/Seoul",
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": { "list": [{ "name": "DS_PROMETHEUS", "type": "datasource", "query": "prometheus", "current": { "text": "Prometheus", "value": "Prometheus" } }] },
+  "panels": [
+    {
+      "id": 1, "title": "Round 23 종합 건강도", "type": "stat",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "round23:overall:health_score", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 70 }, { "color": "green", "value": 90 }] } } }
+    },
+    { "id": 100, "title": "인프라", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 4 }, "collapsed": false },
+    {
+      "id": 2, "title": "인프라 건강도", "type": "gauge",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "round23:infra:health_score", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 70 }, { "color": "green", "value": 90 }] } } },
+      "links": [
+        { "title": "Round 22 통합", "url": "/d/round22-integration-n218" },
+        { "title": "API 인증/인가", "url": "/d/apiserver-auth-n219" },
+        { "title": "Flux 상세", "url": "/d/flux-detailed-n220" },
+        { "title": "etcd 운영", "url": "/d/etcd-ops-n222" },
+        { "title": "Ingress 상세", "url": "/d/ingress-detail-n223" }
+      ]
+    },
+    {
+      "id": 3, "title": "API 인증 성공률", "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 6, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "apiserver:auth:success_rate", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 4, "title": "Flux 건강도", "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 10, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "flux:overall:health_score", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 5, "title": "etcd 조각화", "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 14, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "avg(etcd:disk:fragmentation_ratio)", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 6, "title": "Ingress 가용성", "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "ingress:overall:availability", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    { "id": 200, "title": "데이터", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 }, "collapsed": false },
+    {
+      "id": 7, "title": "데이터 건강도", "type": "gauge",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "round23:data:health_score", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 70 }, { "color": "green", "value": 90 }] } } },
+      "links": [
+        { "title": "PostgreSQL", "url": "/d/postgres-detail-n224" },
+        { "title": "Redis", "url": "/d/redis-detail-n225" },
+        { "title": "Harbor", "url": "/d/harbor-perf-n221" }
+      ]
+    },
+    {
+      "id": 8, "title": "PostgreSQL", "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "postgres:overall:health_score", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 9, "title": "Redis", "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "redis:overall:health_score", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 10, "title": "Harbor", "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "harbor:overall:health_score", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    { "id": 300, "title": "보안", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 }, "collapsed": false },
+    {
+      "id": 11, "title": "보안 건강도", "type": "gauge",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 17 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "round23:security:health_score", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 70 }, { "color": "green", "value": 90 }] } } },
+      "links": [
+        { "title": "Cert-Manager", "url": "/d/certmgr-lifecycle-n226" },
+        { "title": "시크릿 관리", "url": "/d/secrets-mgmt-n227" }
+      ]
+    },
+    {
+      "id": 12, "title": "Cert-Manager", "type": "stat",
+      "gridPos": { "h": 5, "w": 9, "x": 6, "y": 17 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "certmanager:overall:health_score", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 13, "title": "시크릿 관리", "type": "stat",
+      "gridPos": { "h": 5, "w": 9, "x": 15, "y": 17 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "secrets:overall:health_score", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "weekStart": "monday"
+}

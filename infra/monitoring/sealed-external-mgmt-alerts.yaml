@@ -1,0 +1,50 @@
+# Sealed Secrets + External Secrets 알림 규칙
+# Design Ref: MTU-N227
+# Plan SC: FR-N227.3
+# CSAP: D-09 암호화
+---
+groups:
+  - name: secrets_mgmt_alerts
+    rules:
+      - alert: ExternalSecretSyncFailed
+        expr: secrets:external:failed_count > 0
+        for: 10m
+        labels: { severity: critical, component: secrets, csap: D-09 }
+        annotations:
+          summary: "ExternalSecret 동기화 실패"
+          description: "{{ $value }}개 ExternalSecret 동기화 실패 상태"
+          runbook: "1. kubectl get externalsecrets -A 확인 2. Secret Store 연결 점검 3. 인증 정보 유효성 확인"
+
+      - alert: ExternalSecretSyncSlow
+        expr: secrets:external:sync_latency_p99 > 30
+        for: 10m
+        labels: { severity: warning, component: secrets }
+        annotations:
+          summary: "ExternalSecret 동기화 지연"
+          description: "동기화 P99 {{ $value | printf \"%.1f\" }}초 (임계값 30초)"
+
+      - alert: SealedSecretUnsealError
+        expr: secrets:sealed:unseal_error_rate > 0
+        for: 5m
+        labels: { severity: critical, component: secrets, csap: D-09 }
+        annotations:
+          summary: "SealedSecret 복호화 실패"
+          description: "복호화 에러율 {{ $value | printf \"%.1f\" }}%"
+          runbook: "1. kubeseal 키 유효성 확인 2. SealedSecret 매니페스트 검증 3. 키 회전 필요 여부 확인"
+
+      - alert: SecretsKeyRenewalNeeded
+        expr: secrets:sealed:key_renewal_needed > 0
+        for: 1h
+        labels: { severity: warning, component: secrets, csap: D-09 }
+        annotations:
+          summary: "SealedSecrets 키 갱신 필요"
+          description: "키 만료까지 30일 이내. 키 회전 계획 필요."
+          runbook: "1. kubeseal --rotate 실행 계획 2. 기존 SealedSecrets 재암호화 3. 롤아웃 계획 수립"
+
+      - alert: SecretsOverallHealthDegraded
+        expr: secrets:overall:health_score < 80
+        for: 10m
+        labels: { severity: warning, component: secrets }
+        annotations:
+          summary: "시크릿 관리 건강도 저하"
+          description: "건강도 {{ $value | printf \"%.1f\" }}%"

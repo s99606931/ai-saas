@@ -1,0 +1,72 @@
+# Cert-Manager 인증서 수명주기 Recording Rules
+# Design Ref: MTU-N226 S2
+# Plan SC: FR-N226.1
+# CSAP: D-09 암호화
+---
+groups:
+  - name: certmanager_lifecycle_recording
+    interval: 60s
+    rules:
+      - record: certmanager:cert:total_count
+        expr: count(certmanager_certificate_ready_status)
+        labels: { component: certmanager }
+
+      - record: certmanager:cert:ready_count
+        expr: count(certmanager_certificate_ready_status{status="True"})
+        labels: { component: certmanager }
+
+      - record: certmanager:cert:not_ready_count
+        expr: count(certmanager_certificate_ready_status{status="False"}) or vector(0)
+        labels: { component: certmanager }
+
+      - record: certmanager:cert:expiry_days
+        expr: (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400
+        labels: { component: certmanager }
+
+      - record: certmanager:cert:expiring_30d_count
+        expr: |
+          count(
+            (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400 < 30
+          ) or vector(0)
+        labels: { component: certmanager }
+
+      - record: certmanager:cert:expiring_7d_count
+        expr: |
+          count(
+            (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400 < 7
+          ) or vector(0)
+        labels: { component: certmanager }
+
+      - record: certmanager:renewal:success_rate
+        expr: |
+          sum(rate(certmanager_certificate_renewal_timestamp_seconds[1h]) > 0)
+          / clamp_min(count(certmanager_certificate_ready_status), 1) * 100
+          or vector(100)
+        labels: { component: certmanager }
+
+      - record: certmanager:acme:order_success_rate
+        expr: |
+          sum(certmanager_acme_order_count{state="valid"})
+          / clamp_min(sum(certmanager_acme_order_count), 1) * 100
+          or vector(100)
+        labels: { component: certmanager }
+
+      - record: certmanager:acme:challenge_pending
+        expr: sum(certmanager_acme_order_count{state="pending"}) or vector(0)
+        labels: { component: certmanager }
+
+      - record: certmanager:issuer:ready_count
+        expr: count(certmanager_clusterissuer_ready_status{status="True"}) or vector(0)
+        labels: { component: certmanager }
+
+      - record: certmanager:overall:health_score
+        expr: |
+          (
+            clamp_max(
+              certmanager:cert:ready_count / clamp_min(certmanager:cert:total_count, 1) * 100,
+              100
+            ) * 0.4
+            + clamp_max(100 - certmanager:cert:expiring_7d_count * 20, 100) * 0.3
+            + clamp_max(certmanager:acme:order_success_rate or vector(100), 100) * 0.3
+          )
+        labels: { component: certmanager }

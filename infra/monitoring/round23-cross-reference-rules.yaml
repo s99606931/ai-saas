@@ -1,0 +1,47 @@
+# Round 23 통합 크로스 레퍼런스 Recording Rules
+# Design Ref: MTU-N228
+# Plan SC: FR-N228.2
+---
+groups:
+  - name: round23_cross_reference
+    interval: 60s
+    rules:
+      - record: round23:infra:health_score
+        expr: |
+          (
+            (round22:overall:health_score or vector(100)) * 0.2
+            + clamp_max(apiserver:auth:success_rate or vector(100), 100) * 0.2
+            + clamp_max(flux:overall:health_score or vector(100), 100) * 0.2
+            + clamp_max(
+                (1 - clamp_max(etcd:disk:fragmentation_ratio or vector(0), 100) / 100) * 100,
+                100
+              ) * 0.2
+            + clamp_max(ingress:overall:availability or vector(100), 100) * 0.2
+          )
+        labels: { round: "23", category: infra }
+
+      - record: round23:data:health_score
+        expr: |
+          (
+            clamp_max(postgres:overall:health_score or vector(100), 100) * 0.4
+            + clamp_max(redis:overall:health_score or vector(100), 100) * 0.3
+            + clamp_max(harbor:overall:health_score or vector(100), 100) * 0.3
+          )
+        labels: { round: "23", category: data }
+
+      - record: round23:security:health_score
+        expr: |
+          (
+            clamp_max(certmanager:overall:health_score or vector(100), 100) * 0.5
+            + clamp_max(secrets:overall:health_score or vector(100), 100) * 0.5
+          )
+        labels: { round: "23", category: security }
+
+      - record: round23:overall:health_score
+        expr: |
+          (
+            round23:infra:health_score * 0.4
+            + round23:data:health_score * 0.35
+            + round23:security:health_score * 0.25
+          )
+        labels: { round: "23" }

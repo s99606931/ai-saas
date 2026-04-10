@@ -1,0 +1,60 @@
+# Sealed Secrets + External Secrets 운영 Recording Rules
+# Design Ref: MTU-N227 S2
+# Plan SC: FR-N227.1
+# CSAP: D-09 암호화, D-08 접근통제
+---
+groups:
+  - name: secrets_mgmt_recording
+    interval: 60s
+    rules:
+      - record: secrets:external:total_count
+        expr: count(external_secrets_status) or vector(0)
+        labels: { component: secrets }
+
+      - record: secrets:external:synced_count
+        expr: count(external_secrets_status{status="SecretSynced"}) or vector(0)
+        labels: { component: secrets }
+
+      - record: secrets:external:failed_count
+        expr: count(external_secrets_status{status!="SecretSynced"}) or vector(0)
+        labels: { component: secrets }
+
+      - record: secrets:external:sync_success_rate
+        expr: |
+          count(external_secrets_status{status="SecretSynced"})
+          / clamp_min(count(external_secrets_status), 1) * 100
+          or vector(100)
+        labels: { component: secrets }
+
+      - record: secrets:external:sync_latency_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (rate(external_secrets_sync_duration_seconds_bucket[5m]))
+          ) or vector(0)
+        labels: { component: secrets }
+
+      - record: secrets:sealed:total_count
+        expr: count(sealed_secrets_controller_unseal_request_total) or vector(0)
+        labels: { component: secrets }
+
+      - record: secrets:sealed:unseal_error_rate
+        expr: |
+          sum(rate(sealed_secrets_controller_unseal_errors_total[5m]))
+          / clamp_min(sum(rate(sealed_secrets_controller_unseal_request_total[5m])), 0.001)
+          * 100
+        labels: { component: secrets }
+
+      - record: secrets:sealed:key_renewal_needed
+        expr: |
+          (sealed_secrets_controller_key_rotation_timestamp_seconds - time()) / 86400 < 30
+          or vector(0)
+        labels: { component: secrets }
+
+      - record: secrets:overall:health_score
+        expr: |
+          (
+            clamp_max(secrets:external:sync_success_rate or vector(100), 100) * 0.4
+            + clamp_max(100 - (secrets:sealed:unseal_error_rate or vector(0)), 100) * 0.3
+            + clamp_max(100 - secrets:external:failed_count * 10, 100) * 0.3
+          )
+        labels: { component: secrets }
