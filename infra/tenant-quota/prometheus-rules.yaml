@@ -1,0 +1,129 @@
+# Design Ref: MTU-N166
+# Plan SC: FR-N166.1, FR-N166.2, FR-N166.3
+# CSAP: D-08
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tenant-quota-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: tenant-quota.recording
+      interval: 30s
+      rules:
+        # 테넌트별 CPU 할당량 사용률
+        - record: tenant_quota:cpu_usage_ratio
+          expr: |
+            sum(
+              rate(container_cpu_usage_seconds_total{
+                namespace=~"tenant-.*"
+              }[5m])
+            ) by (namespace)
+            /
+            sum(
+              kube_resourcequota{
+                resource="limits.cpu",
+                type="hard",
+                namespace=~"tenant-.*"
+              }
+            ) by (namespace)
+
+        # 테넌트별 메모리 할당량 사용률
+        - record: tenant_quota:memory_usage_ratio
+          expr: |
+            sum(
+              container_memory_working_set_bytes{
+                namespace=~"tenant-.*"
+              }
+            ) by (namespace)
+            /
+            sum(
+              kube_resourcequota{
+                resource="limits.memory",
+                type="hard",
+                namespace=~"tenant-.*"
+              }
+            ) by (namespace)
+
+        # 테넌트별 파드 수 사용률
+        - record: tenant_quota:pod_count_ratio
+          expr: |
+            count(
+              kube_pod_status_phase{
+                phase="Running",
+                namespace=~"tenant-.*"
+              }
+            ) by (namespace)
+            /
+            sum(
+              kube_resourcequota{
+                resource="pods",
+                type="hard",
+                namespace=~"tenant-.*"
+              }
+            ) by (namespace)
+
+        # 할당량 대비 권장 조정값
+        - record: tenant_quota:recommended_cpu
+          expr: |
+            quantile_over_time(0.95,
+              sum(rate(container_cpu_usage_seconds_total{
+                namespace=~"tenant-.*"
+              }[5m])) by (namespace)
+            [7d:5m]) * 1.3
+
+    - name: tenant-quota.alerts
+      rules:
+        # Noisy neighbor 경고
+        - alert: TenantQuotaCpuWarning
+          expr: |
+            tenant_quota:cpu_usage_ratio > 0.80
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            csap: "D-08"
+          annotations:
+            summary: "테넌트 CPU 할당량 80% 초과 ({{ $labels.namespace }})"
+            description: |
+              {{ $labels.namespace }} 테넌트의 CPU 사용률이 할당량의 80%를 초과했습니다.
+              현재 사용률: {{ printf "%.1f" $value }}%
+
+        - alert: TenantQuotaCpuCritical
+          expr: |
+            tenant_quota:cpu_usage_ratio > 0.95
+          for: 2m
+          labels:
+            severity: critical
+            team: sre
+            csap: "D-08"
+          annotations:
+            summary: "테넌트 CPU 할당량 95% 초과 - Noisy Neighbor ({{ $labels.namespace }})"
+            description: |
+              {{ $labels.namespace }} 테넌트가 CPU 할당량의 95% 이상을 사용하고 있습니다.
+              다른 테넌트에 영향을 줄 수 있습니다. 즉시 확인하십시오.
+
+        - alert: TenantQuotaMemoryWarning
+          expr: |
+            tenant_quota:memory_usage_ratio > 0.80
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+          annotations:
+            summary: "테넌트 메모리 할당량 80% 초과 ({{ $labels.namespace }})"
+
+        - alert: TenantQuotaMemoryCritical
+          expr: |
+            tenant_quota:memory_usage_ratio > 0.95
+          for: 2m
+          labels:
+            severity: critical
+            team: sre
+          annotations:
+            summary: "테넌트 메모리 할당량 95% 초과 ({{ $labels.namespace }})"
