@@ -10,6 +10,7 @@ import Fastify from 'fastify';
 import { responseTimePlugin } from '@public-saas/observability';
 import { healthPlugin, CommonCheckers } from '@public-saas/health';
 import { rbacPlugin } from '@public-saas/rbac';
+import { cachePlugin } from '@public-saas/cache';
 
 const PORT = parseInt(process.env['COMPLIANCE-SERVICE_PORT'] ?? '3013', 10);
 const HOST = '0.0.0.0';
@@ -31,6 +32,11 @@ async function main(): Promise<void> {
 
   // Plan SC: FR-INT.3 -- rbacPlugin 통합 (CSAP D-08 접근 통제, 심층 방어)
   await app.register(rbacPlugin, {});
+
+  // Plan SC: FR-INT.2 -- cachePlugin 통합 (CSAP D-07 가용성, 정적 준수 데이터 캐싱)
+  await app.register(cachePlugin, {
+    config: { defaultTtlSeconds: 3600, prefix: 'saas:comp' },
+  });
 
   const { registerRoutes } = await import('./routes.js');
   await registerRoutes(app);
