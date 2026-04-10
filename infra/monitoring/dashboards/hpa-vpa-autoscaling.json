@@ -1,0 +1,338 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "annotations": { "list": [] },
+  "description": "HPA/VPA 오토스케일링 통합 모니터링 대시보드 (Design Ref: MTU-N185 §DS-N185.4, CSAP D-10/D-06)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": true,
+      "includeVars": true,
+      "keepTime": true,
+      "tags": ["autoscaling"],
+      "title": "오토스케일링 관련",
+      "type": "dashboards"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "HPA 상태 개요",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "count(kube_horizontalpodautoscaler_status_current_replicas{namespace=~\"$namespace\"})",
+          "legendFormat": "전체 HPA",
+          "refId": "A"
+        },
+        {
+          "expr": "count(kube_horizontalpodautoscaler_status_current_replicas{namespace=~\"$namespace\"} == on(namespace,horizontalpodautoscaler) kube_horizontalpodautoscaler_status_desired_replicas{namespace=~\"$namespace\"})",
+          "legendFormat": "정상 (현재=목표)",
+          "refId": "B"
+        },
+        {
+          "expr": "count(kube_horizontalpodautoscaler_status_current_replicas{namespace=~\"$namespace\"} != on(namespace,horizontalpodautoscaler) kube_horizontalpodautoscaler_status_desired_replicas{namespace=~\"$namespace\"})",
+          "legendFormat": "스케일링 중",
+          "refId": "C"
+        },
+        {
+          "expr": "count(kube_horizontalpodautoscaler_status_current_replicas{namespace=~\"$namespace\"} == on(namespace,horizontalpodautoscaler) kube_horizontalpodautoscaler_spec_max_replicas{namespace=~\"$namespace\"})",
+          "legendFormat": "최대 도달",
+          "refId": "D"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "HPA 스케일링 이벤트 타임라인",
+      "description": "Design Ref: DS-N185.1 — 5분 윈도우 스케일링 이벤트 추적",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "hpa:scaling_events:rate5m{namespace=~\"$namespace\"}",
+          "legendFormat": "{{ horizontalpodautoscaler }} ({{ namespace }})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": { "mode": "normal" }
+          },
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "title": "HPA 현재 vs 목표 레플리카",
+      "description": "Design Ref: DS-N185.2 — 스케일링 지연 시각화",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=~\"$namespace\", horizontalpodautoscaler=~\"$hpa\"}",
+          "legendFormat": "현재: {{ horizontalpodautoscaler }}",
+          "refId": "A"
+        },
+        {
+          "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=~\"$namespace\", horizontalpodautoscaler=~\"$hpa\"}",
+          "legendFormat": "목표: {{ horizontalpodautoscaler }}",
+          "refId": "B"
+        },
+        {
+          "expr": "kube_horizontalpodautoscaler_spec_min_replicas{namespace=~\"$namespace\", horizontalpodautoscaler=~\"$hpa\"}",
+          "legendFormat": "최소: {{ horizontalpodautoscaler }}",
+          "refId": "C"
+        },
+        {
+          "expr": "kube_horizontalpodautoscaler_spec_max_replicas{namespace=~\"$namespace\", horizontalpodautoscaler=~\"$hpa\"}",
+          "legendFormat": "최대: {{ horizontalpodautoscaler }}",
+          "refId": "D"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10
+          },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "title": "HPA 메트릭 달성률",
+      "description": "Design Ref: DS-N185.6 — 타겟 메트릭 대비 실제 달성률",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "expr": "hpa:cpu_utilization_vs_target:ratio{namespace=~\"$namespace\", horizontalpodautoscaler=~\"$hpa\"} * 100",
+          "legendFormat": "{{ horizontalpodautoscaler }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "green", "value": 80 },
+              { "color": "yellow", "value": 120 },
+              { "color": "red", "value": 150 }
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 200
+        }
+      }
+    },
+    {
+      "title": "VPA 권고 적용률 (CPU)",
+      "description": "Design Ref: DS-N185.3 — VPA CPU 권고 대비 실제 Request 비율",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [
+        {
+          "expr": "vpa:cpu_recommendation_applied:ratio{namespace=~\"$namespace\"} * 100",
+          "legendFormat": "{{ pod }}/{{ container }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 20
+          },
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "green", "value": 90 },
+              { "color": "yellow", "value": 130 },
+              { "color": "red", "value": 150 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "VPA 권고 드리프트 (Memory)",
+      "description": "Design Ref: DS-N185.3 — VPA Memory 권고 대비 차이율 (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "targets": [
+        {
+          "expr": "vpa:memory_recommendation_drift:percentage{namespace=~\"$namespace\"}",
+          "legendFormat": "{{ pod }}/{{ container }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10
+          },
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 20 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "스케일링 Flapping 감지",
+      "description": "Design Ref: DS-N185.5 — 30분 내 스케일링 변경 횟수 (>3 = Flapping)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "targets": [
+        {
+          "expr": "hpa:flapping:score{namespace=~\"$namespace\"}",
+          "legendFormat": "{{ horizontalpodautoscaler }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "thresholdsStyle": { "mode": "line+area" }
+          },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 4 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "오토스케일링 효율성 점수",
+      "description": "Design Ref: DS-N185.4 — 종합 효율성 점수 (0~100)",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "targets": [
+        {
+          "expr": "autoscaling:efficiency:score{namespace=~\"$namespace\", horizontalpodautoscaler=~\"$hpa\"}",
+          "legendFormat": "{{ horizontalpodautoscaler }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 30 },
+              { "color": "yellow", "value": 50 },
+              { "color": "green", "value": 70 }
+            ]
+          },
+          "unit": "short",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "title": "HPA 스케일링 여유 용량",
+      "description": "최대 레플리카 대비 추가 확장 가능 수",
+      "type": "bargauge",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 36 },
+      "targets": [
+        {
+          "expr": "hpa:scaling_headroom:replicas{namespace=~\"$namespace\"}",
+          "legendFormat": "{{ horizontalpodautoscaler }} ({{ namespace }})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "green", "value": 5 }
+            ]
+          },
+          "unit": "short"
+        }
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["autoscaling", "hpa", "vpa", "sre", "csap-d10", "mtu-n185"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(kube_horizontalpodautoscaler_status_current_replicas, namespace)",
+        "name": "namespace",
+        "type": "query",
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2,
+        "sort": 1
+      },
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(kube_horizontalpodautoscaler_status_current_replicas{namespace=~\"$namespace\"}, horizontalpodautoscaler)",
+        "name": "hpa",
+        "type": "query",
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2,
+        "sort": 1
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "HPA/VPA 오토스케일링 모니터링",
+  "uid": "hpa-vpa-autoscaling-n185",
+  "version": 1
+}

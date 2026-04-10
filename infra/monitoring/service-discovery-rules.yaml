@@ -1,0 +1,264 @@
+# =============================================================================
+# 서비스 디스커버리 모니터링 — Recording + Alerting Rules
+# Design Ref: MTU-N187 Design §DS-N187.1~DS-N187.7
+# Plan SC: FR-N187.1~FR-N187.7
+# CSAP: D-06(감사 로깅), D-08(접근 통제), D-10(서비스 가용성)
+#
+# 기존 MTU-N174 DNS 모니터링과 보완 관계 (CoreDNS 해석 → 서비스 디스커버리 전체)
+# 적용: kubectl apply -f infra/monitoring/service-discovery-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: service-discovery-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: service-discovery-monitoring
+    mtu: N187
+  annotations:
+    csap.ref/d08: "접근 통제 — 서비스 간 통신 엔드포인트 검증"
+    csap.ref/d10: "서비스 가용성 — 서비스 디스커버리 상태 모니터링"
+    csap.ref/d06: "침해사고관리 — EndpointSlice 변경 추적"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: Service Endpoint 준비 상태 Recording Rules
+    # Design Ref: MTU-N187 Design §DS-N187.1
+    # Plan SC: FR-N187.1
+    # =========================================================================
+    - name: service_discovery:endpoint_rules
+      interval: 30s
+      rules:
+        # 서비스별 Ready Endpoint 비율 (가용률)
+        - record: service:endpoint_ready:ratio
+          expr: |
+            kube_endpoint_address_available
+            / (
+              kube_endpoint_address_available
+              + kube_endpoint_address_not_ready
+            )
+          labels:
+            mtu: N187
+            csap_control: D-10-03
+
+        # 네임스페이스별 총 Ready Endpoint 수
+        - record: namespace:endpoint_ready:count
+          expr: |
+            sum by (namespace) (
+              kube_endpoint_address_available
+            )
+          labels:
+            mtu: N187
+            csap_control: D-10-03
+
+        # 네임스페이스별 NotReady Endpoint 수
+        - record: namespace:endpoint_not_ready:count
+          expr: |
+            sum by (namespace) (
+              kube_endpoint_address_not_ready
+            )
+          labels:
+            mtu: N187
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 2: CoreDNS 캐시 효율성 Recording Rules
+    # Design Ref: MTU-N187 Design §DS-N187.3
+    # Plan SC: FR-N187.3
+    # =========================================================================
+    - name: service_discovery:dns_cache_rules
+      interval: 30s
+      rules:
+        # CoreDNS 캐시 히트율 (%)
+        - record: coredns:cache_hit:ratio
+          expr: |
+            sum(rate(coredns_cache_hits_total[5m]))
+            / (
+              sum(rate(coredns_cache_hits_total[5m]))
+              + sum(rate(coredns_cache_misses_total[5m]))
+            )
+          labels:
+            mtu: N187
+            csap_control: D-10-03
+
+        # CoreDNS 캐시 히트율 (타입별)
+        - record: coredns:cache_hit_by_type:ratio
+          expr: |
+            sum by (type) (rate(coredns_cache_hits_total[5m]))
+            / (
+              sum by (type) (rate(coredns_cache_hits_total[5m]))
+              + sum by (type) (rate(coredns_cache_misses_total[5m]))
+            )
+          labels:
+            mtu: N187
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 3: CoreDNS 포워드 레이턴시 Recording Rules
+    # Design Ref: MTU-N187 Design §DS-N187.4
+    # Plan SC: FR-N187.4
+    # =========================================================================
+    - name: service_discovery:dns_forward_rules
+      interval: 30s
+      rules:
+        # CoreDNS 포워드 레이턴시 p50
+        - record: coredns:forward_latency_p50:seconds
+          expr: |
+            histogram_quantile(0.50,
+              sum by (le, to) (
+                rate(coredns_forward_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            mtu: N187
+            csap_control: D-10-03
+
+        # CoreDNS 포워드 레이턴시 p99
+        - record: coredns:forward_latency_p99:seconds
+          expr: |
+            histogram_quantile(0.99,
+              sum by (le, to) (
+                rate(coredns_forward_request_duration_seconds_bucket[5m])
+              )
+            )
+          labels:
+            mtu: N187
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 4: EndpointSlice 변경 빈도 Recording Rules
+    # Design Ref: MTU-N187 Design §DS-N187.7
+    # Plan SC: FR-N187.7
+    # =========================================================================
+    - name: service_discovery:endpointslice_rules
+      interval: 60s
+      rules:
+        # EndpointSlice 변경 빈도 (5분 윈도우)
+        - record: endpointslice:changes:rate5m
+          expr: |
+            sum by (namespace) (
+              changes(kube_endpointslice_created[5m])
+            )
+          labels:
+            mtu: N187
+            csap_control: D-06-02
+
+    # =========================================================================
+    # 그룹 5: 서비스 디스커버리 알림 규칙
+    # Design Ref: MTU-N187 Design §DS-N187.2
+    # Plan SC: FR-N187.2
+    # =========================================================================
+    - name: service_discovery:alerts
+      rules:
+        # Ready Endpoint가 0인 서비스 (5분 이상)
+        - alert: ServiceEndpointDown
+          expr: |
+            kube_endpoint_address_available == 0
+            and on(namespace, endpoint)
+            kube_endpoint_address_not_ready >= 0
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-10-03
+            team: sre
+            mtu: N187
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.endpoint }} 서비스 Endpoint 없음"
+            description: |
+              서비스 {{ $labels.endpoint }}에 Ready 상태의 Endpoint가 없습니다.
+              해당 서비스로의 트래픽이 유실되고 있을 수 있습니다.
+              관련 Pod 상태를 확인하십시오.
+            runbook_url: "https://docs.saas.go.kr/operations/service-discovery/endpoint-down"
+
+        # Endpoint 가용률 50% 미만
+        - alert: ServiceEndpointDegraded
+          expr: |
+            service:endpoint_ready:ratio < 0.5
+            and kube_endpoint_address_available > 0
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N187
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.endpoint }} Endpoint 가용률 저하"
+            description: |
+              서비스 {{ $labels.endpoint }}의 Endpoint 가용률이
+              {{ $value | humanizePercentage }}로 50% 미만입니다.
+              다수의 Pod가 NotReady 상태입니다.
+            runbook_url: "https://docs.saas.go.kr/operations/service-discovery/endpoint-degraded"
+
+        # CoreDNS 캐시 히트율 저하 (50% 미만)
+        - alert: CoreDNSCacheHitRateLow
+          expr: |
+            coredns:cache_hit:ratio < 0.5
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N187
+          annotations:
+            summary: "CoreDNS 캐시 히트율 저하"
+            description: |
+              CoreDNS 캐시 히트율이 {{ $value | humanizePercentage }}로
+              50% 미만입니다.
+              DNS 조회 부하가 증가하여 서비스 디스커버리 지연이 발생할 수 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/service-discovery/dns-cache"
+
+        # CoreDNS 포워드 레이턴시 과다 (p99 > 1초)
+        - alert: CoreDNSForwardLatencyHigh
+          expr: |
+            coredns:forward_latency_p99:seconds > 1
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N187
+          annotations:
+            summary: "CoreDNS 포워드 레이턴시 과다"
+            description: |
+              CoreDNS 업스트림 포워드 p99 레이턴시가
+              {{ $value | printf "%.3f" }}초로 1초를 초과합니다.
+              업스트림 DNS 서버 상태를 확인하십시오.
+            runbook_url: "https://docs.saas.go.kr/operations/service-discovery/dns-forward-latency"
+
+        # EndpointSlice 과다 변경 (5분 내 10회 이상)
+        - alert: EndpointSliceChurnHigh
+          expr: |
+            endpointslice:changes:rate5m > 10
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-06-02
+            team: sre
+            mtu: N187
+          annotations:
+            summary: "{{ $labels.namespace }} EndpointSlice 과다 변경"
+            description: |
+              네임스페이스 {{ $labels.namespace }}에서 5분 내
+              {{ $value | printf "%.0f" }}회의 EndpointSlice 변경이 발생했습니다.
+              Pod Churn 또는 불안정한 배포가 원인일 수 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/service-discovery/endpoint-churn"
+
+        # NotReady Endpoint 다수 존재 (네임스페이스 기준)
+        - alert: NamespaceEndpointNotReadyHigh
+          expr: |
+            namespace:endpoint_not_ready:count > 5
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N187
+          annotations:
+            summary: "{{ $labels.namespace }} NotReady Endpoint 다수 감지"
+            description: |
+              네임스페이스 {{ $labels.namespace }}에서
+              {{ $value | printf "%.0f" }}개의 NotReady Endpoint가 감지되었습니다.
+              Pod 상태 또는 리소스 부족을 확인하십시오.

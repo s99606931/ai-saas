@@ -1,0 +1,268 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "annotations": { "list": [] },
+  "description": "스토리지 I/O 모니터링 대시보드 — IOPS, 레이턴시, 처리량, 포화도 (Design Ref: MTU-N186 §DS-N186.7, CSAP D-10/D-06)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": true,
+      "includeVars": true,
+      "keepTime": true,
+      "tags": ["storage"],
+      "title": "스토리지 관련",
+      "type": "dashboards"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "스토리지 I/O 상태 개요",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "count(disk:io_saturation:ratio{instance=~\"$instance\"} < 0.5)",
+          "legendFormat": "정상 (포화도 <50%)",
+          "refId": "A"
+        },
+        {
+          "expr": "count(disk:io_saturation:ratio{instance=~\"$instance\"} >= 0.5 and disk:io_saturation:ratio < 0.8)",
+          "legendFormat": "경고 (50-80%)",
+          "refId": "B"
+        },
+        {
+          "expr": "count(disk:io_saturation:ratio{instance=~\"$instance\"} >= 0.8)",
+          "legendFormat": "위험 (>80%)",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "노드 디스크 IOPS (읽기/쓰기)",
+      "description": "Design Ref: DS-N186.1 — 5분 평균 IOPS",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "disk:read_iops:rate5m{instance=~\"$instance\", device=~\"$device\"}",
+          "legendFormat": "읽기: {{ instance }}/{{ device }}",
+          "refId": "A"
+        },
+        {
+          "expr": "disk:write_iops:rate5m{instance=~\"$instance\", device=~\"$device\"}",
+          "legendFormat": "쓰기: {{ instance }}/{{ device }}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 },
+          "unit": "iops"
+        }
+      }
+    },
+    {
+      "title": "노드 디스크 레이턴시 (읽기/쓰기)",
+      "description": "Design Ref: DS-N186.2 — I/O 레이턴시 (ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "disk:read_latency_ms:rate5m{instance=~\"$instance\", device=~\"$device\"}",
+          "legendFormat": "읽기: {{ instance }}/{{ device }}",
+          "refId": "A"
+        },
+        {
+          "expr": "disk:write_latency_ms:rate5m{instance=~\"$instance\", device=~\"$device\"}",
+          "legendFormat": "쓰기: {{ instance }}/{{ device }}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 100 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "노드 디스크 처리량 (읽기/쓰기)",
+      "description": "Design Ref: DS-N186.3 — 디스크 처리량 (bytes/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "expr": "disk:read_throughput:rate5m{instance=~\"$instance\", device=~\"$device\"}",
+          "legendFormat": "읽기: {{ instance }}/{{ device }}",
+          "refId": "A"
+        },
+        {
+          "expr": "disk:write_throughput:rate5m{instance=~\"$instance\", device=~\"$device\"}",
+          "legendFormat": "쓰기: {{ instance }}/{{ device }}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 },
+          "unit": "Bps"
+        }
+      }
+    },
+    {
+      "title": "디스크 I/O 포화도",
+      "description": "Design Ref: DS-N186.4 — I/O 대기 시간 비율",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [
+        {
+          "expr": "disk:io_saturation:ratio{instance=~\"$instance\", device=~\"$device\"} * 100",
+          "legendFormat": "{{ instance }}/{{ device }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 20,
+            "thresholdsStyle": { "mode": "line+area" }
+          },
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 80 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "디스크 I/O 큐 깊이",
+      "description": "Design Ref: DS-N186.4 — I/O 큐 깊이 (높을수록 대기 중 요청 많음)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "targets": [
+        {
+          "expr": "disk:io_queue_depth:avg{instance=~\"$instance\", device=~\"$device\"}",
+          "legendFormat": "{{ instance }}/{{ device }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 16 },
+              { "color": "red", "value": 32 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "컨테이너 I/O Top 10 (읽기+쓰기)",
+      "description": "Design Ref: DS-N186.5 — 컨테이너별 I/O 처리량 상위 10개",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 28 },
+      "targets": [
+        {
+          "expr": "topk(10, container:fs_read_bytes:rate5m{namespace=~\"$namespace\"} + container:fs_write_bytes:rate5m{namespace=~\"$namespace\"})",
+          "legendFormat": "{{ namespace }}/{{ pod }}/{{ container }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } },
+          "unit": "Bps"
+        }
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["storage", "io", "disk", "sre", "csap-d10", "mtu-n186"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(node_disk_reads_completed_total, instance)",
+        "name": "instance",
+        "type": "query",
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2,
+        "sort": 1
+      },
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(node_disk_reads_completed_total{instance=~\"$instance\"}, device)",
+        "name": "device",
+        "type": "query",
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2,
+        "sort": 1
+      },
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(container_fs_reads_bytes_total, namespace)",
+        "name": "namespace",
+        "type": "query",
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2,
+        "sort": 1
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "스토리지 I/O 모니터링",
+  "uid": "storage-io-n186",
+  "version": 1
+}

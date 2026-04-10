@@ -1,0 +1,308 @@
+# =============================================================================
+# 스토리지 I/O 모니터링 — Recording + Alerting Rules
+# Design Ref: MTU-N186 Design §DS-N186.1~DS-N186.6
+# Plan SC: FR-N186.1, FR-N186.2, FR-N186.3, FR-N186.4, FR-N186.5, FR-N186.6
+# CSAP: D-06(감사 로깅), D-10(서비스 가용성)
+#
+# 적용: kubectl apply -f infra/monitoring/storage-io-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: storage-io-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: storage-io-monitoring
+    mtu: N186
+  annotations:
+    csap.ref/d06: "침해사고관리 — 스토리지 I/O 이상 감사 추적"
+    csap.ref/d10: "서비스 가용성 — 디스크 성능 모니터링"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 노드 디스크 IOPS Recording Rules
+    # Design Ref: MTU-N186 Design §DS-N186.1
+    # Plan SC: FR-N186.1
+    # =========================================================================
+    - name: disk:iops_rules
+      interval: 30s
+      rules:
+        # 노드 디스크 읽기 IOPS (5분 평균)
+        - record: disk:read_iops:rate5m
+          expr: |
+            rate(
+              node_disk_reads_completed_total{device!~"dm-.*|loop.*"}[5m]
+            )
+          labels:
+            mtu: N186
+            csap_control: D-10-03
+
+        # 노드 디스크 쓰기 IOPS (5분 평균)
+        - record: disk:write_iops:rate5m
+          expr: |
+            rate(
+              node_disk_writes_completed_total{device!~"dm-.*|loop.*"}[5m]
+            )
+          labels:
+            mtu: N186
+            csap_control: D-10-03
+
+        # 노드 디스크 총 IOPS (읽기+쓰기)
+        - record: disk:total_iops:rate5m
+          expr: |
+            rate(node_disk_reads_completed_total{device!~"dm-.*|loop.*"}[5m])
+            + rate(node_disk_writes_completed_total{device!~"dm-.*|loop.*"}[5m])
+          labels:
+            mtu: N186
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 2: 노드 디스크 레이턴시 Recording Rules
+    # Design Ref: MTU-N186 Design §DS-N186.2
+    # Plan SC: FR-N186.2
+    # =========================================================================
+    - name: disk:latency_rules
+      interval: 30s
+      rules:
+        # 노드 디스크 읽기 레이턴시 (밀리초)
+        - record: disk:read_latency_ms:rate5m
+          expr: |
+            (
+              rate(node_disk_read_time_seconds_total{device!~"dm-.*|loop.*"}[5m])
+              / rate(node_disk_reads_completed_total{device!~"dm-.*|loop.*"}[5m])
+            ) * 1000
+          labels:
+            mtu: N186
+            csap_control: D-10-03
+
+        # 노드 디스크 쓰기 레이턴시 (밀리초)
+        - record: disk:write_latency_ms:rate5m
+          expr: |
+            (
+              rate(node_disk_write_time_seconds_total{device!~"dm-.*|loop.*"}[5m])
+              / rate(node_disk_writes_completed_total{device!~"dm-.*|loop.*"}[5m])
+            ) * 1000
+          labels:
+            mtu: N186
+            csap_control: D-10-03
+
+        # 노드 디스크 평균 I/O 대기 시간 (밀리초)
+        - record: disk:avg_queue_time_ms:rate5m
+          expr: |
+            (
+              rate(node_disk_io_time_weighted_seconds_total{device!~"dm-.*|loop.*"}[5m])
+              / (
+                rate(node_disk_reads_completed_total{device!~"dm-.*|loop.*"}[5m])
+                + rate(node_disk_writes_completed_total{device!~"dm-.*|loop.*"}[5m])
+              )
+            ) * 1000
+          labels:
+            mtu: N186
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 3: 노드 디스크 처리량 Recording Rules
+    # Design Ref: MTU-N186 Design §DS-N186.3
+    # Plan SC: FR-N186.3
+    # =========================================================================
+    - name: disk:throughput_rules
+      interval: 30s
+      rules:
+        # 노드 디스크 읽기 처리량 (bytes/s)
+        - record: disk:read_throughput:rate5m
+          expr: |
+            rate(
+              node_disk_read_bytes_total{device!~"dm-.*|loop.*"}[5m]
+            )
+          labels:
+            mtu: N186
+            csap_control: D-10-03
+
+        # 노드 디스크 쓰기 처리량 (bytes/s)
+        - record: disk:write_throughput:rate5m
+          expr: |
+            rate(
+              node_disk_written_bytes_total{device!~"dm-.*|loop.*"}[5m]
+            )
+          labels:
+            mtu: N186
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 4: 디스크 I/O 포화도 Recording Rules
+    # Design Ref: MTU-N186 Design §DS-N186.4
+    # Plan SC: FR-N186.4
+    # =========================================================================
+    - name: disk:saturation_rules
+      interval: 30s
+      rules:
+        # 디스크 I/O 포화도 (%) — I/O 대기 시간 비율
+        - record: disk:io_saturation:ratio
+          expr: |
+            rate(
+              node_disk_io_time_seconds_total{device!~"dm-.*|loop.*"}[5m]
+            )
+          labels:
+            mtu: N186
+            csap_control: D-06-02
+
+        # 디스크 I/O 큐 깊이
+        - record: disk:io_queue_depth:avg
+          expr: |
+            rate(
+              node_disk_io_time_weighted_seconds_total{device!~"dm-.*|loop.*"}[5m]
+            )
+          labels:
+            mtu: N186
+            csap_control: D-06-02
+
+    # =========================================================================
+    # 그룹 5: 컨테이너/PVC I/O Recording Rules
+    # Design Ref: MTU-N186 Design §DS-N186.5
+    # Plan SC: FR-N186.5
+    # =========================================================================
+    - name: container:io_rules
+      interval: 60s
+      rules:
+        # 컨테이너 읽기 바이트 (Top 워크로드 식별용)
+        - record: container:fs_read_bytes:rate5m
+          expr: |
+            rate(
+              container_fs_reads_bytes_total{container!="", container!="POD"}[5m]
+            )
+          labels:
+            mtu: N186
+            csap_control: D-10-03
+
+        # 컨테이너 쓰기 바이트
+        - record: container:fs_write_bytes:rate5m
+          expr: |
+            rate(
+              container_fs_writes_bytes_total{container!="", container!="POD"}[5m]
+            )
+          labels:
+            mtu: N186
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 6: 스토리지 I/O 알림 규칙
+    # Design Ref: MTU-N186 Design §DS-N186.6
+    # Plan SC: FR-N186.6
+    # =========================================================================
+    - name: disk:io_alerts
+      rules:
+        # 디스크 읽기/쓰기 레이턴시 경고 (> 100ms)
+        - alert: DiskIOLatencyHigh
+          expr: |
+            disk:read_latency_ms:rate5m > 100
+            or disk:write_latency_ms:rate5m > 100
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N186
+          annotations:
+            summary: "{{ $labels.instance }} 디스크 {{ $labels.device }} I/O 레이턴시 경고"
+            description: |
+              디스크 I/O 레이턴시가 {{ $value | printf "%.1f" }}ms로
+              임계값(100ms)을 초과하고 있습니다.
+              디스크 부하 또는 하드웨어 이상을 확인하십시오.
+            runbook_url: "https://docs.saas.go.kr/operations/storage/io-latency"
+
+        # 디스크 레이턴시 위험 (> 500ms)
+        - alert: DiskIOLatencyCritical
+          expr: |
+            disk:read_latency_ms:rate5m > 500
+            or disk:write_latency_ms:rate5m > 500
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-10-03
+            team: sre
+            mtu: N186
+          annotations:
+            summary: "{{ $labels.instance }} 디스크 {{ $labels.device }} I/O 레이턴시 위험"
+            description: |
+              디스크 I/O 레이턴시가 {{ $value | printf "%.1f" }}ms로
+              위험 임계값(500ms)을 초과하고 있습니다.
+              즉시 조치가 필요합니다.
+            runbook_url: "https://docs.saas.go.kr/operations/storage/io-latency-critical"
+
+        # 디스크 I/O 포화도 경고 (> 80%)
+        - alert: DiskIOSaturationHigh
+          expr: |
+            disk:io_saturation:ratio > 0.8
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-06-02
+            team: sre
+            mtu: N186
+          annotations:
+            summary: "{{ $labels.instance }} 디스크 {{ $labels.device }} I/O 포화도 경고"
+            description: |
+              디스크 I/O 포화도가 {{ $value | humanizePercentage }}로
+              80%를 초과하고 있습니다.
+              I/O 병목이 발생하여 서비스 응답 지연이 우려됩니다.
+            runbook_url: "https://docs.saas.go.kr/operations/storage/io-saturation"
+
+        # 디스크 IOPS 과다 경고 (> 5000)
+        - alert: DiskIOPSHigh
+          expr: |
+            disk:total_iops:rate5m > 5000
+          for: 15m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N186
+          annotations:
+            summary: "{{ $labels.instance }} 디스크 {{ $labels.device }} IOPS 과다"
+            description: |
+              디스크 총 IOPS가 {{ $value | printf "%.0f" }}으로
+              임계값(5000)을 초과하고 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/storage/iops-high"
+
+        # 디스크 처리량 급감 경고 (1시간 평균 대비 50% 미만)
+        - alert: DiskThroughputAnomaly
+          expr: |
+            (
+              disk:read_throughput:rate5m + disk:write_throughput:rate5m
+            )
+            < 0.5 * (
+              avg_over_time(
+                (disk:read_throughput:rate5m + disk:write_throughput:rate5m)[1h:]
+              )
+            )
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-06-02
+            team: sre
+            mtu: N186
+          annotations:
+            summary: "{{ $labels.instance }} 디스크 {{ $labels.device }} 처리량 급감"
+            description: |
+              디스크 처리량이 1시간 평균 대비 50% 미만으로 급감했습니다.
+              디스크 장애 또는 I/O 차단 가능성이 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/storage/throughput-anomaly"
+
+        # 디스크 I/O 큐 깊이 과다
+        - alert: DiskIOQueueDepthHigh
+          expr: |
+            disk:io_queue_depth:avg > 32
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-06-02
+            team: sre
+            mtu: N186
+          annotations:
+            summary: "{{ $labels.instance }} 디스크 {{ $labels.device }} I/O 큐 깊이 과다"
+            description: |
+              디스크 I/O 큐 깊이가 {{ $value | printf "%.1f" }}로
+              과다한 상태입니다. I/O 지연이 발생할 수 있습니다.

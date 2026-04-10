@@ -432,3 +432,8 @@
 | **MTU-N118** E2E 릴리스 파이프라인 v2 (SLO 롤백) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N118-release-pipeline-v2/` |
 | **MTU-N119** 개발자 생산성 도구 (스캐폴딩+DevContainer) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N119-developer-productivity/` |
 | **MTU-N120** Round 10 통합 검증 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N120-round10-integration/` |
+| **MTU-N185** HPA/VPA 오토스케일링 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N185-hpa-vpa-autoscaling/` |
+| **MTU-N186** 스토리지 I/O 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N186-storage-io/` |
+| **MTU-N187** 서비스 디스커버리 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N187-service-discovery/` |
+| **MTU-N188** ConfigMap/Secret 변경 감지 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N188-configmap-secret-change/` |
+| **MTU-N189** Pod 리소스 제한 위반 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N189-pod-resource-limit/` |

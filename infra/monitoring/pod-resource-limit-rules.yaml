@@ -1,0 +1,273 @@
+# =============================================================================
+# Pod 리소스 제한 위반 모니터링 — Recording + Alerting Rules
+# Design Ref: MTU-N189 Design §DS-N189.1~DS-N189.6
+# Plan SC: FR-N189.1~FR-N189.6
+# CSAP: D-06(감사 로깅), D-10(서비스 가용성), D-12(리소스 관리)
+#
+# 적용: kubectl apply -f infra/monitoring/pod-resource-limit-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pod-resource-limit-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: resource-limit-monitoring
+    mtu: N189
+  annotations:
+    csap.ref/d06: "침해사고관리 — OOMKilled 이벤트 감사 추적"
+    csap.ref/d10: "서비스 가용성 — 리소스 제한 위반 모니터링"
+    csap.ref/d12: "시스템 개발 보안 — 리소스 관리 최적화"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: CPU Throttling Recording Rules
+    # Design Ref: MTU-N189 Design §DS-N189.1
+    # Plan SC: FR-N189.1
+    # =========================================================================
+    - name: pod:cpu_throttling_rules
+      interval: 30s
+      rules:
+        # CPU Throttling 비율 (%)
+        - record: pod:cpu_throttling:ratio
+          expr: |
+            rate(container_cpu_cfs_throttled_periods_total{container!="", container!="POD"}[5m])
+            / rate(container_cpu_cfs_periods_total{container!="", container!="POD"}[5m])
+          labels:
+            mtu: N189
+            csap_control: D-10-03
+
+        # CPU 사용률 vs Limit 비율
+        - record: pod:cpu_usage_vs_limit:ratio
+          expr: |
+            rate(container_cpu_usage_seconds_total{container!="", container!="POD"}[5m])
+            / on(namespace, pod, container)
+            kube_pod_container_resource_limits{resource="cpu"}
+          labels:
+            mtu: N189
+            csap_control: D-10-03
+
+        # CPU 사용률 vs Request 비율
+        - record: pod:cpu_usage_vs_request:ratio
+          expr: |
+            rate(container_cpu_usage_seconds_total{container!="", container!="POD"}[5m])
+            / on(namespace, pod, container)
+            kube_pod_container_resource_requests{resource="cpu"}
+          labels:
+            mtu: N189
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 2: Memory 사용률 Recording Rules
+    # Design Ref: MTU-N189 Design §DS-N189.2
+    # Plan SC: FR-N189.2
+    # =========================================================================
+    - name: pod:memory_limit_rules
+      interval: 30s
+      rules:
+        # Memory Working Set / Limit 비율
+        - record: pod:memory_usage_vs_limit:ratio
+          expr: |
+            container_memory_working_set_bytes{container!="", container!="POD"}
+            / on(namespace, pod, container)
+            kube_pod_container_resource_limits{resource="memory"}
+          labels:
+            mtu: N189
+            csap_control: D-10-03
+
+        # Memory Working Set / Request 비율
+        - record: pod:memory_usage_vs_request:ratio
+          expr: |
+            container_memory_working_set_bytes{container!="", container!="POD"}
+            / on(namespace, pod, container)
+            kube_pod_container_resource_requests{resource="memory"}
+          labels:
+            mtu: N189
+            csap_control: D-10-03
+
+        # Memory RSS (Resident Set Size)
+        - record: pod:memory_rss:bytes
+          expr: |
+            container_memory_rss{container!="", container!="POD"}
+          labels:
+            mtu: N189
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 3: OOMKilled 이벤트 Recording Rules
+    # Design Ref: MTU-N189 Design §DS-N189.3
+    # Plan SC: FR-N189.3
+    # =========================================================================
+    - name: pod:oomkilled_rules
+      interval: 30s
+      rules:
+        # OOMKilled 발생 여부 (현재)
+        - record: pod:oomkilled:detected
+          expr: |
+            kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+          labels:
+            mtu: N189
+            csap_control: D-06-02
+
+        # OOMKilled 컨테이너의 재시작 횟수
+        - record: pod:oomkilled_restarts:total
+          expr: |
+            kube_pod_container_status_restarts_total
+            * on(namespace, pod, container)
+            group_left()
+            kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}
+          labels:
+            mtu: N189
+            csap_control: D-06-02
+
+    # =========================================================================
+    # 그룹 4: 리소스 효율성 Recording Rules
+    # =========================================================================
+    - name: pod:resource_efficiency_rules
+      interval: 60s
+      rules:
+        # 리소스 효율성 점수 (CPU + Memory 종합)
+        - record: pod:resource_efficiency:score
+          expr: |
+            clamp_max(
+              (
+                (1 - clamp_max(pod:cpu_throttling:ratio, 1)) * 50
+                + (1 - clamp_max(abs(1 - pod:memory_usage_vs_limit:ratio), 1)) * 50
+              ), 100
+            )
+          labels:
+            mtu: N189
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 5: 알림 규칙
+    # Design Ref: MTU-N189 Design §DS-N189.4~DS-N189.6
+    # Plan SC: FR-N189.4, FR-N189.5, FR-N189.6
+    # =========================================================================
+    - name: pod:resource_limit_alerts
+      rules:
+        # CPU Throttling 경고 (25% 초과)
+        - alert: CPUThrottlingHigh
+          expr: |
+            pod:cpu_throttling:ratio > 0.25
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N189
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} CPU Throttling 경고"
+            description: |
+              컨테이너 {{ $labels.container }}의 CPU Throttling 비율이
+              {{ $value | humanizePercentage }}입니다.
+              CPU limit 증가 또는 애플리케이션 최적화를 검토하십시오.
+            runbook_url: "https://docs.saas.go.kr/operations/resource/cpu-throttling"
+
+        # CPU Throttling 위험 (50% 초과)
+        - alert: CPUThrottlingSevere
+          expr: |
+            pod:cpu_throttling:ratio > 0.50
+          for: 3m
+          labels:
+            severity: critical
+            csap_control: D-10-03
+            team: sre
+            mtu: N189
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} CPU Throttling 위험"
+            description: |
+              컨테이너 {{ $labels.container }}의 CPU Throttling 비율이
+              {{ $value | humanizePercentage }}로 50%를 초과합니다.
+              서비스 응답 지연이 발생하고 있을 수 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/resource/cpu-throttling-severe"
+
+        # Memory limit 접근 (90% 초과)
+        - alert: MemoryLimitApproaching
+          expr: |
+            pod:memory_usage_vs_limit:ratio > 0.90
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N189
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} Memory limit 접근"
+            description: |
+              컨테이너 {{ $labels.container }}의 메모리 사용률이
+              limit의 {{ $value | humanizePercentage }}입니다.
+              OOMKilled 위험이 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/resource/memory-limit"
+
+        # Memory limit 위험 (95% 초과)
+        - alert: MemoryLimitCritical
+          expr: |
+            pod:memory_usage_vs_limit:ratio > 0.95
+          for: 3m
+          labels:
+            severity: critical
+            csap_control: D-10-03
+            team: sre
+            mtu: N189
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} Memory limit 위험"
+            description: |
+              컨테이너 {{ $labels.container }}의 메모리 사용률이
+              limit의 {{ $value | humanizePercentage }}로 95%를 초과합니다.
+              OOMKilled가 임박했습니다. 즉시 조치가 필요합니다.
+            runbook_url: "https://docs.saas.go.kr/operations/resource/memory-limit-critical"
+
+        # OOMKilled 발생 감지
+        - alert: OOMKilledDetected
+          expr: |
+            pod:oomkilled:detected == 1
+          for: 0m
+          labels:
+            severity: warning
+            csap_control: D-06-02
+            team: sre
+            mtu: N189
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} OOMKilled 감지"
+            description: |
+              컨테이너 {{ $labels.container }}가 OOMKilled로 종료되었습니다.
+              메모리 limit 증가 또는 메모리 누수 점검이 필요합니다.
+            runbook_url: "https://docs.saas.go.kr/operations/resource/oomkilled"
+
+        # OOMKilled 반복 (1시간 내 재시작 2회 이상)
+        - alert: OOMKilledRepeated
+          expr: |
+            increase(pod:oomkilled_restarts:total[1h]) > 2
+          for: 0m
+          labels:
+            severity: critical
+            csap_control: D-06-02
+            team: sre
+            mtu: N189
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} OOMKilled 반복"
+            description: |
+              컨테이너 {{ $labels.container }}가 1시간 내
+              {{ $value | printf "%.0f" }}회 OOMKilled로 재시작되었습니다.
+              메모리 누수 또는 근본적인 리소스 설정 문제입니다.
+            runbook_url: "https://docs.saas.go.kr/operations/resource/oomkilled-repeated"
+
+        # Request 대비 CPU 과다 사용 (200% 초과)
+        - alert: CPURequestOverrun
+          expr: |
+            pod:cpu_usage_vs_request:ratio > 2
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-12-07
+            team: sre
+            mtu: N189
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} CPU Request 초과"
+            description: |
+              CPU 사용량이 Request의 {{ $value | printf "%.0f" }}배입니다.
+              Request 상향 조정이 필요합니다.

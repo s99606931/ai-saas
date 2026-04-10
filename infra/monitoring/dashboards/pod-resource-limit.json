@@ -1,0 +1,248 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "annotations": { "list": [] },
+  "description": "Pod 리소스 제한 위반 모니터링 — CPU Throttling, Memory Limit, OOMKilled (Design Ref: MTU-N189 §DS-N189.7, CSAP D-10/D-06)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "리소스 제한 상태 개요",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "count(pod:cpu_throttling:ratio{namespace=~\"$namespace\"} > 0.25) or vector(0)",
+          "legendFormat": "CPU Throttling >25%",
+          "refId": "A"
+        },
+        {
+          "expr": "count(pod:memory_usage_vs_limit:ratio{namespace=~\"$namespace\"} > 0.90) or vector(0)",
+          "legendFormat": "Memory >90% Limit",
+          "refId": "B"
+        },
+        {
+          "expr": "count(pod:oomkilled:detected{namespace=~\"$namespace\"} == 1) or vector(0)",
+          "legendFormat": "OOMKilled",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "CPU Throttling Top 10",
+      "description": "Design Ref: DS-N189.1 — Throttling 비율이 높은 상위 10 컨테이너",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "topk(10, pod:cpu_throttling:ratio{namespace=~\"$namespace\"} * 100)",
+          "legendFormat": "{{ namespace }}/{{ pod }}/{{ container }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 25 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Memory 사용률 vs Limit",
+      "description": "Design Ref: DS-N189.2 — 컨테이너 메모리 사용률 / Limit 비율",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "topk(10, pod:memory_usage_vs_limit:ratio{namespace=~\"$namespace\"} * 100)",
+          "legendFormat": "{{ namespace }}/{{ pod }}/{{ container }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "thresholdsStyle": { "mode": "line+area" }
+          },
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 80 },
+              { "color": "orange", "value": 90 },
+              { "color": "red", "value": 95 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "OOMKilled 이벤트 타임라인",
+      "description": "Design Ref: DS-N189.3 — OOMKilled 발생 컨테이너 추적",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "expr": "pod:oomkilled_restarts:total{namespace=~\"$namespace\"}",
+          "legendFormat": "{{ namespace }}/{{ pod }}/{{ container }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "bars", "fillOpacity": 80 },
+          "unit": "short",
+          "color": { "fixedColor": "red", "mode": "fixed" }
+        }
+      }
+    },
+    {
+      "title": "CPU 사용률 vs Request vs Limit",
+      "description": "Design Ref: DS-N189.1 — CPU 리소스 비교",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [
+        {
+          "expr": "pod:cpu_usage_vs_request:ratio{namespace=~\"$namespace\", pod=~\"$pod\"} * 100",
+          "legendFormat": "사용/Request: {{ container }}",
+          "refId": "A"
+        },
+        {
+          "expr": "pod:cpu_usage_vs_limit:ratio{namespace=~\"$namespace\", pod=~\"$pod\"} * 100",
+          "legendFormat": "사용/Limit: {{ container }}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "percent"
+        }
+      }
+    },
+    {
+      "title": "컨테이너 리소스 효율성",
+      "description": "CPU Throttling, Memory 사용률, 효율성 점수 요약",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "targets": [
+        {
+          "expr": "pod:cpu_throttling:ratio{namespace=~\"$namespace\"} * 100",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true },
+            "renameByName": {
+              "namespace": "네임스페이스",
+              "pod": "Pod",
+              "container": "컨테이너",
+              "Value": "CPU Throttling (%)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "OOMKilled 재시작 횟수",
+      "description": "Design Ref: DS-N189.3 — OOMKilled로 재시작된 컨테이너 누적 횟수",
+      "type": "bargauge",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 28 },
+      "targets": [
+        {
+          "expr": "topk(10, pod:oomkilled_restarts:total{namespace=~\"$namespace\"})",
+          "legendFormat": "{{ namespace }}/{{ pod }}/{{ container }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "yellow", "value": null },
+              { "color": "orange", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "short"
+        }
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["resource-limit", "oomkilled", "cpu-throttling", "sre", "csap-d10", "mtu-n189"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(container_cpu_cfs_throttled_periods_total, namespace)",
+        "name": "namespace",
+        "type": "query",
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2,
+        "sort": 1
+      },
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(container_cpu_cfs_throttled_periods_total{namespace=~\"$namespace\"}, pod)",
+        "name": "pod",
+        "type": "query",
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2,
+        "sort": 1
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "Pod 리소스 제한 위반 모니터링",
+  "uid": "pod-resource-limit-n189",
+  "version": 1
+}

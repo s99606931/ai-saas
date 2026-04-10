@@ -1,0 +1,304 @@
+# =============================================================================
+# HPA/VPA 오토스케일링 통합 모니터링 — Recording + Alerting Rules
+# Design Ref: MTU-N185 Design §DS-N185.1~DS-N185.6
+# Plan SC: FR-N185.1, FR-N185.2, FR-N185.3, FR-N185.5, FR-N185.6
+# CSAP: D-06(감사 로깅), D-10(서비스 가용성), D-12(시스템 개발 보안)
+#
+# 적용: kubectl apply -f infra/monitoring/hpa-vpa-autoscaling-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hpa-vpa-autoscaling-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: autoscaling-monitoring
+    mtu: N185
+  annotations:
+    csap.ref/d06: "침해사고관리 — 스케일링 이벤트 감사 추적"
+    csap.ref/d10: "서비스 가용성 — 오토스케일링 상태 모니터링"
+    csap.ref/d12: "시스템 개발 보안 — 리소스 관리 최적화"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: HPA Recording Rules (사전 계산)
+    # Design Ref: MTU-N185 Design §DS-N185.1
+    # Plan SC: FR-N185.1
+    # =========================================================================
+    - name: hpa:recording_rules
+      interval: 30s
+      rules:
+        # HPA 스케일링 이벤트 비율 (5분 윈도우)
+        - record: hpa:scaling_events:rate5m
+          expr: |
+            changes(
+              kube_horizontalpodautoscaler_status_current_replicas[5m]
+            )
+          labels:
+            mtu: N185
+            csap_control: D-10-03
+
+        # HPA 현재 레플리카 / 최대 레플리카 비율
+        - record: hpa:current_vs_max:ratio
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas
+            / on(namespace, horizontalpodautoscaler)
+            kube_horizontalpodautoscaler_spec_max_replicas
+          labels:
+            mtu: N185
+            csap_control: D-10-03
+
+        # HPA 현재 레플리카 / 목표(desired) 레플리카 비율
+        - record: hpa:current_vs_desired:ratio
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas
+            / on(namespace, horizontalpodautoscaler)
+            kube_horizontalpodautoscaler_status_desired_replicas
+          labels:
+            mtu: N185
+            csap_control: D-10-03
+
+        # HPA 스케일링 여유 용량 (최대 - 현재)
+        - record: hpa:scaling_headroom:replicas
+          expr: |
+            kube_horizontalpodautoscaler_spec_max_replicas
+            - on(namespace, horizontalpodautoscaler)
+            kube_horizontalpodautoscaler_status_current_replicas
+          labels:
+            mtu: N185
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 2: HPA 타겟 메트릭 달성률 Recording Rules
+    # Design Ref: MTU-N185 Design §DS-N185.6
+    # Plan SC: FR-N185.6
+    # =========================================================================
+    - name: hpa:target_metric_rules
+      interval: 30s
+      rules:
+        # CPU 사용률 기반 HPA 타겟 달성률
+        - record: hpa:cpu_utilization_vs_target:ratio
+          expr: |
+            kube_horizontalpodautoscaler_status_target_metric{metric_name="cpu"}
+            / on(namespace, horizontalpodautoscaler)
+            kube_horizontalpodautoscaler_spec_target_metric{metric_name="cpu"}
+          labels:
+            mtu: N185
+            csap_control: D-10-03
+
+        # Flapping 점수 (30분 내 스케일링 변경 횟수)
+        # Design Ref: MTU-N185 Design §DS-N185.5
+        # Plan SC: FR-N185.5
+        - record: hpa:flapping:score
+          expr: |
+            changes(
+              kube_horizontalpodautoscaler_status_current_replicas[30m]
+            )
+          labels:
+            mtu: N185
+            csap_control: D-06-02
+
+    # =========================================================================
+    # 그룹 3: VPA 권고 적용률 Recording Rules
+    # Design Ref: MTU-N185 Design §DS-N185.3
+    # Plan SC: FR-N185.3
+    # =========================================================================
+    - name: vpa:recommendation_rules
+      interval: 60s
+      rules:
+        # VPA CPU 권고 적용률 (실제 request / VPA 권고)
+        - record: vpa:cpu_recommendation_applied:ratio
+          expr: |
+            kube_pod_container_resource_requests{resource="cpu"}
+            / on(namespace, pod, container)
+            vpa_recommender_recommendation_target{resource="cpu"}
+          labels:
+            mtu: N185
+            csap_control: D-12-07
+
+        # VPA Memory 권고 적용률
+        - record: vpa:memory_recommendation_applied:ratio
+          expr: |
+            kube_pod_container_resource_requests{resource="memory"}
+            / on(namespace, pod, container)
+            vpa_recommender_recommendation_target{resource="memory"}
+          labels:
+            mtu: N185
+            csap_control: D-12-07
+
+        # VPA CPU 권고 드리프트 (%)
+        - record: vpa:cpu_recommendation_drift:percentage
+          expr: |
+            abs(
+              kube_pod_container_resource_requests{resource="cpu"}
+              - on(namespace, pod, container)
+              vpa_recommender_recommendation_target{resource="cpu"}
+            )
+            / on(namespace, pod, container)
+            vpa_recommender_recommendation_target{resource="cpu"}
+            * 100
+          labels:
+            mtu: N185
+            csap_control: D-12-07
+
+        # VPA Memory 권고 드리프트 (%)
+        - record: vpa:memory_recommendation_drift:percentage
+          expr: |
+            abs(
+              kube_pod_container_resource_requests{resource="memory"}
+              - on(namespace, pod, container)
+              vpa_recommender_recommendation_target{resource="memory"}
+            )
+            / on(namespace, pod, container)
+            vpa_recommender_recommendation_target{resource="memory"}
+            * 100
+          labels:
+            mtu: N185
+            csap_control: D-12-07
+
+    # =========================================================================
+    # 그룹 4: 오토스케일링 효율성 점수
+    # Design Ref: MTU-N185 Design §DS-N185.4
+    # =========================================================================
+    - name: autoscaling:efficiency_rules
+      interval: 60s
+      rules:
+        # 오토스케일링 효율성 종합 점수 (0~100)
+        # 스케일링 안정성(flapping 없음) + 타겟 달성률 + 여유 용량 적정성
+        - record: autoscaling:efficiency:score
+          expr: |
+            clamp_max(
+              (
+                100
+                - clamp_max(hpa:flapping:score * 10, 30)
+                - clamp_max(
+                    abs(1 - hpa:current_vs_desired:ratio) * 50, 30
+                  )
+                - clamp_max(
+                    (1 - clamp_max(hpa:current_vs_max:ratio, 1)) * 10, 40
+                  )
+              ), 100
+            )
+          labels:
+            mtu: N185
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 5: HPA/VPA 알림 규칙
+    # Design Ref: MTU-N185 Design §DS-N185.2, §DS-N185.5
+    # Plan SC: FR-N185.2, FR-N185.5
+    # =========================================================================
+    - name: hpa:alerts
+      rules:
+        # HPA 스케일링 지연 — 현재 != 목표 10분 이상
+        - alert: HPAScalingStuck
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas
+            != on(namespace, horizontalpodautoscaler)
+            kube_horizontalpodautoscaler_status_desired_replicas
+          for: 10m
+          labels:
+            severity: critical
+            csap_control: D-10-03
+            team: sre
+            mtu: N185
+          annotations:
+            summary: "HPA {{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler }} 스케일링 지연"
+            description: |
+              HPA {{ $labels.horizontalpodautoscaler }}의 현재 레플리카가
+              목표 레플리카와 10분 이상 불일치합니다.
+              스케일링이 차단되었거나 리소스가 부족할 수 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/autoscaling/hpa-stuck"
+
+        # HPA 최대 레플리카 도달 — 30분 이상 유지
+        - alert: HPAMaxReplicasReached
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas
+            == on(namespace, horizontalpodautoscaler)
+            kube_horizontalpodautoscaler_spec_max_replicas
+          for: 30m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N185
+          annotations:
+            summary: "HPA {{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler }} 최대 레플리카 도달"
+            description: |
+              HPA {{ $labels.horizontalpodautoscaler }}가 최대 레플리카({{ $value }})에
+              30분 이상 도달해 있습니다.
+              추가 확장 불가 상태이며, maxReplicas 증가를 검토하십시오.
+            runbook_url: "https://docs.saas.go.kr/operations/autoscaling/max-replicas"
+
+        # HPA 메트릭 수집 불가
+        - alert: HPAMetricsUnavailable
+          expr: |
+            kube_horizontalpodautoscaler_status_condition{condition="ScalingActive", status="false"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N185
+          annotations:
+            summary: "HPA {{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler }} 메트릭 수집 불가"
+            description: |
+              HPA {{ $labels.horizontalpodautoscaler }}가 스케일링에 필요한
+              메트릭을 수집하지 못하고 있습니다.
+              metrics-server 또는 custom metrics API 상태를 확인하십시오.
+            runbook_url: "https://docs.saas.go.kr/operations/autoscaling/metrics-unavailable"
+
+        # HPA Flapping 감지 — 30분 내 4회 이상 변경
+        - alert: HPAScalingFlapping
+          expr: |
+            hpa:flapping:score > 3
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-06-02
+            team: sre
+            mtu: N185
+          annotations:
+            summary: "HPA {{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler }} 스케일링 Flapping 감지"
+            description: |
+              HPA {{ $labels.horizontalpodautoscaler }}가 30분 내
+              {{ $value }}회 스케일링 변경이 발생했습니다.
+              타겟 메트릭 임계값 조정 또는 스케일링 안정화 윈도우 증가를 검토하십시오.
+            runbook_url: "https://docs.saas.go.kr/operations/autoscaling/flapping"
+
+        # HPA 최소 레플리카 미달
+        - alert: HPABelowMinReplicas
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas
+            < on(namespace, horizontalpodautoscaler)
+            kube_horizontalpodautoscaler_spec_min_replicas
+          for: 5m
+          labels:
+            severity: critical
+            csap_control: D-10-03
+            team: sre
+            mtu: N185
+          annotations:
+            summary: "HPA {{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler }} 최소 레플리카 미달"
+            description: |
+              현재 레플리카 수가 최소 설정값보다 낮습니다.
+              Pod 장애 또는 리소스 부족 가능성이 있습니다.
+
+        # 오토스케일링 효율성 저하
+        - alert: AutoscalingEfficiencyLow
+          expr: |
+            autoscaling:efficiency:score < 50
+          for: 15m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N185
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler }} 오토스케일링 효율성 저하"
+            description: |
+              오토스케일링 효율성 점수가 {{ $value | printf "%.0f" }}점으로
+              50점 미만입니다. Flapping, 타겟 미달성, 또는 비정상 스케일링 패턴을 확인하십시오.
