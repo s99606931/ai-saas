@@ -1,0 +1,41 @@
+# 글로벌 LimitRange — 모든 앱 네임스페이스 적용
+# Design Ref: MTU-N76 §2
+# Plan SC: FR-N76.2
+# CSAP 매핑: D-08
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: global-limit-range
+  labels:
+    app.kubernetes.io/component: resource-management
+    csap.compliance/control: D-08
+spec:
+  limits:
+    # 컨테이너 리소스 제한
+    - type: Container
+      default:
+        cpu: "200m"
+        memory: "256Mi"
+      defaultRequest:
+        cpu: "50m"
+        memory: "64Mi"
+      max:
+        cpu: "4"
+        memory: "8Gi"
+      min:
+        cpu: "10m"
+        memory: "16Mi"
+
+    # Pod 전체 리소스 제한
+    - type: Pod
+      max:
+        cpu: "8"
+        memory: "16Gi"
+
+    # PVC 크기 제한
+    - type: PersistentVolumeClaim
+      max:
+        storage: "50Gi"
+      min:
+        storage: "1Gi"

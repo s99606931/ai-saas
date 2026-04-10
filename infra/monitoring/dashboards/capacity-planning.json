@@ -1,0 +1,91 @@
+{
+  "annotations": { "list": [] },
+  "description": "용량 계획 + ResourceQuota 현황 대시보드",
+  "editable": true,
+  "panels": [
+    {
+      "title": "네임스페이스별 CPU Quota 사용률",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [{
+        "expr": "kube_resourcequota{resource=\"requests.cpu\", type=\"used\"} / on(namespace, resourcequota) kube_resourcequota{resource=\"requests.cpu\", type=\"hard\"} * 100",
+        "legendFormat": "{{namespace}}"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "orange", "value": 80 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "unit": "percent", "min": 0, "max": 100
+        }
+      }
+    },
+    {
+      "title": "네임스페이스별 Memory Quota 사용률",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [{
+        "expr": "kube_resourcequota{resource=\"requests.memory\", type=\"used\"} / on(namespace, resourcequota) kube_resourcequota{resource=\"requests.memory\", type=\"hard\"} * 100",
+        "legendFormat": "{{namespace}}"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "unit": "percent", "min": 0, "max": 100
+        }
+      }
+    },
+    {
+      "title": "클러스터 전체 CPU 용량 (할당/사용/가용)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "sum(kube_node_status_allocatable{resource=\"cpu\"})", "legendFormat": "전체 할당 가능" },
+        { "expr": "sum(kube_pod_container_resource_requests{resource=\"cpu\"})", "legendFormat": "현재 요청량" },
+        { "expr": "sum(rate(container_cpu_usage_seconds_total[5m]))", "legendFormat": "실제 사용량" }
+      ]
+    },
+    {
+      "title": "클러스터 전체 Memory 용량",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "sum(kube_node_status_allocatable{resource=\"memory\"})", "legendFormat": "전체 할당 가능" },
+        { "expr": "sum(kube_pod_container_resource_requests{resource=\"memory\"})", "legendFormat": "현재 요청량" },
+        { "expr": "sum(container_memory_working_set_bytes)", "legendFormat": "실제 사용량" }
+      ]
+    },
+    {
+      "title": "네임스페이스별 Pod 수 vs Quota",
+      "type": "barchart",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "kube_resourcequota{resource=\"pods\", type=\"used\"}", "legendFormat": "{{namespace}} 사용" },
+        { "expr": "kube_resourcequota{resource=\"pods\", type=\"hard\"}", "legendFormat": "{{namespace}} 한도" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["capacity", "quota", "finops", "csap-d08"],
+  "time": { "from": "now-24h", "to": "now" },
+  "title": "용량 계획 + ResourceQuota 현황",
+  "uid": "capacity-planning-dashboard"
+}

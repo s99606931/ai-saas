@@ -1,0 +1,109 @@
+# 용량 계획 알림 규칙
+# Design Ref: MTU-N76 §3
+# Plan SC: FR-N76.3
+# CSAP 매핑: D-06, D-08
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: capacity-planning-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/component: capacity-planning
+    csap.compliance/control: D-08
+spec:
+  groups:
+    - name: capacity-planning
+      interval: 5m
+      rules:
+        # ResourceQuota 80% 사용 경고
+        - alert: QuotaUsageHigh
+          expr: |
+            (
+              kube_resourcequota{type="used"}
+              / on(namespace, resource, resourcequota)
+              kube_resourcequota{type="hard"}
+            ) > 0.8
+          for: 15m
+          labels:
+            severity: warning
+            csap_control: D-08
+            category: capacity
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.resourcequota }} {{ $labels.resource }} 80% 초과"
+            description: |
+              네임스페이스 {{ $labels.namespace }}의 ResourceQuota
+              {{ $labels.resource }}가 {{ $value | humanizePercentage }} 사용 중.
+              증설 또는 리소스 최적화 검토 필요.
+            runbook_url: "https://docs.saas.go.kr/operations/runbooks/quota-usage"
+
+        # ResourceQuota 90% 위험
+        - alert: QuotaUsageCritical
+          expr: |
+            (
+              kube_resourcequota{type="used"}
+              / on(namespace, resource, resourcequota)
+              kube_resourcequota{type="hard"}
+            ) > 0.9
+          for: 10m
+          labels:
+            severity: critical
+            csap_control: D-08
+            category: capacity
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.resourcequota }} {{ $labels.resource }} 90% 초과 위험"
+            runbook_url: "https://docs.saas.go.kr/operations/runbooks/quota-usage"
+
+        # 클러스터 전체 가용 CPU 부족
+        - alert: ClusterCPUCapacityLow
+          expr: |
+            (
+              1 - (
+                sum(kube_pod_container_resource_requests{resource="cpu"})
+                / sum(kube_node_status_allocatable{resource="cpu"})
+              )
+            ) < 0.2
+          for: 30m
+          labels:
+            severity: critical
+            csap_control: D-08
+            category: capacity
+          annotations:
+            summary: "클러스터 CPU 가용량 20% 미만"
+            description: "노드 증설 또는 리소스 최적화가 시급합니다."
+            runbook_url: "https://docs.saas.go.kr/operations/runbooks/cluster-capacity"
+
+        # 클러스터 전체 가용 Memory 부족
+        - alert: ClusterMemoryCapacityLow
+          expr: |
+            (
+              1 - (
+                sum(kube_pod_container_resource_requests{resource="memory"})
+                / sum(kube_node_status_allocatable{resource="memory"})
+              )
+            ) < 0.2
+          for: 30m
+          labels:
+            severity: critical
+            csap_control: D-08
+            category: capacity
+          annotations:
+            summary: "클러스터 Memory 가용량 20% 미만"
+            runbook_url: "https://docs.saas.go.kr/operations/runbooks/cluster-capacity"
+
+        # Pod 수 quota 임박
+        - alert: PodCountQuotaNearLimit
+          expr: |
+            (
+              kube_resourcequota{resource="pods", type="used"}
+              / on(namespace, resourcequota)
+              kube_resourcequota{resource="pods", type="hard"}
+            ) > 0.85
+          for: 15m
+          labels:
+            severity: warning
+            csap_control: D-08
+            category: capacity
+          annotations:
+            summary: "{{ $labels.namespace }} Pod 수 quota 85% 초과"
