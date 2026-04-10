@@ -1,0 +1,86 @@
+# =============================================================================
+# Subscription Service SLO 정의 (Sloth CRD 형식)
+# Design Ref: MTU-N142 Design SS3.1
+# Plan SC: FR-N142.2
+#
+# 티어: High — 가용성 99.9%, 지연 P95 < 500ms
+# 적용: kubectl apply -f infra/slo/subscription-service-slo.yaml
+# =============================================================================
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: subscription-service-slo
+  namespace: production
+  labels:
+    app.kubernetes.io/name: subscription-service
+    app.kubernetes.io/part-of: saas-platform
+    team: platform
+    tier: high
+spec:
+  service: "subscription-service"
+  labels:
+    owner: "platform-team"
+    tier: "high"
+
+  slos:
+    # =========================================================================
+    # SLO 1: 가용성 — 99.9% 성공률
+    # =========================================================================
+    - name: "availability"
+      objective: 99.9
+      description: "구독 서비스 HTTP 요청 성공률"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_requests_total{job="subscription-service",code=~"5.."}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_requests_total{job="subscription-service"}[{{.window}}]))
+      alerting:
+        name: SubscriptionServiceAvailabilitySLOBreach
+        labels:
+          category: "availability"
+          severity: "critical"
+        annotations:
+          summary: "Subscription Service 가용성 SLO 위반"
+          description: >
+            구독 서비스 가용성이 99.9% SLO 미달입니다.
+            구독 관리 기능 장애로 테넌트 서비스 접근에 영향이 있을 수 있습니다.
+          runbook: "docs/operations/slo-guide.md"
+        pageAlert:
+          labels:
+            severity: "critical"
+        ticketAlert:
+          labels:
+            severity: "warning"
+
+    # =========================================================================
+    # SLO 2: 지연시간 — P95 < 500ms
+    # =========================================================================
+    - name: "latency"
+      objective: 99.0
+      description: "구독 서비스 P95 응답시간 500ms 미만"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_request_duration_seconds_bucket{job="subscription-service",le="0.5"}[{{.window}}]))
+            -
+            sum(rate(http_request_duration_seconds_count{job="subscription-service"}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_request_duration_seconds_count{job="subscription-service"}[{{.window}}]))
+      alerting:
+        name: SubscriptionServiceLatencySLOBreach
+        labels:
+          category: "latency"
+          severity: "warning"
+        annotations:
+          summary: "Subscription Service 지연시간 SLO 위반"
+          description: >
+            구독 서비스 P95 응답시간이 500ms를 초과하는 비율이
+            SLO 목표(99%)를 미달하고 있습니다.
+          runbook: "docs/operations/slo-guide.md"
+        pageAlert:
+          labels:
+            severity: "critical"
+        ticketAlert:
+          labels:
+            severity: "warning"

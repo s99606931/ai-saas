@@ -1,0 +1,233 @@
+# =============================================================================
+# 티어별 자동 롤백 AnalysisTemplate -- 공공기관 SaaS 플랫폼
+# Design Ref: MTU-N143 Design SS1
+# Plan SC: FR-N143.2
+# CSAP: D-10(부하분산), D-06(침해사고 관리), D-12(시스템 개발 보안)
+#
+# 적용: kubectl apply -f infra/argo-rollouts/tiered-analysis-templates.yaml
+# =============================================================================
+
+---
+# =============================================================================
+# 1. Critical 티어 AnalysisTemplate (가장 엄격)
+#    대상: api-gateway, auth-service, audit-service
+#    에러율 > 0.5%, P95 > 2x 기준, 가용성 < 99.9% → 즉시 롤백
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: rollback-critical-tier
+  namespace: production
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: rollback-analysis
+    csap.compliance/domain: "D-10"
+    tier: critical
+  annotations:
+    description: "Critical 티어 서비스 배포 후 자동 검증 + 롤백 분석"
+    design.ref: "MTU-N143 Design SS1"
+spec:
+  args:
+    - name: service-name
+    - name: latency-threshold-ms
+      value: "500"
+  metrics:
+    # -----------------------------------------------------------------
+    # 에러율 검증: 에러율 < 0.5% (0.005)
+    # -----------------------------------------------------------------
+    - name: error-rate-critical
+      interval: 30s
+      count: 10
+      successCondition: result[0] < 0.005
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring:9090
+          query: |
+            sum(rate(http_requests_total{job="{{args.service-name}}",code=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total{job="{{args.service-name}}"}[5m])), 0.001)
+
+    # -----------------------------------------------------------------
+    # P95 지연시간 검증: P95 < 임계값 x 2
+    # -----------------------------------------------------------------
+    - name: latency-p95-critical
+      interval: 30s
+      count: 10
+      successCondition: result[0] < {{args.latency-threshold-ms}} * 2
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring:9090
+          query: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{job="{{args.service-name}}"}[5m])) by (le)
+            ) * 1000
+
+    # -----------------------------------------------------------------
+    # 가용성 검증: 가용성 > 99.9% (0.999)
+    # -----------------------------------------------------------------
+    - name: availability-critical
+      interval: 60s
+      count: 5
+      successCondition: result[0] > 0.999
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring:9090
+          query: |
+            1 - (
+              sum(rate(http_requests_total{job="{{args.service-name}}",code=~"5.."}[10m]))
+              /
+              clamp_min(sum(rate(http_requests_total{job="{{args.service-name}}"}[10m])), 0.001)
+            )
+
+---
+# =============================================================================
+# 2. High 티어 AnalysisTemplate (표준)
+#    대상: tenant-service, user-service, subscription-service, ai-gateway
+#    에러율 > 1.0%, P95 > 2x 기준, 가용성 < 99.5% → 30초 후 롤백
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: rollback-high-tier
+  namespace: production
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: rollback-analysis
+    csap.compliance/domain: "D-10"
+    tier: high
+  annotations:
+    description: "High 티어 서비스 배포 후 자동 검증 + 롤백 분석"
+    design.ref: "MTU-N143 Design SS1"
+spec:
+  args:
+    - name: service-name
+    - name: latency-threshold-ms
+      value: "500"
+  metrics:
+    # -----------------------------------------------------------------
+    # 에러율 검증: 에러율 < 1.0% (0.01)
+    # -----------------------------------------------------------------
+    - name: error-rate-high
+      interval: 30s
+      count: 10
+      successCondition: result[0] < 0.01
+      failureLimit: 3
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring:9090
+          query: |
+            sum(rate(http_requests_total{job="{{args.service-name}}",code=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total{job="{{args.service-name}}"}[5m])), 0.001)
+
+    # -----------------------------------------------------------------
+    # P95 지연시간 검증: P95 < 임계값 x 2
+    # -----------------------------------------------------------------
+    - name: latency-p95-high
+      interval: 30s
+      count: 10
+      successCondition: result[0] < {{args.latency-threshold-ms}} * 2
+      failureLimit: 3
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring:9090
+          query: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{job="{{args.service-name}}"}[5m])) by (le)
+            ) * 1000
+
+    # -----------------------------------------------------------------
+    # 가용성 검증: 가용성 > 99.5% (0.995)
+    # -----------------------------------------------------------------
+    - name: availability-high
+      interval: 60s
+      count: 5
+      successCondition: result[0] > 0.995
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring:9090
+          query: |
+            1 - (
+              sum(rate(http_requests_total{job="{{args.service-name}}",code=~"5.."}[10m]))
+              /
+              clamp_min(sum(rate(http_requests_total{job="{{args.service-name}}"}[10m])), 0.001)
+            )
+
+---
+# =============================================================================
+# 3. Standard 티어 AnalysisTemplate (관대)
+#    대상: menu, catalog, billing, crm, notification, file 서비스
+#    에러율 > 2.0%, P95 > 3x 기준, 가용성 < 99.0% → 60초 후 롤백
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: rollback-standard-tier
+  namespace: production
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: rollback-analysis
+    csap.compliance/domain: "D-10"
+    tier: standard
+  annotations:
+    description: "Standard 티어 서비스 배포 후 자동 검증 + 롤백 분석"
+    design.ref: "MTU-N143 Design SS1"
+spec:
+  args:
+    - name: service-name
+    - name: latency-threshold-ms
+      value: "500"
+  metrics:
+    # -----------------------------------------------------------------
+    # 에러율 검증: 에러율 < 2.0% (0.02)
+    # -----------------------------------------------------------------
+    - name: error-rate-standard
+      interval: 60s
+      count: 5
+      successCondition: result[0] < 0.02
+      failureLimit: 3
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring:9090
+          query: |
+            sum(rate(http_requests_total{job="{{args.service-name}}",code=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total{job="{{args.service-name}}"}[5m])), 0.001)
+
+    # -----------------------------------------------------------------
+    # P95 지연시간 검증: P95 < 임계값 x 3
+    # -----------------------------------------------------------------
+    - name: latency-p95-standard
+      interval: 60s
+      count: 5
+      successCondition: result[0] < {{args.latency-threshold-ms}} * 3
+      failureLimit: 3
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring:9090
+          query: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{job="{{args.service-name}}"}[5m])) by (le)
+            ) * 1000
+
+    # -----------------------------------------------------------------
+    # 가용성 검증: 가용성 > 99.0% (0.99)
+    # -----------------------------------------------------------------
+    - name: availability-standard
+      interval: 60s
+      count: 5
+      successCondition: result[0] > 0.99
+      failureLimit: 3
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring:9090
+          query: |
+            1 - (
+              sum(rate(http_requests_total{job="{{args.service-name}}",code=~"5.."}[10m]))
+              /
+              clamp_min(sum(rate(http_requests_total{job="{{args.service-name}}"}[10m])), 0.001)
+            )

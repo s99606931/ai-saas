@@ -1,0 +1,184 @@
+# =============================================================================
+# 배포 후 자동 롤백 감지 + 알림 + 기록 규칙
+# Design Ref: MTU-N143 Design SS2~SS4
+# Plan SC: FR-N143.3, FR-N143.4, FR-N143.5
+# CSAP: D-06(침해사고 관리 -- 배포 롤백 자동 감지)
+#       D-10(부하분산 -- 배포 후 에러율 급증 탐지)
+#       D-12(시스템 개발 보안 -- 배포 검증 자동화)
+#
+# 적용: kubectl apply -f infra/monitoring/deployment-rollback-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: deployment-rollback-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 -- 배포 롤백 자동 감지"
+    csap.ref/d10: "부하분산 -- 배포 후 에러율 급증 탐지"
+    design.ref: "MTU-N143 Design SS2~SS4"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 배포 후 에러율 급증 감지
+    # =========================================================================
+    - name: saas:deployment:error_spike
+      rules:
+        # -----------------------------------------------------------------
+        # 배포 후 5분 이내 에러율 급증 (이전 1시간 대비 5배 이상)
+        # -----------------------------------------------------------------
+        - alert: DeploymentErrorRateSpike
+          expr: |
+            (
+              sum by (job) (rate(http_requests_total{code=~"5.."}[5m]))
+              /
+              clamp_min(sum by (job) (rate(http_requests_total[5m])), 0.001)
+            )
+            >
+            5 * (
+              sum by (job) (rate(http_requests_total{code=~"5.."}[1h] offset 10m))
+              /
+              clamp_min(sum by (job) (rate(http_requests_total[1h] offset 10m)), 0.001)
+            )
+            and
+            sum by (job) (rate(http_requests_total{code=~"5.."}[5m])) > 0
+          for: 2m
+          labels:
+            severity: critical
+            team: sre
+            category: deployment
+            csap_domain: "D-10"
+          annotations:
+            summary: "배포 후 에러율 급증 감지 -- {{ $labels.job }}"
+            description: >
+              서비스 {{ $labels.job }}에서 최근 5분간 에러율이
+              이전 1시간 평균 대비 5배 이상 급증했습니다.
+              최근 배포가 원인일 수 있습니다. 자동 롤백 여부를 확인하십시오.
+            runbook: "infra/argo-rollouts/rollback-policy.md"
+
+        # -----------------------------------------------------------------
+        # 배포 후 P95 지연시간 급증 (이전 1시간 대비 3배 이상)
+        # -----------------------------------------------------------------
+        - alert: DeploymentLatencySpike
+          expr: |
+            histogram_quantile(0.95,
+              sum by (job, le) (rate(http_request_duration_seconds_bucket[5m]))
+            )
+            >
+            3 * histogram_quantile(0.95,
+              sum by (job, le) (rate(http_request_duration_seconds_bucket[1h] offset 10m))
+            )
+          for: 3m
+          labels:
+            severity: warning
+            team: sre
+            category: deployment
+            csap_domain: "D-10"
+          annotations:
+            summary: "배포 후 지연시간 급증 감지 -- {{ $labels.job }}"
+            description: >
+              서비스 {{ $labels.job }}에서 최근 5분간 P95 지연시간이
+              이전 1시간 평균 대비 3배 이상 급증했습니다.
+
+    # =========================================================================
+    # 그룹 2: 롤백 발생 알림
+    # =========================================================================
+    - name: saas:deployment:rollback_alerts
+      rules:
+        # -----------------------------------------------------------------
+        # Argo Rollouts 롤백 발생 감지
+        # -----------------------------------------------------------------
+        - alert: ArgoRolloutAborted
+          expr: |
+            kube_customresource_rollout_info{phase="Degraded"} == 1
+            or
+            kube_customresource_analysisrun_info{phase="Failed"} == 1
+          for: 0s
+          labels:
+            severity: critical
+            team: sre
+            category: rollback
+            csap_domain: "D-06"
+          annotations:
+            summary: "자동 롤백 발생 -- {{ $labels.name }}"
+            description: >
+              Argo Rollout {{ $labels.name }}이(가) 분석 실패로 인해
+              자동 롤백되었습니다. 배포 후 메트릭 검증에서 임계값을 초과했습니다.
+              즉시 원인 분석 및 포스트모템을 진행하십시오.
+            runbook: "infra/argo-rollouts/rollback-policy.md"
+
+        # -----------------------------------------------------------------
+        # Kubernetes 기본 롤백 감지 (rollout undo)
+        # -----------------------------------------------------------------
+        - alert: KubernetesDeploymentRollback
+          expr: |
+            kube_deployment_status_observed_generation
+            < kube_deployment_metadata_generation
+          for: 1m
+          labels:
+            severity: warning
+            team: sre
+            category: rollback
+          annotations:
+            summary: "Kubernetes 배포 롤백 감지 -- {{ $labels.deployment }}"
+            description: >
+              Deployment {{ $labels.namespace }}/{{ $labels.deployment }}에서
+              롤백이 감지되었습니다. 배포 상태를 확인하십시오.
+
+    # =========================================================================
+    # 그룹 3: 배포/롤백 이력 Recording Rules
+    # =========================================================================
+    - name: saas:deployment:recording
+      interval: 1m
+      rules:
+        # 서비스별 최근 1시간 에러율 (배포 검증 기준선)
+        - record: deployment:error_rate:baseline_1h
+          expr: |
+            sum by (job) (rate(http_requests_total{code=~"5.."}[1h]))
+            /
+            clamp_min(sum by (job) (rate(http_requests_total[1h])), 0.001)
+
+        # 서비스별 최근 5분 에러율 (배포 후 현재 상태)
+        - record: deployment:error_rate:current_5m
+          expr: |
+            sum by (job) (rate(http_requests_total{code=~"5.."}[5m]))
+            /
+            clamp_min(sum by (job) (rate(http_requests_total[5m])), 0.001)
+
+        # 에러율 변화 비율 (현재/기준선)
+        - record: deployment:error_rate:change_ratio
+          expr: |
+            deployment:error_rate:current_5m
+            /
+            clamp_min(deployment:error_rate:baseline_1h, 0.0001)
+
+        # 서비스별 P95 지연시간 기준선 (1시간)
+        - record: deployment:latency_p95:baseline_1h
+          expr: |
+            histogram_quantile(0.95,
+              sum by (job, le) (rate(http_request_duration_seconds_bucket[1h]))
+            )
+
+        # 서비스별 P95 지연시간 현재 (5분)
+        - record: deployment:latency_p95:current_5m
+          expr: |
+            histogram_quantile(0.95,
+              sum by (job, le) (rate(http_request_duration_seconds_bucket[5m]))
+            )
+
+        # 배포 성공률 (최근 7일, Argo Rollouts 기반)
+        - record: deployment:success:rate_7d
+          expr: |
+            sum by (namespace) (
+              kube_customresource_rollout_info{phase="Healthy"}
+            )
+            /
+            clamp_min(
+              sum by (namespace) (
+                kube_customresource_rollout_info
+              ), 1
+            )

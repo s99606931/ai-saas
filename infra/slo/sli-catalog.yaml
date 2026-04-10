@@ -1,0 +1,235 @@
+# =============================================================================
+# SLI/SLO 통합 카탈로그 -- 공공기관 SaaS 플랫폼
+# Design Ref: MTU-N142 Design SS4
+# Plan SC: FR-N142.4
+# CSAP: D-06(침해사고 관리 -- 전체 서비스 SLO 일람)
+#
+# 용도: 전체 서비스 SLI/SLO 현황 일람, 감리 증빙, 자동화 참조
+# 최종 갱신: 2026-04-10
+# =============================================================================
+
+catalog:
+  version: "1.0.0"
+  lastUpdated: "2026-04-10"
+  standard: "Sloth CRD v1 (PrometheusServiceLevel)"
+  sliTypes:
+    - name: availability
+      description: "HTTP 5xx 비율 기반 서비스 가용성"
+      metric: "http_requests_total"
+      errorDefinition: "code=~5.."
+    - name: latency
+      description: "P95 응답시간 임계값 초과 비율"
+      metric: "http_request_duration_seconds_bucket"
+      errorDefinition: "le 임계값 기준 초과 요청"
+    - name: throughput
+      description: "초당 요청 처리량 최소 기준 미달"
+      metric: "http_requests_total rate"
+      errorDefinition: "처리량 < 최소 기준 rps"
+
+  tiers:
+    critical:
+      description: "핵심 서비스 — 에러 버짓 소진 시 기능 동결"
+      minAvailability: 99.9
+      errorBudgetPolicy: "freeze_deployments"
+    high:
+      description: "중요 서비스 — 에러 버짓 소진 시 주의 강화"
+      minAvailability: 99.5
+      errorBudgetPolicy: "escalate_monitoring"
+    standard:
+      description: "일반 서비스 — 에러 버짓 소진 시 알림"
+      minAvailability: 99.5
+      errorBudgetPolicy: "alert_only"
+
+  services:
+    # =====================================================================
+    # Critical 티어
+    # =====================================================================
+    - name: api-gateway
+      tier: critical
+      team: platform
+      crdFile: api-gateway-slo.yaml
+      csapDomain: "D-06"
+      slos:
+        - type: availability
+          objective: 99.9
+          window: 30d
+          errorBudget: "0.1% (월간 43.2분)"
+        - type: latency
+          objective: 99.0
+          threshold: "P95 < 500ms"
+          window: 30d
+
+    - name: auth-service
+      tier: critical
+      team: platform
+      crdFile: auth-service-slo.yaml
+      csapDomain: "D-08"
+      slos:
+        - type: availability
+          objective: 99.95
+          window: 30d
+          errorBudget: "0.05% (월간 21.6분)"
+
+    - name: audit-service
+      tier: critical
+      team: platform
+      crdFile: audit-service-slo.yaml
+      csapDomain: "D-06"
+      slos:
+        - type: availability
+          objective: 99.99
+          window: 30d
+          errorBudget: "0.01% (월간 4.3분)"
+
+    # =====================================================================
+    # High 티어
+    # =====================================================================
+    - name: tenant-service
+      tier: high
+      team: platform
+      crdFile: tenant-service-slo.yaml
+      slos:
+        - type: availability
+          objective: 99.9
+          window: 30d
+          errorBudget: "0.1% (월간 43.2분)"
+
+    - name: user-service
+      tier: high
+      team: platform
+      crdFile: user-service-slo.yaml
+      csapDomain: "D-08"
+      slos:
+        - type: availability
+          objective: 99.9
+          window: 30d
+          errorBudget: "0.1% (월간 43.2분)"
+        - type: latency
+          objective: 99.0
+          threshold: "P95 < 500ms"
+          window: 30d
+
+    - name: subscription-service
+      tier: high
+      team: platform
+      crdFile: subscription-service-slo.yaml
+      slos:
+        - type: availability
+          objective: 99.9
+          window: 30d
+          errorBudget: "0.1% (월간 43.2분)"
+        - type: latency
+          objective: 99.0
+          threshold: "P95 < 500ms"
+          window: 30d
+
+    - name: ai-gateway
+      tier: high
+      team: ai
+      crdFile: ai-gateway-slo.yaml
+      slos:
+        - type: availability
+          objective: 99.5
+          window: 30d
+          errorBudget: "0.5% (월간 3.6시간)"
+
+    # =====================================================================
+    # Standard 티어
+    # =====================================================================
+    - name: menu-service
+      tier: standard
+      team: platform
+      crdFile: menu-service-slo.yaml
+      slos:
+        - type: availability
+          objective: 99.5
+          window: 30d
+          errorBudget: "0.5% (월간 3.6시간)"
+        - type: latency
+          objective: 99.0
+          threshold: "P95 < 500ms"
+          window: 30d
+
+    - name: catalog-service
+      tier: standard
+      team: platform
+      crdFile: catalog-service-slo.yaml
+      slos:
+        - type: availability
+          objective: 99.5
+          window: 30d
+          errorBudget: "0.5% (월간 3.6시간)"
+        - type: latency
+          objective: 99.0
+          threshold: "P95 < 500ms"
+          window: 30d
+
+    - name: billing-service
+      tier: standard
+      team: platform
+      crdFile: billing-service-slo.yaml
+      slos:
+        - type: availability
+          objective: 99.5
+          window: 30d
+          errorBudget: "0.5% (월간 3.6시간)"
+        - type: latency
+          objective: 99.0
+          threshold: "P95 < 1000ms"
+          window: 30d
+
+    - name: crm-service
+      tier: standard
+      team: platform
+      crdFile: crm-service-slo.yaml
+      slos:
+        - type: availability
+          objective: 99.5
+          window: 30d
+          errorBudget: "0.5% (월간 3.6시간)"
+        - type: latency
+          objective: 99.0
+          threshold: "P95 < 1000ms"
+          window: 30d
+
+    - name: notification-service
+      tier: standard
+      team: platform
+      crdFile: notification-service-slo.yaml
+      csapDomain: "D-06"
+      slos:
+        - type: availability
+          objective: 99.5
+          window: 30d
+          errorBudget: "0.5% (월간 3.6시간)"
+        - type: latency
+          objective: 99.0
+          threshold: "P95 < 1000ms"
+          window: 30d
+
+    - name: file-service
+      tier: standard
+      team: platform
+      crdFile: file-service-slo.yaml
+      slos:
+        - type: availability
+          objective: 99.5
+          window: 30d
+          errorBudget: "0.5% (월간 3.6시간)"
+        - type: latency
+          objective: 99.0
+          threshold: "P95 < 2000ms"
+          window: 30d
+
+  governance:
+    reviewCycle: "quarterly"
+    changeProcess:
+      - "SRE 팀 변경 제안서 작성"
+      - "서비스 오너 합의"
+      - "PM 승인"
+      - "README.md + CRD 동시 업데이트"
+      - "변경 이력 기록"
+    errorBudgetExhaustion:
+      critical: "신규 배포 동결 + 안정성 작업 전환"
+      high: "모니터링 강화 + 원인 분석"
+      standard: "알림 발송 + 추이 관찰"

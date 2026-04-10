@@ -1,0 +1,86 @@
+# =============================================================================
+# Menu Service SLO 정의 (Sloth CRD 형식)
+# Design Ref: MTU-N142 Design SS3.1
+# Plan SC: FR-N142.2
+#
+# 티어: Standard — 가용성 99.5%, 지연 P95 < 500ms
+# 적용: kubectl apply -f infra/slo/menu-service-slo.yaml
+# =============================================================================
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: menu-service-slo
+  namespace: production
+  labels:
+    app.kubernetes.io/name: menu-service
+    app.kubernetes.io/part-of: saas-platform
+    team: platform
+    tier: standard
+spec:
+  service: "menu-service"
+  labels:
+    owner: "platform-team"
+    tier: "standard"
+
+  slos:
+    # =========================================================================
+    # SLO 1: 가용성 — 99.5% 성공률
+    # =========================================================================
+    - name: "availability"
+      objective: 99.5
+      description: "메뉴 서비스 HTTP 요청 성공률"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_requests_total{job="menu-service",code=~"5.."}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_requests_total{job="menu-service"}[{{.window}}]))
+      alerting:
+        name: MenuServiceAvailabilitySLOBreach
+        labels:
+          category: "availability"
+          severity: "warning"
+        annotations:
+          summary: "Menu Service 가용성 SLO 위반"
+          description: >
+            메뉴 서비스 가용성이 99.5% SLO 미달입니다.
+            UI 메뉴 구성 기능에 장애가 발생할 수 있습니다.
+          runbook: "docs/operations/slo-guide.md"
+        pageAlert:
+          labels:
+            severity: "critical"
+        ticketAlert:
+          labels:
+            severity: "warning"
+
+    # =========================================================================
+    # SLO 2: 지연시간 — P95 < 500ms
+    # =========================================================================
+    - name: "latency"
+      objective: 99.0
+      description: "메뉴 서비스 P95 응답시간 500ms 미만"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_request_duration_seconds_bucket{job="menu-service",le="0.5"}[{{.window}}]))
+            -
+            sum(rate(http_request_duration_seconds_count{job="menu-service"}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_request_duration_seconds_count{job="menu-service"}[{{.window}}]))
+      alerting:
+        name: MenuServiceLatencySLOBreach
+        labels:
+          category: "latency"
+          severity: "warning"
+        annotations:
+          summary: "Menu Service 지연시간 SLO 위반"
+          description: >
+            메뉴 서비스 P95 응답시간이 500ms를 초과하는 비율이
+            SLO 목표(99%)를 미달하고 있습니다.
+          runbook: "docs/operations/slo-guide.md"
+        pageAlert:
+          labels:
+            severity: "critical"
+        ticketAlert:
+          labels:
+            severity: "warning"

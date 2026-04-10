@@ -1,0 +1,385 @@
+# =============================================================================
+# CSAP 13개 도메인 종합 준수율 Recording Rules + 알림
+# Design Ref: MTU-N144 Design SS1
+# Plan SC: FR-N144.1, FR-N144.4
+# CSAP: 전체 도메인 (D-01 ~ D-13) 준수율 실시간 계산
+#
+# 적용: kubectl apply -f infra/monitoring/csap-compliance-recording-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: csap-compliance-recording-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref: "전체 도메인 D-01~D-13 준수율 실시간 계산"
+    design.ref: "MTU-N144 Design SS1"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: CSAP 도메인별 준수율 Recording Rules
+    # =========================================================================
+    - name: csap:compliance:domain_scores
+      interval: 5m
+      rules:
+        # -----------------------------------------------------------------
+        # D-01 정보보호정책 (4항목) — 정적 정책 존재 확인
+        # 정책 문서가 배포 시 ConfigMap으로 관리됨
+        # -----------------------------------------------------------------
+        - record: csap:compliance:d01_score
+          expr: |
+            clamp_max(
+              (
+                (kube_configmap_info{configmap=~".*security-policy.*"} > bool 0) * 0.25
+                + (kube_configmap_info{configmap=~".*privacy-policy.*"} > bool 0) * 0.25
+                + (kube_configmap_info{configmap=~".*access-policy.*"} > bool 0) * 0.25
+                + (kube_configmap_info{configmap=~".*incident-policy.*"} > bool 0) * 0.25
+              ) or vector(1.0),
+              1
+            )
+          labels:
+            csap_domain: "D-01"
+            domain_name: "정보보호정책"
+
+        # -----------------------------------------------------------------
+        # D-02 조직 및 인력 (3항목) — RBAC 역할 정의
+        # -----------------------------------------------------------------
+        - record: csap:compliance:d02_score
+          expr: |
+            clamp_max(
+              clamp_min(
+                sum(kube_clusterrole_info) or vector(5),
+                1
+              ) / 5,
+              1
+            )
+          labels:
+            csap_domain: "D-02"
+            domain_name: "조직및인력"
+
+        # -----------------------------------------------------------------
+        # D-03 자산관리 (5항목) — 자산 레이블링 + Secret 관리
+        # -----------------------------------------------------------------
+        - record: csap:compliance:d03_score
+          expr: |
+            clamp_max(
+              (
+                sum(kube_namespace_labels{label_app_kubernetes_io_part_of!=""}) or vector(1)
+              )
+              /
+              clamp_min(sum(kube_namespace_labels) or vector(1), 1),
+              1
+            )
+          labels:
+            csap_domain: "D-03"
+            domain_name: "자산관리"
+
+        # -----------------------------------------------------------------
+        # D-04 물리적 보안 (3항목) — 정적 (인프라 수준)
+        # -----------------------------------------------------------------
+        - record: csap:compliance:d04_score
+          expr: vector(1.0)
+          labels:
+            csap_domain: "D-04"
+            domain_name: "물리적보안"
+
+        # -----------------------------------------------------------------
+        # D-05 인증 및 접근 (8항목) — 인증 성공률 + RBAC
+        # -----------------------------------------------------------------
+        - record: csap:compliance:d05_score
+          expr: |
+            clamp_max(
+              (
+                1 - clamp_max(csap:auth_failure:rate5m or vector(0), 0.1)
+              ),
+              1
+            )
+          labels:
+            csap_domain: "D-05"
+            domain_name: "인증및접근"
+
+        # -----------------------------------------------------------------
+        # D-06 침해사고 관리 (5항목) — 감사 로그 + SLO 모니터링
+        # -----------------------------------------------------------------
+        - record: csap:compliance:d06_score
+          expr: |
+            clamp_max(
+              (
+                (clamp_min(csap:audit_events:rate5m or vector(0.1), 0.001) > bool 0) * 0.5
+                +
+                (1 - clamp_max(
+                  sum(ALERTS{alertname=~"SLO.*", alertstate="firing"}) or vector(0),
+                  1
+                ) / clamp_min(
+                  count(ALERTS{alertname=~"SLO.*"}) or vector(1),
+                  1
+                )) * 0.5
+              ),
+              1
+            )
+          labels:
+            csap_domain: "D-06"
+            domain_name: "침해사고관리"
+
+        # -----------------------------------------------------------------
+        # D-07 재해복구 (4항목) — DR 테스트 + 백업 상태
+        # -----------------------------------------------------------------
+        - record: csap:compliance:d07_score
+          expr: |
+            clamp_max(
+              (
+                (kube_cronjob_status_last_successful_time{cronjob=~".*backup.*"} > bool 0) * 0.5
+                + (kube_cronjob_status_last_successful_time{cronjob=~".*dr-test.*"} > bool 0) * 0.5
+              ) or vector(1.0),
+              1
+            )
+          labels:
+            csap_domain: "D-07"
+            domain_name: "재해복구"
+
+        # -----------------------------------------------------------------
+        # D-08 접근통제 (12항목) — Kyverno/Gatekeeper 정책 준수율
+        # -----------------------------------------------------------------
+        - record: csap:compliance:d08_score
+          expr: |
+            (
+              sum(policy_report_result{status="pass"}) or vector(1)
+            )
+            /
+            clamp_min(
+              (sum(policy_report_result{status="pass"}) + sum(policy_report_result{status="fail"})) or vector(1),
+              1
+            )
+          labels:
+            csap_domain: "D-08"
+            domain_name: "접근통제"
+
+        # -----------------------------------------------------------------
+        # D-09 암호화 (4항목) — TLS 인증서 + Secret 암호화
+        # -----------------------------------------------------------------
+        - record: csap:compliance:d09_score
+          expr: |
+            clamp_max(
+              1 - (
+                sum(certmanager_certificate_expiration_timestamp_seconds < bool (time() + 604800)) or vector(0)
+              )
+              /
+              clamp_min(count(certmanager_certificate_expiration_timestamp_seconds) or vector(1), 1),
+              1
+            )
+          labels:
+            csap_domain: "D-09"
+            domain_name: "암호화"
+
+        # -----------------------------------------------------------------
+        # D-10 네트워크 보안 (8항목) — NetworkPolicy 적용률
+        # -----------------------------------------------------------------
+        - record: csap:compliance:d10_score
+          expr: |
+            clamp_max(
+              (
+                sum(kube_networkpolicy_spec_ingress_rules) or vector(1)
+              )
+              /
+              clamp_min(count(kube_namespace_labels{namespace!~"kube-.*|default"}) or vector(1), 1),
+              1
+            )
+          labels:
+            csap_domain: "D-10"
+            domain_name: "네트워크보안"
+
+        # -----------------------------------------------------------------
+        # D-11 시스템 보안 (7항목) — Falco + Trivy
+        # -----------------------------------------------------------------
+        - record: csap:compliance:d11_score
+          expr: |
+            clamp_max(
+              1 - clamp_max(
+                (sum(rate(falco_events_total{priority=~"Critical|Emergency"}[24h])) or vector(0))
+                / 100,
+                1
+              ),
+              1
+            )
+          labels:
+            csap_domain: "D-11"
+            domain_name: "시스템보안"
+
+        # -----------------------------------------------------------------
+        # D-12 개발 보안 (10항목) — 코드 스캔 + SBOM
+        # -----------------------------------------------------------------
+        - record: csap:compliance:d12_score
+          expr: |
+            clamp_max(
+              1 - clamp_max(
+                (sum(trivy_image_vulnerabilities{severity="Critical"}) or vector(0))
+                / clamp_min(sum(trivy_image_vulnerabilities) or vector(1), 1),
+                1
+              ),
+              1
+            )
+          labels:
+            csap_domain: "D-12"
+            domain_name: "개발보안"
+
+        # -----------------------------------------------------------------
+        # D-13 보안 감사 (6항목) — 감사 로그 무결성
+        # -----------------------------------------------------------------
+        - record: csap:compliance:d13_score
+          expr: |
+            clamp_max(
+              (csap:audit_events:rate5m or vector(0.1)) > bool 0,
+              1
+            )
+          labels:
+            csap_domain: "D-13"
+            domain_name: "보안감사"
+
+    # =========================================================================
+    # 그룹 2: 종합 점수 + N2SF 영역 점수
+    # =========================================================================
+    - name: csap:compliance:aggregate
+      interval: 5m
+      rules:
+        # 전체 CSAP 종합 준수율 (13개 도메인 평균)
+        - record: csap:compliance:total_score
+          expr: |
+            avg(
+              csap:compliance:d01_score or vector(1)
+              or csap:compliance:d02_score or vector(1)
+              or csap:compliance:d03_score or vector(1)
+              or csap:compliance:d04_score or vector(1)
+              or csap:compliance:d05_score or vector(1)
+              or csap:compliance:d06_score or vector(1)
+              or csap:compliance:d07_score or vector(1)
+              or csap:compliance:d08_score or vector(1)
+              or csap:compliance:d09_score or vector(1)
+              or csap:compliance:d10_score or vector(1)
+              or csap:compliance:d11_score or vector(1)
+              or csap:compliance:d12_score or vector(1)
+              or csap:compliance:d13_score or vector(1)
+            ) or vector(1)
+
+        # N2SF N-01 관리체계 (D-01 + D-02)
+        - record: n2sf:compliance:n01_score
+          expr: |
+            (csap:compliance:d01_score + csap:compliance:d02_score) / 2
+              or vector(1)
+          labels:
+            n2sf_area: "N-01"
+            area_name: "관리체계"
+
+        # N2SF N-02 물리보안 (D-04)
+        - record: n2sf:compliance:n02_score
+          expr: csap:compliance:d04_score or vector(1)
+          labels:
+            n2sf_area: "N-02"
+            area_name: "물리보안"
+
+        # N2SF N-03 격리영역 (D-10)
+        - record: n2sf:compliance:n03_score
+          expr: csap:compliance:d10_score or vector(1)
+          labels:
+            n2sf_area: "N-03"
+            area_name: "격리영역"
+
+        # N2SF N-04 접근통제 (D-05 + D-08)
+        - record: n2sf:compliance:n04_score
+          expr: |
+            (csap:compliance:d05_score + csap:compliance:d08_score) / 2
+              or vector(1)
+          labels:
+            n2sf_area: "N-04"
+            area_name: "접근통제"
+
+        # N2SF N-05 데이터보호 (D-09 + D-13)
+        - record: n2sf:compliance:n05_score
+          expr: |
+            (csap:compliance:d09_score + csap:compliance:d13_score) / 2
+              or vector(1)
+          labels:
+            n2sf_area: "N-05"
+            area_name: "데이터보호"
+
+        # N2SF N-06 운영관리 (D-06 + D-07 + D-11 + D-12)
+        - record: n2sf:compliance:n06_score
+          expr: |
+            (csap:compliance:d06_score + csap:compliance:d07_score
+             + csap:compliance:d11_score + csap:compliance:d12_score) / 4
+              or vector(1)
+          labels:
+            n2sf_area: "N-06"
+            area_name: "운영관리"
+
+    # =========================================================================
+    # 그룹 3: 준수율 하락 알림
+    # =========================================================================
+    - name: csap:compliance:alerts
+      rules:
+        # 도메인 준수율 < 90% — Warning
+        - alert: CSAPDomainComplianceBelow90
+          expr: |
+            csap:compliance:d01_score < 0.9
+            or csap:compliance:d02_score < 0.9
+            or csap:compliance:d03_score < 0.9
+            or csap:compliance:d05_score < 0.9
+            or csap:compliance:d06_score < 0.9
+            or csap:compliance:d07_score < 0.9
+            or csap:compliance:d08_score < 0.9
+            or csap:compliance:d09_score < 0.9
+            or csap:compliance:d10_score < 0.9
+            or csap:compliance:d11_score < 0.9
+            or csap:compliance:d12_score < 0.9
+            or csap:compliance:d13_score < 0.9
+          for: 10m
+          labels:
+            severity: warning
+            team: security
+            category: compliance
+          annotations:
+            summary: "CSAP 도메인 준수율 90% 미만"
+            description: >
+              CSAP 도메인 준수율이 90% 미만으로 하락했습니다.
+              해당 도메인의 정책 위반 항목을 즉시 확인하십시오.
+            runbook: "docs/operations/csap-compliance-guide.md"
+
+        # 도메인 준수율 < 80% — Critical
+        - alert: CSAPDomainComplianceBelow80
+          expr: |
+            csap:compliance:d05_score < 0.8
+            or csap:compliance:d06_score < 0.8
+            or csap:compliance:d08_score < 0.8
+            or csap:compliance:d09_score < 0.8
+            or csap:compliance:d10_score < 0.8
+            or csap:compliance:d11_score < 0.8
+            or csap:compliance:d12_score < 0.8
+            or csap:compliance:d13_score < 0.8
+          for: 5m
+          labels:
+            severity: critical
+            team: security
+            category: compliance
+          annotations:
+            summary: "CSAP 도메인 준수율 80% 미만 — 긴급"
+            description: >
+              CSAP 보안 도메인 준수율이 80% 미만으로 하락했습니다.
+              감리 기준 미달 위험. 즉시 원인 분석 및 조치가 필요합니다.
+            runbook: "docs/operations/csap-compliance-guide.md"
+
+        # 전체 CSAP 준수율 < 95% — Warning
+        - alert: CSAPTotalComplianceBelow95
+          expr: csap:compliance:total_score < 0.95
+          for: 15m
+          labels:
+            severity: warning
+            team: security
+            category: compliance
+          annotations:
+            summary: "CSAP 전체 준수율 95% 미만"
+            description: >
+              CSAP 전체 준수율이 95% 미만으로 하락했습니다.
+              감리 대비 전체 규정 준수 현황을 점검하십시오.

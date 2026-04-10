@@ -1,0 +1,93 @@
+{
+  "annotations": { "list": [] },
+  "description": "전체 서비스 건강 상태 통합 대시보드",
+  "editable": true,
+  "panels": [
+    {
+      "title": "서비스 건강 상태",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "title": "전체 서비스 건강률",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "targets": [{ "expr": "service:health:total_ratio or vector(1)", "legendFormat": "건강률" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "서비스별 상태",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 10, "w": 18, "x": 6, "y": 1 },
+      "targets": [
+        {
+          "expr": "up{job=~\"api-gateway|auth-service|audit-service|tenant-service|user-service|subscription-service|ai-gateway|menu-service|catalog-service|billing-service|crm-service|notification-service|file-service\"}",
+          "legendFormat": "{{job}}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Critical 서비스",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 11 },
+      "collapsed": false
+    },
+    {
+      "title": "API Gateway",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 12 },
+      "targets": [{ "expr": "up{job=\"api-gateway\"} or vector(1)", "legendFormat": "" }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } }, { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }] } }
+    },
+    {
+      "title": "Auth Service",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 12 },
+      "targets": [{ "expr": "up{job=\"auth-service\"} or vector(1)", "legendFormat": "" }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } }, { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }] } }
+    },
+    {
+      "title": "Audit Service",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 12 },
+      "targets": [{ "expr": "up{job=\"audit-service\"} or vector(1)", "legendFormat": "" }],
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } }, { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }] } }
+    },
+    {
+      "title": "건강 상태 추이 (7일)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "service:health:total_ratio", "legendFormat": "전체 건강률" },
+        { "expr": "up{job=\"api-gateway\"}", "legendFormat": "API Gateway" },
+        { "expr": "up{job=\"auth-service\"}", "legendFormat": "Auth" },
+        { "expr": "up{job=\"audit-service\"}", "legendFormat": "Audit" }
+      ],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "custom": { "fillOpacity": 10 } } }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["healthcheck", "service-status", "sre"],
+  "time": { "from": "now-7d", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "서비스 건강 상태 통합",
+  "uid": "service-health-status",
+  "version": 1
+}

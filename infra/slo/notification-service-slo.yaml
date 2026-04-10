@@ -1,0 +1,90 @@
+# =============================================================================
+# Notification Service SLO 정의 (Sloth CRD 형식)
+# Design Ref: MTU-N142 Design SS3.1
+# Plan SC: FR-N142.2
+# CSAP: D-06(침해사고 관리 -- 보안 알림 전달 보장)
+#
+# 티어: Standard — 가용성 99.5%, 지연 P95 < 1000ms
+# 적용: kubectl apply -f infra/slo/notification-service-slo.yaml
+# =============================================================================
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: notification-service-slo
+  namespace: production
+  labels:
+    app.kubernetes.io/name: notification-service
+    app.kubernetes.io/part-of: saas-platform
+    csap.compliance/domain: "D-06"
+    team: platform
+    tier: standard
+spec:
+  service: "notification-service"
+  labels:
+    owner: "platform-team"
+    tier: "standard"
+    compliance: "csap-d06"
+
+  slos:
+    # =========================================================================
+    # SLO 1: 가용성 — 99.5% 성공률
+    # =========================================================================
+    - name: "availability"
+      objective: 99.5
+      description: "알림 서비스 HTTP 요청 성공률 (보안 알림 포함)"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_requests_total{job="notification-service",code=~"5.."}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_requests_total{job="notification-service"}[{{.window}}]))
+      alerting:
+        name: NotificationServiceAvailabilitySLOBreach
+        labels:
+          category: "availability"
+          severity: "warning"
+          csap_domain: "D-06"
+        annotations:
+          summary: "Notification Service 가용성 SLO 위반"
+          description: >
+            알림 서비스 가용성이 99.5% SLO 미달입니다.
+            보안 알림 전달 지연으로 CSAP D-06 침해사고 대응에 영향이 있을 수 있습니다.
+          runbook: "docs/operations/slo-guide.md"
+        pageAlert:
+          labels:
+            severity: "critical"
+        ticketAlert:
+          labels:
+            severity: "warning"
+
+    # =========================================================================
+    # SLO 2: 지연시간 — P95 < 1000ms
+    # =========================================================================
+    - name: "latency"
+      objective: 99.0
+      description: "알림 서비스 P95 응답시간 1000ms 미만"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_request_duration_seconds_bucket{job="notification-service",le="1.0"}[{{.window}}]))
+            -
+            sum(rate(http_request_duration_seconds_count{job="notification-service"}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_request_duration_seconds_count{job="notification-service"}[{{.window}}]))
+      alerting:
+        name: NotificationServiceLatencySLOBreach
+        labels:
+          category: "latency"
+          severity: "warning"
+        annotations:
+          summary: "Notification Service 지연시간 SLO 위반"
+          description: >
+            알림 서비스 P95 응답시간이 1000ms를 초과하는 비율이
+            SLO 목표(99%)를 미달하고 있습니다.
+          runbook: "docs/operations/slo-guide.md"
+        pageAlert:
+          labels:
+            severity: "critical"
+        ticketAlert:
+          labels:
+            severity: "warning"

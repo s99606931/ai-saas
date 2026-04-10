@@ -1,0 +1,164 @@
+# =============================================================================
+# 통합 헬스체크 프로브 설정 -- Blackbox Exporter + 알림 규칙
+# Design Ref: MTU-N147 Design SS3
+# Plan SC: FR-N147.2, FR-N147.3
+# CSAP: D-10(부하분산 -- 서비스 가용성 자동 확인)
+#
+# 적용: kubectl apply -f infra/monitoring/healthcheck-probes.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: healthcheck-probes
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d10: "부하분산 -- 서비스 헬스체크 자동 모니터링"
+    design.ref: "MTU-N147 Design SS3"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 서비스 헬스체크 Recording Rules
+    # =========================================================================
+    - name: saas:healthcheck:recording
+      interval: 30s
+      rules:
+        # 서비스별 헬스체크 상태 (up/down)
+        - record: service:health:status
+          expr: |
+            up{job=~"api-gateway|auth-service|audit-service|tenant-service|user-service|subscription-service|ai-gateway|menu-service|catalog-service|billing-service|crm-service|notification-service|file-service"}
+            or vector(0)
+
+        # 전체 서비스 건강률
+        - record: service:health:total_ratio
+          expr: |
+            sum(up{job=~"api-gateway|auth-service|audit-service|tenant-service|user-service|subscription-service|ai-gateway|menu-service|catalog-service|billing-service|crm-service|notification-service|file-service"} == 1)
+            /
+            clamp_min(
+              count(up{job=~"api-gateway|auth-service|audit-service|tenant-service|user-service|subscription-service|ai-gateway|menu-service|catalog-service|billing-service|crm-service|notification-service|file-service"}),
+              1
+            )
+            or vector(1)
+
+        # Blackbox Exporter HTTP 프로브 성공률
+        - record: service:probe:success_ratio
+          expr: |
+            sum by (instance) (probe_success{job="blackbox-http"})
+            or vector(1)
+
+        # Blackbox Exporter 프로브 지연시간
+        - record: service:probe:duration_seconds
+          expr: |
+            probe_duration_seconds{job="blackbox-http"}
+            or vector(0)
+
+    # =========================================================================
+    # 그룹 2: 헬스체크 실패 알림
+    # =========================================================================
+    - name: saas:healthcheck:alerts
+      rules:
+        # -----------------------------------------------------------------
+        # Critical 서비스 다운 (api-gateway, auth, audit)
+        # -----------------------------------------------------------------
+        - alert: CriticalServiceDown
+          expr: |
+            up{job=~"api-gateway|auth-service|audit-service"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            team: sre
+            category: healthcheck
+            csap_domain: "D-10"
+          annotations:
+            summary: "Critical 서비스 다운 -- {{ $labels.job }}"
+            description: >
+              Critical 티어 서비스 {{ $labels.job }}이(가) 응답하지 않습니다.
+              즉시 원인 분석 및 복구가 필요합니다.
+              CSAP D-10 부하분산 요건에 따라 자동 전환을 확인하십시오.
+            runbook: "docs/operations/service-recovery.md"
+
+        # -----------------------------------------------------------------
+        # High 서비스 다운
+        # -----------------------------------------------------------------
+        - alert: HighServiceDown
+          expr: |
+            up{job=~"tenant-service|user-service|subscription-service|ai-gateway"} == 0
+          for: 2m
+          labels:
+            severity: warning
+            team: sre
+            category: healthcheck
+          annotations:
+            summary: "High 서비스 다운 -- {{ $labels.job }}"
+            description: >
+              High 티어 서비스 {{ $labels.job }}이(가) 응답하지 않습니다.
+              2분 이상 지속 중. 원인 확인이 필요합니다.
+
+        # -----------------------------------------------------------------
+        # Standard 서비스 다운
+        # -----------------------------------------------------------------
+        - alert: StandardServiceDown
+          expr: |
+            up{job=~"menu-service|catalog-service|billing-service|crm-service|notification-service|file-service"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            category: healthcheck
+          annotations:
+            summary: "Standard 서비스 다운 -- {{ $labels.job }}"
+            description: >
+              Standard 티어 서비스 {{ $labels.job }}이(가) 5분 이상 응답하지 않습니다.
+
+        # -----------------------------------------------------------------
+        # 전체 서비스 건강률 90% 미만
+        # -----------------------------------------------------------------
+        - alert: OverallServiceHealthBelow90
+          expr: service:health:total_ratio < 0.9
+          for: 3m
+          labels:
+            severity: critical
+            team: sre
+            category: healthcheck
+            csap_domain: "D-10"
+          annotations:
+            summary: "전체 서비스 건강률 90% 미만"
+            description: >
+              전체 서비스 중 10% 이상이 응답하지 않습니다.
+              현재 건강률: {{ $value | printf "%.1f" }}%.
+              대규모 장애 가능성을 확인하십시오.
+
+        # -----------------------------------------------------------------
+        # Blackbox 프로브 실패
+        # -----------------------------------------------------------------
+        - alert: BlackboxProbeFailure
+          expr: probe_success{job="blackbox-http"} == 0
+          for: 2m
+          labels:
+            severity: warning
+            team: sre
+            category: healthcheck
+          annotations:
+            summary: "HTTP 프로브 실패 -- {{ $labels.instance }}"
+            description: >
+              Blackbox Exporter HTTP 프로브가 {{ $labels.instance }}에서
+              2분 이상 실패하고 있습니다.
+
+        # -----------------------------------------------------------------
+        # 프로브 지연시간 급증 (> 5초)
+        # -----------------------------------------------------------------
+        - alert: ProbeHighLatency
+          expr: probe_duration_seconds{job="blackbox-http"} > 5
+          for: 3m
+          labels:
+            severity: warning
+            team: sre
+            category: healthcheck
+          annotations:
+            summary: "프로브 지연시간 급증 -- {{ $labels.instance }}"
+            description: >
+              {{ $labels.instance }} 서비스의 프로브 응답시간이
+              5초를 초과하고 있습니다. 서비스 성능 저하를 확인하십시오.

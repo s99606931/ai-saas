@@ -1,0 +1,89 @@
+# =============================================================================
+# User Service SLO 정의 (Sloth CRD 형식)
+# Design Ref: MTU-N142 Design SS3.1
+# Plan SC: FR-N142.2
+# CSAP: D-08(접근 통제 -- 사용자 관리 가용성), D-06(침해사고 관리)
+#
+# 티어: High — 가용성 99.9%, 지연 P95 < 500ms
+# 적용: kubectl apply -f infra/slo/user-service-slo.yaml
+# =============================================================================
+apiVersion: sloth.slok.dev/v1
+kind: PrometheusServiceLevel
+metadata:
+  name: user-service-slo
+  namespace: production
+  labels:
+    app.kubernetes.io/name: user-service
+    app.kubernetes.io/part-of: saas-platform
+    csap.compliance/domain: "D-08"
+    team: platform
+    tier: high
+spec:
+  service: "user-service"
+  labels:
+    owner: "platform-team"
+    tier: "high"
+
+  slos:
+    # =========================================================================
+    # SLO 1: 가용성 — 99.9% 성공률
+    # =========================================================================
+    - name: "availability"
+      objective: 99.9
+      description: "사용자 서비스 HTTP 요청 성공률 (CSAP D-08 접근 통제)"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_requests_total{job="user-service",code=~"5.."}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_requests_total{job="user-service"}[{{.window}}]))
+      alerting:
+        name: UserServiceAvailabilitySLOBreach
+        labels:
+          category: "availability"
+          severity: "critical"
+          csap_domain: "D-08"
+        annotations:
+          summary: "User Service 가용성 SLO 위반"
+          description: >
+            사용자 서비스 가용성이 99.9% SLO 미달입니다.
+            CSAP D-08 접근 통제 관련 사용자 관리 기능 장애 가능성을 확인하십시오.
+          runbook: "docs/operations/slo-guide.md"
+        pageAlert:
+          labels:
+            severity: "critical"
+        ticketAlert:
+          labels:
+            severity: "warning"
+
+    # =========================================================================
+    # SLO 2: 지연시간 — P95 < 500ms
+    # =========================================================================
+    - name: "latency"
+      objective: 99.0
+      description: "사용자 서비스 P95 응답시간 500ms 미만"
+      sli:
+        events:
+          errorQuery: |
+            sum(rate(http_request_duration_seconds_bucket{job="user-service",le="0.5"}[{{.window}}]))
+            -
+            sum(rate(http_request_duration_seconds_count{job="user-service"}[{{.window}}]))
+          totalQuery: |
+            sum(rate(http_request_duration_seconds_count{job="user-service"}[{{.window}}]))
+      alerting:
+        name: UserServiceLatencySLOBreach
+        labels:
+          category: "latency"
+          severity: "warning"
+        annotations:
+          summary: "User Service 지연시간 SLO 위반"
+          description: >
+            사용자 서비스 P95 응답시간이 500ms를 초과하는 비율이
+            SLO 목표(99%)를 미달하고 있습니다.
+          runbook: "docs/operations/slo-guide.md"
+        pageAlert:
+          labels:
+            severity: "critical"
+        ticketAlert:
+          labels:
+            severity: "warning"

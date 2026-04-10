@@ -1,0 +1,146 @@
+{
+  "annotations": { "list": [] },
+  "description": "관측성 성숙도 자동 평가 대시보드 -- 5대 축 점수 + 레벨",
+  "editable": true,
+  "panels": [
+    {
+      "title": "관측성 성숙도 현황",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "title": "종합 성숙도 레벨",
+      "description": "L1(초기) ~ L5(최적화)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "observability:maturity:level or vector(3)",
+          "legendFormat": "레벨"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "L1 초기", "color": "red" } } },
+            { "type": "value", "options": { "2": { "text": "L2 반복", "color": "orange" } } },
+            { "type": "value", "options": { "3": { "text": "L3 정의", "color": "yellow" } } },
+            { "type": "value", "options": { "4": { "text": "L4 관리", "color": "light-green" } } },
+            { "type": "value", "options": { "5": { "text": "L5 최적화", "color": "green" } } }
+          ],
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 2, "color": "orange" },
+              { "value": 3, "color": "yellow" },
+              { "value": 4, "color": "light-green" },
+              { "value": 5, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "종합 점수",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 4, "x": 4, "y": 1 },
+      "targets": [
+        {
+          "expr": "observability:maturity:total_score or vector(0.5)",
+          "legendFormat": "종합"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.4, "color": "orange" },
+              { "value": 0.6, "color": "yellow" },
+              { "value": 0.8, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "5대 축별 점수",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "collapsed": false
+    },
+    {
+      "title": "메트릭",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 8 },
+      "targets": [{ "expr": "observability:maturity:metrics_score or vector(0.5)", "legendFormat": "메트릭" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.5, "color": "orange" }, { "value": 0.8, "color": "green" }] } } }
+    },
+    {
+      "title": "로깅",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 4, "y": 8 },
+      "targets": [{ "expr": "observability:maturity:logging_score or vector(0.5)", "legendFormat": "로깅" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.5, "color": "orange" }, { "value": 0.8, "color": "green" }] } } }
+    },
+    {
+      "title": "트레이싱",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 8, "y": 8 },
+      "targets": [{ "expr": "observability:maturity:tracing_score or vector(0.3)", "legendFormat": "트레이싱" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.5, "color": "orange" }, { "value": 0.8, "color": "green" }] } } }
+    },
+    {
+      "title": "알림",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 12, "y": 8 },
+      "targets": [{ "expr": "observability:maturity:alerting_score or vector(0.5)", "legendFormat": "알림" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.5, "color": "orange" }, { "value": 0.8, "color": "green" }] } } }
+    },
+    {
+      "title": "대시보드",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 16, "y": 8 },
+      "targets": [{ "expr": "observability:maturity:dashboard_score or vector(0.9)", "legendFormat": "대시보드" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.5, "color": "orange" }, { "value": 0.8, "color": "green" }] } } }
+    },
+    {
+      "title": "성숙도 추이 (30일)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 13 },
+      "targets": [
+        { "expr": "observability:maturity:metrics_score", "legendFormat": "메트릭" },
+        { "expr": "observability:maturity:logging_score", "legendFormat": "로깅" },
+        { "expr": "observability:maturity:tracing_score", "legendFormat": "트레이싱" },
+        { "expr": "observability:maturity:alerting_score", "legendFormat": "알림" },
+        { "expr": "observability:maturity:dashboard_score", "legendFormat": "대시보드" },
+        { "expr": "observability:maturity:total_score", "legendFormat": "종합" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 1,
+          "unit": "percentunit",
+          "custom": { "fillOpacity": 10 }
+        }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["observability", "maturity", "sre"],
+  "time": { "from": "now-30d", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "관측성 성숙도 평가",
+  "uid": "observability-maturity",
+  "version": 1
+}

@@ -1,0 +1,399 @@
+{
+  "annotations": { "list": [] },
+  "description": "CSAP 79개 통제항목 + N2SF 6영역 종합 규정 준수 실시간 대시보드",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "tags": [],
+      "title": "기존 CSAP 대시보드",
+      "type": "link",
+      "url": "/d/csap-compliance/csap-compliance-status"
+    }
+  ],
+  "panels": [
+    {
+      "title": "CSAP 종합 규정 준수 현황 (경영진 뷰)",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "title": "전체 CSAP 준수율",
+      "description": "CSAP 13개 도메인 종합 준수율 (D-01 ~ D-13)",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "csap:compliance:total_score or vector(1)",
+          "legendFormat": "종합 준수율"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.8, "color": "orange" },
+              { "value": 0.9, "color": "yellow" },
+              { "value": 0.95, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "정책 위반 총 건수",
+      "description": "현재 활성 Kyverno + Gatekeeper 위반 건수",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 3, "x": 6, "y": 1 },
+      "targets": [
+        {
+          "expr": "(sum(policy_report_result{status=\"fail\"}) or vector(0)) + (sum(gatekeeper_violations) or vector(0))",
+          "legendFormat": "위반 건수"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 5, "color": "orange" },
+              { "value": 20, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "보안 이벤트 (24h)",
+      "description": "Falco 런타임 보안 이벤트 수",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 3, "x": 9, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(increase(falco_events_total[24h])) or vector(0)",
+          "legendFormat": "이벤트 수"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 10, "color": "yellow" },
+              { "value": 50, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "취약점 (Critical)",
+      "description": "Trivy 스캔 Critical 취약점 수",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 3, "x": 6, "y": 5 },
+      "targets": [
+        {
+          "expr": "sum(trivy_image_vulnerabilities{severity=\"Critical\"}) or vector(0)",
+          "legendFormat": "Critical"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 1, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "인증서 만료 임박",
+      "description": "7일 이내 만료 TLS 인증서 수",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 3, "x": 9, "y": 5 },
+      "targets": [
+        {
+          "expr": "sum(certmanager_certificate_expiration_timestamp_seconds < bool (time() + 604800)) or vector(0)",
+          "legendFormat": "만료 임박"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 1, "color": "orange" },
+              { "value": 3, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "CSAP 도메인별 준수율",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "collapsed": false
+    },
+    {
+      "title": "D-01 정보보호정책",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 3, "x": 0, "y": 10 },
+      "targets": [{ "expr": "csap:compliance:d01_score or vector(1)", "legendFormat": "D-01" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "D-02 조직/인력",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 3, "x": 3, "y": 10 },
+      "targets": [{ "expr": "csap:compliance:d02_score or vector(1)", "legendFormat": "D-02" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "D-03 자산관리",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 3, "x": 6, "y": 10 },
+      "targets": [{ "expr": "csap:compliance:d03_score or vector(1)", "legendFormat": "D-03" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "D-04 물리보안",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 3, "x": 9, "y": 10 },
+      "targets": [{ "expr": "csap:compliance:d04_score or vector(1)", "legendFormat": "D-04" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "D-05 인증/접근",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 3, "x": 12, "y": 10 },
+      "targets": [{ "expr": "csap:compliance:d05_score or vector(1)", "legendFormat": "D-05" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "D-06 침해사고",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 3, "x": 15, "y": 10 },
+      "targets": [{ "expr": "csap:compliance:d06_score or vector(1)", "legendFormat": "D-06" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "D-07 재해복구",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 3, "x": 18, "y": 10 },
+      "targets": [{ "expr": "csap:compliance:d07_score or vector(1)", "legendFormat": "D-07" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "D-08 접근통제",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 3, "x": 21, "y": 10 },
+      "targets": [{ "expr": "csap:compliance:d08_score or vector(1)", "legendFormat": "D-08" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "D-09 암호화",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 3, "x": 0, "y": 15 },
+      "targets": [{ "expr": "csap:compliance:d09_score or vector(1)", "legendFormat": "D-09" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "D-10 네트워크",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 3, "x": 3, "y": 15 },
+      "targets": [{ "expr": "csap:compliance:d10_score or vector(1)", "legendFormat": "D-10" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "D-11 시스템보안",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 3, "x": 6, "y": 15 },
+      "targets": [{ "expr": "csap:compliance:d11_score or vector(1)", "legendFormat": "D-11" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "D-12 개발보안",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 3, "x": 9, "y": 15 },
+      "targets": [{ "expr": "csap:compliance:d12_score or vector(1)", "legendFormat": "D-12" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "D-13 보안감사",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 3, "x": 12, "y": 15 },
+      "targets": [{ "expr": "csap:compliance:d13_score or vector(1)", "legendFormat": "D-13" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "N2SF 6영역 준수 현황",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "collapsed": false
+    },
+    {
+      "title": "N-01 관리체계",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 21 },
+      "targets": [{ "expr": "n2sf:compliance:n01_score or vector(1)", "legendFormat": "N-01" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "N-02 물리보안",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 4, "y": 21 },
+      "targets": [{ "expr": "n2sf:compliance:n02_score or vector(1)", "legendFormat": "N-02" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "N-03 격리영역",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 8, "y": 21 },
+      "targets": [{ "expr": "n2sf:compliance:n03_score or vector(1)", "legendFormat": "N-03" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "N-04 접근통제",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 12, "y": 21 },
+      "targets": [{ "expr": "n2sf:compliance:n04_score or vector(1)", "legendFormat": "N-04" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "N-05 데이터보호",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 16, "y": 21 },
+      "targets": [{ "expr": "n2sf:compliance:n05_score or vector(1)", "legendFormat": "N-05" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "N-06 운영관리",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 21 },
+      "targets": [{ "expr": "n2sf:compliance:n06_score or vector(1)", "legendFormat": "N-06" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.8, "color": "orange" }, { "value": 0.95, "color": "green" }] } } }
+    },
+    {
+      "title": "SRE 상세 분석",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
+      "collapsed": false
+    },
+    {
+      "title": "Kyverno 정책 위반 상세 (정책별)",
+      "description": "CSAP D-08 접근통제 정책 위반 세부",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+      "targets": [
+        {
+          "expr": "sum by (policy, rule, status) (policy_report_result) > 0",
+          "legendFormat": "{{policy}} / {{rule}} / {{status}}",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "title": "Gatekeeper 제약 위반 상세",
+      "description": "OPA Gatekeeper ConstraintTemplate 위반 세부",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+      "targets": [
+        {
+          "expr": "gatekeeper_violations > 0",
+          "legendFormat": "{{constraint}} / {{enforcement_action}}",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "title": "준수율 추이 (30일)",
+      "description": "CSAP 도메인별 준수율 변화 추이",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 },
+      "targets": [
+        { "expr": "csap:compliance:d05_score", "legendFormat": "D-05 인증" },
+        { "expr": "csap:compliance:d06_score", "legendFormat": "D-06 침해사고" },
+        { "expr": "csap:compliance:d08_score", "legendFormat": "D-08 접근통제" },
+        { "expr": "csap:compliance:d09_score", "legendFormat": "D-09 암호화" },
+        { "expr": "csap:compliance:d10_score", "legendFormat": "D-10 네트워크" },
+        { "expr": "csap:compliance:d11_score", "legendFormat": "D-11 시스템보안" },
+        { "expr": "csap:compliance:d12_score", "legendFormat": "D-12 개발보안" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 1,
+          "unit": "percentunit",
+          "custom": { "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "title": "Falco 보안 이벤트 추이 (심각도별)",
+      "description": "D-11 시스템 보안 - 런타임 보안 이벤트",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 },
+      "targets": [
+        {
+          "expr": "sum by (priority) (rate(falco_events_total[1h])) or vector(0)",
+          "legendFormat": "{{priority}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 20 }
+        }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["csap", "compliance", "n2sf", "security", "governance"],
+  "templating": { "list": [] },
+  "time": { "from": "now-7d", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "CSAP 종합 규정 준수 대시보드",
+  "uid": "csap-compliance-comprehensive",
+  "version": 1
+}
