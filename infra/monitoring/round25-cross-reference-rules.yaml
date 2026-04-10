@@ -1,0 +1,148 @@
+# Round 25 통합 교차 상관 Recording Rules
+# Design Ref: MTU-N240
+# Plan SC: FR-N240.1, FR-N240.2
+# 연관 MTU: N236(정책엔진), N237(백업), N238(Falco), N239(KEDA)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: round25-cross-reference-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    monitoring.bkit.io/round: "25"
+    monitoring.bkit.io/category: cross-reference
+spec:
+  groups:
+    # ── 보안 인프라 종합 건전성 ──
+    - name: round25.security.infrastructure.health
+      interval: 60s
+      rules:
+        # 정책 엔진 종합 건전성 (0=장애, 1=정상)
+        - record: round25:policy_engine:health
+          expr: |
+            clamp(
+              1
+              - clamp_max(kyverno:policy_error:ratio * 10, 0.5)
+              - clamp_max(gatekeeper:validation:error_ratio * 10, 0.5)
+              , 0, 1
+            )
+          labels:
+            round: "25"
+            category: security-infrastructure
+
+        # 백업 인프라 건전성
+        - record: round25:backup:health
+          expr: |
+            clamp(
+              avg(velero:backup:success_ratio)
+              * clamp(1 - clamp_max(velero:schedule:last_success_age_seconds / 172800, 1), 0, 1)
+              , 0, 1
+            )
+          labels:
+            round: "25"
+            category: security-infrastructure
+
+        # 런타임 보안 건전성
+        - record: round25:runtime_security:health
+          expr: |
+            clamp(
+              (falco:pods:coverage_ratio or vector(1))
+              * clamp(1 - clamp_max(falco:drop:ratio * 100, 1), 0, 1)
+              * clamp(1 - clamp_max(falcosidekick:output:error_ratio * 10, 1), 0, 1)
+              , 0, 1
+            )
+          labels:
+            round: "25"
+            category: security-infrastructure
+
+        # 자동 스케일링 건전성
+        - record: round25:autoscaling:health
+          expr: |
+            clamp(
+              1
+              - clamp_max((keda:scaledobject:error_count or vector(0)) / clamp_min(keda:scaledobject:total, 1), 1)
+              - clamp_max(keda:operator:reconcile:error_ratio * 5, 0.5)
+              , 0, 1
+            )
+          labels:
+            round: "25"
+            category: security-infrastructure
+
+        # 전체 보안 인프라 종합 건전성
+        - record: round25:security_infra:overall_health
+          expr: |
+            (
+              (round25:policy_engine:health or vector(1))
+              + (round25:backup:health or vector(1))
+              + (round25:runtime_security:health or vector(1))
+              + (round25:autoscaling:health or vector(1))
+            ) / 4
+          labels:
+            round: "25"
+            category: security-infrastructure
+
+    # ── CSAP 통제항목별 준수 상태 ──
+    - name: round25.csap.compliance
+      interval: 60s
+      rules:
+        # D-06 침해사고 관리 준수 (Falco + 감사로그)
+        - record: round25:csap:d06:compliance
+          expr: |
+            clamp(
+              (falco:pods:coverage_ratio or vector(1))
+              * clamp(1 - clamp_max(falco:drop:ratio * 50, 1), 0, 1)
+              , 0, 1
+            )
+          labels:
+            round: "25"
+            csap_control: "D-06"
+
+        # D-08 접근통제 준수 (정책 엔진)
+        - record: round25:csap:d08:compliance
+          expr: |
+            round25:policy_engine:health
+          labels:
+            round: "25"
+            csap_control: "D-08"
+
+        # D-10 재해복구 준수 (Velero)
+        - record: round25:csap:d10:compliance
+          expr: |
+            round25:backup:health
+          labels:
+            round: "25"
+            csap_control: "D-10"
+
+        # D-12 시스템 보안 준수 (Falco + 정책 엔진)
+        - record: round25:csap:d12:compliance
+          expr: |
+            (round25:runtime_security:health + round25:policy_engine:health) / 2
+          labels:
+            round: "25"
+            csap_control: "D-12"
+
+    # ── Admission 파이프라인 성능 ──
+    - name: round25.admission.pipeline
+      interval: 30s
+      rules:
+        # 전체 Admission Webhook 합산 지연
+        - record: round25:admission:total_latency_p99
+          expr: |
+            (kyverno:admission_review:p99 or vector(0))
+            + (gatekeeper:validation:p99 or vector(0))
+          labels:
+            round: "25"
+            category: admission-pipeline
+
+        # Admission 파이프라인 가용성
+        - record: round25:admission:availability
+          expr: |
+            clamp(
+              1
+              - clamp_max((kyverno:admission_review:p99 or vector(0)) / 10, 0.5)
+              - clamp_max((gatekeeper:validation:p99 or vector(0)) / 10, 0.5)
+              , 0, 1
+            )
+          labels:
+            round: "25"
+            category: admission-pipeline

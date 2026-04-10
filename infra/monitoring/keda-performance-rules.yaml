@@ -1,0 +1,174 @@
+# KEDA Autoscaler 성능 모니터링 Recording Rules
+# Design Ref: MTU-N239 §3.1 ~ §3.4
+# Plan SC: FR-N239.1 ~ FR-N239.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: keda-performance-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    monitoring.bkit.io/component: keda
+    monitoring.bkit.io/category: autoscaling
+spec:
+  groups:
+    # ── ScaledObject 상태 메트릭 ──
+    - name: keda.scaledobject.status
+      interval: 30s
+      rules:
+        # 활성 ScaledObject 수
+        - record: keda:scaledobject:active
+          expr: |
+            count(keda_scaledobject_status{status="Active"}) or vector(0)
+          labels:
+            component: keda
+
+        # 오류 ScaledObject 수
+        - record: keda:scaledobject:error_count
+          expr: |
+            count(keda_scaledobject_status{status!="Active"}) or vector(0)
+          labels:
+            component: keda
+
+        # ScaledObject 전체 수
+        - record: keda:scaledobject:total
+          expr: |
+            count(keda_scaledobject_status) or vector(0)
+          labels:
+            component: keda
+
+    # ── 스케일링 이벤트 메트릭 ──
+    - name: keda.scaling.events
+      interval: 30s
+      rules:
+        # 스케일링 이벤트 빈도 (분당)
+        - record: keda:scaling:events_per_minute
+          expr: |
+            sum(rate(keda_scaled_object_errors[5m])) * 60
+            + sum(rate(keda_trigger_totals[5m])) * 60
+          labels:
+            component: keda
+
+        # 트리거별 활성화 빈도
+        - record: keda:trigger:rate5m
+          expr: |
+            sum(rate(keda_trigger_totals[5m])) by (type, scaledObject)
+          labels:
+            component: keda
+
+        # 스케일링 대상 레플리카 수
+        - record: keda:scaling:target_replicas
+          expr: |
+            keda_scaledobject_ready
+          labels:
+            component: keda
+
+    # ── 트리거 성능 ──
+    - name: keda.trigger.performance
+      interval: 30s
+      rules:
+        # 트리거 메트릭 수집 지연 p95
+        - record: keda:trigger:latency:p95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(keda_internal_scale_loop_latency_bucket[5m])) by (le)
+            )
+          labels:
+            quantile: "0.95"
+            component: keda
+
+        # 트리거 메트릭 수집 지연 p99
+        - record: keda:trigger:latency:p99
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(keda_internal_scale_loop_latency_bucket[5m])) by (le)
+            )
+          labels:
+            quantile: "0.99"
+            component: keda
+
+        # 트리거 오류율
+        - record: keda:trigger:error:ratio
+          expr: |
+            (
+              sum(rate(keda_scaled_object_errors[5m]))
+            /
+              clamp_min(sum(rate(keda_trigger_totals[5m])), 0.001)
+            )
+          labels:
+            component: keda
+
+    # ── Operator 성능 ──
+    - name: keda.operator.performance
+      interval: 30s
+      rules:
+        # 재조정 빈도
+        - record: keda:operator:reconcile:rate5m
+          expr: |
+            sum(rate(controller_runtime_reconcile_total{controller=~"keda.*"}[5m])) by (controller, result)
+          labels:
+            component: keda
+
+        # 재조정 소요시간 p95
+        - record: keda:operator:reconcile:duration:p95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(controller_runtime_reconcile_time_seconds_bucket{controller=~"keda.*"}[5m])) by (le, controller)
+            )
+          labels:
+            quantile: "0.95"
+            component: keda
+
+        # 재조정 소요시간 p99
+        - record: keda:operator:reconcile:duration:p99
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(controller_runtime_reconcile_time_seconds_bucket{controller=~"keda.*"}[5m])) by (le, controller)
+            )
+          labels:
+            quantile: "0.99"
+            component: keda
+
+        # 재조정 오류율
+        - record: keda:operator:reconcile:error_ratio
+          expr: |
+            (
+              sum(rate(controller_runtime_reconcile_total{controller=~"keda.*", result="error"}[5m]))
+            /
+              clamp_min(sum(rate(controller_runtime_reconcile_total{controller=~"keda.*"}[5m])), 0.001)
+            )
+          labels:
+            component: keda
+
+    # ── 리소스 사용량 ──
+    - name: keda.resource.usage
+      interval: 30s
+      rules:
+        # CPU 사용량
+        - record: keda:cpu:usage_cores
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{
+              namespace="keda",
+              container!="",
+              container!="POD"
+            }[5m])) by (pod, container)
+          labels:
+            component: keda
+
+        # 메모리 사용량
+        - record: keda:memory:usage_bytes
+          expr: |
+            sum(container_memory_working_set_bytes{
+              namespace="keda",
+              container!="",
+              container!="POD"
+            }) by (pod, container)
+          labels:
+            component: keda
+
+        # KEDA Operator 파드 수
+        - record: keda:operator:pods_running
+          expr: |
+            count(kube_pod_status_phase{namespace="keda", pod=~"keda-operator.*", phase="Running"})
+          labels:
+            component: keda

@@ -1,0 +1,80 @@
+# Round 25 알림 라우팅 규칙
+# Design Ref: MTU-N240
+# Plan SC: FR-N240.3
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: round25-alert-routing
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    monitoring.bkit.io/round: "25"
+    monitoring.bkit.io/category: alert-routing
+spec:
+  groups:
+    - name: round25.routing.alerts
+      rules:
+        # ── 보안 인프라 종합 건전성 저하 ──
+        - alert: Round25SecurityInfraHealthLow
+          expr: |
+            round25:security_infra:overall_health < 0.7
+          for: 10m
+          labels:
+            severity: critical
+            team: sre
+            round: "25"
+            category: security-infrastructure
+          annotations:
+            summary: "보안 인프라 종합 건전성 70% 미만"
+            description: |
+              보안 인프라 종합 건전성이 {{ $value | printf "%.2f" }}로 70% 미만입니다.
+              정책 엔진, 백업, 런타임 보안, 자동 스케일링 중 하나 이상에 문제가 있습니다.
+            runbook: "https://docs.bkit.io/runbooks/round25-security-infra-health"
+            action: |
+              1. 개별 건전성 지표 확인 (round25:*:health)
+              2. 가장 낮은 점수의 컴포넌트 우선 조사
+              3. 관련 알림 확인 및 대응
+
+        # ── Admission 파이프라인 지연 ──
+        - alert: Round25AdmissionPipelineLatencyHigh
+          expr: |
+            round25:admission:total_latency_p99 > 5
+          for: 5m
+          labels:
+            severity: warning
+            team: sre
+            round: "25"
+            category: admission-pipeline
+          annotations:
+            summary: "Admission 파이프라인 합산 p99 지연 5초 초과"
+            description: |
+              Kyverno + Gatekeeper 합산 Admission 지연이
+              {{ $value | printf "%.1f" }}초로 5초를 초과합니다.
+              리소스 배포 지연이 발생할 수 있습니다.
+            action: |
+              1. 개별 Webhook 지연 확인 (Kyverno vs Gatekeeper)
+              2. 병목 정책 식별
+              3. 리소스 부족 여부 확인
+
+        # ── CSAP 준수 저하 ──
+        - alert: Round25CsapComplianceLow
+          expr: |
+            round25:csap:d06:compliance < 0.9
+            or round25:csap:d08:compliance < 0.9
+            or round25:csap:d10:compliance < 0.9
+            or round25:csap:d12:compliance < 0.9
+          for: 15m
+          labels:
+            severity: warning
+            team: security
+            round: "25"
+            category: csap-compliance
+          annotations:
+            summary: "CSAP 통제항목 준수율 90% 미만"
+            description: |
+              하나 이상의 CSAP 통제항목 준수율이 90% 미만입니다.
+              감리 대응 위해 즉시 확인이 필요합니다.
+            action: |
+              1. 어떤 통제항목(D-06/D-08/D-10/D-12)이 미달인지 확인
+              2. 해당 컴포넌트 상태 점검
+              3. CSAP 증적 자료 갱신
