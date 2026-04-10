@@ -13,6 +13,7 @@ import {
   acknowledgeAlertHandler,
   alertsSummaryHandler,
 } from './handlers/security.handler.js';
+import { loginFailureTrendHandler, securityEventStatsHandler } from './handlers/secmon-analytics.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
@@ -58,4 +59,10 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
 
   // FR-SECMON.3: 알림 심각도 대시보드
   app.get('/security/alerts/summary', { preHandler: readLimiter }, alertsSummaryHandler as never);
+
+  // FR-SECMON.6: 로그인 실패 추이
+  app.get('/security/login-failures/trend', { preHandler: readLimiter }, loginFailureTrendHandler as never);
+
+  // FR-SECMON.7: 보안 이벤트 통계
+  app.get('/security/events/stats', { preHandler: readLimiter }, securityEventStatsHandler as never);
 }
