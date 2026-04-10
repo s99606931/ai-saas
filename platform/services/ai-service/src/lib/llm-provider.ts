@@ -4,6 +4,8 @@
 
 export type LLMProviderType = 'openai' | 'ollama' | 'vllm' | 'lmstudio';
 
+export type LLMModelType = 'chat' | 'embed' | 'multimodal';
+
 export interface LLMContentPart {
   type: 'text' | 'image_url';
   text?: string;
@@ -26,10 +28,31 @@ export interface LLMResponse {
   model: string;
 }
 
+/** 스트리밍 청크 */
+export interface LLMStreamChunk {
+  text: string;
+  done: boolean;
+  tokensUsed?: number;
+}
+
+/** 임베딩 응답 */
+export interface LLMEmbedResponse {
+  embeddings: number[][];
+  model: string;
+  dimensions: number;
+  tokensUsed: number;
+}
+
 export interface LLMProvider {
   readonly providerType: LLMProviderType;
   readonly isMultimodal: boolean;
   chat(messages: LLMMessage[], options?: LLMChatOptions): Promise<LLMResponse>;
+  /** SSE 스트리밍 채팅 — FR-AI-R3.1 */
+  chatStream(messages: LLMMessage[], options?: LLMChatOptions): AsyncGenerator<LLMStreamChunk>;
+  /** 텍스트 임베딩 — FR-AI-R3.2 */
+  embed(texts: string[]): Promise<LLMEmbedResponse>;
+  /** LLM 서버 헬스체크 — FR-AI-R3.4 */
+  healthCheck(): Promise<{ status: 'healthy' | 'unhealthy'; responseTimeMs: number; models: string[] }>;
 }
 
 export interface LLMConfig {
@@ -54,7 +77,7 @@ export function getLLMConfig(): LLMConfig {
   // Thinking 모델(gemma-4, qwen3 등)은 추론에 많은 토큰을 사용하므로 기본값 4096 권장
   const maxTokens = parseInt(process.env['LLM_MAX_TOKENS'] ?? '4096', 10);
   const temperature = parseFloat(process.env['LLM_TEMPERATURE'] ?? '0.7');
-  const timeoutMs = parseInt(process.env['LLM_TIMEOUT_MS'] ?? '30000', 10);
+  const timeoutMs = parseInt(process.env['LLM_TIMEOUT_MS'] ?? '60000', 10);
 
   return { providerType, baseUrl, model, apiKey, maxTokens, temperature, timeoutMs };
 }
