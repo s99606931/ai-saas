@@ -439,3 +439,4 @@
 | **MTU-N189** Pod 리소스 제한 위반 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N189-pod-resource-limit/` |
 | **MTU-N191** Namespace 리소스 쿼터 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N191-namespace-quota/` |
 | **MTU-N192** Deployment/StatefulSet 롤아웃 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N192-rollout-monitoring/` |
+| **MTU-N193** 노드 상태 상세 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N193-node-condition/` |

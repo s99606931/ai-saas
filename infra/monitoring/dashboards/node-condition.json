@@ -1,0 +1,106 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "annotations": { "list": [] },
+  "description": "노드 상태 상세 모니터링 — Condition, Pressure, Unschedulable (Design Ref: MTU-N193, CSAP D-10/D-06)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "노드 상태 개요",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "node:ready:count or vector(0)", "legendFormat": "Ready", "refId": "A" },
+        { "expr": "node:not_ready:count or vector(0)", "legendFormat": "NotReady", "refId": "B" },
+        { "expr": "node:memory_pressure:count or vector(0)", "legendFormat": "MemoryPressure", "refId": "C" },
+        { "expr": "node:disk_pressure:count or vector(0)", "legendFormat": "DiskPressure", "refId": "D" },
+        { "expr": "node:unschedulable:count or vector(0)", "legendFormat": "Unschedulable", "refId": "E" }
+      ],
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } }
+    },
+    {
+      "title": "노드 Condition 히트맵",
+      "description": "각 노드의 Condition 상태 (True=1, False=0)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "targets": [
+        { "expr": "kube_node_status_condition{status=\"true\"}", "legendFormat": "{{ node }} - {{ condition }}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 20 }, "unit": "short" } }
+    },
+    {
+      "title": "노드 가용률 (%)",
+      "description": "Ready 노드 / 전체 노드 비율",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 12 },
+      "targets": [
+        { "expr": "node:availability:ratio * 100", "legendFormat": "가용률", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 80 }, { "color": "green", "value": 95 }] }, "unit": "percent", "min": 0, "max": 100 } }
+    },
+    {
+      "title": "노드 수 추세",
+      "description": "Ready, NotReady, Unschedulable 추세",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 16, "x": 8, "y": 12 },
+      "targets": [
+        { "expr": "node:ready:count", "legendFormat": "Ready", "refId": "A" },
+        { "expr": "node:not_ready:count", "legendFormat": "NotReady", "refId": "B" },
+        { "expr": "node:unschedulable:count", "legendFormat": "Unschedulable", "refId": "C" },
+        { "expr": "node:total:count", "legendFormat": "전체", "refId": "D" }
+      ],
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }, "unit": "short" } }
+    },
+    {
+      "title": "Pressure 노드 추세",
+      "description": "MemoryPressure, DiskPressure, PIDPressure 추이",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "targets": [
+        { "expr": "node:memory_pressure:count", "legendFormat": "MemoryPressure", "refId": "A" },
+        { "expr": "node:disk_pressure:count", "legendFormat": "DiskPressure", "refId": "B" },
+        { "expr": "node:pid_pressure:count", "legendFormat": "PIDPressure", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }, "unit": "short", "color": { "mode": "palette-classic" } } }
+    },
+    {
+      "title": "Unschedulable 노드 목록",
+      "description": "현재 Cordoned 상태의 노드",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "targets": [
+        { "expr": "kube_node_spec_unschedulable == 1", "format": "table", "instant": true, "refId": "A" }
+      ],
+      "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "__name__": true }, "renameByName": { "node": "노드명" } } }]
+    },
+    {
+      "title": "노드 Allocatable 리소스",
+      "description": "노드별 할당 가능 CPU/Memory",
+      "type": "bargauge",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 26 },
+      "targets": [
+        { "expr": "kube_node_status_allocatable{resource=\"cpu\"}", "legendFormat": "CPU: {{ node }}", "refId": "A" },
+        { "expr": "kube_node_status_allocatable{resource=\"memory\"} / 1024 / 1024 / 1024", "legendFormat": "Memory(Gi): {{ node }}", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["node", "condition", "pressure", "sre", "csap-d10", "mtu-n193"],
+  "templating": { "list": [] },
+  "time": { "from": "now-12h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "노드 상태 상세 모니터링",
+  "uid": "node-condition-n193",
+  "version": 1
+}

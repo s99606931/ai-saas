@@ -1,0 +1,218 @@
+# =============================================================================
+# 노드 상태 상세 모니터링 — Recording + Alerting Rules
+# Design Ref: MTU-N193 Design §DS-N193.1~DS-N193.6
+# Plan SC: FR-N193.1~FR-N193.4
+# CSAP: D-06(감사 로깅), D-10(서비스 가용성)
+#
+# 적용: kubectl apply -f infra/monitoring/node-condition-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: node-condition-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: node-condition-monitoring
+    mtu: N193
+  annotations:
+    csap.ref/d06: "침해사고관리 — 노드 상태 이상 감사 추적"
+    csap.ref/d10: "서비스 가용성 — 노드 상태 모니터링"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 노드 상태 Recording Rules
+    # Design Ref: MTU-N193 Design §DS-N193.1
+    # Plan SC: FR-N193.1
+    # =========================================================================
+    - name: node:condition_rules
+      interval: 30s
+      rules:
+        # Ready 노드 수
+        - record: node:ready:count
+          expr: |
+            count(
+              kube_node_status_condition{condition="Ready", status="true"} == 1
+            )
+          labels:
+            mtu: N193
+            csap_control: D-10-03
+
+        # NotReady 노드 수
+        - record: node:not_ready:count
+          expr: |
+            count(
+              kube_node_status_condition{condition="Ready", status="true"} == 0
+            ) or vector(0)
+          labels:
+            mtu: N193
+            csap_control: D-10-03
+
+        # MemoryPressure 노드 수
+        - record: node:memory_pressure:count
+          expr: |
+            count(
+              kube_node_status_condition{condition="MemoryPressure", status="true"} == 1
+            ) or vector(0)
+          labels:
+            mtu: N193
+            csap_control: D-06-02
+
+        # DiskPressure 노드 수
+        - record: node:disk_pressure:count
+          expr: |
+            count(
+              kube_node_status_condition{condition="DiskPressure", status="true"} == 1
+            ) or vector(0)
+          labels:
+            mtu: N193
+            csap_control: D-06-02
+
+        # PIDPressure 노드 수
+        - record: node:pid_pressure:count
+          expr: |
+            count(
+              kube_node_status_condition{condition="PIDPressure", status="true"} == 1
+            ) or vector(0)
+          labels:
+            mtu: N193
+            csap_control: D-06-02
+
+        # Unschedulable 노드 수
+        - record: node:unschedulable:count
+          expr: |
+            count(
+              kube_node_spec_unschedulable == 1
+            ) or vector(0)
+          labels:
+            mtu: N193
+            csap_control: D-10-03
+
+        # 클러스터 노드 총 수
+        - record: node:total:count
+          expr: |
+            count(kube_node_info)
+          labels:
+            mtu: N193
+            csap_control: D-10-03
+
+        # 노드 가용률 (Ready / Total)
+        - record: node:availability:ratio
+          expr: |
+            count(kube_node_status_condition{condition="Ready", status="true"} == 1)
+            / count(kube_node_info)
+          labels:
+            mtu: N193
+            csap_control: D-10-03
+
+    # =========================================================================
+    # 그룹 2: 노드 상태 알림 규칙
+    # Design Ref: MTU-N193 Design §DS-N193.2~DS-N193.4
+    # Plan SC: FR-N193.2, FR-N193.3, FR-N193.4
+    # =========================================================================
+    - name: node:condition_alerts
+      rules:
+        # 노드 NotReady (3분 이상)
+        - alert: NodeNotReady
+          expr: |
+            kube_node_status_condition{condition="Ready", status="true"} == 0
+          for: 3m
+          labels:
+            severity: critical
+            csap_control: D-10-03
+            team: sre
+            mtu: N193
+          annotations:
+            summary: "노드 {{ $labels.node }} NotReady"
+            description: |
+              노드 {{ $labels.node }}가 3분 이상 NotReady 상태입니다.
+              해당 노드의 kubelet, 네트워크, 시스템 리소스를 확인하십시오.
+            runbook_url: "https://docs.saas.go.kr/operations/node/not-ready"
+
+        # MemoryPressure (5분 이상)
+        - alert: NodeMemoryPressure
+          expr: |
+            kube_node_status_condition{condition="MemoryPressure", status="true"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-06-02
+            team: sre
+            mtu: N193
+          annotations:
+            summary: "노드 {{ $labels.node }} MemoryPressure"
+            description: |
+              노드 {{ $labels.node }}에 메모리 압박이 발생하고 있습니다.
+              Pod eviction이 시작될 수 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/node/memory-pressure"
+
+        # DiskPressure (5분 이상)
+        - alert: NodeDiskPressure
+          expr: |
+            kube_node_status_condition{condition="DiskPressure", status="true"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-06-02
+            team: sre
+            mtu: N193
+          annotations:
+            summary: "노드 {{ $labels.node }} DiskPressure"
+            description: |
+              노드 {{ $labels.node }}에 디스크 압박이 발생하고 있습니다.
+              이미지 가비지 컬렉션 또는 디스크 정리가 필요합니다.
+            runbook_url: "https://docs.saas.go.kr/operations/node/disk-pressure"
+
+        # PIDPressure
+        - alert: NodePIDPressure
+          expr: |
+            kube_node_status_condition{condition="PIDPressure", status="true"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-06-02
+            team: sre
+            mtu: N193
+          annotations:
+            summary: "노드 {{ $labels.node }} PIDPressure"
+            description: |
+              노드 {{ $labels.node }}에 PID 고갈이 발생하고 있습니다.
+              프로세스 수가 한계에 도달했을 수 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/node/pid-pressure"
+
+        # Unschedulable 노드 (10분 이상)
+        - alert: NodeUnschedulable
+          expr: |
+            kube_node_spec_unschedulable == 1
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N193
+          annotations:
+            summary: "노드 {{ $labels.node }} Unschedulable (Cordoned)"
+            description: |
+              노드 {{ $labels.node }}가 10분 이상 Unschedulable 상태입니다.
+              유지보수 완료 후 uncordon이 필요할 수 있습니다.
+            runbook_url: "https://docs.saas.go.kr/operations/node/unschedulable"
+
+        # 클러스터 노드 수 감소
+        - alert: ClusterNodeCountDecreased
+          expr: |
+            node:total:count < node:total:count offset 1h
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-10-03
+            team: sre
+            mtu: N193
+          annotations:
+            summary: "클러스터 노드 수 감소"
+            description: |
+              클러스터 노드 수가 1시간 전 대비 감소했습니다.
+              현재: {{ $value }}개.
+              노드 장애 또는 의도적 축소인지 확인하십시오.
+            runbook_url: "https://docs.saas.go.kr/operations/node/count-decreased"
