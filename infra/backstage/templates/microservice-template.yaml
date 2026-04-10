@@ -1,0 +1,254 @@
+# Backstage Software Template: NestJS 마이크로서비스
+# Design Ref: MTU-N100 Design §Software Templates
+# Plan SC: FR-N100.3
+
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: microservice-template
+  title: "NestJS 마이크로서비스"
+  description: "CSAP/N2SF 준수 NestJS 마이크로서비스 골든 패스 템플릿"
+  tags:
+    - nestjs
+    - microservice
+    - csap
+spec:
+  owner: platform-team
+  type: service
+
+  parameters:
+    - title: 서비스 정보
+      required:
+        - name
+        - description
+        - owner
+      properties:
+        name:
+          title: 서비스 이름
+          type: string
+          pattern: "^[a-z][a-z0-9-]*$"
+          ui:autofocus: true
+        description:
+          title: 설명
+          type: string
+        owner:
+          title: 소유 팀
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+
+    - title: 기술 설정
+      required:
+        - n2sfGrade
+        - dbRequired
+      properties:
+        n2sfGrade:
+          title: N2SF 데이터 등급
+          type: string
+          enum: ["C", "S", "O"]
+          default: "O"
+        dbRequired:
+          title: PostgreSQL 필요
+          type: boolean
+          default: true
+        cacheRequired:
+          title: Redis 캐시 필요
+          type: boolean
+          default: false
+        auditLogEnabled:
+          title: 감사 로그 활성화 (CSAP D-06)
+          type: boolean
+          default: true
+
+    - title: 인프라 설정
+      properties:
+        cpuRequest:
+          title: CPU 요청
+          type: string
+          default: "100m"
+        memoryRequest:
+          title: 메모리 요청
+          type: string
+          default: "256Mi"
+
+  steps:
+    - id: fetch-template
+      name: 템플릿 코드 복제
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          n2sfGrade: ${{ parameters.n2sfGrade }}
+
+    - id: create-gitea-repo
+      name: Gitea 저장소 생성
+      action: gitea:repo:create
+      input:
+        repoUrl: "gitea.saas.go.kr?owner=services&repo=${{ parameters.name }}"
+        description: ${{ parameters.description }}
+        defaultBranch: main
+        private: true
+
+    - id: publish
+      name: 코드 푸시
+      action: publish:gitea
+      input:
+        repoUrl: "gitea.saas.go.kr?owner=services&repo=${{ parameters.name }}"
+        defaultBranch: main
+
+    - id: register-catalog
+      name: 카탈로그 등록
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: "/catalog-info.yaml"
+
+  output:
+    links:
+      - title: Gitea 저장소
+        url: ${{ steps.create-gitea-repo.output.repoUrl }}
+      - title: 서비스 카탈로그
+        icon: catalog
+        entityRef: ${{ steps.register-catalog.output.entityRef }}
+
+---
+# 템플릿 2: 공용 라이브러리
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: library-template
+  title: "공용 TypeScript 라이브러리"
+  description: "npm 패키지 퍼블리시 포함 라이브러리 템플릿"
+  tags:
+    - library
+    - typescript
+    - npm
+spec:
+  owner: platform-team
+  type: library
+  parameters:
+    - title: 라이브러리 정보
+      required:
+        - name
+        - scope
+      properties:
+        name:
+          title: 패키지 이름
+          type: string
+        scope:
+          title: npm 스코프
+          type: string
+          default: "@saas"
+  steps:
+    - id: fetch-template
+      name: 템플릿 복제
+      action: fetch:template
+      input:
+        url: ./library-skeleton
+        values:
+          name: ${{ parameters.name }}
+          scope: ${{ parameters.scope }}
+
+---
+# 템플릿 3: React 프론트엔드
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: frontend-template
+  title: "React SPA 프론트엔드"
+  description: "Nginx 기반 React SPA 템플릿"
+  tags:
+    - react
+    - frontend
+spec:
+  owner: platform-team
+  type: website
+  parameters:
+    - title: 프론트엔드 정보
+      required:
+        - name
+      properties:
+        name:
+          title: 애플리케이션 이름
+          type: string
+  steps:
+    - id: fetch-template
+      name: 템플릿 복제
+      action: fetch:template
+      input:
+        url: ./frontend-skeleton
+
+---
+# 템플릿 4: 인프라 컴포넌트 (Crossplane Claim)
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: infra-component-template
+  title: "인프라 컴포넌트 (Crossplane)"
+  description: "Crossplane Claim으로 인프라 프로비저닝"
+  tags:
+    - crossplane
+    - infrastructure
+spec:
+  owner: platform-team
+  type: infrastructure
+  parameters:
+    - title: 인프라 요청
+      required:
+        - type
+        - n2sfGrade
+      properties:
+        type:
+          title: 인프라 유형
+          type: string
+          enum: ["database", "cache", "namespace"]
+        n2sfGrade:
+          title: N2SF 등급
+          type: string
+          enum: ["C", "S", "O"]
+  steps:
+    - id: fetch-claim
+      name: Claim 템플릿 생성
+      action: fetch:template
+      input:
+        url: ./infra-skeleton
+
+---
+# 템플릿 5: 감리 문서
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: compliance-doc-template
+  title: "감리 문서 템플릿"
+  description: "행안부 감리기준 표준 문서 구조 생성"
+  tags:
+    - compliance
+    - audit
+    - documentation
+spec:
+  owner: security-team
+  type: documentation
+  parameters:
+    - title: 문서 정보
+      required:
+        - docType
+        - projectName
+      properties:
+        docType:
+          title: 문서 유형
+          type: string
+          enum: ["T01-사업계획서", "T02-요구사항정의서", "T03-상세설계서", "T04-추적성매트릭스", "T05-단위테스트결과서", "T06-통합테스트결과서", "T07-결함관리대장"]
+        projectName:
+          title: 프로젝트명
+          type: string
+  steps:
+    - id: generate-doc
+      name: 문서 생성
+      action: fetch:template
+      input:
+        url: ./compliance-skeleton
