@@ -8,6 +8,7 @@ import { changeRoleHandler } from './handlers/role.handler.js';
 import { changePasswordHandler } from './handlers/password.handler.js';
 import { requestPasswordResetHandler, confirmPasswordResetHandler } from './handlers/password-reset.handler.js';
 import { listInactiveUsersHandler } from './handlers/inactive.handler.js';
+import { userStatsHandler, loginActivityHandler } from './handlers/user-stats.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
@@ -41,6 +42,12 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
 
   // Plan SC: FR-P02.2, FR-USR.1 (검색/필터링 지원)
   app.get('/users', { preHandler: readLimiter }, listUsersHandler as never);
+
+  // FR-USR.7: 사용자 통계 (정적 라우트 우선 등록)
+  app.get('/users/stats', { preHandler: readLimiter }, userStatsHandler as never);
+
+  // FR-USR.8: 로그인 활동 추이 (정적 라우트 우선 등록)
+  app.get('/users/login-activity', { preHandler: readLimiter }, loginActivityHandler as never);
 
   // Plan SC: FR-USR.2 (비활성 계정 감지)
   // NOTE: /users/inactive는 /users/:id보다 먼저 등록 (Fastify 라우트 우선순위)
