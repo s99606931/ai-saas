@@ -23,11 +23,43 @@ describe('SaaS 카탈로그 검색 및 통계 (FR-SCAT.3, FR-SCAT.5)', () => {
 
     // 테스트 데이터 생성
     const items = [
-      { name: '전자결재 시스템', description: '공공기관 결재 프로세스', category: 'BUSINESS', provider: 'A사', version: '1.0' },
-      { name: '보안 관제 플랫폼', description: '실시간 보안 모니터링', category: 'SECURITY', provider: 'B사', version: '2.0', csapGrade: 'HIGH' },
-      { name: 'AI 문서 분석', description: '인공지능 기반 문서 자동 분류', category: 'AI_ML', provider: 'C사', version: '1.5' },
-      { name: '문서관리 시스템', description: '전자문서 라이프사이클 관리', category: 'DOCUMENT', provider: 'D사', version: '3.0', csapGrade: 'STANDARD' },
-      { name: '협업 메신저', description: '보안 메시지 서비스', category: 'COLLABORATION', provider: 'E사', version: '1.0' },
+      {
+        name: '전자결재 시스템',
+        description: '공공기관 결재 프로세스',
+        category: 'BUSINESS',
+        provider: 'A사',
+        version: '1.0',
+      },
+      {
+        name: '보안 관제 플랫폼',
+        description: '실시간 보안 모니터링',
+        category: 'SECURITY',
+        provider: 'B사',
+        version: '2.0',
+        csapGrade: 'HIGH',
+      },
+      {
+        name: 'AI 문서 분석',
+        description: '인공지능 기반 문서 자동 분류',
+        category: 'AI_ML',
+        provider: 'C사',
+        version: '1.5',
+      },
+      {
+        name: '문서관리 시스템',
+        description: '전자문서 라이프사이클 관리',
+        category: 'DOCUMENT',
+        provider: 'D사',
+        version: '3.0',
+        csapGrade: 'STANDARD',
+      },
+      {
+        name: '협업 메신저',
+        description: '보안 메시지 서비스',
+        category: 'COLLABORATION',
+        provider: 'E사',
+        version: '1.0',
+      },
     ];
 
     for (const item of items) {
