@@ -1,0 +1,126 @@
+# =============================================================================
+# AlertManager 알림 전달 성능 — Alert Rules
+# Design Ref: MTU-N232 §1.4, §1.6
+# Plan SC: FR-N232.4, FR-N232.6
+# CSAP: D-06(침해사고 관리 — 알림 전달 체계 장애 탐지)
+# =============================================================================
+groups:
+  # =========================================================================
+  # AlertManager 전달 실패 알림
+  # Design Ref: §1.4
+  # =========================================================================
+  - name: alertmanager-delivery-failure-alerts
+    rules:
+      # 알림 전달 실패율 > 1%
+      # Plan SC: FR-N232.4
+      - alert: AlertManagerNotificationFailing
+        expr: |
+          alertmanager:notifications:failure_ratio > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          team: devops
+          component: alertmanager
+        annotations:
+          summary: "AlertManager 알림 전달 실패율 {{ $value | printf \"%.1f%%\" }}"
+          description: "알림 전달 실패율이 1%를 초과했습니다. 알림 채널(웹훅, 이메일 등) 상태 확인 필요."
+          csap_ref: "D-06-01"
+          runbook: "docs/operations/alertmanager-delivery-runbook.md"
+
+      # 특정 integration 전달 실패 발생
+      - alert: AlertManagerIntegrationFailing
+        expr: |
+          alertmanager:notifications:failure_by_integration > 0
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+          component: alertmanager
+        annotations:
+          summary: "AlertManager {{ $labels.integration }} 채널 전달 실패"
+          description: "{{ $labels.integration }} 알림 채널에서 전달 실패가 발생 중입니다."
+          csap_ref: "D-06-01"
+
+      # AlertManager 파드 미실행
+      - alert: AlertManagerNotRunning
+        expr: |
+          absent(up{job=~".*alertmanager.*"} == 1)
+        for: 2m
+        labels:
+          severity: critical
+          team: devops
+          component: alertmanager
+        annotations:
+          summary: "AlertManager 미실행 — 알림 전달 중단"
+          description: "AlertManager 파드가 실행되지 않고 있습니다. 모든 알림 전달이 중단됩니다."
+          csap_ref: "D-06-01"
+
+  # =========================================================================
+  # AlertManager 전달 지연 알림
+  # Design Ref: §1.2
+  # =========================================================================
+  - name: alertmanager-delivery-latency-alerts
+    rules:
+      # 전달 지연 p99 > 30초
+      # Plan SC: FR-N232.2
+      - alert: AlertManagerHighLatency
+        expr: |
+          alertmanager:notification:latency_p99 > 30
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+          component: alertmanager
+        annotations:
+          summary: "AlertManager 전달 지연 p99 {{ $value | printf \"%.1f\" }}초"
+          description: "알림 전달 p99 지연이 30초를 초과했습니다. 알림 수신 지연 가능성."
+          csap_ref: "D-06-03"
+
+  # =========================================================================
+  # AlertManager 클러스터/상태 알림
+  # Design Ref: §1.4
+  # =========================================================================
+  - name: alertmanager-delivery-cluster-alerts
+    rules:
+      # 활성 알림 폭주 (100개 이상 — 알림 폭풍 징후)
+      # Plan SC: FR-N232.3
+      - alert: AlertManagerAlertStorm
+        expr: |
+          alertmanager:alerts:active_count > 100
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+          component: alertmanager
+        annotations:
+          summary: "알림 폭풍 — 활성 알림 {{ $value }}개"
+          description: "활성 알림이 100개를 초과. 알림 노이즈 또는 대규모 장애 가능성. 긴급 확인 필요."
+          csap_ref: "D-06-04"
+
+      # 알림 그룹 과다 (억제 규칙 검토 필요)
+      - alert: AlertManagerHighGroupCount
+        expr: |
+          alertmanager:dispatch:groups_count > 50
+        for: 10m
+        labels:
+          severity: warning
+          team: devops
+          component: alertmanager
+        annotations:
+          summary: "AlertManager 알림 그룹 {{ $value }}개 — 과다"
+          description: "알림 그룹이 50개를 초과. 그룹핑/라우팅 규칙 최적화 검토 필요."
+          csap_ref: "D-06-04"
+
+      # AlertManager 메모리 사용량 > 512MB
+      - alert: AlertManagerMemoryHigh
+        expr: |
+          sum(container_memory_working_set_bytes{container="alertmanager"}) / 1024 / 1024 > 512
+        for: 10m
+        labels:
+          severity: warning
+          team: devops
+          component: alertmanager
+        annotations:
+          summary: "AlertManager 메모리 {{ $value | printf \"%.0f\" }}MB"
+          description: "AlertManager 메모리 사용량이 512MB를 초과. 알림 볼륨 확인 필요."
+          csap_ref: "D-06-04"

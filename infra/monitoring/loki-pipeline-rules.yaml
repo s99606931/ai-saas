@@ -1,0 +1,93 @@
+# =============================================================================
+# Loki 로그 수집 파이프라인 — Recording Rules
+# Design Ref: MTU-N229 §1.1, §1.3
+# Plan SC: FR-N229.1, FR-N229.3
+# CSAP: D-06(로그 무결성 — 수집 파이프라인 상태 추적)
+# =============================================================================
+groups:
+  # =========================================================================
+  # Loki Ingester 수집률/드롭률 Recording Rules
+  # Design Ref: §1.1
+  # =========================================================================
+  - name: loki-pipeline-ingestion
+    interval: 15s
+    rules:
+      # 5분간 Loki 수신 라인 비율 (초당)
+      # Plan SC: FR-N229.1
+      - record: loki:ingester:lines_received_rate5m
+        expr: |
+          sum(rate(loki_distributor_lines_received_total[5m]))
+
+      # 5분간 수신 바이트 비율 (초당, MB 단위)
+      - record: loki:ingester:bytes_received_rate5m_mb
+        expr: |
+          sum(rate(loki_distributor_bytes_received_total[5m])) / 1024 / 1024
+
+      # Promtail에서 전송된 바이트 비율
+      - record: loki:promtail:sent_bytes_rate5m
+        expr: |
+          sum(rate(promtail_sent_bytes_total[5m]))
+
+      # Promtail에서 드롭된 바이트 비율
+      - record: loki:promtail:dropped_bytes_rate5m
+        expr: |
+          sum(rate(promtail_dropped_bytes_total[5m]))
+
+      # 드롭률 (드롭 바이트 / 전체 바이트)
+      # 0.1% 초과 시 알림 대상
+      - record: loki:pipeline:drop_ratio
+        expr: |
+          (
+            sum(rate(promtail_dropped_bytes_total[5m]))
+            /
+            clamp_min(
+              sum(rate(promtail_sent_bytes_total[5m])) + sum(rate(promtail_dropped_bytes_total[5m])),
+              1
+            )
+          )
+
+      # 활성 수집 대상 수
+      - record: loki:promtail:active_targets
+        expr: |
+          sum(promtail_targets_active_total)
+
+  # =========================================================================
+  # Loki 스토리지/압축 Recording Rules
+  # Design Ref: §1.3
+  # =========================================================================
+  - name: loki-pipeline-storage
+    interval: 30s
+    rules:
+      # 메모리 내 활성 청크 수
+      # Plan SC: FR-N229.3
+      - record: loki:storage:active_chunks
+        expr: |
+          sum(loki_ingester_memory_chunks)
+
+      # 압축 소요 시간 평균 (초)
+      - record: loki:compactor:duration_avg_seconds
+        expr: |
+          avg(rate(loki_compactor_apply_retention_sweeps_duration_seconds_sum[10m]))
+          /
+          clamp_min(avg(rate(loki_compactor_apply_retention_sweeps_duration_seconds_count[10m])), 0.001)
+
+      # 쿼리 처리 시간 p50/p99
+      # Plan SC: FR-N229.4
+      - record: loki:query:duration_p50
+        expr: |
+          histogram_quantile(0.50,
+            sum(rate(loki_request_duration_seconds_bucket{route=~"loki_api_v1_query.*"}[5m])) by (le)
+          )
+
+      - record: loki:query:duration_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(loki_request_duration_seconds_bucket{route=~"loki_api_v1_query.*"}[5m])) by (le)
+          )
+
+      # Promtail Loki 전송 지연 p99
+      - record: loki:promtail:request_latency_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(promtail_request_duration_seconds_bucket[5m])) by (le)
+          )

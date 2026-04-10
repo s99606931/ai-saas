@@ -1,0 +1,99 @@
+# =============================================================================
+# Grafana 자체 성능 — Alert Rules
+# Design Ref: MTU-N233 §1.2, §1.4, §1.6
+# Plan SC: FR-N233.2, FR-N233.4, FR-N233.6
+# CSAP: D-06(대시보드 가용성), D-08(인증 실패 감지)
+# =============================================================================
+groups:
+  - name: grafana-self-availability-alerts
+    rules:
+      # Grafana 파드 미실행
+      # Plan SC: FR-N233.2
+      - alert: GrafanaNotRunning
+        expr: |
+          absent(up{job=~".*grafana.*"} == 1)
+        for: 2m
+        labels:
+          severity: critical
+          team: devops
+          component: grafana
+        annotations:
+          summary: "Grafana 미실행 — 대시보드 접근 불가"
+          description: "Grafana 파드가 실행되지 않고 있습니다. 모니터링 대시보드 접근이 불가합니다."
+          csap_ref: "D-06-01"
+
+      # API 에러율 > 5%
+      - alert: GrafanaAPIErrorHigh
+        expr: |
+          grafana:api:error_rate > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+          component: grafana
+        annotations:
+          summary: "Grafana API 에러율 {{ $value | printf \"%.1f%%\" }}"
+          description: "Grafana API 5xx 에러율이 5%를 초과했습니다."
+          csap_ref: "D-06-04"
+
+      # API p99 지연 > 3초
+      - alert: GrafanaAPISlowP99
+        expr: |
+          grafana:api:request_duration_p99 > 3
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+          component: grafana
+        annotations:
+          summary: "Grafana API 지연 p99 {{ $value | printf \"%.1f\" }}초"
+          description: "Grafana API p99 지연이 3초를 초과. 대시보드 로딩 지연 발생."
+          csap_ref: "D-06-04"
+
+  - name: grafana-self-auth-alerts
+    rules:
+      # 로그인 실패 급증 (무차별 대입 공격 의심)
+      # Plan SC: FR-N233.3
+      - alert: GrafanaLoginFailureSpike
+        expr: |
+          grafana:auth:login_failures_rate > 0.5
+        for: 2m
+        labels:
+          severity: critical
+          team: security
+          component: grafana
+        annotations:
+          summary: "Grafana 로그인 실패 급증 — 무차별 대입 의심"
+          description: "Grafana 로그인 실패가 초당 {{ $value | printf \"%.1f\" }}회. 공격 가능성."
+          csap_ref: "D-08-05"
+
+  - name: grafana-self-resource-alerts
+    rules:
+      # 메모리 > 512MB
+      # Plan SC: FR-N233.4
+      - alert: GrafanaMemoryHigh
+        expr: |
+          sum(container_memory_working_set_bytes{container="grafana"}) / 1024 / 1024 > 512
+        for: 10m
+        labels:
+          severity: warning
+          team: devops
+          component: grafana
+        annotations:
+          summary: "Grafana 메모리 {{ $value | printf \"%.0f\" }}MB"
+          description: "Grafana 메모리가 512MB를 초과. 대시보드 수 또는 쿼리 최적화 검토."
+          csap_ref: "D-06-04"
+
+      # CPU > 500m
+      - alert: GrafanaCPUHigh
+        expr: |
+          sum(rate(container_cpu_usage_seconds_total{container="grafana"}[5m])) * 1000 > 500
+        for: 10m
+        labels:
+          severity: warning
+          team: devops
+          component: grafana
+        annotations:
+          summary: "Grafana CPU {{ $value | printf \"%.0f\" }}m"
+          description: "Grafana CPU 사용량이 500m을 초과."
+          csap_ref: "D-06-04"

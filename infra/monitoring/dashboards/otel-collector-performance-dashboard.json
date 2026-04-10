@@ -1,0 +1,85 @@
+{
+  "__inputs": [],
+  "annotations": { "list": [] },
+  "description": "OTel Collector 성능 모니터링 — MTU-N234",
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    { "title": "수신 성능", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "collapsed": false },
+    {
+      "title": "수신 허용 (포인트/초)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "otelcol:receiver:accepted_rate", "legendFormat": "허용/초" }],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 20 } } }
+    },
+    {
+      "title": "수신 거부 (포인트/초)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "otelcol:receiver:refused_rate", "legendFormat": "거부/초" }],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 30 } } }
+    },
+    {
+      "title": "수신 거부율 (%)",
+      "type": "gauge",
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "otelcol:receiver:refused_ratio * 100", "legendFormat": "거부율" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "thresholds": { "steps": [{ "color": "green", "value": 0 }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] } } }
+    },
+    { "title": "처리 / 내보내기", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 8 }, "collapsed": false },
+    {
+      "title": "프로세서 드롭/초",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "otelcol:processor:dropped_rate", "legendFormat": "드롭/초" }],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 30 } } }
+    },
+    {
+      "title": "내보내기 성공 / 실패 (포인트/초)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "otelcol:exporter:sent_rate", "legendFormat": "성공/초" },
+        { "expr": "otelcol:exporter:failed_rate", "legendFormat": "실패/초" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 15 } } }
+    },
+    {
+      "title": "내보내기 큐 크기",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "otelcol:exporter:queue_size", "legendFormat": "큐 크기" }],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 15 } } }
+    },
+    { "title": "리소스", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 }, "collapsed": false },
+    {
+      "title": "메모리 (MB)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 17 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(container_memory_working_set_bytes{container=~\"otel.*collector.*\"}) / 1024 / 1024", "legendFormat": "메모리 (MB)" }],
+      "fieldConfig": { "defaults": { "unit": "decmbytes", "custom": { "drawStyle": "line", "fillOpacity": 15 } } }
+    },
+    {
+      "title": "CPU (millicores)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 17 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(rate(container_cpu_usage_seconds_total{container=~\"otel.*collector.*\"}[5m])) * 1000", "legendFormat": "CPU (m)" }],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 15 } } }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["otel", "collector", "telemetry", "mtu-n234", "csap-d06"],
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "OTel Collector 성능 모니터링",
+  "uid": "otel-perf-n234",
+  "version": 1
+}

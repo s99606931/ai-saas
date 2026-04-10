@@ -1,0 +1,93 @@
+# =============================================================================
+# AlertManager 알림 전달 성능 — Recording Rules
+# Design Ref: MTU-N232 §1.1, §1.2, §1.3
+# Plan SC: FR-N232.1, FR-N232.2, FR-N232.3
+# CSAP: D-06(알림 전달 무결성 — 침해사고 알림 보장)
+# =============================================================================
+groups:
+  # =========================================================================
+  # 알림 전달 성공/실패 Recording Rules
+  # Design Ref: §1.1
+  # =========================================================================
+  - name: alertmanager-delivery-notifications
+    interval: 15s
+    rules:
+      # 전체 알림 전달 시도율 (초당)
+      # Plan SC: FR-N232.1
+      - record: alertmanager:notifications:total_rate5m
+        expr: |
+          sum(rate(alertmanager_notifications_total[5m]))
+
+      # 전달 성공률
+      - record: alertmanager:notifications:success_rate5m
+        expr: |
+          sum(rate(alertmanager_notifications_total{status="success"}[5m]))
+
+      # 전달 실패율
+      - record: alertmanager:notifications:failure_rate5m
+        expr: |
+          sum(rate(alertmanager_notifications_failed_total[5m]))
+
+      # 전달 실패 비율 (실패/전체)
+      - record: alertmanager:notifications:failure_ratio
+        expr: |
+          (
+            sum(rate(alertmanager_notifications_failed_total[5m]))
+            /
+            clamp_min(sum(rate(alertmanager_notifications_total[5m])), 0.001)
+          )
+
+      # 통합별 전달 실패율 (integration 라벨)
+      - record: alertmanager:notifications:failure_by_integration
+        expr: |
+          sum by (integration) (rate(alertmanager_notifications_failed_total[5m]))
+
+  # =========================================================================
+  # 알림 전달 지연 Recording Rules
+  # Design Ref: §1.2
+  # =========================================================================
+  - name: alertmanager-delivery-latency
+    interval: 15s
+    rules:
+      # 전달 지연 p50 (초)
+      # Plan SC: FR-N232.2
+      - record: alertmanager:notification:latency_p50
+        expr: |
+          histogram_quantile(0.50,
+            sum(rate(alertmanager_notification_latency_seconds_bucket[5m])) by (le)
+          )
+
+      # 전달 지연 p99 (초)
+      - record: alertmanager:notification:latency_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(alertmanager_notification_latency_seconds_bucket[5m])) by (le)
+          )
+
+  # =========================================================================
+  # 억제/무음 현황 Recording Rules
+  # Design Ref: §1.3
+  # =========================================================================
+  - name: alertmanager-delivery-suppression
+    interval: 30s
+    rules:
+      # 활성 알림 수
+      # Plan SC: FR-N232.3
+      - record: alertmanager:alerts:active_count
+        expr: |
+          sum(alertmanager_alerts{state="active"})
+
+      # 억제된 알림 수
+      - record: alertmanager:alerts:suppressed_count
+        expr: |
+          sum(alertmanager_alerts{state="suppressed"})
+
+      # 활성 무음 규칙 수
+      - record: alertmanager:silences:active_count
+        expr: |
+          sum(alertmanager_silences{state="active"})
+
+      # 알림 그룹 수
+      - record: alertmanager:dispatch:groups_count
+        expr: |
+          sum(alertmanager_dispatcher_aggregation_groups)

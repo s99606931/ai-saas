@@ -1,0 +1,91 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "description": "Grafana 자체 성능 모니터링 — MTU-N233",
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    { "title": "API 성능", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "collapsed": false },
+    {
+      "title": "API 응답 지연 (p50/p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "grafana:api:request_duration_p50", "legendFormat": "p50" },
+        { "expr": "grafana:api:request_duration_p99", "legendFormat": "p99" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 10 } } }
+    },
+    {
+      "title": "API 에러율 (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "grafana:api:error_rate * 100", "legendFormat": "에러율 %" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "custom": { "drawStyle": "line", "fillOpacity": 10 } } }
+    },
+    {
+      "title": "API 요청률 (요청/초)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "grafana:api:request_rate", "legendFormat": "요청/초" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 20 } } }
+    },
+    { "title": "인증", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 8 }, "collapsed": false },
+    {
+      "title": "로그인 시도/실패 (초당)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "grafana:auth:login_attempts_rate", "legendFormat": "로그인 시도" },
+        { "expr": "grafana:auth:login_failures_rate", "legendFormat": "로그인 실패" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 15 } } }
+    },
+    {
+      "title": "활성 사용자",
+      "type": "stat",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "grafana:users:active_count", "legendFormat": "활성 사용자" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    { "title": "리소스", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 }, "collapsed": false },
+    {
+      "title": "메모리 (MB)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 17 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(container_memory_working_set_bytes{container=\"grafana\"}) / 1024 / 1024", "legendFormat": "메모리 (MB)" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "decmbytes", "custom": { "drawStyle": "line", "fillOpacity": 15 } } }
+    },
+    {
+      "title": "CPU (millicores)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 17 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(container_cpu_usage_seconds_total{container=\"grafana\"}[5m])) * 1000", "legendFormat": "CPU (millicores)" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 15 } } }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["grafana", "self-monitoring", "mtu-n233", "csap-d06"],
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Grafana 자체 성능 모니터링",
+  "uid": "grafana-self-n233",
+  "version": 1
+}

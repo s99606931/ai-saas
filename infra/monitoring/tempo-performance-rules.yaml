@@ -1,0 +1,98 @@
+# =============================================================================
+# Tempo 분산 추적 성능 — Recording Rules
+# Design Ref: MTU-N230 §1.1, §1.3, §1.4
+# Plan SC: FR-N230.1, FR-N230.3, FR-N230.4
+# CSAP: D-06(트레이스 무결성 — 수집 파이프라인 상태 추적)
+# =============================================================================
+groups:
+  # =========================================================================
+  # Tempo Ingester 수집 성능
+  # Design Ref: §1.1
+  # =========================================================================
+  - name: tempo-performance-ingestion
+    interval: 15s
+    rules:
+      # 5분간 스팬 수신 비율 (초당)
+      # Plan SC: FR-N230.1
+      - record: tempo:ingester:spans_received_rate5m
+        expr: |
+          sum(rate(tempo_distributor_spans_received_total[5m]))
+
+      # 5분간 수신 바이트 비율 (초당, MB)
+      - record: tempo:ingester:bytes_received_rate5m_mb
+        expr: |
+          sum(rate(tempo_distributor_bytes_received_total[5m])) / 1024 / 1024
+
+      # 드롭된 스팬 비율
+      - record: tempo:distributor:spans_dropped_rate5m
+        expr: |
+          sum(rate(tempo_discarded_spans_total[5m]))
+
+      # 드롭률 (드롭 스팬 / 전체 스팬)
+      - record: tempo:pipeline:span_drop_ratio
+        expr: |
+          (
+            sum(rate(tempo_discarded_spans_total[5m]))
+            /
+            clamp_min(
+              sum(rate(tempo_distributor_spans_received_total[5m])),
+              1
+            )
+          )
+
+      # 활성 트레이스 수
+      - record: tempo:ingester:live_traces
+        expr: |
+          sum(tempo_ingester_live_traces)
+
+  # =========================================================================
+  # WAL/스토리지 Recording Rules
+  # Design Ref: §1.3
+  # =========================================================================
+  - name: tempo-performance-storage
+    interval: 30s
+    rules:
+      # WAL 크기 (바이트)
+      # Plan SC: FR-N230.3
+      - record: tempo:wal:size_bytes
+        expr: |
+          sum(tempo_ingester_bytes_received_total) - sum(tempo_ingester_bytes_flushed_total)
+
+      # 메모리 내 블록 수
+      - record: tempo:ingester:blocks_count
+        expr: |
+          sum(tempo_ingester_blocks_local_total)
+
+      # 쿼리 처리 시간 p50/p99
+      # Plan SC: FR-N230.2
+      - record: tempo:query:duration_p50
+        expr: |
+          histogram_quantile(0.50,
+            sum(rate(tempo_request_duration_seconds_bucket{route=~"/tempo.*"}[5m])) by (le)
+          )
+
+      - record: tempo:query:duration_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(tempo_request_duration_seconds_bucket{route=~"/tempo.*"}[5m])) by (le)
+          )
+
+  # =========================================================================
+  # Compactor 성능 Recording Rules
+  # Design Ref: §1.4
+  # =========================================================================
+  - name: tempo-performance-compactor
+    interval: 30s
+    rules:
+      # 압축 소요 시간 평균 (초)
+      # Plan SC: FR-N230.4
+      - record: tempo:compactor:duration_avg_seconds
+        expr: |
+          avg(rate(tempo_compactor_compaction_duration_seconds_sum[10m]))
+          /
+          clamp_min(avg(rate(tempo_compactor_compaction_duration_seconds_count[10m])), 0.001)
+
+      # 압축 처리 블록 비율
+      - record: tempo:compactor:blocks_compacted_rate
+        expr: |
+          sum(rate(tempo_compactor_blocks_total[5m]))

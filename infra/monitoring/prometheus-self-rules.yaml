@@ -1,0 +1,93 @@
+# =============================================================================
+# Prometheus 자체 성능 — Recording Rules
+# Design Ref: MTU-N231 §1.1, §1.2
+# Plan SC: FR-N231.1, FR-N231.2
+# CSAP: D-06(모니터링 시스템 자체 가용성 보장)
+# =============================================================================
+groups:
+  # =========================================================================
+  # 스크랩 성능 Recording Rules
+  # Design Ref: §1.1
+  # =========================================================================
+  - name: prometheus-self-scrape
+    interval: 15s
+    rules:
+      # 스크랩 성공률 (%)
+      # Plan SC: FR-N231.1
+      - record: prometheus:scrape:success_ratio
+        expr: |
+          (
+            sum(up)
+            /
+            clamp_min(count(up), 1)
+          )
+
+      # 스크랩 지연 p99 (초)
+      - record: prometheus:scrape:duration_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(prometheus_target_scrape_pool_sync_total[5m])) by (le)
+          )
+
+      # 활성 스크랩 대상 수
+      - record: prometheus:target:active_count
+        expr: |
+          count(up)
+
+      # 스크랩 실패 대상 수
+      - record: prometheus:target:down_count
+        expr: |
+          count(up == 0)
+
+      # 초당 수집 샘플 수
+      - record: prometheus:scrape:samples_rate
+        expr: |
+          sum(rate(prometheus_tsdb_head_samples_appended_total[5m]))
+
+      # 초당 수집 시리즈 생성률
+      - record: prometheus:tsdb:series_created_rate
+        expr: |
+          sum(rate(prometheus_tsdb_head_series_created_total[5m]))
+
+  # =========================================================================
+  # TSDB 성능 Recording Rules
+  # Design Ref: §1.2
+  # =========================================================================
+  - name: prometheus-self-tsdb
+    interval: 30s
+    rules:
+      # 헤드 시리즈 수
+      # Plan SC: FR-N231.2
+      - record: prometheus:tsdb:head_series
+        expr: |
+          prometheus_tsdb_head_series
+
+      # 헤드 청크 수
+      - record: prometheus:tsdb:head_chunks
+        expr: |
+          prometheus_tsdb_head_chunks
+
+      # WAL 크기 (MB)
+      - record: prometheus:tsdb:wal_size_mb
+        expr: |
+          prometheus_tsdb_wal_storage_size_bytes / 1024 / 1024
+
+      # TSDB 압축 시간 평균 (초)
+      - record: prometheus:tsdb:compaction_duration_avg
+        expr: |
+          avg(rate(prometheus_tsdb_compaction_duration_seconds_sum[10m]))
+          /
+          clamp_min(avg(rate(prometheus_tsdb_compaction_duration_seconds_count[10m])), 0.001)
+
+      # 규칙 평가 지연 p99 (초)
+      # Plan SC: FR-N231.3
+      - record: prometheus:rule:evaluation_duration_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(prometheus_rule_evaluation_duration_seconds_bucket[5m])) by (le)
+          )
+
+      # 규칙 평가 실패 비율
+      - record: prometheus:rule:evaluation_failures_rate
+        expr: |
+          sum(rate(prometheus_rule_evaluation_failures_total[5m]))

@@ -1,0 +1,47 @@
+# =============================================================================
+# Round 24 교차 참조 규칙 — 관측성 스택 전체 상태
+# Design Ref: MTU-N235 §1
+# Plan SC: FR-N235.2, FR-N235.3
+# CSAP: D-06(전체 관측성 스택 무결성 — 모니터링 인프라 보호)
+# =============================================================================
+groups:
+  - name: round24-observability-stack-health
+    interval: 30s
+    rules:
+      # 관측성 스택 구성 요소 수 (정상 동작 중)
+      - record: observability:stack:healthy_components
+        expr: |
+          (count(up{job=~".*loki.*"} == 1) > 0 or vector(0))
+          + (count(up{job=~".*tempo.*"} == 1) > 0 or vector(0))
+          + (count(up{job="prometheus"} == 1) > 0 or vector(0))
+          + (count(up{job=~".*alertmanager.*"} == 1) > 0 or vector(0))
+          + (count(up{job=~".*grafana.*"} == 1) > 0 or vector(0))
+          + (count(up{job=~".*otel.*collector.*"} == 1) > 0 or vector(0))
+
+      # Round 24 알림: 다중 관측성 컴포넌트 동시 장애
+      - alert: ObservabilityStackMultipleFailures
+        expr: |
+          observability:stack:healthy_components < 4
+        for: 2m
+        labels:
+          severity: critical
+          team: devops
+          component: observability-stack
+        annotations:
+          summary: "관측성 스택 다중 장애 — {{ $value }}/6 컴포넌트만 정상"
+          description: "관측성 스택 6개 구성 요소 중 {{ $value }}개만 정상. 모니터링 체계 심각한 장애."
+          csap_ref: "D-06-01"
+
+      # 관측성 스택 완전 장애 (0개 정상)
+      - alert: ObservabilityStackTotalFailure
+        expr: |
+          observability:stack:healthy_components == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: devops
+          component: observability-stack
+        annotations:
+          summary: "관측성 스택 완전 장애 — 전체 모니터링 중단"
+          description: "관측성 스택의 모든 구성 요소가 장애 상태. 즉시 조치 필요."
+          csap_ref: "D-06-01"
