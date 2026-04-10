@@ -1,0 +1,67 @@
+# Design Ref: MTU-N165
+# Plan SC: FR-N165.4
+# CSAP: D-12
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: api-versioning-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: api-versioning.recording
+      interval: 60s
+      rules:
+        # API 버전별 요청 수
+        - record: api_versioning:requests_by_version
+          expr: |
+            sum(rate(
+              http_requests_total{
+                path=~"/api/v[0-9]+/.*"
+              }[5m]
+            )) by (version, service)
+
+        # Deprecated API 사용률
+        - record: api_versioning:deprecated_usage_ratio
+          expr: |
+            sum(rate(
+              http_requests_total{
+                deprecated="true"
+              }[5m]
+            )) by (service, path)
+            /
+            sum(rate(
+              http_requests_total[5m]
+            )) by (service, path)
+
+    - name: api-versioning.alerts
+      rules:
+        - alert: ApiDeprecatedEndpointUsage
+          expr: |
+            api_versioning:deprecated_usage_ratio > 0
+          for: 1h
+          labels:
+            severity: info
+            team: dev
+          annotations:
+            summary: "Deprecated API 엔드포인트 사용 감지 ({{ $labels.service }})"
+            description: |
+              {{ $labels.service }}의 {{ $labels.path }} 엔드포인트가 deprecated 상태에서 호출되고 있습니다.
+              클라이언트에게 신버전 마이그레이션을 안내하십시오.
+
+        - alert: ApiOldVersionHighTraffic
+          expr: |
+            api_versioning:requests_by_version{version!="v1"} > 100
+          for: 24h
+          labels:
+            severity: warning
+            team: dev
+          annotations:
+            summary: "이전 API 버전 높은 트래픽 ({{ $labels.version }})"
+            description: |
+              {{ $labels.version }} 버전 API에 여전히 높은 트래픽이 감지됩니다.
+              마이그레이션 계획을 수립하십시오.

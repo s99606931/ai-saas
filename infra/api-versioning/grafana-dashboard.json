@@ -1,0 +1,34 @@
+{
+  "__meta": { "design_ref": "MTU-N165", "plan_sc": "FR-N165.4" },
+  "description": "API 버전 관리 대시보드 - 버전별 트래픽, Deprecation 상태",
+  "panels": [
+    { "title": "API 버전 현황", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 } },
+    {
+      "title": "버전별 요청 수",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        { "expr": "api_versioning:requests_by_version", "legendFormat": "{{ version }} ({{ service }})" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "title": "Deprecated API 사용률",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "targets": [
+        { "expr": "api_versioning:deprecated_usage_ratio * 100", "legendFormat": "{{ service }} {{ path }}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["api", "versioning", "governance"],
+  "time": { "from": "now-7d", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "API 버전 관리 대시보드",
+  "uid": "api-versioning-N165",
+  "version": 1
+}
