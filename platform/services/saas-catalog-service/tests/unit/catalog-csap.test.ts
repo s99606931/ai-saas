@@ -28,12 +28,10 @@ describe('CSAP D-08-05: 테넌트 격리', () => {
     await app.close();
   });
 
-  it('모든 API에서 X-Tenant-Id 누락 시 400 반환', async () => {
+  it('GET API에서 X-Tenant-Id 누락 시 400 반환', async () => {
     const endpoints = [
-      { method: 'POST' as const, url: '/saas-catalog' },
       { method: 'GET' as const, url: '/saas-catalog' },
       { method: 'GET' as const, url: '/saas-catalog/some-id' },
-      { method: 'PUT' as const, url: '/saas-catalog/some-id' },
       { method: 'DELETE' as const, url: '/saas-catalog/some-id' },
       { method: 'GET' as const, url: '/saas-catalog/stats' },
     ];
@@ -42,12 +40,38 @@ describe('CSAP D-08-05: 테넌트 격리', () => {
       const res = await app.inject({
         method: ep.method,
         url: ep.url,
-        headers: { 'content-type': 'application/json' },
-        payload: ep.method === 'POST' || ep.method === 'PUT' ? {} : undefined,
       });
       expect(res.statusCode).toBe(400);
       expect(res.json().error.code).toBe('TENANT_REQUIRED');
     }
+  });
+
+  it('POST /saas-catalog: X-Tenant-Id 누락 시 400 반환', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/saas-catalog',
+      headers: { 'content-type': 'application/json' },
+      payload: {
+        name: '테스트',
+        description: '설명',
+        category: 'BUSINESS',
+        provider: '제공자',
+        version: '1.0',
+      },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.code).toBe('TENANT_REQUIRED');
+  });
+
+  it('PUT /saas-catalog/:id: X-Tenant-Id 누락 시 400 반환', async () => {
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/saas-catalog/some-id',
+      headers: { 'content-type': 'application/json' },
+      payload: { name: '변경' },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.code).toBe('TENANT_REQUIRED');
   });
 
   it('다른 테넌트의 데이터에 접근 불가 (격리)', async () => {
