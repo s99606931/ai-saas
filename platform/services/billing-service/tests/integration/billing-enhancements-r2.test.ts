@@ -16,6 +16,7 @@ describe('수익 추이 고도화', () => {
   });
 
   it('months 범위가 1~24이다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       months: z.coerce.number().int().min(1).max(24).default(6),

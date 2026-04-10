@@ -193,6 +193,7 @@ describe('CSAP 준수: 구독 서비스', () => {
   });
 
   it('D-12: Zod 입력 검증이 모든 쓰기 핸들러에 적용된다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       name: z.string().min(1),

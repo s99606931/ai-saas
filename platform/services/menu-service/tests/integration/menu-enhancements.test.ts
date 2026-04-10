@@ -145,6 +145,7 @@ describe('FR-MENU.4: 순서변경 보강', () => {
   });
 
   it('유효하지 않은 순서값은 거부된다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({ order: z.number().int().min(0) });
     expect(schema.safeParse({ order: -1 }).success).toBe(false);
@@ -279,6 +280,7 @@ describe('CSAP 준수: 메뉴 서비스', () => {
   });
 
   it('D-12: Zod 입력 검증이 모든 쓰기 핸들러에 적용된다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const createSchema = z.object({
       tenantId: z.string().min(1),

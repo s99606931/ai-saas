@@ -41,6 +41,7 @@ describe('FR-AUDIT.3: 일별 이벤트 추이', () => {
   });
 
   it('days는 1~90 범위이다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       days: z.coerce.number().int().min(1).max(90).default(7),
@@ -98,6 +99,7 @@ describe('FR-AUDIT.4: 이상 행위 탐지', () => {
   });
 
   it('threshold는 1.5~10 범위이다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       threshold: z.coerce.number().min(1.5).max(10).default(2),
@@ -109,6 +111,7 @@ describe('FR-AUDIT.4: 이상 행위 탐지', () => {
   });
 
   it('days 최소값은 7이다 (의미 있는 통계량 확보)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       days: z.coerce.number().int().min(7).max(90).default(30),
@@ -158,6 +161,7 @@ describe('CSAP 준수: 감사 서비스 Round 2', () => {
   });
 
   it('D-12: 모든 쿼리 파라미터에 Zod 검증이 적용된다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       days: z.coerce.number().int().min(1).max(90),

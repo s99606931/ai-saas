@@ -125,7 +125,9 @@ describe('E2E: 감사 추적 (FR-N01.5, CSAP D-06)', () => {
 
   describe('프로젝트 감사 로그 파일 검증', () => {
     it('.claude/audit.jsonl 파일이 존재해야 한다', () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const fs = require('fs');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const path = require('path');
       const auditPath = path.resolve(__dirname, '../../../../.claude/audit.jsonl');
       expect(fs.existsSync(auditPath)).toBe(true);

@@ -18,6 +18,7 @@ describe('구독 만료 임박 고도화', () => {
   });
 
   it('days 파라미터 범위가 1~365이다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       days: z.coerce.number().int().min(1).max(365).default(7),

@@ -163,6 +163,7 @@ describe('CSAP 준수: 보안 서비스', () => {
   });
 
   it('D-12: 모든 입력에 Zod 검증이 적용된다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       ip: z.string().min(1),

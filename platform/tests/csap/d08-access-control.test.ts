@@ -105,7 +105,9 @@ describe('CSAP D-08: 접근 통제 검증', () => {
 });
 
 function findTsFiles(dir: string): string[] {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { readdirSync } = require('fs');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { join } = require('path');
   const files: string[] = [];
   try {

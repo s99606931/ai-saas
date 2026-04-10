@@ -44,6 +44,7 @@ describe('FR-NOTIF.6: 전달률 추이', () => {
   });
 
   it('channel 필터가 적용된다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       channel: z.enum(['in_app', 'email', 'webhook', 'sms']).optional(),
@@ -54,6 +55,7 @@ describe('FR-NOTIF.6: 전달률 추이', () => {
   });
 
   it('days 범위는 1~90이다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       days: z.coerce.number().int().min(1).max(90).default(7),

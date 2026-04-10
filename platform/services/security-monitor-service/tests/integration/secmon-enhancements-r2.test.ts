@@ -32,6 +32,7 @@ describe('FR-SECMON.6: 로그인 실패 추이', () => {
   });
 
   it('days 범위는 1~90이다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       days: z.coerce.number().int().min(1).max(90).default(7),

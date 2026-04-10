@@ -152,7 +152,9 @@ describe('CSAP D-09: 암호화 검증', () => {
 // ── 유틸리티 ──
 
 function findTypeScriptFiles(dir: string): string[] {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { readdirSync } = require('fs');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { join } = require('path');
   const files: string[] = [];
 

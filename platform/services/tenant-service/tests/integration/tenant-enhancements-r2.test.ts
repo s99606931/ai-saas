@@ -51,6 +51,7 @@ describe('FR-TENANT.5: 테넌트 검색', () => {
   });
 
   it('빈 검색어는 400을 반환한다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       q: z.string().min(1, '검색어는 필수입니다'),
@@ -170,6 +171,7 @@ describe('입력 검증 강화 (Round 2)', () => {
   });
 
   it('검색 쿼리 Zod 스키마가 올바르다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       q: z.string().min(1).max(200),
@@ -225,6 +227,7 @@ describe('기존 기능 회귀: 테넌트 라우트', () => {
 
 describe('CSAP 준수: 테넌트 서비스 Round 2', () => {
   it('D-12: 검색 API에 Zod 검증이 적용된다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       q: z.string().min(1),
@@ -239,6 +242,7 @@ describe('CSAP 준수: 테넌트 서비스 Round 2', () => {
   });
 
   it('D-08-05: UUID 형식 검증이 적용된다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       id: z.string().uuid(),

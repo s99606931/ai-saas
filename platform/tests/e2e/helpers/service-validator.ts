@@ -37,6 +37,7 @@ export function serviceFileContains(relativePath: string, patterns: string[]): {
 export function getServiceHandlers(serviceName: string): string[] {
   const handlersDir = resolve(PROJECT_ROOT, `platform/services/${serviceName}/src/handlers`);
   if (!existsSync(handlersDir)) return [];
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { readdirSync } = require('fs');
   return readdirSync(handlersDir) as string[];
 }

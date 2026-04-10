@@ -26,12 +26,15 @@ export function initTelemetry(): void {
     const { NodeSDK } = require('@opentelemetry/sdk-node') as {
       NodeSDK: new (config: Record<string, unknown>) => { start: () => void; shutdown: () => Promise<void> };
     };
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http') as {
       OTLPTraceExporter: new (config: { url: string }) => unknown;
     };
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node') as {
       getNodeAutoInstrumentations: (config: Record<string, unknown>) => unknown[];
     };
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { Resource } = require('@opentelemetry/resources') as {
       Resource: new (attrs: Record<string, string>) => unknown;
     };

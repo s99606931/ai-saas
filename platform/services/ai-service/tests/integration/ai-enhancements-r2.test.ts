@@ -31,6 +31,7 @@ describe('FR-AI.4: 일별 AI 사용량 추이', () => {
   });
 
   it('days 범위는 1~90이다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       days: z.coerce.number().int().min(1).max(90).default(7),

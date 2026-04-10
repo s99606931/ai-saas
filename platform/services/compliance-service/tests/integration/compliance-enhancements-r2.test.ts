@@ -27,6 +27,7 @@ describe('FR-COMP.5: 준수율 추이', () => {
   });
 
   it('days는 7~365 범위이다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       days: z.coerce.number().int().min(7).max(365).default(30),
@@ -37,6 +38,7 @@ describe('FR-COMP.5: 준수율 추이', () => {
   });
 
   it('framework는 csap/n2sf/all이다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({
       framework: z.enum(['csap', 'n2sf', 'all']).default('all'),

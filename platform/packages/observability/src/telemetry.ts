@@ -40,12 +40,15 @@ export function initTelemetry(config: TelemetryConfig): void {
         shutdown: () => Promise<void>;
       };
     };
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http') as {
       OTLPTraceExporter: new (cfg: { url: string }) => unknown;
     };
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node') as {
       getNodeAutoInstrumentations: (cfg: Record<string, unknown>) => unknown[];
     };
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { Resource } = require('@opentelemetry/resources') as {
       Resource: new (attrs: Record<string, string>) => unknown;
     };

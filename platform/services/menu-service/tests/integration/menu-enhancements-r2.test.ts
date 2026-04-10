@@ -57,6 +57,7 @@ describe('메뉴 검색 고도화', () => {
   });
 
   it('빈 검색어가 거부된다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { z } = require('zod') as typeof import('zod');
     const schema = z.object({ q: z.string().min(1) });
     expect(schema.safeParse({ q: '' }).success).toBe(false);
