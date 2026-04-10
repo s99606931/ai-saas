@@ -1,0 +1,172 @@
+# Design Ref: MTU-N237 SS1
+# Plan SC: FR-HF.1, FR-HF.2
+# Hotfix 파이프라인 자동화 - Gitea Actions
+
+name: Hotfix Pipeline
+
+on:
+  push:
+    branches:
+      - 'hotfix/**'
+
+env:
+  REGISTRY: harbor.saas.go.kr
+  IMAGE_PREFIX: saas-platform
+
+jobs:
+  # === Stage 1: 빌드 + 테스트 ===
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 소스 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 의존성 설치
+        run: npm ci --prefer-offline
+
+      - name: 린트 검사
+        run: npm run lint
+
+      - name: 단위 테스트 (영향 범위)
+        run: |
+          # 변경된 파일 기반 영향 범위 테스트만 실행
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD -- '*.ts' '*.tsx')
+          if [ -n "$CHANGED_FILES" ]; then
+            npx jest --findRelatedTests $CHANGED_FILES --passWithNoTests
+          fi
+
+      - name: Docker 이미지 빌드
+        run: |
+          HOTFIX_TAG="${GITHUB_REF_NAME//\//-}-$(git rev-parse --short HEAD)"
+          docker build -t $REGISTRY/$IMAGE_PREFIX:$HOTFIX_TAG .
+          echo "HOTFIX_TAG=$HOTFIX_TAG" >> $GITHUB_ENV
+
+      - name: 이미지 태그 아티팩트
+        run: echo "${{ env.HOTFIX_TAG }}" > hotfix-tag.txt
+
+      - name: 아티팩트 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: hotfix-tag
+          path: hotfix-tag.txt
+
+  # === Stage 2: 보안 스캔 ===
+  security-scan:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: 소스 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 아티팩트 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: hotfix-tag
+
+      - name: Trivy 이미지 스캔
+        run: |
+          HOTFIX_TAG=$(cat hotfix-tag.txt)
+          trivy image --exit-code 1 --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            $REGISTRY/$IMAGE_PREFIX:$HOTFIX_TAG
+
+      - name: SBOM 생성
+        run: |
+          HOTFIX_TAG=$(cat hotfix-tag.txt)
+          trivy image --format cyclonedx \
+            --output sbom-hotfix.json \
+            $REGISTRY/$IMAGE_PREFIX:$HOTFIX_TAG
+
+      - name: Cosign 서명
+        run: |
+          HOTFIX_TAG=$(cat hotfix-tag.txt)
+          cosign sign --key env://COSIGN_KEY \
+            $REGISTRY/$IMAGE_PREFIX:$HOTFIX_TAG
+        env:
+          COSIGN_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+  # === Stage 3: 스테이징 배포 + Smoke Test ===
+  staging-deploy:
+    needs: security-scan
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: 소스 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 아티팩트 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: hotfix-tag
+
+      - name: 스테이징 Helm 배포
+        run: |
+          HOTFIX_TAG=$(cat hotfix-tag.txt)
+          helm upgrade --install saas-platform ./infra/helm \
+            --namespace staging \
+            --set image.tag=$HOTFIX_TAG \
+            --set replicaCount=1 \
+            --wait --timeout 5m
+
+      - name: Smoke Test 실행
+        run: |
+          # FR-HF.3: 배포 후 자동 검증
+          bash scripts/hotfix-deploy.sh --verify-only --namespace staging
+
+      - name: 실패 시 스테이징 롤백
+        if: failure()
+        run: |
+          helm rollback saas-platform --namespace staging
+          echo "STAGING_ROLLBACK=true" >> $GITHUB_ENV
+
+  # === Stage 4: 프로덕션 배포 (수동 승인) ===
+  production-deploy:
+    needs: staging-deploy
+    runs-on: ubuntu-latest
+    environment: production  # 수동 승인 게이트
+    steps:
+      - name: 소스 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 아티팩트 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: hotfix-tag
+
+      - name: 프로덕션 배포
+        run: |
+          HOTFIX_TAG=$(cat hotfix-tag.txt)
+          bash scripts/hotfix-deploy.sh \
+            --tag $HOTFIX_TAG \
+            --namespace production
+
+      - name: 배포 후 검증
+        run: |
+          bash scripts/hotfix-deploy.sh --verify-only --namespace production
+
+      - name: 감사 로그 기록
+        run: |
+          # FR-HF.6: 감사 로그
+          HOTFIX_TAG=$(cat hotfix-tag.txt)
+          echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"action\":\"HOTFIX_DEPLOY\",\"tag\":\"$HOTFIX_TAG\",\"branch\":\"$GITHUB_REF_NAME\",\"actor\":\"$GITHUB_ACTOR\"}" >> .claude/audit.jsonl
+
+      - name: 실패 시 자동 롤백
+        if: failure()
+        run: |
+          # FR-HF.4: 자동 롤백
+          bash scripts/hotfix-rollback.sh --namespace production
+
+      - name: 배포 알림
+        if: always()
+        run: |
+          # FR-HF.5: ChatOps 알림
+          STATUS="${{ job.status }}"
+          HOTFIX_TAG=$(cat hotfix-tag.txt)
+          echo "Hotfix 배포: $HOTFIX_TAG - 상태: $STATUS"
