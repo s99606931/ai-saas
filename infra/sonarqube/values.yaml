@@ -1,0 +1,117 @@
+# SonarQube Community Edition - k3s 경량 배포
+# Design Ref: DS-N105.1
+# Plan SC: FR-N105.1
+# CSAP: D-12 시스템 개발 보안
+
+replicaCount: 1
+
+image:
+  repository: sonarqube
+  tag: "10.7-community"
+  pullPolicy: IfNotPresent
+
+# 경량 리소스 설정 (WSL2/k3s 환경 최적화)
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: "1"
+    memory: 2Gi
+
+# JVM 메모리 설정 (경량화)
+env:
+  - name: SONAR_WEB_JAVAOPTS
+    value: "-Xmx512m -Xms256m"
+  - name: SONAR_CE_JAVAOPTS
+    value: "-Xmx512m -Xms128m"
+  - name: SONAR_SEARCH_JAVAOPTS
+    value: "-Xmx512m -Xms256m"
+  # 텔레메트리 비활성화 (N2SF 외부 통신 차단)
+  - name: SONAR_TELEMETRY_ENABLE
+    value: "false"
+
+# 영속성 설정
+persistence:
+  enabled: true
+  storageClass: local-path
+  size: 5Gi
+  accessMode: ReadWriteOnce
+
+# 내장 PostgreSQL (경량 단일 인스턴스)
+postgresql:
+  enabled: true
+  persistence:
+    enabled: true
+    storageClass: local-path
+    size: 2Gi
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# 서비스 설정
+service:
+  type: ClusterIP
+  port: 9000
+
+# Ingress 설정 (Traefik)
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  hosts:
+    - host: sonar.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# 보안 컨텍스트
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Pod 보안 컨텍스트 (PSS Restricted 호환)
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+
+# 리소스 제한 (노이즈 네이버 방지)
+# Design Ref: DS-N105.1
+networkPolicy:
+  enabled: true
+  allowIngress:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: gitea
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: monitoring
+
+# 프로브 설정
+livenessProbe:
+  httpGet:
+    path: /api/system/status
+    port: 9000
+  initialDelaySeconds: 120
+  periodSeconds: 30
+  timeoutSeconds: 5
+readinessProbe:
+  httpGet:
+    path: /api/system/status
+    port: 9000
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+
+# 플러그인 (최소화 - 경량 원칙)
+plugins:
+  install: []
+  # 필요 시 추가:
+  # - "https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/1.19.0/sonarqube-community-branch-plugin-1.19.0.jar"

@@ -1,0 +1,121 @@
+# 메트릭 상관관계 분석 규칙
+# Design Ref: DS-N107.3
+# Plan SC: FR-N107.3
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: anomaly-correlation-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: anomaly-detector
+    app.kubernetes.io/component: correlation
+    app.kubernetes.io/part-of: aiops
+data:
+  correlation-rules.yaml: |
+    # 상관관계 규칙 정의
+    version: "1.0"
+
+    # 디듀플리케이션: 동시 발생 이상을 단일 이벤트로 통합
+    rules:
+      # 규칙 1: 리소스 부족 패턴
+      - name: "resource_exhaustion"
+        description: "CPU + Memory 동시 급증 = 리소스 부족 (단일 알림)"
+        conditions:
+          - metric: "cpu_usage"
+            operator: ">"
+            threshold: 85
+          - metric: "memory_usage"
+            operator: ">"
+            threshold: 85
+        correlation_window: "5m"
+        action: "merge_alerts"
+        merged_alert:
+          name: "ResourceExhaustion"
+          severity: "critical"
+          summary: "리소스 부족 감지: CPU/Memory 동시 급증"
+          runbook: "https://docs.saas.go.kr/runbooks/resource-exhaustion"
+
+      # 규칙 2: 네트워크 장애 패턴
+      - name: "network_degradation"
+        description: "Network 이상 + Latency 급증 = 네트워크 장애"
+        conditions:
+          - metric: "network_rx_rate"
+            operator: "anomaly"
+          - metric: "http_latency_p99"
+            operator: ">"
+            threshold: 2.0  # 2초 이상
+        correlation_window: "5m"
+        action: "merge_alerts"
+        merged_alert:
+          name: "NetworkDegradation"
+          severity: "warning"
+          summary: "네트워크 성능 저하 감지: 트래픽 이상 + 지연 증가"
+          runbook: "https://docs.saas.go.kr/runbooks/network-degradation"
+
+      # 규칙 3: 애플리케이션 장애 패턴
+      - name: "application_failure"
+        description: "HTTP 에러율 + Pod 재시작 = 애플리케이션 장애"
+        conditions:
+          - metric: "http_error_rate"
+            operator: ">"
+            threshold: 5  # 5% 이상
+          - metric: "pod_restart_rate"
+            operator: ">"
+            threshold: 3  # 1시간 내 3회 이상
+        correlation_window: "10m"
+        action: "merge_alerts"
+        merged_alert:
+          name: "ApplicationFailure"
+          severity: "critical"
+          summary: "애플리케이션 장애 감지: 에러율 급증 + Pod 재시작"
+          runbook: "https://docs.saas.go.kr/runbooks/application-failure"
+
+      # 규칙 4: 디스크 I/O 병목 패턴
+      - name: "disk_io_bottleneck"
+        description: "Disk I/O 급증 + Latency 증가 = I/O 병목"
+        conditions:
+          - metric: "disk_io_util"
+            operator: ">"
+            threshold: 80
+          - metric: "http_latency_p99"
+            operator: ">"
+            threshold: 1.0
+        correlation_window: "5m"
+        action: "merge_alerts"
+        merged_alert:
+          name: "DiskIOBottleneck"
+          severity: "warning"
+          summary: "디스크 I/O 병목 감지: I/O 사용률 급증 + 응답 지연"
+
+      # 규칙 5: 전면 장애 패턴 (다중 메트릭 동시 이상)
+      - name: "total_outage"
+        description: "3개 이상 메트릭 동시 이상 = 전면 장애"
+        conditions:
+          min_anomalies: 3  # 8개 특성 중 3개 이상 이상
+        correlation_window: "5m"
+        action: "escalate"
+        merged_alert:
+          name: "TotalOutage"
+          severity: "critical"
+          summary: "전면 장애 의심: 다변량 이상 탐지 3개+ 메트릭 동시 이상"
+          runbook: "https://docs.saas.go.kr/runbooks/total-outage"
+          escalation:
+            - type: "pagerduty"
+            - type: "slack"
+              channel: "#incident-critical"
+
+    # 억제 규칙 (알림 노이즈 감소)
+    suppression:
+      # 유지보수 윈도우 중 알림 억제
+      maintenance_windows:
+        - name: "weekly_maintenance"
+          schedule: "0 2-4 * * 0"  # 일요일 02:00-04:00
+          suppress_severity: ["low", "medium"]
+
+      # 자동 복구 대기
+      auto_recovery_wait: "5m"  # 5분 내 정상화 시 알림 취소
+
+      # 중복 억제
+      dedup_key_template: "{{ .name }}_{{ .namespace }}_{{ .instance }}"
+      dedup_window: "15m"

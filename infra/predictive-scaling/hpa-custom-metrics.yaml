@@ -1,0 +1,120 @@
+# HPA Custom Metrics 연동 설정
+# Design Ref: DS-N109.3
+# Plan SC: FR-N109.3
+
+# Prometheus Adapter 규칙 (예측 메트릭 -> HPA)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: predictive-hpa-adapter-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: predictive-scaler
+    app.kubernetes.io/component: hpa-adapter
+    app.kubernetes.io/part-of: predictive-scaling
+data:
+  rules.yaml: |
+    # Prometheus Adapter 커스텀 메트릭 규칙
+    rules:
+      # 15분 후 CPU 예측값
+      - seriesQuery: 'predicted_cpu_usage_15m{namespace!=""}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+        name:
+          matches: "^(.*)$"
+          as: "predicted_cpu_15m"
+        metricsQuery: '<<.Series>>{<<.LabelMatchers>>}'
+
+      # 1시간 후 CPU 예측값
+      - seriesQuery: 'predicted_cpu_usage_1h{namespace!=""}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+        name:
+          matches: "^(.*)$"
+          as: "predicted_cpu_1h"
+        metricsQuery: '<<.Series>>{<<.LabelMatchers>>}'
+
+      # 15분 후 메모리 예측값
+      - seriesQuery: 'predicted_memory_usage_15m{namespace!=""}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+        name:
+          matches: "^(.*)$"
+          as: "predicted_memory_15m"
+        metricsQuery: '<<.Series>>{<<.LabelMatchers>>}'
+
+      # 15분 후 요청률 예측값
+      - seriesQuery: 'predicted_request_rate_15m{namespace!=""}'
+        resources:
+          overrides:
+            namespace: {resource: "namespace"}
+        name:
+          matches: "^(.*)$"
+          as: "predicted_rps_15m"
+        metricsQuery: '<<.Series>>{<<.LabelMatchers>>}'
+---
+# 예측 기반 HPA 예시 (API Gateway 대상)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-gateway-predictive-hpa
+  namespace: saas-platform
+  labels:
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/component: predictive-hpa
+  annotations:
+    # Design Ref: DS-N109.3
+    saas.go.kr/scaling-mode: "predictive"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-gateway
+  minReplicas: 2
+  maxReplicas: 10
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60  # 예측이므로 빠르게 확장
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 축소는 신중하게
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 120
+  metrics:
+    # 실시간 CPU (기본)
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    # 예측 CPU 15분 후 (사전 확장)
+    - type: External
+      external:
+        metric:
+          name: predicted_cpu_15m
+          selector:
+            matchLabels:
+              namespace: saas-platform
+        target:
+          type: Value
+          value: "70"
+    # 예측 요청률 15분 후
+    - type: External
+      external:
+        metric:
+          name: predicted_rps_15m
+          selector:
+            matchLabels:
+              namespace: saas-platform
+        target:
+          type: AverageValue
+          averageValue: "1000"

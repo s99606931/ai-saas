@@ -1,0 +1,78 @@
+# FinOps 비용 예측 모델 설정
+# Design Ref: DS-N110.1
+# Plan SC: FR-N110.1
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cost-prediction-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: finops-predictor
+    app.kubernetes.io/component: cost-prediction
+    app.kubernetes.io/part-of: finops
+data:
+  config.yaml: |
+    version: "1.0"
+
+    # 비용 데이터 소스
+    data_source:
+      type: "opencost"
+      prometheus_url: "http://prometheus-server.monitoring:9090"
+      # OpenCost 비용 메트릭
+      queries:
+        # 네임스페이스별 일일 CPU 비용
+        daily_cpu_cost: |
+          sum by (namespace) (
+            increase(container_cpu_usage_seconds_total[24h]) *
+            on(node) group_left()
+            node_cpu_hourly_cost
+          )
+        # 네임스페이스별 일일 메모리 비용
+        daily_memory_cost: |
+          sum by (namespace) (
+            avg_over_time(container_memory_working_set_bytes[24h]) *
+            on(node) group_left()
+            node_ram_hourly_cost / 1073741824
+          )
+        # 네임스페이스별 일일 스토리지 비용
+        daily_storage_cost: |
+          sum by (namespace) (
+            pv_hourly_cost * 24
+          )
+        # 네임스페이스별 총 일일 비용
+        daily_total_cost: |
+          sum by (namespace) (
+            container_cpu_allocation * on(node) group_left() node_cpu_hourly_cost +
+            container_memory_allocation_bytes * on(node) group_left() node_ram_hourly_cost / 1073741824
+          ) * 24
+
+    # 예측 모델 설정
+    prediction:
+      model: "prophet"
+      # 학습 데이터 윈도우
+      training_window: "30d"
+      # 예측 시점
+      horizons:
+        - name: "end_of_month"
+          description: "월말까지 예측"
+        - name: "7d_ahead"
+          description: "7일 후 예측"
+      # Prophet 파라미터
+      prophet_params:
+        daily_seasonality: true
+        weekly_seasonality: true
+        changepoint_prior_scale: 0.1
+        interval_width: 0.90
+
+    # 비용 단가 (원/시간) - 온프레미스 기준
+    unit_costs:
+      cpu_per_core_hour: 50       # 50원/코어시간
+      memory_per_gb_hour: 10      # 10원/GB시간
+      storage_per_gb_month: 100   # 100원/GB월
+      network_per_gb: 50          # 50원/GB
+
+    # 예측 실행 스케줄
+    schedule:
+      interval: "1h"  # 1시간마다 예측 갱신
+      full_retrain: "24h"  # 24시간마다 전체 재학습

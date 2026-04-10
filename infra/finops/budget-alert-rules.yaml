@@ -1,0 +1,122 @@
+# FinOps 예산 초과 AlertManager 규칙
+# Design Ref: DS-N110.3
+# Plan SC: FR-N110.3
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: finops-budget-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: finops-predictor
+    app.kubernetes.io/component: alert-rules
+    app.kubernetes.io/part-of: finops
+    prometheus: k8s
+    role: alert-rules
+spec:
+  groups:
+    - name: finops-budget
+      interval: 15m
+      rules:
+        # 1. 예산 50% 도달 (정보)
+        - alert: BudgetUsage50Percent
+          expr: |
+            (sum by (namespace) (
+              increase(container_cpu_usage_seconds_total[30d])
+            ) * 50 +
+            sum by (namespace) (
+              avg_over_time(container_memory_working_set_bytes[30d])
+            ) * 10 / 1073741824 * 720) /
+            on(namespace) group_left()
+            label_replace(
+              kube_namespace_annotations{annotation_saas_go_kr_monthly_budget!=""},
+              "budget", "$1", "annotation_saas_go_kr_monthly_budget", "(.*)"
+            ) > 0.50
+          for: 30m
+          labels:
+            severity: info
+            category: finops
+          annotations:
+            summary: "네임스페이스 {{ $labels.namespace }} 예산 50% 도달"
+            description: "현재 월비용이 예산의 50%에 도달했습니다. 월말 예측 비용을 확인하십시오."
+            runbook_url: "https://docs.saas.go.kr/runbooks/finops-budget-review"
+
+        # 2. 예산 80% 도달 (경고)
+        - alert: BudgetUsage80Percent
+          expr: |
+            finops_predicted_monthly_cost_krw / finops_monthly_budget_krw > 0.80
+          for: 15m
+          labels:
+            severity: warning
+            category: finops
+          annotations:
+            summary: "네임스페이스 {{ $labels.namespace }} 예산 80% 예측 초과"
+            description: |
+              월말 예측 비용이 예산의 80%를 초과합니다.
+              예측 비용: {{ $value | humanize }}원
+              즉시 리소스 사용 최적화를 검토하십시오.
+            runbook_url: "https://docs.saas.go.kr/runbooks/finops-cost-optimization"
+
+        # 3. 예산 100% 초과 예측 (긴급)
+        - alert: BudgetExceededPrediction
+          expr: |
+            finops_predicted_monthly_cost_krw / finops_monthly_budget_krw > 1.00
+          for: 5m
+          labels:
+            severity: critical
+            category: finops
+          annotations:
+            summary: "네임스페이스 {{ $labels.namespace }} 예산 초과 예측"
+            description: |
+              월말 예측 비용이 예산을 초과합니다.
+              예측 비용: {{ $value | humanize }}원
+              즉시 비용 절감 조치가 필요합니다.
+            runbook_url: "https://docs.saas.go.kr/runbooks/finops-budget-exceeded"
+
+        # 4. 일일 비용 이상 급증
+        - alert: DailyCostSpike
+          expr: |
+            (finops_daily_cost_krw - finops_daily_cost_krw offset 1d) /
+            finops_daily_cost_krw offset 1d > 0.30
+          for: 30m
+          labels:
+            severity: warning
+            category: finops
+          annotations:
+            summary: "네임스페이스 {{ $labels.namespace }} 일일 비용 30% 이상 급증"
+            description: |
+              전일 대비 비용이 30% 이상 증가했습니다.
+              비정상적인 리소스 사용이 없는지 확인하십시오.
+
+        # 5. 유휴 리소스 감지
+        - alert: IdleResourceDetected
+          expr: |
+            avg by (namespace, pod) (
+              rate(container_cpu_usage_seconds_total[48h])
+            ) < 0.10
+            and
+            kube_pod_status_phase{phase="Running"} == 1
+          for: 48h
+          labels:
+            severity: info
+            category: finops
+          annotations:
+            summary: "유휴 리소스 감지: {{ $labels.namespace }}/{{ $labels.pod }}"
+            description: |
+              48시간 동안 CPU 사용률 10% 미만입니다.
+              리소스 축소 또는 제거를 검토하십시오.
+
+    - name: finops-platform
+      interval: 30m
+      rules:
+        # 플랫폼 전체 비용 모니터링
+        - alert: PlatformBudgetWarning
+          expr: |
+            sum(finops_predicted_monthly_cost_krw) / 10000000 > 0.80
+          for: 1h
+          labels:
+            severity: warning
+            category: finops
+          annotations:
+            summary: "플랫폼 전체 월비용 예산 80% 초과 예측"
+            description: "전체 플랫폼 월 예측 비용이 1000만원의 80%를 초과합니다."

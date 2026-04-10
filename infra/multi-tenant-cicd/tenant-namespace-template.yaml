@@ -1,0 +1,73 @@
+# 테넌트 CI/CD 네임스페이스 템플릿
+# Design Ref: DS-N108.1
+# Plan SC: FR-N108.1
+# CSAP: D-08 접근 통제
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "tenant-TENANT_ID-cicd"
+  labels:
+    app.kubernetes.io/managed-by: saas-platform
+    saas.go.kr/tenant-id: "TENANT_ID"
+    saas.go.kr/tier: "TENANT_TIER"
+    saas.go.kr/component: cicd
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+  annotations:
+    saas.go.kr/onboarded-at: "ONBOARDING_DATE"
+    saas.go.kr/quota-tier: "TENANT_TIER"
+    saas.go.kr/owner: "TENANT_ADMIN_EMAIL"
+    scheduler.alpha.kubernetes.io/node-selector: "node-role.kubernetes.io/worker="
+---
+# 테넌트 전용 ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "tenant-TENANT_ID-sa"
+  namespace: "tenant-TENANT_ID-cicd"
+  labels:
+    saas.go.kr/tenant-id: "TENANT_ID"
+automountServiceAccountToken: false
+---
+# 테넌트 CI/CD 전용 Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: "tenant-cicd-role"
+  namespace: "tenant-TENANT_ID-cicd"
+  labels:
+    saas.go.kr/tenant-id: "TENANT_ID"
+rules:
+  # 빌드/배포에 필요한 최소 권한
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "services", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch", "create", "update", "delete"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  # 읽기 전용: 상태 확인
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+---
+# RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "tenant-cicd-binding"
+  namespace: "tenant-TENANT_ID-cicd"
+  labels:
+    saas.go.kr/tenant-id: "TENANT_ID"
+subjects:
+  - kind: ServiceAccount
+    name: "tenant-TENANT_ID-sa"
+    namespace: "tenant-TENANT_ID-cicd"
+roleRef:
+  kind: Role
+  name: "tenant-cicd-role"
+  apiGroup: rbac.authorization.k8s.io

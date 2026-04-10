@@ -1,0 +1,78 @@
+# LSTM Autoencoder 시계열 이상 탐지 설정
+# Design Ref: DS-N107.2
+# Plan SC: FR-N107.2
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lstm-autoencoder-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: anomaly-detector
+    app.kubernetes.io/component: lstm
+    app.kubernetes.io/part-of: aiops
+data:
+  lstm-config.yaml: |
+    # LSTM Autoencoder 설정
+    version: "1.0"
+
+    # 모델 아키텍처
+    architecture:
+      type: "lstm_autoencoder"
+      encoder:
+        layers:
+          - type: "lstm"
+            units: 64
+            return_sequences: true
+          - type: "lstm"
+            units: 32
+            return_sequences: false
+      decoder:
+        layers:
+          - type: "repeat_vector"
+            n: 60  # 시퀀스 길이
+          - type: "lstm"
+            units: 32
+            return_sequences: true
+          - type: "lstm"
+            units: 64
+            return_sequences: true
+          - type: "time_distributed_dense"
+            units: 8  # 특성 벡터 차원 수
+
+    # 학습 파라미터
+    training:
+      epochs: 50
+      batch_size: 32
+      learning_rate: 0.001
+      optimizer: "adam"
+      loss: "mse"  # Mean Squared Error
+      validation_split: 0.2
+      early_stopping:
+        patience: 10
+        min_delta: 0.0001
+
+    # 시퀀스 설정
+    sequence:
+      length: 60          # 60분 시퀀스 (1분 간격)
+      step: 1             # 1분 슬라이딩 윈도우
+      features: 8         # 특성 벡터 차원 수
+
+    # 이상 탐지 임계값
+    detection:
+      # 재구성 오차 기반 임계값
+      method: "reconstruction_error"
+      # 동적 임계값: 학습 데이터의 재구성 오차 분포 기반
+      threshold_method: "percentile"
+      threshold_percentile: 99  # 상위 1% = 이상
+
+    # 계절성 보정
+    seasonality:
+      daily: true         # 일간 패턴 학습
+      weekly: true         # 주간 패턴 학습
+      decomposition: "stl" # STL 분해 사용
+
+    # 리소스 제한
+    resources:
+      inference_timeout: "5s"
+      max_batch_inference: 100

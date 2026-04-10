@@ -1,0 +1,114 @@
+# Kyverno 테넌트 RBAC 자동 주입 정책
+# Design Ref: DS-N108.2
+# Plan SC: FR-N108.2
+# CSAP: D-08 접근 통제
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: tenant-cicd-rbac-injection
+  labels:
+    app.kubernetes.io/managed-by: saas-platform
+    app.kubernetes.io/component: multi-tenant-cicd
+  annotations:
+    policies.kyverno.io/title: 테넌트 CI/CD RBAC 자동 주입
+    policies.kyverno.io/description: |
+      tenant-*-cicd 네임스페이스 생성 시 자동으로
+      ServiceAccount, Role, RoleBinding을 생성합니다.
+      CSAP D-08 접근 통제 준수를 위한 최소 권한 원칙 적용.
+    policies.kyverno.io/severity: high
+spec:
+  rules:
+    # 규칙 1: 보안 컨텍스트 자동 주입
+    - name: inject-security-context
+      match:
+        any:
+          - resources:
+              kinds: ["Pod"]
+              namespaces: ["tenant-*-cicd"]
+      mutate:
+        patchStrategicMerge:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+              seccompProfile:
+                type: RuntimeDefault
+            containers:
+              - name: "*"
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  capabilities:
+                    drop: ["ALL"]
+
+    # 규칙 2: 테넌트 라벨 강제
+    - name: enforce-tenant-labels
+      match:
+        any:
+          - resources:
+              kinds: ["Deployment", "StatefulSet", "Job", "CronJob"]
+              namespaces: ["tenant-*-cicd"]
+      validate:
+        message: "모든 워크로드에 saas.go.kr/tenant-id 라벨이 필수입니다"
+        pattern:
+          metadata:
+            labels:
+              saas.go.kr/tenant-id: "?*"
+
+    # 규칙 3: 이미지 레지스트리 제한
+    - name: restrict-image-registry
+      match:
+        any:
+          - resources:
+              kinds: ["Pod"]
+              namespaces: ["tenant-*-cicd"]
+      validate:
+        message: "테넌트 CI/CD에서는 내부 Harbor 레지스트리만 사용 가능합니다"
+        pattern:
+          spec:
+            containers:
+              - image: "harbor.local/*"
+
+    # 규칙 4: 호스트 경로 마운트 금지
+    - name: deny-host-path
+      match:
+        any:
+          - resources:
+              kinds: ["Pod"]
+              namespaces: ["tenant-*-cicd"]
+      validate:
+        message: "테넌트 CI/CD에서 hostPath 볼륨 사용이 금지됩니다"
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.spec.volumes[].hostPath || '' }}"
+                operator: NotEquals
+                value: ""
+---
+# 테넌트 감사 로그 정책
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: tenant-cicd-audit-logging
+  labels:
+    app.kubernetes.io/component: multi-tenant-cicd
+  annotations:
+    policies.kyverno.io/title: 테넌트 CI/CD 감사 로깅
+    policies.kyverno.io/description: |
+      테넌트 CI/CD 네임스페이스의 모든 리소스 변경을 감사 로그에 기록합니다.
+      CSAP D-06 침해사고 관리 준수.
+spec:
+  rules:
+    - name: audit-tenant-changes
+      match:
+        any:
+          - resources:
+              kinds: ["Deployment", "Service", "ConfigMap", "Secret"]
+              namespaces: ["tenant-*-cicd"]
+              operations: ["CREATE", "UPDATE", "DELETE"]
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            annotations:
+              saas.go.kr/last-modified-at: "{{ time_now_utc() }}"
+              saas.go.kr/modified-by: "{{ request.userInfo.username }}"

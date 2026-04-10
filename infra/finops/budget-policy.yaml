@@ -1,0 +1,86 @@
+# FinOps 예산 정책 정의
+# Design Ref: DS-N110.2
+# Plan SC: FR-N110.2
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: budget-policy
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: finops-predictor
+    app.kubernetes.io/component: budget-policy
+    app.kubernetes.io/part-of: finops
+data:
+  budget-policy.yaml: |
+    version: "1.0"
+
+    # 테넌트 티어별 월예산 정책
+    tier_budgets:
+      basic:
+        monthly_budget_krw: 500000  # 50만원
+        alert_thresholds:
+          info: 0.50    # 50% 도달: 정보
+          warning: 0.80  # 80% 도달: 경고
+          critical: 1.00 # 100% 도달: 긴급
+        actions:
+          on_critical:
+            - type: "notification"
+              channels: ["slack", "email"]
+              targets: ["tenant-admin", "platform-admin"]
+            - type: "resource_review"
+              description: "리소스 사용 최적화 검토 요청"
+
+      standard:
+        monthly_budget_krw: 2000000  # 200만원
+        alert_thresholds:
+          info: 0.50
+          warning: 0.80
+          critical: 1.00
+        actions:
+          on_critical:
+            - type: "notification"
+              channels: ["slack", "email"]
+              targets: ["tenant-admin", "platform-admin", "finance"]
+            - type: "resource_review"
+
+      enterprise:
+        monthly_budget_krw: 0  # 무제한 (예측 기반 알림만)
+        alert_thresholds:
+          info: 0.80
+          warning: 0.90  # 예측 기반
+        actions:
+          on_warning:
+            - type: "notification"
+              channels: ["slack"]
+              targets: ["tenant-admin"]
+
+    # 플랫폼 전체 예산
+    platform_budget:
+      monthly_budget_krw: 10000000  # 1000만원
+      alert_thresholds:
+        info: 0.60
+        warning: 0.80
+        critical: 0.95
+      actions:
+        on_critical:
+          - type: "notification"
+            channels: ["slack", "email", "pagerduty"]
+            targets: ["platform-admin", "cto", "finance"]
+          - type: "cost_freeze"
+            description: "신규 리소스 프로비저닝 일시 중단"
+
+    # 비용 이상 탐지 정책
+    anomaly_detection:
+      # 일일 비용 급증 감지
+      daily_spike_threshold: 0.30  # 전일 대비 30% 이상 증가
+      # 시간별 비용 급증 감지
+      hourly_spike_threshold: 0.50  # 전시간 대비 50% 이상 증가
+      # 유휴 리소스 감지
+      idle_resource_threshold: 0.10  # CPU 10% 미만 사용 48시간 이상
+
+    # 보고서 생성 스케줄
+    reporting:
+      daily_report: "09:00"  # 매일 09시 일일 비용 보고
+      weekly_report: "monday 09:00"  # 매주 월요일 주간 보고
+      monthly_report: "1st 09:00"  # 매월 1일 월간 보고

@@ -1,0 +1,105 @@
+# XGBoost 다변량 예측 모델 설정
+# Design Ref: DS-N109.1
+# Plan SC: FR-N109.1
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xgboost-predictive-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: predictive-scaler
+    app.kubernetes.io/component: xgboost
+    app.kubernetes.io/part-of: predictive-scaling
+data:
+  xgboost-config.yaml: |
+    version: "2.0"
+    model: "xgboost"
+
+    # 다변량 특성 벡터 정의
+    features:
+      # 기본 리소스 메트릭
+      cpu_usage_current:
+        query: '100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'
+        type: "real_time"
+
+      memory_usage_current:
+        query: '(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100'
+        type: "real_time"
+
+      network_rx_rate:
+        query: 'sum(rate(node_network_receive_bytes_total[5m]))'
+        type: "real_time"
+
+      # 시간대 특성 (주기성)
+      hour_of_day:
+        type: "derived"
+        formula: "datetime.now().hour"
+
+      day_of_week:
+        type: "derived"
+        formula: "datetime.now().weekday()"
+
+      is_business_hours:
+        type: "derived"
+        formula: "1 if 9 <= hour <= 18 and weekday < 5 else 0"
+
+      # 이동 평균 (트렌드)
+      cpu_ma_5m:
+        query: 'avg_over_time((100 - avg(rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)[5m:])'
+        type: "aggregated"
+
+      cpu_ma_15m:
+        query: 'avg_over_time((100 - avg(rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)[15m:])'
+        type: "aggregated"
+
+      cpu_ma_1h:
+        query: 'avg_over_time((100 - avg(rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)[1h:])'
+        type: "aggregated"
+
+      # 변화율 (기울기)
+      cpu_derivative:
+        query: 'deriv((100 - avg(rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)[15m:])'
+        type: "derived"
+
+      # HTTP 트래픽 특성
+      request_rate:
+        query: 'sum(rate(http_requests_total[5m]))'
+        type: "real_time"
+
+      error_rate:
+        query: 'sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100'
+        type: "real_time"
+
+    # XGBoost 하이퍼파라미터
+    hyperparameters:
+      n_estimators: 300
+      max_depth: 6
+      learning_rate: 0.05
+      subsample: 0.8
+      colsample_bytree: 0.8
+      min_child_weight: 3
+      reg_alpha: 0.1
+      reg_lambda: 1.0
+      objective: "reg:squarederror"
+      eval_metric: "rmse"
+      early_stopping_rounds: 20
+
+    # 예측 시점
+    prediction_horizons:
+      - name: "15min"
+        steps: 15
+        weight_in_ensemble: 0.6  # XGBoost 60%
+      - name: "1hour"
+        steps: 60
+        weight_in_ensemble: 0.6
+      - name: "24hour"
+        steps: 1440
+        weight_in_ensemble: 0.4  # 장기 예측은 Prophet 비중 증가
+
+    # 학습 설정
+    training:
+      data_window: "14d"  # 14일 학습 데이터
+      validation_split: 0.2
+      cross_validation_folds: 5
+      retrain_interval: "6h"  # 6시간마다 재학습

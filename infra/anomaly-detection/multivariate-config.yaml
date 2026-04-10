@@ -1,0 +1,93 @@
+# AIOps 다변량 이상 탐지 설정
+# Design Ref: DS-N107.1
+# Plan SC: FR-N107.1
+# 기존 N83 Z-Score와 병렬 운영
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: multivariate-anomaly-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: anomaly-detector
+    app.kubernetes.io/component: multivariate
+    app.kubernetes.io/part-of: aiops
+data:
+  multivariate.yaml: |
+    # 다변량 이상 탐지 설정 v2.0
+    version: "2.0"
+    mode: "multivariate"
+
+    # 특성 벡터 정의
+    features:
+      cpu_usage:
+        query: '100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'
+        normalization: "minmax"
+        weight: 1.0
+
+      memory_usage:
+        query: '(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100'
+        normalization: "minmax"
+        weight: 1.0
+
+      network_rx_rate:
+        query: 'sum by(instance) (rate(node_network_receive_bytes_total[5m]))'
+        normalization: "minmax"
+        weight: 0.8
+
+      network_tx_rate:
+        query: 'sum by(instance) (rate(node_network_transmit_bytes_total[5m]))'
+        normalization: "minmax"
+        weight: 0.8
+
+      disk_io_util:
+        query: 'rate(node_disk_io_time_seconds_total[5m]) * 100'
+        normalization: "minmax"
+        weight: 0.7
+
+      pod_restart_rate:
+        query: 'sum by(namespace) (increase(kube_pod_container_status_restarts_total[1h]))'
+        normalization: "minmax"
+        weight: 1.2
+
+      http_error_rate:
+        query: 'sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100'
+        normalization: "minmax"
+        weight: 1.5
+
+      http_latency_p99:
+        query: 'histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))'
+        normalization: "minmax"
+        weight: 1.0
+
+    # Isolation Forest 설정
+    isolation_forest:
+      enabled: true
+      n_estimators: 200
+      contamination: 0.05  # 5% 이상치 비율 예상
+      max_samples: "auto"
+      random_state: 42
+      # 이상 점수 임계값
+      anomaly_threshold: -0.3  # sklearn 기준 (음수 = 이상)
+
+    # 데이터 수집 설정
+    collection:
+      interval: "1m"         # 1분 간격 수집
+      prometheus_url: "http://prometheus-server.monitoring:9090"
+      lookback_window: "7d"  # 학습 데이터 윈도우
+      min_samples: 1000      # 최소 학습 샘플 수
+
+    # 알림 설정
+    alerting:
+      deduplication_window: "15m"  # 중복 알림 억제 윈도우
+      min_consecutive_anomalies: 3  # 연속 3회 이상 시 알림
+      severity_mapping:
+        high: 0.9    # anomaly score >= 0.9
+        medium: 0.7  # anomaly score >= 0.7
+        low: 0.5     # anomaly score >= 0.5
+
+    # 모델 저장 경로
+    model:
+      save_path: "/models/isolation_forest_latest.pkl"
+      version_path: "/models/versions/"
+      max_versions: 5

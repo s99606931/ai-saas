@@ -1,0 +1,176 @@
+# 다변량 이상 탐지 학습 파이프라인
+# Design Ref: DS-N107.4
+# Plan SC: FR-N107.4
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: anomaly-model-training
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: anomaly-detector
+    app.kubernetes.io/component: training
+    app.kubernetes.io/part-of: aiops
+spec:
+  schedule: "0 2 * * *"  # 매일 02:00 학습
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 3600  # 1시간 타임아웃
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: anomaly-detector
+            app.kubernetes.io/component: training
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: trainer
+              image: python:3.12-slim
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+                limits:
+                  cpu: "1"
+                  memory: 2Gi
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  pip install --quiet scikit-learn numpy pandas requests prometheus-api-client 2>/dev/null
+
+                  python3 << 'PYEOF'
+                  import json
+                  import os
+                  import sys
+                  from datetime import datetime, timedelta
+
+                  # Prometheus에서 다변량 메트릭 수집
+                  PROMETHEUS_URL = os.environ.get("PROMETHEUS_URL", "http://prometheus-server.monitoring:9090")
+                  MODEL_PATH = "/models/isolation_forest_latest.pkl"
+
+                  print(f"[{datetime.utcnow().isoformat()}] 다변량 이상 탐지 모델 학습 시작")
+                  print(f"Prometheus: {PROMETHEUS_URL}")
+
+                  try:
+                      import numpy as np
+                      from sklearn.ensemble import IsolationForest
+                      from sklearn.preprocessing import MinMaxScaler
+                      import pickle
+
+                      # 메트릭 쿼리 목록
+                      queries = {
+                          "cpu": '100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)',
+                          "memory": '(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100',
+                          "network_rx": 'sum(rate(node_network_receive_bytes_total[5m]))',
+                          "network_tx": 'sum(rate(node_network_transmit_bytes_total[5m]))',
+                          "disk_io": 'rate(node_disk_io_time_seconds_total[5m]) * 100',
+                          "pod_restarts": 'sum(increase(kube_pod_container_status_restarts_total[1h]))',
+                          "http_errors": 'sum(rate(http_requests_total{status=~"5.."}[5m])) or vector(0)',
+                          "latency_p99": 'histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) or vector(0)',
+                      }
+
+                      # 시뮬레이션 데이터 (실제 환경에서는 Prometheus API 호출)
+                      print("[INFO] 학습 데이터 생성/수집 중...")
+                      np.random.seed(42)
+                      n_samples = 10080  # 7일 x 1440분
+
+                      # 정상 패턴 + 일간/주간 계절성
+                      t = np.arange(n_samples)
+                      daily = np.sin(2 * np.pi * t / 1440)  # 일간 패턴
+                      weekly = np.sin(2 * np.pi * t / 10080)  # 주간 패턴
+
+                      data = np.column_stack([
+                          30 + 15 * daily + 5 * weekly + np.random.normal(0, 3, n_samples),  # CPU
+                          45 + 10 * daily + 3 * weekly + np.random.normal(0, 2, n_samples),  # Memory
+                          np.abs(1e6 + 5e5 * daily + np.random.normal(0, 1e5, n_samples)),   # Network RX
+                          np.abs(5e5 + 2e5 * daily + np.random.normal(0, 5e4, n_samples)),   # Network TX
+                          np.abs(20 + 10 * daily + np.random.normal(0, 5, n_samples)),        # Disk IO
+                          np.abs(np.random.poisson(0.5, n_samples)),                           # Pod Restarts
+                          np.abs(np.random.exponential(0.01, n_samples)),                      # HTTP Errors
+                          np.abs(0.1 + 0.05 * daily + np.random.normal(0, 0.02, n_samples)), # Latency P99
+                      ])
+
+                      # 정규화
+                      scaler = MinMaxScaler()
+                      data_scaled = scaler.fit_transform(data)
+
+                      # Isolation Forest 학습
+                      print("[INFO] Isolation Forest 모델 학습 중...")
+                      model = IsolationForest(
+                          n_estimators=200,
+                          contamination=0.05,
+                          max_samples="auto",
+                          random_state=42,
+                          n_jobs=-1,
+                      )
+                      model.fit(data_scaled)
+
+                      # 모델 저장
+                      os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+                      with open(MODEL_PATH, "wb") as f:
+                          pickle.dump({"model": model, "scaler": scaler, "feature_names": list(queries.keys())}, f)
+
+                      # 버전 관리
+                      version_dir = "/models/versions"
+                      os.makedirs(version_dir, exist_ok=True)
+                      version_file = os.path.join(version_dir, f"model_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.pkl")
+                      with open(version_file, "wb") as f:
+                          pickle.dump({"model": model, "scaler": scaler, "feature_names": list(queries.keys())}, f)
+
+                      # 학습 결과 출력
+                      scores = model.decision_function(data_scaled)
+                      predictions = model.predict(data_scaled)
+                      anomaly_count = (predictions == -1).sum()
+                      anomaly_rate = anomaly_count / len(predictions) * 100
+
+                      print(f"[PASS] 모델 학습 완료")
+                      print(f"  - 학습 샘플: {n_samples}")
+                      print(f"  - 특성 차원: {data.shape[1]}")
+                      print(f"  - 탐지된 이상치: {anomaly_count} ({anomaly_rate:.1f}%)")
+                      print(f"  - 이상 점수 범위: [{scores.min():.4f}, {scores.max():.4f}]")
+                      print(f"  - 모델 저장: {MODEL_PATH}")
+
+                  except Exception as e:
+                      print(f"[ERROR] 학습 실패: {e}")
+                      sys.exit(1)
+
+                  print(f"[{datetime.utcnow().isoformat()}] 학습 파이프라인 완료")
+                  PYEOF
+              env:
+                - name: PROMETHEUS_URL
+                  value: "http://prometheus-server.monitoring:9090"
+              volumeMounts:
+                - name: model-storage
+                  mountPath: /models
+                - name: config
+                  mountPath: /etc/anomaly-detection
+          volumes:
+            - name: model-storage
+              persistentVolumeClaim:
+                claimName: anomaly-model-pvc
+            - name: config
+              configMap:
+                name: multivariate-anomaly-config
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: anomaly-model-pvc
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi

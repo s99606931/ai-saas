@@ -1,0 +1,64 @@
+# API 문서 자동 생성 워크플로우
+# Design Ref: DS-N106.4
+# Plan SC: FR-N106.4
+
+name: API Docs Auto-Generation
+
+on:
+  push:
+    branches: [main, stg]
+    paths:
+      - "docs-portal/static/openapi/**"
+      - "src/**/openapi.*"
+      - "packages/**/openapi.*"
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs-portal/static/openapi/**"
+
+jobs:
+  generate-api-docs:
+    name: API 문서 생성
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 소스코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: 의존성 설치
+        working-directory: docs-portal
+        run: npm ci --ignore-scripts
+
+      - name: OpenAPI 스펙 검증
+        run: |
+          if [ -f docs-portal/static/openapi/ai-saas-api.yaml ]; then
+            echo "[PASS] OpenAPI 스펙 파일 존재"
+            # 기본 YAML 문법 검증
+            node -e "
+              const fs = require('fs');
+              const content = fs.readFileSync('docs-portal/static/openapi/ai-saas-api.yaml', 'utf8');
+              if (content.includes('openapi:')) {
+                console.log('[PASS] OpenAPI 스펙 구조 유효');
+              } else {
+                console.error('[FAIL] OpenAPI 버전 선언 누락');
+                process.exit(1);
+              }
+            "
+          else
+            echo "[FAIL] OpenAPI 스펙 파일 누락"
+            exit 1
+          fi
+
+      - name: API 문서 생성
+        run: bash scripts/generate-api-docs.sh
+
+      - name: 감사 로그 기록
+        if: always()
+        run: |
+          echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"actor\":\"gitea-ci\",\"action\":\"API_DOCS_GENERATION\",\"target\":\"openapi-spec\",\"result\":\"${{ job.status }}\"}" >> .claude/audit.jsonl

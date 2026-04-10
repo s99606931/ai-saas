@@ -1,0 +1,192 @@
+# 예측 모델 학습 파이프라인
+# Design Ref: DS-N109.4
+# Plan SC: FR-N109.4
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: predictive-model-training
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: predictive-scaler
+    app.kubernetes.io/component: training
+    app.kubernetes.io/part-of: predictive-scaling
+spec:
+  schedule: "0 */6 * * *"  # 6시간마다 재학습
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800  # 30분 타임아웃
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: predictive-scaler
+            app.kubernetes.io/component: training
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: trainer
+              image: python:3.12-slim
+              resources:
+                requests:
+                  cpu: "1"
+                  memory: 2Gi
+                limits:
+                  cpu: "2"
+                  memory: 4Gi
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  pip install --quiet xgboost prophet scikit-learn numpy pandas requests 2>/dev/null
+
+                  python3 << 'PYEOF'
+                  import json
+                  import os
+                  import sys
+                  from datetime import datetime, timedelta
+
+                  print(f"[{datetime.utcnow().isoformat()}] 예측 모델 앙상블 학습 시작")
+
+                  try:
+                      import numpy as np
+                      import pandas as pd
+                      from xgboost import XGBRegressor
+                      from sklearn.model_selection import TimeSeriesSplit
+                      from sklearn.metrics import mean_absolute_error, mean_squared_error
+                      import pickle
+
+                      MODEL_PATH = "/models/predictive"
+                      os.makedirs(MODEL_PATH, exist_ok=True)
+
+                      # 시뮬레이션 데이터 (실제: Prometheus API)
+                      np.random.seed(42)
+                      n = 20160  # 14일 * 1440분
+
+                      t = np.arange(n)
+                      daily = np.sin(2 * np.pi * t / 1440)
+                      weekly = np.sin(2 * np.pi * t / 10080)
+                      business = np.where((t % 1440 >= 540) & (t % 1440 <= 1080) & (t % 10080 < 7200), 1, 0)
+
+                      # 특성 생성
+                      cpu = 35 + 20 * daily + 8 * weekly + 15 * business + np.random.normal(0, 4, n)
+                      memory = 50 + 10 * daily + 5 * weekly + 10 * business + np.random.normal(0, 3, n)
+                      network = np.abs(1e6 + 5e5 * daily + 3e5 * business + np.random.normal(0, 1e5, n))
+                      hour = (t % 1440) // 60
+                      dow = (t // 1440) % 7
+
+                      # 이동 평균
+                      cpu_series = pd.Series(cpu)
+                      cpu_ma5 = cpu_series.rolling(5).mean().fillna(cpu_series.mean())
+                      cpu_ma15 = cpu_series.rolling(15).mean().fillna(cpu_series.mean())
+                      cpu_ma60 = cpu_series.rolling(60).mean().fillna(cpu_series.mean())
+                      cpu_deriv = cpu_series.diff().rolling(15).mean().fillna(0)
+
+                      X = np.column_stack([cpu, memory, network, hour, dow, business, cpu_ma5, cpu_ma15, cpu_ma60, cpu_deriv])
+                      y_15m = np.roll(cpu, -15)  # 15분 후 CPU
+                      y_1h = np.roll(cpu, -60)   # 1시간 후 CPU
+
+                      # 마지막 예측 범위 제거
+                      X = X[:-60]
+                      y_15m = y_15m[:-60]
+                      y_1h = y_1h[:-60]
+
+                      # XGBoost 학습
+                      print("[INFO] XGBoost 모델 학습 중...")
+                      tscv = TimeSeriesSplit(n_splits=5)
+
+                      model_15m = XGBRegressor(
+                          n_estimators=300, max_depth=6, learning_rate=0.05,
+                          subsample=0.8, colsample_bytree=0.8,
+                          early_stopping_rounds=20, eval_metric="rmse"
+                      )
+                      model_1h = XGBRegressor(
+                          n_estimators=300, max_depth=6, learning_rate=0.05,
+                          subsample=0.8, colsample_bytree=0.8,
+                          early_stopping_rounds=20, eval_metric="rmse"
+                      )
+
+                      # 학습 (마지막 폴드)
+                      for train_idx, val_idx in tscv.split(X):
+                          pass  # 마지막 폴드 사용
+                      model_15m.fit(X[train_idx], y_15m[train_idx],
+                                    eval_set=[(X[val_idx], y_15m[val_idx])], verbose=False)
+                      model_1h.fit(X[train_idx], y_1h[train_idx],
+                                   eval_set=[(X[val_idx], y_1h[val_idx])], verbose=False)
+
+                      # 평가
+                      pred_15m = model_15m.predict(X[val_idx])
+                      pred_1h = model_1h.predict(X[val_idx])
+                      mae_15m = mean_absolute_error(y_15m[val_idx], pred_15m)
+                      mae_1h = mean_absolute_error(y_1h[val_idx], pred_1h)
+                      rmse_15m = mean_squared_error(y_15m[val_idx], pred_15m, squared=False)
+                      rmse_1h = mean_squared_error(y_1h[val_idx], pred_1h, squared=False)
+
+                      # 모델 저장
+                      with open(f"{MODEL_PATH}/xgboost_15m.pkl", "wb") as f:
+                          pickle.dump(model_15m, f)
+                      with open(f"{MODEL_PATH}/xgboost_1h.pkl", "wb") as f:
+                          pickle.dump(model_1h, f)
+
+                      print(f"[PASS] XGBoost 학습 완료")
+                      print(f"  15분 예측 - MAE: {mae_15m:.2f}%, RMSE: {rmse_15m:.2f}%")
+                      print(f"  1시간 예측 - MAE: {mae_1h:.2f}%, RMSE: {rmse_1h:.2f}%")
+
+                      # 메타데이터 저장
+                      meta = {
+                          "trained_at": datetime.utcnow().isoformat(),
+                          "samples": len(X),
+                          "features": 10,
+                          "metrics": {
+                              "15m": {"mae": float(mae_15m), "rmse": float(rmse_15m)},
+                              "1h": {"mae": float(mae_1h), "rmse": float(rmse_1h)},
+                          }
+                      }
+                      with open(f"{MODEL_PATH}/metadata.json", "w") as f:
+                          json.dump(meta, f, indent=2)
+
+                  except Exception as e:
+                      print(f"[ERROR] 학습 실패: {e}")
+                      sys.exit(1)
+
+                  print(f"[{datetime.utcnow().isoformat()}] 학습 파이프라인 완료")
+                  PYEOF
+              env:
+                - name: PROMETHEUS_URL
+                  value: "http://prometheus-server.monitoring:9090"
+              volumeMounts:
+                - name: model-storage
+                  mountPath: /models
+                - name: config
+                  mountPath: /etc/predictive-scaling
+          volumes:
+            - name: model-storage
+              persistentVolumeClaim:
+                claimName: predictive-model-pvc
+            - name: config
+              projected:
+                sources:
+                  - configMap:
+                      name: xgboost-predictive-config
+                  - configMap:
+                      name: prophet-predictive-config
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: predictive-model-pvc
+  namespace: monitoring
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi

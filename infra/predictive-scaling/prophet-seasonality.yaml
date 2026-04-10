@@ -1,0 +1,80 @@
+# Prophet 계절성 분해 + 앙상블 설정
+# Design Ref: DS-N109.2
+# Plan SC: FR-N109.2
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prophet-predictive-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: predictive-scaler
+    app.kubernetes.io/component: prophet
+    app.kubernetes.io/part-of: predictive-scaling
+data:
+  prophet-config.yaml: |
+    version: "2.0"
+    model: "prophet"
+
+    # Prophet 설정
+    prophet_params:
+      # 계절성
+      yearly_seasonality: false  # 데이터 부족 시 비활성화
+      weekly_seasonality: true
+      daily_seasonality: true
+
+      # 추가 계절성
+      custom_seasonalities:
+        - name: "business_hours"
+          period: 1  # 일
+          fourier_order: 8
+        - name: "weekly_pattern"
+          period: 7  # 주
+          fourier_order: 5
+
+      # 변화점 탐지
+      changepoint_prior_scale: 0.05  # 변화점 민감도
+      changepoint_range: 0.9  # 데이터 90%에서 변화점 탐지
+
+      # 예측 불확실성
+      interval_width: 0.95  # 95% 신뢰 구간
+      uncertainty_samples: 1000
+
+      # 공휴일 효과 (한국 공휴일)
+      holidays:
+        country_name: "KR"
+        # 추가 기관 휴무일
+        custom:
+          - name: "year_end_close"
+            lower_window: -1
+            upper_window: 1
+            dates: ["2026-12-31", "2027-01-01"]
+
+    # 대상 메트릭
+    target_metrics:
+      - name: "cpu_usage"
+        query: '100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)'
+      - name: "memory_usage"
+        query: '(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100'
+      - name: "request_rate"
+        query: 'sum(rate(http_requests_total[5m]))'
+
+    # 앙상블 설정
+    ensemble:
+      method: "weighted_average"
+      weights:
+        prophet: 0.4
+        xgboost: 0.6
+      # 앙상블 선택 기준: 과거 72시간 RMSE 비교
+      dynamic_weight_update: true
+      evaluation_window: "72h"
+      min_weight: 0.2  # 최소 20% 비중 보장
+      max_weight: 0.8  # 최대 80% 비중 제한
+
+    # STL 분해 설정
+    decomposition:
+      method: "stl"
+      period: 1440  # 일간 (분 단위)
+      seasonal_deg: 1
+      trend_deg: 1
+      robust: true  # 이상치에 강건

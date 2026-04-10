@@ -1,0 +1,109 @@
+{
+  "__comment": "Design Ref: DS-N110.4, Plan SC: FR-N110.4",
+  "dashboard": {
+    "title": "FinOps 비용 예측 및 예산 관리",
+    "uid": "finops-cost-prediction",
+    "tags": ["finops", "cost", "prediction", "budget"],
+    "timezone": "Asia/Seoul",
+    "refresh": "5m",
+    "panels": [
+      {
+        "title": "월별 예산 대비 실제/예측 비용",
+        "type": "gauge",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "finops_predicted_monthly_cost_krw / finops_monthly_budget_krw * 100",
+            "legendFormat": "{{ namespace }}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 50, "color": "yellow"},
+                {"value": 80, "color": "orange"},
+                {"value": 100, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "네임스페이스별 일일 비용 추이",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "sum by (namespace) (finops_daily_cost_krw)",
+            "legendFormat": "{{ namespace }}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyKRW"
+          }
+        }
+      },
+      {
+        "title": "비용 예측 (월말까지)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "finops_predicted_monthly_cost_krw",
+            "legendFormat": "예측: {{ namespace }}"
+          },
+          {
+            "expr": "finops_actual_monthly_cost_krw",
+            "legendFormat": "실제: {{ namespace }}"
+          },
+          {
+            "expr": "finops_monthly_budget_krw",
+            "legendFormat": "예산: {{ namespace }}"
+          }
+        ]
+      },
+      {
+        "title": "리소스 유형별 비용 분포",
+        "type": "piechart",
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(finops_cost_by_resource_type_krw) by (resource_type)",
+            "legendFormat": "{{ resource_type }}"
+          }
+        ]
+      },
+      {
+        "title": "유휴 리소스 비용 (절감 가능)",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(finops_idle_resource_cost_krw)",
+            "legendFormat": "절감 가능 비용"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyKRW"
+          }
+        }
+      },
+      {
+        "title": "비용 이상 탐지 이벤트",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16},
+        "targets": [
+          {
+            "expr": "ALERTS{category=\"finops\", alertstate=\"firing\"}",
+            "format": "table"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,69 @@
+# SonarQube 코드 품질 스캔 워크플로우
+# Design Ref: DS-N105.2
+# Plan SC: FR-N105.2
+# CSAP: D-12 시스템 개발 보안
+
+name: SonarQube Quality Gate
+
+on:
+  pull_request:
+    branches: [main, stg]
+  push:
+    branches: [main]
+
+env:
+  SONAR_HOST: ${{ secrets.SONAR_HOST_URL }}
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+jobs:
+  sonarqube-scan:
+    name: SonarQube 코드 품질 분석
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 소스코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 전체 히스토리 (SCM 분석용)
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 의존성 설치
+        run: npm ci --ignore-scripts
+
+      - name: 테스트 및 커버리지 생성
+        run: |
+          npm run test:coverage -- --reporter=lcov || true
+        continue-on-error: true
+
+      - name: SonarQube 스캔 실행
+        run: |
+          npx sonar-scanner \
+            -Dsonar.host.url="${SONAR_HOST}" \
+            -Dsonar.token="${SONAR_TOKEN}" \
+            -Dsonar.projectKey=ai-saas \
+            -Dsonar.projectName="공공기관 SaaS 프레임워크" \
+            -Dsonar.sources=src,packages \
+            -Dsonar.tests=tests \
+            -Dsonar.exclusions="**/node_modules/**,**/dist/**,**/coverage/**,**/generated/**,**/vendor/**" \
+            -Dsonar.test.exclusions="**/tests/**,**/*.test.ts,**/*.spec.ts" \
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+            -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info \
+            -Dsonar.qualitygate.wait=true \
+            -Dsonar.qualitygate.timeout=300
+
+      - name: 품질 게이트 결과 확인
+        run: |
+          bash scripts/sonar-quality-gate-check.sh
+        env:
+          SONAR_HOST: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: 감사 로그 기록
+        if: always()
+        run: |
+          echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"actor\":\"gitea-ci\",\"action\":\"SONARQUBE_SCAN\",\"target\":\"${{ github.event.pull_request.number || github.sha }}\",\"result\":\"${{ job.status }}\"}" >> .claude/audit.jsonl
