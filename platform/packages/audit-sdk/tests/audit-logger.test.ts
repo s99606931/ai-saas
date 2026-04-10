@@ -191,15 +191,9 @@ describe('createServiceAuditLogger', () => {
     const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
 
     const logEvent = createServiceAuditLogger('billing-service', 'billing');
-    await logEvent(
-      'PAYMENT_PROCESSED',
-      'user-1',
-      'invoice-123',
-      'tenant-1',
-      '192.168.1.1',
-      'Mozilla/5.0',
-      { amount: 10000 },
-    );
+    await logEvent('PAYMENT_PROCESSED', 'user-1', 'invoice-123', 'tenant-1', '192.168.1.1', 'Mozilla/5.0', {
+      amount: 10000,
+    });
 
     expect(writeSpy).toHaveBeenCalledOnce();
     const output = writeSpy.mock.calls[0][0] as string;

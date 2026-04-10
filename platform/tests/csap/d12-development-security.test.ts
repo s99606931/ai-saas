@@ -55,23 +55,19 @@ describe('CSAP D-12: 시스템 개발 보안 — 입력 검증', () => {
       // 최소한 하나의 검증 메커니즘이 존재해야 함
       // api-gateway는 middleware + plugins 구조로 입력 검증 수행
       const hasValidationMechanism =
-        hasSchemasDir || hasValidation || hasHandlerWithValidation ||
-        hasMiddleware || hasPlugins || hasRoutes;
+        hasSchemasDir || hasValidation || hasHandlerWithValidation || hasMiddleware || hasPlugins || hasRoutes;
 
-      expect(
-        hasValidationMechanism,
-        `${service}: 입력 검증 메커니즘 누락`,
-      ).toBe(true);
+      expect(hasValidationMechanism, `${service}: 입력 검증 메커니즘 누락`).toBe(true);
     }
   });
 
   // D-12-02: SQL 주입 방지 — ORM/매개변수화 쿼리 사용
   it('D-12-02: SQL 주입 방지 — 직접 SQL 문자열 결합 없음', () => {
     const dangerousPatterns = [
-      /`SELECT.*\$\{/,                    // 템플릿 리터럴 내 SQL
-      /'SELECT.*'\s*\+\s*/,               // 문자열 결합 SQL
-      /query\(\s*`.*\$\{/,               // query() 내 템플릿 리터럴
-      /execute\(\s*`.*\$\{/,             // execute() 내 템플릿 리터럴
+      /`SELECT.*\$\{/, // 템플릿 리터럴 내 SQL
+      /'SELECT.*'\s*\+\s*/, // 문자열 결합 SQL
+      /query\(\s*`.*\$\{/, // query() 내 템플릿 리터럴
+      /execute\(\s*`.*\$\{/, // execute() 내 템플릿 리터럴
     ];
 
     const services = readdirSync(SERVICES_DIR, { withFileTypes: true })
@@ -96,9 +92,7 @@ describe('CSAP D-12: 시스템 개발 보안 — 입력 검증', () => {
               const line = lines[matchLine]!.trim();
               // 주석이 아닌 경우에만 실패
               if (!line.startsWith('//') && !line.startsWith('*')) {
-                expect.fail(
-                  `${file}: SQL 주입 위험 패턴 발견 (라인 ${matchLine + 1})`,
-                );
+                expect.fail(`${file}: SQL 주입 위험 패턴 발견 (라인 ${matchLine + 1})`);
               }
             }
           }
@@ -142,8 +136,8 @@ describe('CSAP D-12: 시스템 개발 보안 — 시크릿 관리', () => {
     const secretPatterns = [
       /(?:api[_-]?key|secret|password|token)\s*[:=]\s*['"][A-Za-z0-9+/=]{16,}['"]/i,
       /-----BEGIN (?:RSA )?PRIVATE KEY-----/,
-      /sk-[a-zA-Z0-9]{32,}/,   // OpenAI API key pattern
-      /ghp_[a-zA-Z0-9]{36}/,   // GitHub personal access token
+      /sk-[a-zA-Z0-9]{32,}/, // OpenAI API key pattern
+      /ghp_[a-zA-Z0-9]{36}/, // GitHub personal access token
     ];
 
     // 검사 대상: services, packages, plugins 소스 코드
@@ -176,9 +170,7 @@ describe('CSAP D-12: 시스템 개발 보안 — 시크릿 관리', () => {
                 !line.includes('placeholder') &&
                 !line.includes('process.env')
               ) {
-                expect.fail(
-                  `${file}: 하드코딩된 시크릿 의심 (라인 ${matchLine + 1}): ${line.substring(0, 80)}`,
-                );
+                expect.fail(`${file}: 하드코딩된 시크릿 의심 (라인 ${matchLine + 1}): ${line.substring(0, 80)}`);
               }
             }
           }
@@ -202,10 +194,7 @@ describe('CSAP D-12: 시스템 개발 보안 — 시크릿 관리', () => {
       // JWT_SECRET, DATABASE_URL 등이 process.env에서 읽히는지 확인
       if (content.includes('JWT') || content.includes('jwt')) {
         // process.env 참조가 있어야 함
-        expect(
-          content.includes('process.env'),
-          `${service}: JWT 설정이 환경 변수에서 읽히지 않음`,
-        ).toBe(true);
+        expect(content.includes('process.env'), `${service}: JWT 설정이 환경 변수에서 읽히지 않음`).toBe(true);
       }
     }
   });
@@ -257,10 +246,7 @@ describe('CSAP D-12: 시스템 개발 보안 — 에러 처리', () => {
 describe('CSAP D-12: 시스템 개발 보안 — API 문서', () => {
   // D-12-08: OpenAPI 스펙 존재
   it('D-12-08: API 게이트웨이에 Swagger/OpenAPI 플러그인', () => {
-    const swaggerPath = resolve(
-      SERVICES_DIR,
-      'api-gateway/src/plugins/swagger.ts',
-    );
+    const swaggerPath = resolve(SERVICES_DIR, 'api-gateway/src/plugins/swagger.ts');
     expect(existsSync(swaggerPath)).toBe(true);
 
     const content = readFileSync(swaggerPath, 'utf-8');
@@ -276,10 +262,7 @@ describe('CSAP D-12: 시스템 개발 보안 — API 문서', () => {
 
     for (const service of services) {
       const testsDir = join(SERVICES_DIR, service, 'tests');
-      expect(
-        existsSync(testsDir),
-        `${service}: tests 디렉토리 누락`,
-      ).toBe(true);
+      expect(existsSync(testsDir), `${service}: tests 디렉토리 누락`).toBe(true);
     }
   });
 
@@ -305,11 +288,7 @@ function findFiles(dir: string, extensions: string[]): string[] {
       const fullPath = join(dir, entry.name);
       if (entry.isDirectory()) {
         // node_modules, dist, .next 등 제외
-        if (
-          ['node_modules', 'dist', '.next', 'coverage', '.turbo'].includes(
-            entry.name,
-          )
-        ) {
+        if (['node_modules', 'dist', '.next', 'coverage', '.turbo'].includes(entry.name)) {
           continue;
         }
         files.push(...findFiles(fullPath, extensions));

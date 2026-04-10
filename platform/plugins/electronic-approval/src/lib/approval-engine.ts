@@ -26,7 +26,7 @@ export class ApprovalEngine {
 
   constructor(approvers: Approver[], documentStatus: DocumentStatus) {
     // 방어적 깊은 복사: 외부 배열 변경이 엔진 내부 상태에 영향을 주지 않도록 함
-    this.approvers = approvers.map(a => ({ ...a })).sort((a, b) => a.order - b.order);
+    this.approvers = approvers.map((a) => ({ ...a })).sort((a, b) => a.order - b.order);
     this.documentStatus = documentStatus;
   }
 
@@ -36,11 +36,11 @@ export class ApprovalEngine {
    * - 병렬: 같은 순서의 결재자들은 동시 결재 가능
    */
   getCurrentApprovers(): Approver[] {
-    const pendingApprovers = this.approvers.filter(a => a.status === 'pending');
+    const pendingApprovers = this.approvers.filter((a) => a.status === 'pending');
     if (pendingApprovers.length === 0) return [];
 
-    const minOrder = Math.min(...pendingApprovers.map(a => a.order));
-    return pendingApprovers.filter(a => a.order === minOrder);
+    const minOrder = Math.min(...pendingApprovers.map((a) => a.order));
+    return pendingApprovers.filter((a) => a.order === minOrder);
   }
 
   /**
@@ -91,7 +91,7 @@ export class ApprovalEngine {
    * 전체 결재 상태 평가
    */
   private evaluateOverallStatus(): DocumentStatus {
-    const allApproved = this.approvers.every(a => a.status === 'approved');
+    const allApproved = this.approvers.every((a) => a.status === 'approved');
     if (allApproved) {
       this.documentStatus = transition(this.documentStatus, 'approved');
     }
@@ -99,7 +99,7 @@ export class ApprovalEngine {
   }
 
   private findApprover(userId: string): Approver {
-    const approver = this.approvers.find(a => a.userId === userId);
+    const approver = this.approvers.find((a) => a.userId === userId);
     if (!approver) {
       throw new Error(`결재자를 찾을 수 없습니다: ${userId}`);
     }
@@ -108,7 +108,7 @@ export class ApprovalEngine {
 
   private validateCurrentTurn(approver: Approver): void {
     const currentApprovers = this.getCurrentApprovers();
-    const isCurrent = currentApprovers.some(a => a.userId === approver.userId);
+    const isCurrent = currentApprovers.some((a) => a.userId === approver.userId);
     if (!isCurrent) {
       throw new Error('현재 결재 차례가 아닙니다');
     }

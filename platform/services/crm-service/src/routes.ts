@@ -16,10 +16,7 @@ import {
   updateContractHandler,
   pipelineHandler,
 } from './handlers/crm.handler.js';
-import {
-  expiringContractsHandler,
-  crmStatsHandler,
-} from './handlers/crm-stats.handler.js';
+import { expiringContractsHandler, crmStatsHandler } from './handlers/crm-stats.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {

@@ -86,7 +86,9 @@ describe('FR-SECMON.3: 알림 심각도 대시보드', () => {
     expect(summary.bySeverity.high).toBe(2);
     expect(summary.bySeverity.medium).toBe(3);
     expect(summary.bySeverity.low).toBe(4);
-    expect(summary.bySeverity.critical + summary.bySeverity.high + summary.bySeverity.medium + summary.bySeverity.low).toBe(10);
+    expect(
+      summary.bySeverity.critical + summary.bySeverity.high + summary.bySeverity.medium + summary.bySeverity.low,
+    ).toBe(10);
   });
 
   it('심각도 4단계가 정의되어 있다', () => {
@@ -173,11 +175,11 @@ describe('기존 기능 회귀: 라우트', () => {
   });
 
   it('알림 확인 라우트가 추가되었다', () => {
-    expect(routes.find(r => r.path.includes('acknowledge'))).toBeDefined();
+    expect(routes.find((r) => r.path.includes('acknowledge'))).toBeDefined();
   });
 
   it('알림 대시보드 라우트가 추가되었다', () => {
-    expect(routes.find(r => r.path === '/security/alerts/summary')).toBeDefined();
+    expect(routes.find((r) => r.path === '/security/alerts/summary')).toBeDefined();
   });
 });
 

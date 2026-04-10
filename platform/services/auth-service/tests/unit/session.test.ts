@@ -38,10 +38,7 @@ describe('세션 관리 (CSAP D-08-02, D-08-04)', () => {
       createdAt: '2026-04-07T00:00:00.000Z',
     });
 
-    expect(mockRedis.rpush).toHaveBeenCalledWith(
-      'sessions:user-1',
-      expect.stringContaining('access-token-1'),
-    );
+    expect(mockRedis.rpush).toHaveBeenCalledWith('sessions:user-1', expect.stringContaining('access-token-1'));
   });
 
   it('createSession: 동시 세션 3개 초과 시 가장 오래된 세션을 제거한다', async () => {
@@ -67,12 +64,7 @@ describe('세션 관리 (CSAP D-08-02, D-08-04)', () => {
     // 가장 오래된 세션 제거 (lpop)
     expect(mockRedis.lpop).toHaveBeenCalled();
     // 오래된 토큰 블랙리스트 등록
-    expect(mockRedis.set).toHaveBeenCalledWith(
-      'blacklist:t1',
-      '1',
-      'EX',
-      expect.any(Number),
-    );
+    expect(mockRedis.set).toHaveBeenCalledWith('blacklist:t1', '1', 'EX', expect.any(Number));
   });
 
   it('blacklistToken: 토큰을 블랙리스트에 등록한다', async () => {
@@ -80,12 +72,7 @@ describe('세션 관리 (CSAP D-08-02, D-08-04)', () => {
 
     await blacklistToken('some-token');
 
-    expect(mockRedis.set).toHaveBeenCalledWith(
-      'blacklist:some-token',
-      '1',
-      'EX',
-      expect.any(Number),
-    );
+    expect(mockRedis.set).toHaveBeenCalledWith('blacklist:some-token', '1', 'EX', expect.any(Number));
   });
 
   it('isTokenBlacklisted: 블랙리스트에 있으면 true를 반환한다', async () => {
@@ -119,11 +106,6 @@ describe('세션 관리 (CSAP D-08-02, D-08-04)', () => {
     await removeSession('user-1', 'target-token');
 
     expect(mockRedis.lrem).toHaveBeenCalledWith('sessions:user-1', 1, sessionData);
-    expect(mockRedis.set).toHaveBeenCalledWith(
-      'blacklist:target-token',
-      '1',
-      'EX',
-      expect.any(Number),
-    );
+    expect(mockRedis.set).toHaveBeenCalledWith('blacklist:target-token', '1', 'EX', expect.any(Number));
   });
 });

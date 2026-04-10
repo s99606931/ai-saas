@@ -44,7 +44,7 @@ describe('멀티테넌트 격리 검증 (N2SF N-03)', () => {
     // 테넌트 A의 사용자 목록 조회
     const usersA = await fetch(`${GATEWAY_URL}/api/v1/users`, {
       headers: {
-        'Authorization': `Bearer ${tokenA}`,
+        Authorization: `Bearer ${tokenA}`,
         'X-Tenant-Id': 'tenant-a',
       },
     });
@@ -52,7 +52,7 @@ describe('멀티테넌트 격리 검증 (N2SF N-03)', () => {
     // 테넌트 B로 테넌트 A의 데이터 접근 시도
     const crossAccess = await fetch(`${GATEWAY_URL}/api/v1/users`, {
       headers: {
-        'Authorization': `Bearer ${tokenB}`,
+        Authorization: `Bearer ${tokenB}`,
         'X-Tenant-Id': 'tenant-a', // 타 테넌트 ID로 접근 시도
       },
     });
@@ -87,7 +87,7 @@ describe('멀티테넌트 격리 검증 (N2SF N-03)', () => {
     // 테넌트 ID 없이 접근
     const res = await fetch(`${GATEWAY_URL}/api/v1/tenants`, {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         // X-Tenant-Id 헤더 의도적 누락
       },
     });
@@ -115,7 +115,7 @@ describe('멀티테넌트 격리 검증 (N2SF N-03)', () => {
     const createRes = await fetch(`${GATEWAY_URL}/api/v1/tenants`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

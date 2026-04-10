@@ -56,9 +56,7 @@ export function initTelemetry(): void {
     sdkInstance = sdk;
   } catch {
     // OTel 패키지 미설치 시 경고만 출력
-    process.stderr.write(
-      '[telemetry] OpenTelemetry 패키지가 설치되지 않았습니다. 분산 추적이 비활성화됩니다.\n',
-    );
+    process.stderr.write('[telemetry] OpenTelemetry 패키지가 설치되지 않았습니다. 분산 추적이 비활성화됩니다.\n');
   }
 }
 

@@ -9,10 +9,7 @@ const auditLogger = createAuditLogger({
   transport: createStandardTransport('compliance-service'),
 });
 
-export async function logComplianceEvent(
-  action: string,
-  metadata?: Record<string, unknown>,
-): Promise<void> {
+export async function logComplianceEvent(action: string, metadata?: Record<string, unknown>): Promise<void> {
   await auditLogger.log({
     actor: 'system:compliance-service',
     action,

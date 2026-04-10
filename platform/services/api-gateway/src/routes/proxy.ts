@@ -32,10 +32,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
  * CSAP D-08-01: 중앙 인증 게이트웨이
  * 인증 성공 시 x-user-id, x-user-tenant-id, x-user-role 헤더 주입 (하위 서비스 actor 추적용)
  */
-async function authPreHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+async function authPreHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   let authHeader = request.headers.authorization;
 
   // FR-L03.3: Authorization 헤더 없으면 쿠키에서 accessToken 추출 (HttpOnly 쿠키 지원)
@@ -43,7 +40,10 @@ async function authPreHandler(
   if (!authHeader?.startsWith('Bearer ')) {
     const cookieHeader = request.headers.cookie;
     if (cookieHeader) {
-      const tokenMatch = cookieHeader.split(';').map(c => c.trim()).find(c => c.startsWith('accessToken='));
+      const tokenMatch = cookieHeader
+        .split(';')
+        .map((c) => c.trim())
+        .find((c) => c.startsWith('accessToken='));
       if (tokenMatch) {
         const token = tokenMatch.split('=')[1];
         if (token) {
@@ -67,7 +67,7 @@ async function authPreHandler(
     });
 
     if (!verifyResponse.ok) {
-      const errorBody = await verifyResponse.json() as { error?: { code?: string; message?: string } };
+      const errorBody = (await verifyResponse.json()) as { error?: { code?: string; message?: string } };
       await reply.status(401).send({
         success: false,
         error: errorBody.error ?? { code: 'AUTH_TOKEN_INVALID', message: '인증 실패' },
@@ -75,7 +75,7 @@ async function authPreHandler(
       return;
     }
 
-    const { data } = await verifyResponse.json() as { data: JwtUser };
+    const { data } = (await verifyResponse.json()) as { data: JwtUser };
     (request as FastifyRequest & { user?: JwtUser }).user = data;
 
     // 하위 서비스 actor 추적 및 테넌트 격리를 위한 헤더 주입 (CSAP D-06, D-08)
@@ -101,10 +101,7 @@ async function authPreHandler(
  * service-registry에 선언된 requiredPermissions를 JWT 클레임과 비교
  */
 function makePermissionPreHandler(requiredPermissions: string[]) {
-  return async function permissionPreHandler(
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ): Promise<void> {
+  return async function permissionPreHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const user = (request as FastifyRequest & { user?: JwtUser }).user;
     if (!user) {
       await reply.status(401).send({
@@ -155,14 +152,15 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
     }
 
     // @fastify/http-proxy는 단일 함수 preHandler만 허용 — 복합 함수로 래핑
-    const compositePreHandler = preHandlers.length > 0
-      ? async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
-          for (const handler of preHandlers) {
-            await handler(req, reply);
-            if (reply.sent) return;
+    const compositePreHandler =
+      preHandlers.length > 0
+        ? async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
+            for (const handler of preHandlers) {
+              await handler(req, reply);
+              if (reply.sent) return;
+            }
           }
-        }
-      : undefined;
+        : undefined;
 
     await app.register(httpProxy, {
       upstream: entry.url,
@@ -172,106 +170,112 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
       preHandler: compositePreHandler,
     });
 
-    app.log.info(`프록시 등록: /api/v1/${serviceId} -> ${entry.url}${entry.requireAuth ? ' [인증]' : ''}${serviceId === 'ai' ? ' [등급검증]' : ''}`);
+    app.log.info(
+      `프록시 등록: /api/v1/${serviceId} -> ${entry.url}${entry.requireAuth ? ' [인증]' : ''}${serviceId === 'ai' ? ' [등급검증]' : ''}`,
+    );
   }
 
   // 동적 서비스 라우트 (비즈니스 플러그인)
   // Plan SC: FR-P04.11
   // CSAP D-08-05: 인증 + 플러그인별 requiredPermissions RBAC 검사
-  app.all('/api/v1/plugins/:pluginId/*', {
-    preHandler: authPreHandler,
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const params = request.params as { pluginId: string; '*': string };
-    const pluginEntry = getServiceEntry(params.pluginId);
+  app.all(
+    '/api/v1/plugins/:pluginId/*',
+    {
+      preHandler: authPreHandler,
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const params = request.params as { pluginId: string; '*': string };
+      const pluginEntry = getServiceEntry(params.pluginId);
 
-    if (!pluginEntry) {
-      await reply.status(404).send({
-        success: false,
-        error: {
-          code: 'SERVICE_NOT_FOUND',
-          message: `서비스 '${params.pluginId}'를 찾을 수 없습니다`,
-        },
-      });
-      return;
-    }
-
-    // 플러그인 requiredPermissions RBAC 검사 (MEDIUM-01, CSAP D-08-05)
-    if (pluginEntry.requiredPermissions?.length) {
-      const user = (request as FastifyRequest & { user?: JwtUser }).user;
-      const userPermissions = user?.permissions ?? ROLE_PERMISSIONS[user?.role ?? ''] ?? [];
-      const hasAll = pluginEntry.requiredPermissions.every(
-        (p) => userPermissions.includes(p) || userPermissions.includes('admin:all'),
-      );
-      if (!hasAll) {
-        await reply.status(403).send({
-          success: false,
-          error: { code: 'FORBIDDEN', message: '이 플러그인에 접근할 권한이 없습니다' },
-        });
-        return;
-      }
-    }
-
-    // 동적 프록시 전달 (undici fetch) — 쿼리스트링 보존
-    const targetPath = params['*'] || '';
-    const queryString = (request.url.split('?')[1]) ?? '';
-    const targetUrl = queryString
-      ? `${pluginEntry.url}/${targetPath}?${queryString}`
-      : `${pluginEntry.url}/${targetPath}`;
-
-    try {
-      // Circuit Breaker로 장애 전파 방지 (CSAP D-07)
-      const proxyResponse = await circuitBreaker.execute(params.pluginId, () =>
-        fetch(targetUrl, {
-          method: request.method,
-          headers: {
-            'content-type': request.headers['content-type'] ?? 'application/json',
-            'authorization': request.headers.authorization ?? '',
-            'x-tenant-id': (request.headers['x-tenant-id'] as string) ?? '',
-            'x-user-id': (request.headers['x-user-id'] as string) ?? '',
-            'x-user-tenant-id': (request.headers['x-user-tenant-id'] as string) ?? '',
-            'x-user-role': (request.headers['x-user-role'] as string) ?? '',
-            'x-internal-service-key': (request.headers['x-internal-service-key'] as string) ?? '',
-            'x-forwarded-for': request.ip,
-            'x-request-id': (request.headers['x-request-id'] as string) ?? '',
-          },
-          body: request.method !== 'GET' && request.method !== 'HEAD'
-            ? JSON.stringify(request.body)
-            : undefined,
-        }),
-      );
-
-      const responseBody = await proxyResponse.text();
-      await reply
-        .status(proxyResponse.status)
-        .headers(Object.fromEntries(
-          [...proxyResponse.headers.entries()].filter(
-            ([key]) => !['transfer-encoding', 'connection'].includes(key.toLowerCase()),
-          ),
-        ))
-        .send(responseBody);
-    } catch (error) {
-      // Circuit Breaker OPEN — 서비스 일시 차단
-      if (error instanceof CircuitOpenError) {
-        app.log.warn({ serviceId: params.pluginId }, `Circuit breaker OPEN: ${params.pluginId}`);
-        await reply.status(503).send({
+      if (!pluginEntry) {
+        await reply.status(404).send({
           success: false,
           error: {
-            code: 'SERVICE_UNAVAILABLE',
-            message: error.message,
-            retryAfterMs: error.retryAfterMs,
+            code: 'SERVICE_NOT_FOUND',
+            message: `서비스 '${params.pluginId}'를 찾을 수 없습니다`,
           },
         });
         return;
       }
 
-      app.log.error({ err: error }, `동적 프록시 실패: ${targetUrl}`);
-      await reply.status(502).send({
-        success: false,
-        error: {
-          code: 'PROXY_ERROR',
-          message: `서비스 '${params.pluginId}' 연결 실패`,
-        },
-      });
-    }
-  });
+      // 플러그인 requiredPermissions RBAC 검사 (MEDIUM-01, CSAP D-08-05)
+      if (pluginEntry.requiredPermissions?.length) {
+        const user = (request as FastifyRequest & { user?: JwtUser }).user;
+        const userPermissions = user?.permissions ?? ROLE_PERMISSIONS[user?.role ?? ''] ?? [];
+        const hasAll = pluginEntry.requiredPermissions.every(
+          (p) => userPermissions.includes(p) || userPermissions.includes('admin:all'),
+        );
+        if (!hasAll) {
+          await reply.status(403).send({
+            success: false,
+            error: { code: 'FORBIDDEN', message: '이 플러그인에 접근할 권한이 없습니다' },
+          });
+          return;
+        }
+      }
+
+      // 동적 프록시 전달 (undici fetch) — 쿼리스트링 보존
+      const targetPath = params['*'] || '';
+      const queryString = request.url.split('?')[1] ?? '';
+      const targetUrl = queryString
+        ? `${pluginEntry.url}/${targetPath}?${queryString}`
+        : `${pluginEntry.url}/${targetPath}`;
+
+      try {
+        // Circuit Breaker로 장애 전파 방지 (CSAP D-07)
+        const proxyResponse = await circuitBreaker.execute(params.pluginId, () =>
+          fetch(targetUrl, {
+            method: request.method,
+            headers: {
+              'content-type': request.headers['content-type'] ?? 'application/json',
+              authorization: request.headers.authorization ?? '',
+              'x-tenant-id': (request.headers['x-tenant-id'] as string) ?? '',
+              'x-user-id': (request.headers['x-user-id'] as string) ?? '',
+              'x-user-tenant-id': (request.headers['x-user-tenant-id'] as string) ?? '',
+              'x-user-role': (request.headers['x-user-role'] as string) ?? '',
+              'x-internal-service-key': (request.headers['x-internal-service-key'] as string) ?? '',
+              'x-forwarded-for': request.ip,
+              'x-request-id': (request.headers['x-request-id'] as string) ?? '',
+            },
+            body: request.method !== 'GET' && request.method !== 'HEAD' ? JSON.stringify(request.body) : undefined,
+          }),
+        );
+
+        const responseBody = await proxyResponse.text();
+        await reply
+          .status(proxyResponse.status)
+          .headers(
+            Object.fromEntries(
+              [...proxyResponse.headers.entries()].filter(
+                ([key]) => !['transfer-encoding', 'connection'].includes(key.toLowerCase()),
+              ),
+            ),
+          )
+          .send(responseBody);
+      } catch (error) {
+        // Circuit Breaker OPEN — 서비스 일시 차단
+        if (error instanceof CircuitOpenError) {
+          app.log.warn({ serviceId: params.pluginId }, `Circuit breaker OPEN: ${params.pluginId}`);
+          await reply.status(503).send({
+            success: false,
+            error: {
+              code: 'SERVICE_UNAVAILABLE',
+              message: error.message,
+              retryAfterMs: error.retryAfterMs,
+            },
+          });
+          return;
+        }
+
+        app.log.error({ err: error }, `동적 프록시 실패: ${targetUrl}`);
+        await reply.status(502).send({
+          success: false,
+          error: {
+            code: 'PROXY_ERROR',
+            message: `서비스 '${params.pluginId}' 연결 실패`,
+          },
+        });
+      }
+    },
+  );
 }

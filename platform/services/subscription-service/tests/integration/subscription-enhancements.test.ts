@@ -40,9 +40,12 @@ describe('FR-SUB.2: 플랜 감사 로그', () => {
 
   it('감사 이벤트 7종이 완비되었다', () => {
     const events = [
-      'PLAN_CREATED', 'PLAN_UPDATED',
-      'SUBSCRIPTION_CREATED', 'SUBSCRIPTION_UPGRADED',
-      'SUBSCRIPTION_DOWNGRADED', 'SUBSCRIPTION_CANCELED',
+      'PLAN_CREATED',
+      'PLAN_UPDATED',
+      'SUBSCRIPTION_CREATED',
+      'SUBSCRIPTION_UPGRADED',
+      'SUBSCRIPTION_DOWNGRADED',
+      'SUBSCRIPTION_CANCELED',
     ];
     expect(events.length).toBeGreaterThanOrEqual(6);
   });
@@ -68,9 +71,7 @@ describe('FR-SUB.3: 구독 만료 임박', () => {
       { id: '4', endDate: new Date(now.getTime() - 86400000), status: 'ACTIVE' },
     ];
 
-    const expiring = subs.filter(
-      (s) => s.status === 'ACTIVE' && s.endDate >= now && s.endDate <= threshold,
-    );
+    const expiring = subs.filter((s) => s.status === 'ACTIVE' && s.endDate >= now && s.endDate <= threshold);
     expect(expiring).toHaveLength(2); // 3일, 5일
   });
 
@@ -167,9 +168,12 @@ describe('기존 기능 회귀: 라우트', () => {
 describe('CSAP 준수: 구독 서비스', () => {
   it('D-06: 모든 상태 변경에 감사 로그가 기록된다', () => {
     const auditedActions = [
-      'PLAN_CREATED', 'PLAN_UPDATED',
-      'SUBSCRIPTION_CREATED', 'SUBSCRIPTION_UPGRADED',
-      'SUBSCRIPTION_DOWNGRADED', 'SUBSCRIPTION_CANCELED',
+      'PLAN_CREATED',
+      'PLAN_UPDATED',
+      'SUBSCRIPTION_CREATED',
+      'SUBSCRIPTION_UPGRADED',
+      'SUBSCRIPTION_DOWNGRADED',
+      'SUBSCRIPTION_CANCELED',
     ];
     expect(auditedActions).toHaveLength(6);
   });

@@ -18,10 +18,7 @@ const revenueTrendQuerySchema = z.object({
  * Design Ref: SVC-BILL-R1 DESIGN
  * CSAP D-08-05: 테넌트 격리
  */
-export async function overdueInvoicesHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function overdueInvoicesHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const now = new Date();
 
   // CSAP D-08-05: 테넌트 격리 (Design Ref: SVC-BILL-R1 DESIGN)
@@ -48,10 +45,7 @@ export async function overdueInvoicesHandler(
     take: 500,
   });
 
-  const totalOverdueAmount = overdue.reduce(
-    (sum, inv) => sum + Number(inv.amount),
-    0,
-  );
+  const totalOverdueAmount = overdue.reduce((sum, inv) => sum + Number(inv.amount), 0);
 
   await reply.send({
     success: true,

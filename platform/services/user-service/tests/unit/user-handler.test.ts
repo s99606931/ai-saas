@@ -86,22 +86,22 @@ describe('MTU-Q3 user-handler: 라우트 등록 검증 (정적 분석)', () => {
   ];
 
   it('TC-RU01: PUT /users/:id/reactivate 라우트가 등록되어 있다', () => {
-    const route = registeredRoutes.find(r => r.method === 'PUT' && r.path === '/users/:id/reactivate');
+    const route = registeredRoutes.find((r) => r.method === 'PUT' && r.path === '/users/:id/reactivate');
     expect(route).toBeDefined();
   });
 
   it('TC-RU02: POST /users/password-reset/request 라우트가 등록되어 있다', () => {
-    const route = registeredRoutes.find(r => r.method === 'POST' && r.path === '/users/password-reset/request');
+    const route = registeredRoutes.find((r) => r.method === 'POST' && r.path === '/users/password-reset/request');
     expect(route).toBeDefined();
   });
 
   it('TC-RU03: POST /users/password-reset/confirm 라우트가 등록되어 있다', () => {
-    const route = registeredRoutes.find(r => r.method === 'POST' && r.path === '/users/password-reset/confirm');
+    const route = registeredRoutes.find((r) => r.method === 'POST' && r.path === '/users/password-reset/confirm');
     expect(route).toBeDefined();
   });
 
   it('TC-RU04: DELETE /users/:id 라우트가 등록되어 있다 (소프트 삭제)', () => {
-    const route = registeredRoutes.find(r => r.method === 'DELETE' && r.path === '/users/:id');
+    const route = registeredRoutes.find((r) => r.method === 'DELETE' && r.path === '/users/:id');
     expect(route).toBeDefined();
   });
 

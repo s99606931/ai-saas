@@ -37,10 +37,7 @@ class NotificationEventBus {
   /**
    * 이벤트 구독 등록
    */
-  on<T extends EventType>(
-    event: T,
-    handler: (payload: NotificationEventMap[T]) => Promise<void> | void,
-  ): void {
+  on<T extends EventType>(event: T, handler: (payload: NotificationEventMap[T]) => Promise<void> | void): void {
     this.emitter.on(event, handler as (...args: unknown[]) => void);
     this.handlerCount++;
   }
@@ -49,10 +46,7 @@ class NotificationEventBus {
    * 이벤트 발행 (비동기 fire-and-forget)
    * 핸들러 오류는 로깅만 하고 전파하지 않음
    */
-  async emit<T extends EventType>(
-    event: T,
-    payload: NotificationEventMap[T],
-  ): Promise<void> {
+  async emit<T extends EventType>(event: T, payload: NotificationEventMap[T]): Promise<void> {
     const listeners = this.emitter.listeners(event);
     const results = listeners.map(async (listener) => {
       try {
@@ -69,10 +63,7 @@ class NotificationEventBus {
    * 이벤트 구독 해제
    * handlerCount를 정확히 감소시켜 카운터 정합성 유지
    */
-  off<T extends EventType>(
-    event: T,
-    handler: (payload: NotificationEventMap[T]) => Promise<void> | void,
-  ): void {
+  off<T extends EventType>(event: T, handler: (payload: NotificationEventMap[T]) => Promise<void> | void): void {
     this.emitter.off(event, handler as (...args: unknown[]) => void);
     if (this.handlerCount > 0) {
       this.handlerCount--;

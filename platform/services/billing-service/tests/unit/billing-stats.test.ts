@@ -36,11 +36,11 @@ function createMockReply() {
   const reply = {
     statusCode: 200,
     body: null as unknown,
-    status: vi.fn().mockImplementation(function(this: typeof reply, code: number) {
+    status: vi.fn().mockImplementation(function (this: typeof reply, code: number) {
       this.statusCode = code;
       return this;
     }),
-    send: vi.fn().mockImplementation(function(this: typeof reply, data: unknown) {
+    send: vi.fn().mockImplementation(function (this: typeof reply, data: unknown) {
       this.body = data;
       return this;
     }),
@@ -55,7 +55,9 @@ describe('FR-BILL.2: 연체 인보이스 조회', () => {
 
   it('연체 인보이스 목록을 반환한다', async () => {
     const overdueInvoice = {
-      id: 'inv-1', amount: 100000, status: 'issued',
+      id: 'inv-1',
+      amount: 100000,
+      status: 'issued',
       dueDate: new Date('2025-01-01'),
       subscription: { tenantId: 'tenant-1', tenant: { name: '공공기관A' } },
     };
@@ -98,9 +100,7 @@ describe('FR-BILL.2: 연체 인보이스 조회', () => {
     const reply = createMockReply();
     await overdueInvoicesHandler(req, reply);
 
-    expect(prisma.invoice.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 500 }),
-    );
+    expect(prisma.invoice.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 500 }));
   });
 });
 

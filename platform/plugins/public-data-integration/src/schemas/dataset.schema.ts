@@ -8,16 +8,9 @@ import { z } from 'zod';
  */
 export const datasetSearchSchema = z.object({
   keyword: z.string().min(1).max(100).optional(),
-  category: z.enum([
-    'general',
-    'economy',
-    'society',
-    'education',
-    'health',
-    'environment',
-    'transportation',
-    'culture',
-  ]).optional(),
+  category: z
+    .enum(['general', 'economy', 'society', 'education', 'health', 'environment', 'transportation', 'culture'])
+    .optional(),
   format: z.enum(['json', 'xml', 'csv']).optional(),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),

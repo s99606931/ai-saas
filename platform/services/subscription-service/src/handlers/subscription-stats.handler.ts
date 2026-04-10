@@ -76,10 +76,7 @@ export async function expiringSubscriptionsHandler(
  * Design Ref: SVC-SUB-R1 DESIGN
  * CSAP D-08-05: 테넌트 격리
  */
-export async function subscriptionStatsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function subscriptionStatsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-08-05: 테넌트 격리 (Design Ref: SVC-SUB-R1 DESIGN)
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;

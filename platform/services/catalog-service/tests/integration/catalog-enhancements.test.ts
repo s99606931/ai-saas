@@ -193,10 +193,7 @@ describe('기존 기능 회귀: 라우트', () => {
 
 describe('CSAP 준수: 카탈로그 서비스', () => {
   it('D-06: 감사 이벤트 6종이 완비되었다', () => {
-    const events = [
-      'SERVICE_CREATED', 'SERVICE_UPDATED', 'SERVICE_DELETED',
-      'SERVICE_VERSION_UPDATED', 'FLAG_TOGGLED',
-    ];
+    const events = ['SERVICE_CREATED', 'SERVICE_UPDATED', 'SERVICE_DELETED', 'SERVICE_VERSION_UPDATED', 'FLAG_TOGGLED'];
     expect(events.length).toBeGreaterThanOrEqual(5);
   });
 

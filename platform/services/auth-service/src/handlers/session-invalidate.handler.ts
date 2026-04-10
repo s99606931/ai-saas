@@ -30,10 +30,7 @@ interface SessionData {
  *
  * 내부 서비스 전용 API (API 게이트웨이에서 외부 노출 차단 권장)
  */
-export async function invalidateAllSessionsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function invalidateAllSessionsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = invalidateSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({

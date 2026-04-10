@@ -14,13 +14,7 @@ function isInternalUrl(urlString: string): boolean {
     const url = new URL(urlString);
     const hostname = url.hostname.toLowerCase();
 
-    const blockedPatterns = [
-      'localhost',
-      '127.0.0.1',
-      '0.0.0.0',
-      '::1',
-      '[::1]',
-    ];
+    const blockedPatterns = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'];
 
     if (blockedPatterns.includes(hostname)) return true;
 

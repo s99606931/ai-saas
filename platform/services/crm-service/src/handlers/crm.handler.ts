@@ -56,9 +56,7 @@ export async function listCustomersHandler(
   // CSAP D-08-05: JWT 클레임 기반 테넌트 격리
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
-  const effectiveTenantId = jwtRole === 'SUPER_ADMIN'
-    ? (request.query.tenantId ?? jwtTenantId)
-    : jwtTenantId;
+  const effectiveTenantId = jwtRole === 'SUPER_ADMIN' ? (request.query.tenantId ?? jwtTenantId) : jwtTenantId;
 
   // FR-CRM.1: 검색/필터 (Design Ref: SVC-CRM-R1 DESIGN)
   const where: Record<string, unknown> = {};
@@ -130,10 +128,7 @@ export async function getCustomerHandler(
  * 고객사 등록
  * Plan SC: FR-P09.1
  */
-export async function createCustomerHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function createCustomerHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = createCustomerSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -330,10 +325,7 @@ export async function listContractsHandler(
  * 계약 등록
  * Plan SC: FR-P09.3
  */
-export async function createContractHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function createContractHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = createContractSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -416,10 +408,7 @@ export async function updateContractHandler(
  * Plan SC: FR-P09.4, FR-CRM.5
  * CSAP D-08-05: 테넌트 격리 (Design Ref: SVC-CRM-R1 DESIGN)
  */
-export async function pipelineHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function pipelineHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const stages = ['prospect', 'qualified', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
 
   // FR-CRM.5: 테넌트 격리 (CSAP D-08-05, Design Ref: SVC-CRM-R1 DESIGN)

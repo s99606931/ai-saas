@@ -12,7 +12,7 @@ describe('CircuitBreaker', () => {
   beforeEach(() => {
     cb = new CircuitBreakerManager({
       failureThreshold: 3,
-      resetTimeout: 100,   // 테스트용 100ms
+      resetTimeout: 100, // 테스트용 100ms
       requestTimeout: 500, // 테스트용 500ms
     });
   });
@@ -27,8 +27,12 @@ describe('CircuitBreaker', () => {
     // 2회 실패 (threshold=3)
     for (let i = 0; i < 2; i++) {
       try {
-        await cb.execute('test-svc', async () => { throw new Error('fail'); });
-      } catch { /* expected */ }
+        await cb.execute('test-svc', async () => {
+          throw new Error('fail');
+        });
+      } catch {
+        /* expected */
+      }
     }
     expect(cb.getStatus('test-svc').state).toBe('CLOSED');
     expect(cb.getStatus('test-svc').failureCount).toBe(2);
@@ -37,8 +41,12 @@ describe('CircuitBreaker', () => {
   it('TC-CB-03: failureThreshold 도달 시 OPEN으로 전환된다', async () => {
     for (let i = 0; i < 3; i++) {
       try {
-        await cb.execute('test-svc', async () => { throw new Error('fail'); });
-      } catch { /* expected */ }
+        await cb.execute('test-svc', async () => {
+          throw new Error('fail');
+        });
+      } catch {
+        /* expected */
+      }
     }
     expect(cb.getStatus('test-svc').state).toBe('OPEN');
   });
@@ -47,20 +55,26 @@ describe('CircuitBreaker', () => {
     // OPEN 전환
     for (let i = 0; i < 3; i++) {
       try {
-        await cb.execute('test-svc', async () => { throw new Error('fail'); });
-      } catch { /* expected */ }
+        await cb.execute('test-svc', async () => {
+          throw new Error('fail');
+        });
+      } catch {
+        /* expected */
+      }
     }
 
-    await expect(
-      cb.execute('test-svc', async () => 'should-not-reach'),
-    ).rejects.toThrow(CircuitOpenError);
+    await expect(cb.execute('test-svc', async () => 'should-not-reach')).rejects.toThrow(CircuitOpenError);
   });
 
   it('TC-CB-05: CircuitOpenError에 serviceId와 retryAfterMs가 포함된다', async () => {
     for (let i = 0; i < 3; i++) {
       try {
-        await cb.execute('my-service', async () => { throw new Error('fail'); });
-      } catch { /* expected */ }
+        await cb.execute('my-service', async () => {
+          throw new Error('fail');
+        });
+      } catch {
+        /* expected */
+      }
     }
 
     try {
@@ -78,8 +92,12 @@ describe('CircuitBreaker', () => {
   it('TC-CB-06: resetTimeout 후 HALF_OPEN으로 전환되어 요청을 허용한다', async () => {
     for (let i = 0; i < 3; i++) {
       try {
-        await cb.execute('test-svc', async () => { throw new Error('fail'); });
-      } catch { /* expected */ }
+        await cb.execute('test-svc', async () => {
+          throw new Error('fail');
+        });
+      } catch {
+        /* expected */
+      }
     }
     expect(cb.getStatus('test-svc').state).toBe('OPEN');
 
@@ -95,8 +113,12 @@ describe('CircuitBreaker', () => {
   it('TC-CB-07: HALF_OPEN에서 2회 연속 성공 시 CLOSED로 복귀한다', async () => {
     for (let i = 0; i < 3; i++) {
       try {
-        await cb.execute('test-svc', async () => { throw new Error('fail'); });
-      } catch { /* expected */ }
+        await cb.execute('test-svc', async () => {
+          throw new Error('fail');
+        });
+      } catch {
+        /* expected */
+      }
     }
 
     await new Promise((resolve) => setTimeout(resolve, 150));
@@ -111,16 +133,24 @@ describe('CircuitBreaker', () => {
   it('TC-CB-08: HALF_OPEN에서 실패하면 다시 OPEN으로 전환된다', async () => {
     for (let i = 0; i < 3; i++) {
       try {
-        await cb.execute('test-svc', async () => { throw new Error('fail'); });
-      } catch { /* expected */ }
+        await cb.execute('test-svc', async () => {
+          throw new Error('fail');
+        });
+      } catch {
+        /* expected */
+      }
     }
 
     await new Promise((resolve) => setTimeout(resolve, 150));
 
     // HALF_OPEN에서 실패
     try {
-      await cb.execute('test-svc', async () => { throw new Error('still broken'); });
-    } catch { /* expected */ }
+      await cb.execute('test-svc', async () => {
+        throw new Error('still broken');
+      });
+    } catch {
+      /* expected */
+    }
 
     expect(cb.getStatus('test-svc').state).toBe('OPEN');
   });
@@ -129,8 +159,12 @@ describe('CircuitBreaker', () => {
     // 2회 실패
     for (let i = 0; i < 2; i++) {
       try {
-        await cb.execute('test-svc', async () => { throw new Error('fail'); });
-      } catch { /* expected */ }
+        await cb.execute('test-svc', async () => {
+          throw new Error('fail');
+        });
+      } catch {
+        /* expected */
+      }
     }
     expect(cb.getStatus('test-svc').failureCount).toBe(2);
 
@@ -143,8 +177,12 @@ describe('CircuitBreaker', () => {
     // svc-a: OPEN
     for (let i = 0; i < 3; i++) {
       try {
-        await cb.execute('svc-a', async () => { throw new Error('fail'); });
-      } catch { /* expected */ }
+        await cb.execute('svc-a', async () => {
+          throw new Error('fail');
+        });
+      } catch {
+        /* expected */
+      }
     }
     expect(cb.getStatus('svc-a').state).toBe('OPEN');
 
@@ -157,8 +195,12 @@ describe('CircuitBreaker', () => {
   it('TC-CB-11: reset()으로 Circuit을 수동 리셋할 수 있다', async () => {
     for (let i = 0; i < 3; i++) {
       try {
-        await cb.execute('test-svc', async () => { throw new Error('fail'); });
-      } catch { /* expected */ }
+        await cb.execute('test-svc', async () => {
+          throw new Error('fail');
+        });
+      } catch {
+        /* expected */
+      }
     }
     expect(cb.getStatus('test-svc').state).toBe('OPEN');
 

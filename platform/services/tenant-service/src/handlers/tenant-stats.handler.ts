@@ -45,10 +45,7 @@ export async function searchTenantsHandler(
   const { q, status, page, pageSize } = parseResult.data;
 
   const where: Record<string, unknown> = {
-    OR: [
-      { name: { contains: q, mode: 'insensitive' } },
-      { slug: { contains: q, mode: 'insensitive' } },
-    ],
+    OR: [{ name: { contains: q, mode: 'insensitive' } }, { slug: { contains: q, mode: 'insensitive' } }],
   };
   if (status) {
     where['status'] = status;
@@ -78,10 +75,7 @@ export async function searchTenantsHandler(
  * GET /tenants/stats
  * Design Ref: SVC-TENANT-R2 DESIGN
  */
-export async function tenantStatsHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function tenantStatsHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const [statusDistribution, totalTenants, totalUsers, storageAgg] = await Promise.all([
     prisma.tenant.groupBy({
       by: ['status'],

@@ -18,7 +18,11 @@ const tenantIdParamSchema = z.object({
 
 const createPlanSchema = z.object({
   name: z.string().min(1, '플랜명은 필수입니다').max(100),
-  slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/),
+  slug: z
+    .string()
+    .min(2)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/),
   price: z.number().min(0),
   currency: z.string().default('KRW'),
   interval: z.enum(['monthly', 'yearly']).default('monthly'),
@@ -36,10 +40,7 @@ const subscribeSchema = z.object({
  * Plan SC: FR-P07.1
  * CSAP D-10: 페이지네이션으로 DoS 방어 (최대 100건)
  */
-export async function listPlansHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function listPlansHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // Design Ref: DESIGN-MTU-P07 — 플랜 수는 제한적이나 방어 코딩으로 take 적용
   const plans = await prisma.plan.findMany({
     where: { isActive: true },
@@ -55,10 +56,7 @@ export async function listPlansHandler(
  * 플랜 생성
  * Plan SC: FR-P07.1
  */
-export async function createPlanHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function createPlanHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = createPlanSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -156,10 +154,7 @@ export async function updatePlanHandler(
  * 구독 생성
  * Plan SC: FR-P07.2
  */
-export async function subscribeHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function subscribeHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = subscribeSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({

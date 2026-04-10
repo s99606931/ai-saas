@@ -11,11 +11,7 @@ const PROJECT_ROOT = resolve(__dirname, '../../../');
 
 describe('CSAP D-08: 접근 통제 검증', () => {
   it('D-08-01: 인증 없는 보호 API 접근 차단 (401)', async () => {
-    const endpoints = [
-      '/users',
-      '/tenants',
-      '/audit/logs',
-    ];
+    const endpoints = ['/users', '/tenants', '/audit/logs'];
 
     try {
       for (const ep of endpoints) {
@@ -36,7 +32,7 @@ describe('CSAP D-08: 접근 통제 검증', () => {
     try {
       // 만료된 토큰으로 접근
       const res = await fetch(`${BASE_URL}/users`, {
-        headers: { 'Authorization': 'Bearer expired.token.here' },
+        headers: { Authorization: 'Bearer expired.token.here' },
       });
       expect(res.status).toBe(401);
     } catch {
@@ -68,7 +64,7 @@ describe('CSAP D-08: 접근 통제 검증', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer test-token',
+          Authorization: 'Bearer test-token',
         },
       });
       // MFA 엔드포인트가 존재해야 함 (401 = 인증 필요, 200 = 성공)
@@ -79,7 +75,9 @@ describe('CSAP D-08: 접근 통제 검증', () => {
       const files = findTsFiles(authSrc);
       const hasMfa = files.some((f) => {
         const content = readFileSync(f, 'utf-8');
-        return content.includes('mfa') || content.includes('MFA') || content.includes('totp') || content.includes('TOTP');
+        return (
+          content.includes('mfa') || content.includes('MFA') || content.includes('totp') || content.includes('TOTP')
+        );
       });
       expect(hasMfa).toBe(true);
     }
@@ -120,6 +118,8 @@ function findTsFiles(dir: string): string[] {
         files.push(fullPath);
       }
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return files;
 }

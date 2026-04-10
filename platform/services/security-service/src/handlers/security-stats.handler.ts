@@ -18,10 +18,7 @@ const SECURITY_ACTIONS = [
  * GET /security/dashboard
  * Design Ref: SVC-SEC-R1 DESIGN
  */
-export async function securityDashboardHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function securityDashboardHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const last24h = new Date();
   last24h.setHours(last24h.getHours() - 24);
 
@@ -83,10 +80,7 @@ export async function securityDashboardHandler(
  * GET /security/threat-trend
  * Design Ref: SVC-SEC-R1 DESIGN
  */
-export async function threatTrendHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function threatTrendHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const trend: { date: string; count: number }[] = [];
 
   for (let i = 6; i >= 0; i--) {

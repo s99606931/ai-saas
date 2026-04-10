@@ -12,7 +12,7 @@ function createApprovers(count: number, type: 'serial' | 'parallel' = 'serial') 
     userId: `user-${i + 1}`,
     order: type === 'parallel' ? 1 : i + 1,
     type,
-    role: i === count - 1 ? 'final-approver' as const : 'approver' as const,
+    role: i === count - 1 ? ('final-approver' as const) : ('approver' as const),
     status: 'pending' as const,
   }));
 }
@@ -21,7 +21,13 @@ describe('ApprovalEngine (FR-ECO3.2 결재 엔진)', () => {
   describe('생성 및 초기 상태', () => {
     it('결재자 목록을 order 순서로 정렬한다', () => {
       const approvers = [
-        { userId: 'u3', order: 3, type: 'serial' as const, role: 'final-approver' as const, status: 'pending' as const },
+        {
+          userId: 'u3',
+          order: 3,
+          type: 'serial' as const,
+          role: 'final-approver' as const,
+          status: 'pending' as const,
+        },
         { userId: 'u1', order: 1, type: 'serial' as const, role: 'approver' as const, status: 'pending' as const },
         { userId: 'u2', order: 2, type: 'serial' as const, role: 'approver' as const, status: 'pending' as const },
       ];

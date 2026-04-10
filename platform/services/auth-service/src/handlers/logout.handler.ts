@@ -16,10 +16,7 @@ import { logAuthEvent } from '../lib/audit.js';
  * - 세션 목록에서 제거
  * - 감사 로그 기록
  */
-export async function logoutHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function logoutHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = logoutSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -45,13 +42,7 @@ export async function logoutHandler(
     }
 
     // 감사 로그
-    await logAuthEvent(
-      'LOGOUT',
-      payload.sub,
-      payload.tenantId,
-      request.ip,
-      request.headers['user-agent'] ?? 'unknown',
-    );
+    await logAuthEvent('LOGOUT', payload.sub, payload.tenantId, request.ip, request.headers['user-agent'] ?? 'unknown');
 
     await reply.status(200).send({
       success: true,

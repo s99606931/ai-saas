@@ -9,7 +9,11 @@ import { z } from 'zod';
 // 스키마 재현 (핸들러 내부 스키마와 동일)
 const createTenantSchema = z.object({
   name: z.string().min(1, '테넌트명은 필수입니다').max(100),
-  slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, '소문자, 숫자, 하이픈만 허용'),
+  slug: z
+    .string()
+    .min(2)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/, '소문자, 숫자, 하이픈만 허용'),
   plan: z.enum(['FREE', 'BASIC', 'STANDARD', 'ENTERPRISE']).default('FREE'),
   adminEmail: z.string().email('유효한 이메일이 필요합니다'),
   maxUsers: z.number().int().min(1).max(10000).default(10),
@@ -18,10 +22,15 @@ const createTenantSchema = z.object({
 const updateTenantSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   settings: z.record(z.unknown()).optional(),
-  theme: z.object({
-    primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
-    logo: z.string().url().optional(),
-  }).optional(),
+  theme: z
+    .object({
+      primaryColor: z
+        .string()
+        .regex(/^#[0-9a-fA-F]{6}$/)
+        .optional(),
+      logo: z.string().url().optional(),
+    })
+    .optional(),
   maxUsers: z.number().int().min(1).max(10000).optional(),
 });
 
@@ -83,15 +92,19 @@ describe('CSAP D-12: 테넌트 입력 검증 보안', () => {
 
   describe('updateTenantSchema 보안', () => {
     it('유효한 HEX 컬러만 허용한다', () => {
-      expect(updateTenantSchema.safeParse({
-        theme: { primaryColor: '#FF5733' },
-      }).success).toBe(true);
+      expect(
+        updateTenantSchema.safeParse({
+          theme: { primaryColor: '#FF5733' },
+        }).success,
+      ).toBe(true);
     });
 
     it('잘못된 컬러 형식을 거부한다', () => {
-      expect(updateTenantSchema.safeParse({
-        theme: { primaryColor: 'red; background: url(evil)' },
-      }).success).toBe(false);
+      expect(
+        updateTenantSchema.safeParse({
+          theme: { primaryColor: 'red; background: url(evil)' },
+        }).success,
+      ).toBe(false);
     });
 
     it('로고 URL은 Zod url()로 검증한다 (javascript: 포함 허용은 sanitize 레이어에서 차단)', () => {
@@ -141,11 +154,7 @@ describe('CSAP D-08: 테넌트 격리 보안 (N2SF N-03)', () => {
 
 describe('CSAP D-06: 감사 로그 연동', () => {
   it('테넌트 CRUD 이벤트 타입이 정의되어 있다', () => {
-    const auditEvents = [
-      'TENANT_CREATED',
-      'TENANT_UPDATED',
-      'TENANT_STATUS_CHANGED',
-    ];
+    const auditEvents = ['TENANT_CREATED', 'TENANT_UPDATED', 'TENANT_STATUS_CHANGED'];
     expect(auditEvents.length).toBeGreaterThanOrEqual(3);
     auditEvents.forEach((event) => {
       expect(typeof event).toBe('string');

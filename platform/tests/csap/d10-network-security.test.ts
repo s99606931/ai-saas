@@ -21,9 +21,7 @@ describe('CSAP D-10: 네트워크 보안 검증', () => {
     // API 게이트웨이의 Rate Limiting 동작 확인
     // 빠르게 연속 요청을 보내 429를 유도
     try {
-      const promises = Array.from({ length: 150 }, () =>
-        fetch(`${GATEWAY_URL}/health`).catch(() => null),
-      );
+      const promises = Array.from({ length: 150 }, () => fetch(`${GATEWAY_URL}/health`).catch(() => null));
 
       const results = await Promise.all(promises);
       const validResults = results.filter(Boolean) as Response[];

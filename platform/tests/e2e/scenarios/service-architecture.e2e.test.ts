@@ -28,18 +28,14 @@ describe('E2E: 서비스 아키텍처 검증 (FR-N01.2~N01.7, CSAP D-08, D-11, D
 
     it('모든 서비스에 헬스체크 엔드포인트가 존재해야 한다', () => {
       for (const svc of ALL_SERVICES) {
-        const indexContent = readServiceFile(
-          `platform/services/${svc}/src/index.ts`,
-        );
+        const indexContent = readServiceFile(`platform/services/${svc}/src/index.ts`);
         expect(indexContent).toContain('/health');
       }
     });
 
     it('모든 서비스에 Graceful Shutdown이 구현되어야 한다 (CSAP D-07)', () => {
       for (const svc of ALL_SERVICES) {
-        const indexContent = readServiceFile(
-          `platform/services/${svc}/src/index.ts`,
-        );
+        const indexContent = readServiceFile(`platform/services/${svc}/src/index.ts`);
         expect(indexContent).toContain('SIGTERM');
       }
     });
@@ -49,9 +45,7 @@ describe('E2E: 서비스 아키텍처 검증 (FR-N01.2~N01.7, CSAP D-08, D-11, D
 
   describe('테넌트 수명주기 검증 (FR-N01.2)', () => {
     it('tenant-service에 CRUD 핸들러가 존재해야 한다', () => {
-      const handlerContent = readServiceFile(
-        'platform/services/tenant-service/src/handlers/tenant.handler.ts',
-      );
+      const handlerContent = readServiceFile('platform/services/tenant-service/src/handlers/tenant.handler.ts');
       // Fastify handler 패턴: request/reply 함수 export
       expect(handlerContent).toContain('FastifyRequest');
       expect(handlerContent).toContain('FastifyReply');
@@ -59,9 +53,7 @@ describe('E2E: 서비스 아키텍처 검증 (FR-N01.2~N01.7, CSAP D-08, D-11, D
     });
 
     it('테넌트 생성 시 입력 검증(Zod)이 적용되어야 한다 (CSAP D-12)', () => {
-      const handlerContent = readServiceFile(
-        'platform/services/tenant-service/src/handlers/tenant.handler.ts',
-      );
+      const handlerContent = readServiceFile('platform/services/tenant-service/src/handlers/tenant.handler.ts');
       expect(handlerContent).toContain('safeParse');
     });
   });
@@ -70,9 +62,7 @@ describe('E2E: 서비스 아키텍처 검증 (FR-N01.2~N01.7, CSAP D-08, D-11, D
 
   describe('사용자 관리 검증 (FR-N01.3)', () => {
     it('user-service에 CRUD 핸들러가 존재해야 한다', () => {
-      const handlerContent = readServiceFile(
-        'platform/services/user-service/src/handlers/user.handler.ts',
-      );
+      const handlerContent = readServiceFile('platform/services/user-service/src/handlers/user.handler.ts');
       // Fastify handler 패턴: request/reply 함수 export
       expect(handlerContent).toContain('FastifyRequest');
       expect(handlerContent).toContain('FastifyReply');
@@ -80,16 +70,12 @@ describe('E2E: 서비스 아키텍처 검증 (FR-N01.2~N01.7, CSAP D-08, D-11, D
     });
 
     it('비밀번호 해싱(bcrypt)이 적용되어야 한다', () => {
-      const handlerContent = readServiceFile(
-        'platform/services/user-service/src/handlers/user.handler.ts',
-      );
+      const handlerContent = readServiceFile('platform/services/user-service/src/handlers/user.handler.ts');
       expect(handlerContent).toContain('bcrypt');
     });
 
     it('사용자 입력 검증(Zod)이 적용되어야 한다 (CSAP D-12)', () => {
-      const handlerContent = readServiceFile(
-        'platform/services/user-service/src/handlers/user.handler.ts',
-      );
+      const handlerContent = readServiceFile('platform/services/user-service/src/handlers/user.handler.ts');
       expect(handlerContent).toContain('safeParse');
     });
   });
@@ -114,10 +100,10 @@ describe('E2E: 서비스 아키텍처 검증 (FR-N01.2~N01.7, CSAP D-08, D-11, D
     });
 
     it('compliance-service에 CSAP 관련 핸들러가 있어야 한다', () => {
-      const result = serviceFileContains(
-        'platform/services/compliance-service/src/handlers/compliance.handler.ts',
-        ['csap', 'compliance'],
-      );
+      const result = serviceFileContains('platform/services/compliance-service/src/handlers/compliance.handler.ts', [
+        'csap',
+        'compliance',
+      ]);
       expect(result.exists).toBe(true);
     });
   });
@@ -134,26 +120,25 @@ describe('E2E: 서비스 아키텍처 검증 (FR-N01.2~N01.7, CSAP D-08, D-11, D
     });
 
     it('비즈니스 플러그인 SDK가 존재해야 한다', () => {
-      const sdkPath = resolve(
-        PROJECT_ROOT,
-        'platform/packages/business-plugin-sdk/src',
-      );
+      const sdkPath = resolve(PROJECT_ROOT, 'platform/packages/business-plugin-sdk/src');
       expect(existsSync(sdkPath)).toBe(true);
     });
 
     it('전자결재 플러그인에 manifest 파일이 있어야 한다', () => {
-      const result = serviceFileContains(
-        'platform/plugins/electronic-approval/src/manifest.ts',
-        ['manifest', 'id', 'version'],
-      );
+      const result = serviceFileContains('platform/plugins/electronic-approval/src/manifest.ts', [
+        'manifest',
+        'id',
+        'version',
+      ]);
       expect(result.exists).toBe(true);
     });
 
     it('공공데이터 연동 플러그인에 manifest 파일이 있어야 한다', () => {
-      const result = serviceFileContains(
-        'platform/plugins/public-data-integration/src/manifest.ts',
-        ['manifest', 'id', 'version'],
-      );
+      const result = serviceFileContains('platform/plugins/public-data-integration/src/manifest.ts', [
+        'manifest',
+        'id',
+        'version',
+      ]);
       expect(result.exists).toBe(true);
     });
   });
@@ -167,44 +152,29 @@ describe('E2E: 서비스 아키텍처 검증 (FR-N01.2~N01.7, CSAP D-08, D-11, D
     });
 
     it('k8s 마이크로서비스 매니페스트가 존재해야 한다', () => {
-      const msPath = resolve(
-        PROJECT_ROOT,
-        'k8s/services/microservices.yaml',
-      );
+      const msPath = resolve(PROJECT_ROOT, 'k8s/services/microservices.yaml');
       expect(existsSync(msPath)).toBe(true);
     });
 
     it('k8s NetworkPolicy 매니페스트가 존재해야 한다 (CSAP D-10)', () => {
-      const npPath = resolve(
-        PROJECT_ROOT,
-        'k8s/config/network-policy.yaml',
-      );
+      const npPath = resolve(PROJECT_ROOT, 'k8s/config/network-policy.yaml');
       expect(existsSync(npPath)).toBe(true);
     });
 
     it('k8s secrets 예시 파일이 존재해야 한다', () => {
-      const secPath = resolve(
-        PROJECT_ROOT,
-        'k8s/config/secrets.example.yaml',
-      );
+      const secPath = resolve(PROJECT_ROOT, 'k8s/config/secrets.example.yaml');
       expect(existsSync(secPath)).toBe(true);
     });
 
     it('k8s 매니페스트에 securityContext가 설정되어야 한다', () => {
-      const msContent = readFileSync(
-        resolve(PROJECT_ROOT, 'k8s/services/microservices.yaml'),
-        'utf-8',
-      );
+      const msContent = readFileSync(resolve(PROJECT_ROOT, 'k8s/services/microservices.yaml'), 'utf-8');
       expect(msContent).toContain('securityContext');
       expect(msContent).toContain('runAsNonRoot');
       expect(msContent).toContain('readOnlyRootFilesystem');
     });
 
     it('k8s 매니페스트에 리소스 제한이 설정되어야 한다', () => {
-      const msContent = readFileSync(
-        resolve(PROJECT_ROOT, 'k8s/services/microservices.yaml'),
-        'utf-8',
-      );
+      const msContent = readFileSync(resolve(PROJECT_ROOT, 'k8s/services/microservices.yaml'), 'utf-8');
       expect(msContent).toContain('resources');
       expect(msContent).toContain('limits');
       expect(msContent).toContain('requests');
@@ -220,10 +190,7 @@ describe('E2E: 서비스 아키텍처 검증 (FR-N01.2~N01.7, CSAP D-08, D-11, D
     });
 
     it('docker-compose.yml에 인프라(postgres, redis, minio)가 정의되어야 한다', () => {
-      const dcContent = readFileSync(
-        resolve(PROJECT_ROOT, 'docker-compose.yml'),
-        'utf-8',
-      );
+      const dcContent = readFileSync(resolve(PROJECT_ROOT, 'docker-compose.yml'), 'utf-8');
       expect(dcContent).toContain('postgres');
       expect(dcContent).toContain('redis');
       expect(dcContent).toContain('minio');

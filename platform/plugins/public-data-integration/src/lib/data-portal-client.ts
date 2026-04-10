@@ -69,7 +69,7 @@ export class DataPortalClient {
 
     // CSAP D-09: API 키를 URL 쿼리 파라미터 대신 헤더로 전달 (서버 로그 노출 방지)
     const response = await fetch(url.toString(), {
-      headers: { 'Authorization': `Bearer ${this.apiKey}` },
+      headers: { Authorization: `Bearer ${this.apiKey}` },
     });
     if (!response.ok) {
       throw new Error(`공공데이터포털 API 오류: ${response.status}`);
@@ -104,7 +104,7 @@ export class DataPortalClient {
     // CSAP D-09: API 키를 헤더로 전달
     const url = `${this.baseUrl}/datasets/${id}`;
     const response = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${this.apiKey}` },
+      headers: { Authorization: `Bearer ${this.apiKey}` },
     });
     if (!response.ok) return null;
     return response.json();
@@ -129,7 +129,7 @@ export class DataPortalClient {
     // CSAP D-09: API 키를 헤더로 전달
     const url = `${this.baseUrl}/datasets/${id}/data`;
     const response = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${this.apiKey}` },
+      headers: { Authorization: `Bearer ${this.apiKey}` },
     });
     if (!response.ok) {
       throw new Error(`데이터 조회 실패: ${response.status}`);
@@ -137,11 +137,7 @@ export class DataPortalClient {
     return response.json();
   }
 
-  private getSampleData(params: {
-    keyword?: string;
-    page: number;
-    limit: number;
-  }): SearchResult {
+  private getSampleData(params: { keyword?: string; page: number; limit: number }): SearchResult {
     const sampleItems: DatasetInfo[] = [
       {
         id: 'sample-001',
@@ -166,9 +162,7 @@ export class DataPortalClient {
     ];
 
     const filtered = params.keyword
-      ? sampleItems.filter(item =>
-          item.title.includes(params.keyword!) || item.description.includes(params.keyword!)
-        )
+      ? sampleItems.filter((item) => item.title.includes(params.keyword!) || item.description.includes(params.keyword!))
       : sampleItems;
 
     return {

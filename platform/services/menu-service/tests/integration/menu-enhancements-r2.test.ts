@@ -23,7 +23,11 @@ describe('메뉴 트리 깊이 분석', () => {
       if (parent === null || parent === undefined) return false;
       return detectCycle(parent, parentMap);
     };
-    const parentMap = new Map<string, string | null>([['1', null], ['2', '1'], ['3', '2']]);
+    const parentMap = new Map<string, string | null>([
+      ['1', null],
+      ['2', '1'],
+      ['3', '2'],
+    ]);
     expect(detectCycle('3', parentMap)).toBe(false);
   });
 

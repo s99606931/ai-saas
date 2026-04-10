@@ -4,12 +4,7 @@
 // CSAP: D-12 시스템 개발 보안 -- 상태 전이 무결성
 
 import { describe, it, expect } from 'vitest';
-import {
-  canTransition,
-  transition,
-  statusLabels,
-  type DocumentStatus,
-} from '../../src/lib/document-status';
+import { canTransition, transition, statusLabels, type DocumentStatus } from '../../src/lib/document-status';
 
 describe('canTransition (상태 전이 가능 여부)', () => {
   // 유효한 전이

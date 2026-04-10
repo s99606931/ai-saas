@@ -80,35 +80,49 @@ describe('createContactSchema (CSAP D-12)', () => {
   });
 
   it('잘못된 이메일 형식을 거부한다', () => {
-    expect(createContactSchema.safeParse({
-      name: '홍길동', email: 'invalid-email',
-    }).success).toBe(false);
+    expect(
+      createContactSchema.safeParse({
+        name: '홍길동',
+        email: 'invalid-email',
+      }).success,
+    ).toBe(false);
   });
 
   it('빈 이름을 거부한다', () => {
-    expect(createContactSchema.safeParse({
-      name: '', email: 'a@b.com',
-    }).success).toBe(false);
+    expect(
+      createContactSchema.safeParse({
+        name: '',
+        email: 'a@b.com',
+      }).success,
+    ).toBe(false);
   });
 
   it('이름 100자 초과를 거부한다', () => {
-    expect(createContactSchema.safeParse({
-      name: 'a'.repeat(101), email: 'a@b.com',
-    }).success).toBe(false);
+    expect(
+      createContactSchema.safeParse({
+        name: 'a'.repeat(101),
+        email: 'a@b.com',
+      }).success,
+    ).toBe(false);
   });
 
   it('isPrimary 기본값 false가 적용된다', () => {
     const result = createContactSchema.safeParse({
-      name: 'T', email: 'a@b.com',
+      name: 'T',
+      email: 'a@b.com',
     });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.isPrimary).toBe(false);
   });
 
   it('전화번호를 선택적으로 허용한다', () => {
-    expect(createContactSchema.safeParse({
-      name: 'T', email: 'a@b.com', phone: '010-1234-5678',
-    }).success).toBe(true);
+    expect(
+      createContactSchema.safeParse({
+        name: 'T',
+        email: 'a@b.com',
+        phone: '010-1234-5678',
+      }).success,
+    ).toBe(true);
   });
 });
 
@@ -125,43 +139,63 @@ describe('createContractSchema (CSAP D-12)', () => {
   });
 
   it('음수 계약 금액을 거부한다', () => {
-    expect(createContractSchema.safeParse({
-      customerId: 'c1', title: 'T', value: -1,
-      startDate: '2026-01-01T00:00:00.000Z',
-      endDate: '2026-12-31T23:59:59.000Z',
-    }).success).toBe(false);
+    expect(
+      createContractSchema.safeParse({
+        customerId: 'c1',
+        title: 'T',
+        value: -1,
+        startDate: '2026-01-01T00:00:00.000Z',
+        endDate: '2026-12-31T23:59:59.000Z',
+      }).success,
+    ).toBe(false);
   });
 
   it('0원 계약을 허용한다 (무상 계약)', () => {
-    expect(createContractSchema.safeParse({
-      customerId: 'c1', title: 'T', value: 0,
-      startDate: '2026-01-01T00:00:00.000Z',
-      endDate: '2026-12-31T23:59:59.000Z',
-    }).success).toBe(true);
+    expect(
+      createContractSchema.safeParse({
+        customerId: 'c1',
+        title: 'T',
+        value: 0,
+        startDate: '2026-01-01T00:00:00.000Z',
+        endDate: '2026-12-31T23:59:59.000Z',
+      }).success,
+    ).toBe(true);
   });
 
   it('잘못된 날짜 형식을 거부한다', () => {
-    expect(createContractSchema.safeParse({
-      customerId: 'c1', title: 'T', value: 0,
-      startDate: '2026-01-01',  // datetime이 아님
-      endDate: '2026-12-31',
-    }).success).toBe(false);
+    expect(
+      createContractSchema.safeParse({
+        customerId: 'c1',
+        title: 'T',
+        value: 0,
+        startDate: '2026-01-01', // datetime이 아님
+        endDate: '2026-12-31',
+      }).success,
+    ).toBe(false);
   });
 
   it('빈 customerId를 거부한다', () => {
-    expect(createContractSchema.safeParse({
-      customerId: '', title: 'T', value: 0,
-      startDate: '2026-01-01T00:00:00.000Z',
-      endDate: '2026-12-31T23:59:59.000Z',
-    }).success).toBe(false);
+    expect(
+      createContractSchema.safeParse({
+        customerId: '',
+        title: 'T',
+        value: 0,
+        startDate: '2026-01-01T00:00:00.000Z',
+        endDate: '2026-12-31T23:59:59.000Z',
+      }).success,
+    ).toBe(false);
   });
 
   it('빈 제목을 거부한다', () => {
-    expect(createContractSchema.safeParse({
-      customerId: 'c1', title: '', value: 0,
-      startDate: '2026-01-01T00:00:00.000Z',
-      endDate: '2026-12-31T23:59:59.000Z',
-    }).success).toBe(false);
+    expect(
+      createContractSchema.safeParse({
+        customerId: 'c1',
+        title: '',
+        value: 0,
+        startDate: '2026-01-01T00:00:00.000Z',
+        endDate: '2026-12-31T23:59:59.000Z',
+      }).success,
+    ).toBe(false);
   });
 });
 

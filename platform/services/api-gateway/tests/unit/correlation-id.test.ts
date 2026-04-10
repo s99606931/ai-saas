@@ -22,9 +22,7 @@ describe('correlation-id 플러그인', () => {
 
     const body = JSON.parse(response.body);
     // UUID v4 형식 검증 (8-4-4-4-12)
-    expect(body.requestId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-    );
+    expect(body.requestId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
     // 응답 헤더에도 동일한 ID가 포함된다
     expect(response.headers['x-request-id']).toBe(body.requestId);
   });
@@ -62,9 +60,7 @@ describe('correlation-id 플러그인', () => {
     });
 
     const body = JSON.parse(response.body);
-    expect(body.requestId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-    );
+    expect(body.requestId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
   });
 
   it('TC-CID-04: 연속 요청마다 서로 다른 Correlation ID가 생성된다', async () => {
@@ -96,9 +92,7 @@ describe('correlation-id 플러그인', () => {
     });
 
     const body = JSON.parse(response.body);
-    expect(body.requestId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-    );
+    expect(body.requestId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
     expect(response.headers['x-request-id']).toBe(body.requestId);
   });
 });

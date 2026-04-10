@@ -18,10 +18,7 @@ import type { TokenPayload } from '@public-saas/types';
  * }
  * ```
  */
-export function hasPermission(
-  user: TokenPayload,
-  permission: string,
-): boolean {
+export function hasPermission(user: TokenPayload, permission: string): boolean {
   // super_admin은 모든 권한 보유
   if (user.role === 'super_admin') {
     return true;
@@ -37,10 +34,7 @@ export function hasPermission(
  * @param permissions - 필요 권한 목록
  * @returns 하나 이상 보유 여부
  */
-export function requirePermissions(
-  user: TokenPayload,
-  permissions: string[],
-): boolean {
+export function requirePermissions(user: TokenPayload, permissions: string[]): boolean {
   if (user.role === 'super_admin') {
     return true;
   }

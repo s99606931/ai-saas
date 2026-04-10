@@ -12,17 +12,12 @@ import { prisma } from '../lib/prisma.js';
  * Design Ref: SVC-MENU-R1 DESIGN
  * CSAP D-08-05: 테넌트 격리
  */
-export async function menuStatsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function menuStatsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-08-05: 테넌트 격리
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
   const queryTenantId = (request.query as Record<string, string>)['tenantId'];
-  const effectiveTenantId = jwtRole === 'SUPER_ADMIN'
-    ? (queryTenantId ?? jwtTenantId)
-    : jwtTenantId;
+  const effectiveTenantId = jwtRole === 'SUPER_ADMIN' ? (queryTenantId ?? jwtTenantId) : jwtTenantId;
 
   if (!effectiveTenantId) {
     await reply.status(400).send({

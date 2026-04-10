@@ -10,9 +10,7 @@ describe('카탈로그 검색 고도화', () => {
       { name: 'HRM', description: '인사 관리 시스템' },
     ];
     const q = '관리';
-    const results = services.filter(
-      (s) => s.name.includes(q) || s.description.includes(q),
-    );
+    const results = services.filter((s) => s.name.includes(q) || s.description.includes(q));
     expect(results).toHaveLength(2);
   });
 

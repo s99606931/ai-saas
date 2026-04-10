@@ -64,11 +64,7 @@ describe('FR-CRM.2: expiringContractsHandler', () => {
   });
 
   it('만료일 오름차순으로 정렬된다', () => {
-    const dates = [
-      new Date('2026-06-01'),
-      new Date('2026-04-15'),
-      new Date('2026-05-10'),
-    ];
+    const dates = [new Date('2026-06-01'), new Date('2026-04-15'), new Date('2026-05-10')];
     const sorted = [...dates].sort((a, b) => a.getTime() - b.getTime());
     expect(sorted[0]!.getMonth()).toBe(3); // April (0-indexed)
   });
@@ -147,10 +143,7 @@ describe('FR-CRM.3: crmStatsHandler', () => {
 
 describe('CSAP 준수: CRM Stats', () => {
   it('D-08-05: 두 핸들러 모두 테넌트 격리 적용', () => {
-    const handlersWithIsolation = [
-      'expiringContractsHandler',
-      'crmStatsHandler',
-    ];
+    const handlersWithIsolation = ['expiringContractsHandler', 'crmStatsHandler'];
     expect(handlersWithIsolation).toHaveLength(2);
   });
 

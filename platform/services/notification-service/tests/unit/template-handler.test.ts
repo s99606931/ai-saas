@@ -45,7 +45,7 @@ describe('MTU-Q2 template-handler: renderTemplate Mustache 치환', () => {
   it('TC-TH04b: \u0028설계 제약\u0029 한글 변수명은 \\w+ 정규식 한계로 치환되지 않는다', () => {
     // 이슈: renderTemplate 정규식 \w+는 한글을 지원하지 않음
     // 한글 변수명을 사용하면 치환이 되지 않고 원래 패턴이 그대로 유지됨
-    const result = renderTemplate('{{한글변수}}', { '한글변수': '값' });
+    const result = renderTemplate('{{한글변수}}', { 한글변수: '값' });
     // \w+가 한글을 매치하지 않으므로 치환 미발생
     expect(result).toBe('{{한글변수}}');
   });
@@ -92,32 +92,32 @@ describe('MTU-Q2 template-handler: 라우트 등록 검증 (정적 분석)', () 
   ];
 
   it('TC-RT01: POST /notification/templates 라우트가 등록되어 있다', () => {
-    const route = registeredRoutes.find(r => r.method === 'POST' && r.path === '/notification/templates');
+    const route = registeredRoutes.find((r) => r.method === 'POST' && r.path === '/notification/templates');
     expect(route).toBeDefined();
   });
 
   it('TC-RT02: GET /notification/templates 라우트가 등록되어 있다', () => {
-    const route = registeredRoutes.find(r => r.method === 'GET' && r.path === '/notification/templates');
+    const route = registeredRoutes.find((r) => r.method === 'GET' && r.path === '/notification/templates');
     expect(route).toBeDefined();
   });
 
   it('TC-RT03: GET /notification/templates/:id 라우트가 등록되어 있다', () => {
-    const route = registeredRoutes.find(r => r.method === 'GET' && r.path === '/notification/templates/:id');
+    const route = registeredRoutes.find((r) => r.method === 'GET' && r.path === '/notification/templates/:id');
     expect(route).toBeDefined();
   });
 
   it('TC-RT04: PUT /notification/templates/:id 라우트가 등록되어 있다', () => {
-    const route = registeredRoutes.find(r => r.method === 'PUT' && r.path === '/notification/templates/:id');
+    const route = registeredRoutes.find((r) => r.method === 'PUT' && r.path === '/notification/templates/:id');
     expect(route).toBeDefined();
   });
 
   it('TC-RT05: DELETE /notification/templates/:id 라우트가 등록되어 있다', () => {
-    const route = registeredRoutes.find(r => r.method === 'DELETE' && r.path === '/notification/templates/:id');
+    const route = registeredRoutes.find((r) => r.method === 'DELETE' && r.path === '/notification/templates/:id');
     expect(route).toBeDefined();
   });
 
   it('TC-RT06: POST /notification/send-template 라우트가 등록되어 있다', () => {
-    const route = registeredRoutes.find(r => r.method === 'POST' && r.path === '/notification/send-template');
+    const route = registeredRoutes.find((r) => r.method === 'POST' && r.path === '/notification/send-template');
     expect(route).toBeDefined();
   });
 

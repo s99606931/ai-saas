@@ -17,10 +17,7 @@ import type { TokenPayload } from '@public-saas/types';
  * @param request - Fastify 요청 (user 속성에 TokenPayload 바인딩 필요)
  * @param reply - Fastify 응답
  */
-export async function tenantIsolationMiddleware(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function tenantIsolationMiddleware(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const user = (request as FastifyRequest & { user?: TokenPayload }).user;
 
   if (!user) {

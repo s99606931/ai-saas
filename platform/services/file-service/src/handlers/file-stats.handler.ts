@@ -7,10 +7,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../lib/prisma.js';
 
 /** 테넌트별 저장 용량 한도 (MB) */
-const TENANT_STORAGE_LIMIT_MB = parseInt(
-  process.env['TENANT_STORAGE_LIMIT_MB'] ?? '1024',
-  10,
-);
+const TENANT_STORAGE_LIMIT_MB = parseInt(process.env['TENANT_STORAGE_LIMIT_MB'] ?? '1024', 10);
 
 /**
  * FR-FILE.4: 테넌트별 저장 용량 조회
@@ -18,17 +15,12 @@ const TENANT_STORAGE_LIMIT_MB = parseInt(
  * Design Ref: SVC-FILE-R1 DESIGN
  * CSAP D-08-05: 테넌트 격리
  */
-export async function storageUsageHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function storageUsageHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-08-05: 테넌트 격리
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
   const queryTenantId = (request.query as Record<string, string>)['tenantId'];
-  const effectiveTenantId = jwtRole === 'SUPER_ADMIN'
-    ? (queryTenantId ?? jwtTenantId)
-    : jwtTenantId;
+  const effectiveTenantId = jwtRole === 'SUPER_ADMIN' ? (queryTenantId ?? jwtTenantId) : jwtTenantId;
 
   if (!effectiveTenantId) {
     await reply.status(400).send({
@@ -71,17 +63,12 @@ export async function storageUsageHandler(
  * Design Ref: SVC-FILE-R1 DESIGN
  * CSAP D-08-05: 테넌트 격리
  */
-export async function fileStatsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function fileStatsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-08-05: 테넌트 격리
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
   const queryTenantId = (request.query as Record<string, string>)['tenantId'];
-  const effectiveTenantId = jwtRole === 'SUPER_ADMIN'
-    ? (queryTenantId ?? jwtTenantId)
-    : jwtTenantId;
+  const effectiveTenantId = jwtRole === 'SUPER_ADMIN' ? (queryTenantId ?? jwtTenantId) : jwtTenantId;
 
   if (!effectiveTenantId) {
     await reply.status(400).send({

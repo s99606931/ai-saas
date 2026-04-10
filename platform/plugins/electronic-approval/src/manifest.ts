@@ -26,12 +26,5 @@ export const manifest = {
       'GET    /documents',
     ],
   },
-  permissions: [
-    'draft:create',
-    'draft:read',
-    'draft:update',
-    'draft:delete',
-    'approval:process',
-    'document:read',
-  ],
+  permissions: ['draft:create', 'draft:read', 'draft:update', 'draft:delete', 'approval:process', 'document:read'],
 } as const;

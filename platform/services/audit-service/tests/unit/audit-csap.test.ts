@@ -22,7 +22,9 @@ const auditLogSchema = z.object({
 describe('CSAP D-06: 감사 로그 무결성', () => {
   it('SHA-256 해시 체인이 올바르다', () => {
     const computeHash = (data: string, previousHash: string): string => {
-      return createHash('sha256').update(previousHash + data).digest('hex');
+      return createHash('sha256')
+        .update(previousHash + data)
+        .digest('hex');
     };
 
     const genesisHash = createHash('sha256').update('genesis').digest('hex');
@@ -36,7 +38,9 @@ describe('CSAP D-06: 감사 로그 무결성', () => {
 
   it('해시 체인 위변조 탐지가 올바르다', () => {
     const computeHash = (data: string, previousHash: string): string => {
-      return createHash('sha256').update(previousHash + data).digest('hex');
+      return createHash('sha256')
+        .update(previousHash + data)
+        .digest('hex');
     };
 
     const genesis = 'genesis-hash';
@@ -77,17 +81,21 @@ describe('CSAP D-06: 감사 로그 입력 검증', () => {
   });
 
   it('actor 없는 감사 로그를 거부한다', () => {
-    expect(auditLogSchema.safeParse({
-      action: 'USER_DELETE',
-      resource: 'user',
-    }).success).toBe(false);
+    expect(
+      auditLogSchema.safeParse({
+        action: 'USER_DELETE',
+        resource: 'user',
+      }).success,
+    ).toBe(false);
   });
 
   it('action 없는 감사 로그를 거부한다', () => {
-    expect(auditLogSchema.safeParse({
-      actor: 'admin-001',
-      resource: 'user',
-    }).success).toBe(false);
+    expect(
+      auditLogSchema.safeParse({
+        actor: 'admin-001',
+        resource: 'user',
+      }).success,
+    ).toBe(false);
   });
 });
 
@@ -99,12 +107,11 @@ describe('CSAP D-06: 로그 보존 정책', () => {
 
   it('보존 기간 만료 시 아카이브로 이동한다', () => {
     const retentionPolicy = {
-      activeDays: 90,    // 90일 활성 스토리지
-      archiveDays: 275,  // 275일 아카이브
-      totalDays: 365,    // 합계 1년
+      activeDays: 90, // 90일 활성 스토리지
+      archiveDays: 275, // 275일 아카이브
+      totalDays: 365, // 합계 1년
     };
-    expect(retentionPolicy.activeDays + retentionPolicy.archiveDays)
-      .toBe(retentionPolicy.totalDays);
+    expect(retentionPolicy.activeDays + retentionPolicy.archiveDays).toBe(retentionPolicy.totalDays);
   });
 
   it('로그 삭제는 SUPER_ADMIN도 불가능하다', () => {

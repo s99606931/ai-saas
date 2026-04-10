@@ -25,10 +25,7 @@ export function readServiceFile(relativePath: string): string {
 /**
  * 서비스 파일에 특정 패턴이 존재하는지 확인
  */
-export function serviceFileContains(
-  relativePath: string,
-  patterns: string[],
-): { exists: boolean; missing: string[] } {
+export function serviceFileContains(relativePath: string, patterns: string[]): { exists: boolean; missing: string[] } {
   const content = readServiceFile(relativePath);
   const missing = patterns.filter((p) => !content.includes(p));
   return { exists: missing.length === 0, missing };
@@ -38,10 +35,7 @@ export function serviceFileContains(
  * 서비스 디렉토리의 핸들러 파일 목록 반환
  */
 export function getServiceHandlers(serviceName: string): string[] {
-  const handlersDir = resolve(
-    PROJECT_ROOT,
-    `platform/services/${serviceName}/src/handlers`,
-  );
+  const handlersDir = resolve(PROJECT_ROOT, `platform/services/${serviceName}/src/handlers`);
   if (!existsSync(handlersDir)) return [];
   const { readdirSync } = require('fs');
   return readdirSync(handlersDir) as string[];
@@ -51,10 +45,7 @@ export function getServiceHandlers(serviceName: string): string[] {
  * 서비스 소스 디렉토리 존재 확인
  */
 export function serviceExists(serviceName: string): boolean {
-  const srcDir = resolve(
-    PROJECT_ROOT,
-    `platform/services/${serviceName}/src`,
-  );
+  const srcDir = resolve(PROJECT_ROOT, `platform/services/${serviceName}/src`);
   return existsSync(srcDir);
 }
 
@@ -62,10 +53,7 @@ export function serviceExists(serviceName: string): boolean {
  * 플러그인 소스 디렉토리 존재 확인
  */
 export function pluginExists(pluginName: string): boolean {
-  const srcDir = resolve(
-    PROJECT_ROOT,
-    `platform/plugins/${pluginName}/src`,
-  );
+  const srcDir = resolve(PROJECT_ROOT, `platform/plugins/${pluginName}/src`);
   return existsSync(srcDir);
 }
 

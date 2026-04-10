@@ -159,9 +159,7 @@ describe('영구 비활성화 상수', () => {
       { id: '2', lockedUntil: new Date('2026-12-31') },
       { id: '3', lockedUntil: PERMANENT_LOCK },
     ];
-    const deactivated = users.filter(
-      (u) => u.lockedUntil?.getTime() === PERMANENT_LOCK.getTime(),
-    );
+    const deactivated = users.filter((u) => u.lockedUntil?.getTime() === PERMANENT_LOCK.getTime());
     expect(deactivated).toHaveLength(1);
     expect(deactivated[0].id).toBe('3');
   });

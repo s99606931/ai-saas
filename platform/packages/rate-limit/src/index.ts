@@ -71,15 +71,8 @@ export function setRedisClient(client: RedisLike | null): void {
  * @param keyPrefix - Redis 키 접두사 (기본: 'rl')
  * @returns Fastify preHandler 훅
  */
-export function createRateLimiter(
-  maxRequests: number,
-  windowSeconds: number,
-  keyPrefix: string = 'rl',
-) {
-  return async function rateLimitMiddleware(
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ): Promise<void> {
+export function createRateLimiter(maxRequests: number, windowSeconds: number, keyPrefix: string = 'rl') {
+  return async function rateLimitMiddleware(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const redis = await getRedis();
     if (!redis) return; // Redis 미연결 시 통과 (가용성 우선)
 

@@ -91,9 +91,18 @@ describe('MTU-Q1 swagger: OpenAPI 스펙 설정 검증', () => {
 
   it('TC-SW10: 필수 API 태그 목록이 모두 정의되어 있다', () => {
     const tags = [
-      'auth', 'users', 'tenants', 'subscriptions',
-      'billing', 'ai', 'audit', 'compliance',
-      'notifications', 'files', 'security', 'gateway',
+      'auth',
+      'users',
+      'tenants',
+      'subscriptions',
+      'billing',
+      'ai',
+      'audit',
+      'compliance',
+      'notifications',
+      'files',
+      'security',
+      'gateway',
     ];
     const requiredTags = ['auth', 'users', 'ai', 'audit', 'compliance'];
     for (const required of requiredTags) {

@@ -191,9 +191,7 @@ describe('FR-USR.4: 서비스 간 HMAC 인증', () => {
   it('HMAC 토큰 형식이 serviceName:timestamp:hmac이다', () => {
     const serviceName = 'user-service';
     const timestamp = Date.now().toString();
-    const hmac = createHmac('sha256', TEST_SECRET)
-      .update(`${serviceName}:${timestamp}`)
-      .digest('hex');
+    const hmac = createHmac('sha256', TEST_SECRET).update(`${serviceName}:${timestamp}`).digest('hex');
     const token = `${serviceName}:${timestamp}:${hmac}`;
 
     const parts = token.split(':');
@@ -262,7 +260,8 @@ describe('FR-USR.5: 비밀번호 이력 관리', () => {
 
   it('동일 비밀번호를 이력에 추가 후 재사용으로 판정된다', async () => {
     const bcrypt = await import('bcryptjs');
-    const { isPasswordReused, addPasswordHistory, clearPasswordHistory } = await import('../../src/lib/password-history.js');
+    const { isPasswordReused, addPasswordHistory, clearPasswordHistory } =
+      await import('../../src/lib/password-history.js');
 
     const userId = 'test-user-reuse';
     clearPasswordHistory(userId);
@@ -277,7 +276,8 @@ describe('FR-USR.5: 비밀번호 이력 관리', () => {
 
   it('다른 비밀번호는 재사용이 아니다', async () => {
     const bcrypt = await import('bcryptjs');
-    const { isPasswordReused, addPasswordHistory, clearPasswordHistory } = await import('../../src/lib/password-history.js');
+    const { isPasswordReused, addPasswordHistory, clearPasswordHistory } =
+      await import('../../src/lib/password-history.js');
 
     const userId = 'test-user-different';
     clearPasswordHistory(userId);
@@ -292,7 +292,8 @@ describe('FR-USR.5: 비밀번호 이력 관리', () => {
 
   it('이력이 최대 N개로 제한된다', async () => {
     const bcrypt = await import('bcryptjs');
-    const { addPasswordHistory, getPasswordHistoryCount, getHistoryCount, clearPasswordHistory } = await import('../../src/lib/password-history.js');
+    const { addPasswordHistory, getPasswordHistoryCount, getHistoryCount, clearPasswordHistory } =
+      await import('../../src/lib/password-history.js');
 
     const userId = 'test-user-overflow';
     clearPasswordHistory(userId);
@@ -321,7 +322,8 @@ describe('FR-USR.5: 비밀번호 이력 관리', () => {
 
   it('이력 초기화가 정상 동작한다', async () => {
     const bcrypt = await import('bcryptjs');
-    const { addPasswordHistory, clearPasswordHistory, getPasswordHistoryCount } = await import('../../src/lib/password-history.js');
+    const { addPasswordHistory, clearPasswordHistory, getPasswordHistoryCount } =
+      await import('../../src/lib/password-history.js');
 
     const userId = 'test-user-clear';
     const hash = await bcrypt.default.hash('SomePassword1!', 4);
@@ -355,21 +357,21 @@ describe('기존 기능 회귀: 라우트 등록', () => {
   });
 
   it('GET /users/inactive 라우트가 추가되었다', () => {
-    const route = expectedRoutes.find(r => r.method === 'GET' && r.path === '/users/inactive');
+    const route = expectedRoutes.find((r) => r.method === 'GET' && r.path === '/users/inactive');
     expect(route).toBeDefined();
   });
 
   it('기존 CRUD 라우트가 유지된다', () => {
-    expect(expectedRoutes.find(r => r.path === '/users' && r.method === 'GET')).toBeDefined();
-    expect(expectedRoutes.find(r => r.path === '/users/:id' && r.method === 'GET')).toBeDefined();
-    expect(expectedRoutes.find(r => r.path === '/users' && r.method === 'POST')).toBeDefined();
-    expect(expectedRoutes.find(r => r.path === '/users/:id' && r.method === 'PUT')).toBeDefined();
-    expect(expectedRoutes.find(r => r.path === '/users/:id' && r.method === 'DELETE')).toBeDefined();
+    expect(expectedRoutes.find((r) => r.path === '/users' && r.method === 'GET')).toBeDefined();
+    expect(expectedRoutes.find((r) => r.path === '/users/:id' && r.method === 'GET')).toBeDefined();
+    expect(expectedRoutes.find((r) => r.path === '/users' && r.method === 'POST')).toBeDefined();
+    expect(expectedRoutes.find((r) => r.path === '/users/:id' && r.method === 'PUT')).toBeDefined();
+    expect(expectedRoutes.find((r) => r.path === '/users/:id' && r.method === 'DELETE')).toBeDefined();
   });
 
   it('비밀번호 재설정 라우트가 유지된다', () => {
-    expect(expectedRoutes.find(r => r.path === '/users/password-reset/request')).toBeDefined();
-    expect(expectedRoutes.find(r => r.path === '/users/password-reset/confirm')).toBeDefined();
+    expect(expectedRoutes.find((r) => r.path === '/users/password-reset/request')).toBeDefined();
+    expect(expectedRoutes.find((r) => r.path === '/users/password-reset/confirm')).toBeDefined();
   });
 });
 
@@ -421,8 +423,8 @@ describe('CSAP 준수 검증', () => {
     ];
     expect(rateLimits).toHaveLength(6);
     // 쓰기 엔드포인트는 읽기보다 제한이 엄격하다
-    const readLimit = rateLimits.find(r => r.endpoint.startsWith('GET'));
-    const writeLimit = rateLimits.find(r => r.endpoint.startsWith('DELETE'));
+    const readLimit = rateLimits.find((r) => r.endpoint.startsWith('GET'));
+    const writeLimit = rateLimits.find((r) => r.endpoint.startsWith('DELETE'));
     expect(readLimit!.max).toBeGreaterThan(writeLimit!.max);
   });
 });

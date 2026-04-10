@@ -22,34 +22,19 @@ export function maskPII(text: string): string {
   let masked = text;
 
   // 이메일 마스킹
-  masked = masked.replace(
-    /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
-    '[EMAIL_MASKED]',
-  );
+  masked = masked.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL_MASKED]');
 
   // 카드 번호 마스킹 (XXXX-XXXX-XXXX-XXXX) — 주민번호보다 먼저 (16자리 > 13자리)
-  masked = masked.replace(
-    /\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}/g,
-    '[CARD_MASKED]',
-  );
+  masked = masked.replace(/\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}/g, '[CARD_MASKED]');
 
   // 주민등록번호 마스킹 (YYMMDD-NNNNNNN) — 전화번호보다 먼저 (13자리 > 11자리)
-  masked = masked.replace(
-    /\d{6}[-\s]?\d{7}/g,
-    '[RRN_MASKED]',
-  );
+  masked = masked.replace(/\d{6}[-\s]?\d{7}/g, '[RRN_MASKED]');
 
   // 전화번호 마스킹 (한국 형식: 010-1234-5678, 02-123-4567)
-  masked = masked.replace(
-    /0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4}/g,
-    '[PHONE_MASKED]',
-  );
+  masked = masked.replace(/0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4}/g, '[PHONE_MASKED]');
 
   // IPv4 주소 마스킹
-  masked = masked.replace(
-    /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g,
-    '[IP_MASKED]',
-  );
+  masked = masked.replace(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g, '[IP_MASKED]');
 
   return masked;
 }
@@ -62,10 +47,10 @@ export function maskPII(text: string): string {
  */
 export function containsPII(text: string): boolean {
   const piiPatterns = [
-    /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/,  // 이메일
-    /0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4}/,                // 전화번호
-    /\d{6}[-\s]?\d{7}/,                                    // 주민등록번호
-    /\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}/,            // 카드 번호
+    /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/, // 이메일
+    /0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4}/, // 전화번호
+    /\d{6}[-\s]?\d{7}/, // 주민등록번호
+    /\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}/, // 카드 번호
   ];
 
   return piiPatterns.some((pattern) => pattern.test(text));

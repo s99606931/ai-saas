@@ -36,9 +36,7 @@ export async function aiUsageTrendHandler(
   // CSAP D-08-05: 테넌트 격리
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
-  const effectiveTenantId = jwtRole === 'SUPER_ADMIN'
-    ? tenantId
-    : (jwtTenantId ?? tenantId);
+  const effectiveTenantId = jwtRole === 'SUPER_ADMIN' ? tenantId : (jwtTenantId ?? tenantId);
 
   const baseWhere: Record<string, unknown> = {};
   if (effectiveTenantId) baseWhere['tenantId'] = effectiveTenantId;
@@ -91,10 +89,7 @@ export async function aiUsageTrendHandler(
  * Design Ref: SVC-AI-R2 DESIGN
  * CSAP D-08-05: 테넌트 격리
  */
-export async function modelAnalyticsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function modelAnalyticsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-08-05: 테넌트 격리
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
@@ -133,9 +128,7 @@ export async function modelAnalyticsHandler(
         totalTokens: m._sum.tokens ?? 0,
         totalCost: Number(m._sum.cost ?? 0),
         avgTokensPerCall: Math.round(Number(m._avg.tokens ?? 0)),
-        callSharePercent: totalCalls > 0
-          ? Number(((m._count.id / totalCalls) * 100).toFixed(1))
-          : 0,
+        callSharePercent: totalCalls > 0 ? Number(((m._count.id / totalCalls) * 100).toFixed(1)) : 0,
       })),
       gradeDistribution: gradeStats.map((g) => ({
         grade: g.grade,

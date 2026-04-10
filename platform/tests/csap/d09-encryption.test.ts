@@ -136,14 +136,10 @@ describe('CSAP D-09: 암호화 검증', () => {
 
         // JWT 헤더 디코딩 (base64url)
         const headerPart = accessToken.split('.')[0];
-        const headerJson = JSON.parse(
-          Buffer.from(headerPart, 'base64url').toString('utf-8'),
-        );
+        const headerJson = JSON.parse(Buffer.from(headerPart, 'base64url').toString('utf-8'));
 
         // 안전한 알고리즘 사용 확인
-        expect(['RS256', 'RS384', 'RS512', 'ES256', 'ES384', 'HS256']).toContain(
-          headerJson.alg,
-        );
+        expect(['RS256', 'RS384', 'RS512', 'ES256', 'ES384', 'HS256']).toContain(headerJson.alg);
         expect(headerJson.alg).not.toBe('none');
       }
     } catch {

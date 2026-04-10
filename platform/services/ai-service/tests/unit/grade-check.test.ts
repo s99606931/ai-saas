@@ -4,11 +4,7 @@
 // CSAP: N2SF N-05 — C/S등급 AI API 전송 절대 금지
 
 import { describe, it, expect } from 'vitest';
-import {
-  validateDataGrade,
-  DataGradeViolationError,
-  canSendToModel,
-} from '../../src/lib/grade-check.js';
+import { validateDataGrade, DataGradeViolationError, canSendToModel } from '../../src/lib/grade-check.js';
 
 describe('validateDataGrade (N2SF N-05)', () => {
   it('O등급 데이터는 허용한다', () => {

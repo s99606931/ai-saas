@@ -14,9 +14,7 @@ describe('FR-TENANT.5: 테넌트 검색', () => {
       { name: '서울교육청', slug: 'seoul-edu' },
     ];
     const q = '서울';
-    const results = tenants.filter(
-      (t) => t.name.includes(q) || t.slug.includes(q),
-    );
+    const results = tenants.filter((t) => t.name.includes(q) || t.slug.includes(q));
     expect(results).toHaveLength(2);
   });
 
@@ -26,9 +24,7 @@ describe('FR-TENANT.5: 테넌트 검색', () => {
       { name: '부산시청', slug: 'busan-city' },
     ];
     const q = 'busan';
-    const results = tenants.filter(
-      (t) => t.name.toLowerCase().includes(q) || t.slug.includes(q),
-    );
+    const results = tenants.filter((t) => t.name.toLowerCase().includes(q) || t.slug.includes(q));
     expect(results).toHaveLength(1);
   });
 
@@ -39,9 +35,7 @@ describe('FR-TENANT.5: 테넌트 검색', () => {
     ];
     const q = '서울';
     const status = 'ACTIVE';
-    const results = tenants.filter(
-      (t) => t.name.includes(q) && t.status === status,
-    );
+    const results = tenants.filter((t) => t.name.includes(q) && t.status === status);
     expect(results).toHaveLength(1);
     expect(results[0].slug).toBe('seoul-city');
   });
@@ -143,9 +137,7 @@ describe('향상된 목록 조회: 정렬', () => {
       { name: '부산시청', slug: 'busan-city' },
     ];
     const search = 'seoul';
-    const results = tenants.filter(
-      (t) => t.name.toLowerCase().includes(search) || t.slug.includes(search),
-    );
+    const results = tenants.filter((t) => t.name.toLowerCase().includes(search) || t.slug.includes(search));
     expect(results).toHaveLength(1);
   });
 

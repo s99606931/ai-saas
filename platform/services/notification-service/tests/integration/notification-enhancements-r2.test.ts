@@ -83,11 +83,7 @@ describe('FR-NOTIF.7: 채널별 전달 분석', () => {
   });
 
   it('전체 알림 수가 올바르다', () => {
-    const channels = [
-      { total: 100 },
-      { total: 80 },
-      { total: 20 },
-    ];
+    const channels = [{ total: 100 }, { total: 80 }, { total: 20 }];
     const totalAll = channels.reduce((sum, c) => sum + c.total, 0);
     expect(totalAll).toBe(200);
   });

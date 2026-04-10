@@ -22,9 +22,7 @@ interface ServiceHealthResult {
  * 등록된 모든 서비스의 /health 엔드포인트를 병렬로 확인
  * 타임아웃: 2초 (응답 없으면 unhealthy)
  */
-export async function checkServicesHealth(
-  registry: Record<string, ServiceEntry>,
-): Promise<ServiceHealthResult[]> {
+export async function checkServicesHealth(registry: Record<string, ServiceEntry>): Promise<ServiceHealthResult[]> {
   const checks = Object.entries(registry).map(async ([name, entry]): Promise<ServiceHealthResult> => {
     const start = Date.now();
     try {
@@ -33,7 +31,7 @@ export async function checkServicesHealth(
 
       const response = await fetch(`${entry.url}/health`, {
         signal: controller.signal,
-        headers: { 'accept': 'application/json' },
+        headers: { accept: 'application/json' },
       });
       clearTimeout(timeoutId);
 

@@ -78,7 +78,7 @@ app.get('/datasets', async (c) => {
   const cacheKey = `search:${auth.tenantId}:${JSON.stringify(parsed.data)}`;
   const cached = await getCached(cacheKey);
   if (cached) {
-    return c.json({ ...cached as object, fromCache: true });
+    return c.json({ ...(cached as object), fromCache: true });
   }
 
   const result = await client.searchDatasets(parsed.data);
@@ -102,7 +102,7 @@ app.get('/datasets/:id', async (c) => {
   const cacheKey = `dataset:${id}`;
   const cached = await getCached(cacheKey);
   if (cached) {
-    return c.json({ ...cached as object, fromCache: true });
+    return c.json({ ...(cached as object), fromCache: true });
   }
 
   const dataset = await client.getDataset(id);

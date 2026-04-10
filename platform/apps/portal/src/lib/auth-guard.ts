@@ -2,16 +2,16 @@
 // Plan SC: FR-UP.21
 // CSAP: D-08-01 인증, D-08-05 접근 통제
 
-import { headers } from 'next/headers'
+import { headers } from 'next/headers';
 
 /**
  * Portal API 인증 정보
  * API 게이트웨이가 주입한 헤더에서 추출
  */
 export interface PortalAuthContext {
-  userId: string
-  tenantId: string
-  role: string
+  userId: string;
+  tenantId: string;
+  role: string;
 }
 
 /**
@@ -25,28 +25,28 @@ export interface PortalAuthContext {
  * @returns 인증 컨텍스트 또는 null
  */
 export async function getAuthContext(): Promise<PortalAuthContext | null> {
-  const headerStore = await headers()
-  const userId = headerStore.get('x-user-id')
-  const tenantId = headerStore.get('x-user-tenant-id')
-  const role = headerStore.get('x-user-role')
+  const headerStore = await headers();
+  const userId = headerStore.get('x-user-id');
+  const tenantId = headerStore.get('x-user-tenant-id');
+  const role = headerStore.get('x-user-role');
 
   if (!userId || userId === 'anonymous') {
-    return null
+    return null;
   }
 
-  const resolvedRole = role ?? 'VIEWER'
+  const resolvedRole = role ?? 'VIEWER';
 
   // M-06 수정 (CSAP D-08-05): 테넌트 격리 — SUPER_ADMIN 외 tenantId 필수
   // API 게이트웨이 없이 직접 접근 시 빈 tenantId로 인한 격리 우회 차단
   if (!tenantId && resolvedRole !== 'SUPER_ADMIN') {
-    return null
+    return null;
   }
 
   return {
     userId,
     tenantId: tenantId ?? '',
     role: resolvedRole,
-  }
+  };
 }
 
 /**
@@ -54,12 +54,12 @@ export async function getAuthContext(): Promise<PortalAuthContext | null> {
  * CSAP D-08-05: RBAC 접근 통제
  */
 export function isAdmin(auth: PortalAuthContext): boolean {
-  return auth.role === 'SUPER_ADMIN' || auth.role === 'TENANT_ADMIN'
+  return auth.role === 'SUPER_ADMIN' || auth.role === 'TENANT_ADMIN';
 }
 
 /**
  * 슈퍼 관리자 권한 확인
  */
 export function isSuperAdmin(auth: PortalAuthContext): boolean {
-  return auth.role === 'SUPER_ADMIN'
+  return auth.role === 'SUPER_ADMIN';
 }

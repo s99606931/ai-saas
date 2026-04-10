@@ -60,9 +60,7 @@ describe('FR-MENU.2: 메뉴 검색', () => {
 
   it('label과 path 모두 검색된다 (OR 조건)', () => {
     const q = 'admin';
-    const results = menus.filter((m) =>
-      m.label.toLowerCase().includes(q) || m.path.toLowerCase().includes(q),
-    );
+    const results = menus.filter((m) => m.label.toLowerCase().includes(q) || m.path.toLowerCase().includes(q));
     expect(results).toHaveLength(3); // users, files, audit (path contains /admin)
   });
 
@@ -195,7 +193,12 @@ describe('FR-MENU.5: 메뉴 통계', () => {
       while (currentId && !visited.has(currentId)) {
         visited.add(currentId);
         const pid = parentMap.get(currentId);
-        if (pid) { depth++; currentId = pid; } else { break; }
+        if (pid) {
+          depth++;
+          currentId = pid;
+        } else {
+          break;
+        }
       }
       if (depth > maxDepth) maxDepth = depth;
     }
@@ -203,11 +206,7 @@ describe('FR-MENU.5: 메뉴 통계', () => {
   });
 
   it('visible/hidden 카운트가 올바르다', () => {
-    const items = [
-      { isVisible: true },
-      { isVisible: true },
-      { isVisible: false },
-    ];
+    const items = [{ isVisible: true }, { isVisible: true }, { isVisible: false }];
     const visible = items.filter((i) => i.isVisible).length;
     const hidden = items.length - visible;
     expect(visible).toBe(2);
@@ -265,20 +264,12 @@ describe('CSAP 준수: 메뉴 서비스', () => {
   });
 
   it('D-08: 모든 조회 핸들러에 테넌트 격리가 적용된다', () => {
-    const handlers = [
-      'getMenuTreeHandler',
-      'getFilteredMenuHandler',
-      'searchMenuHandler',
-      'menuStatsHandler',
-    ];
+    const handlers = ['getMenuTreeHandler', 'getFilteredMenuHandler', 'searchMenuHandler', 'menuStatsHandler'];
     expect(handlers).toHaveLength(4);
   });
 
   it('D-08: 모든 변경 핸들러에 테넌트 격리가 적용된다', () => {
-    const handlers = [
-      'deleteMenuHandler',
-      'reorderMenuHandler',
-    ];
+    const handlers = ['deleteMenuHandler', 'reorderMenuHandler'];
     expect(handlers).toHaveLength(2);
   });
 

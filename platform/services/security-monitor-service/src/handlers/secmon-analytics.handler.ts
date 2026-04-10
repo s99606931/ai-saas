@@ -82,13 +82,14 @@ export async function loginFailureTrendHandler(
  *
  * 감사 로그 기반 보안 이벤트 유형별 통계
  */
-export async function securityEventStatsHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function securityEventStatsHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const SECURITY_ACTIONS = [
-    'LOGIN_FAILED', 'IP_BLOCKED', 'IP_UNBLOCKED',
-    'AI_GRADE_VIOLATION', 'UNAUTHORIZED_ACCESS', 'SESSION_HIJACK_ATTEMPT',
+    'LOGIN_FAILED',
+    'IP_BLOCKED',
+    'IP_UNBLOCKED',
+    'AI_GRADE_VIOLATION',
+    'UNAUTHORIZED_ACCESS',
+    'SESSION_HIJACK_ATTEMPT',
   ];
 
   const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);

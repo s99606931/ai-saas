@@ -46,9 +46,7 @@ export async function getMenuTreeHandler(
   // CSAP D-08-05: JWT 클레임 기반 테넌트 격리 (Security Ref: FR-N08.6)
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
-  const effectiveTenantId = jwtRole === 'SUPER_ADMIN'
-    ? (request.query.tenantId ?? jwtTenantId)
-    : jwtTenantId;
+  const effectiveTenantId = jwtRole === 'SUPER_ADMIN' ? (request.query.tenantId ?? jwtTenantId) : jwtTenantId;
 
   if (!effectiveTenantId) {
     await reply.status(400).send({
@@ -83,9 +81,7 @@ export async function getFilteredMenuHandler(
   // CSAP D-08-05: JWT 클레임 기반 테넌트 격리 (Security Ref: FR-N08.6)
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
-  const effectiveTenantId = jwtRole === 'SUPER_ADMIN'
-    ? (request.query.tenantId ?? jwtTenantId)
-    : jwtTenantId;
+  const effectiveTenantId = jwtRole === 'SUPER_ADMIN' ? (request.query.tenantId ?? jwtTenantId) : jwtTenantId;
 
   if (!effectiveTenantId) {
     await reply.status(400).send({
@@ -116,10 +112,7 @@ export async function getFilteredMenuHandler(
  * 메뉴 항목 생성
  * Plan SC: FR-P05.1
  */
-export async function createMenuHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function createMenuHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = createMenuSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -335,9 +328,8 @@ export async function searchMenuHandler(
   // CSAP D-08-05: 테넌트 격리
   const searchJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const searchJwtRole = request.headers['x-user-role'] as string | undefined;
-  const effectiveTenantId = searchJwtRole === 'SUPER_ADMIN'
-    ? (request.query.tenantId ?? searchJwtTenantId)
-    : searchJwtTenantId;
+  const effectiveTenantId =
+    searchJwtRole === 'SUPER_ADMIN' ? (request.query.tenantId ?? searchJwtTenantId) : searchJwtTenantId;
 
   if (!effectiveTenantId) {
     await reply.status(400).send({

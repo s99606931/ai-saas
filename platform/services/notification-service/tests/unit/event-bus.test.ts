@@ -29,10 +29,7 @@ class TestEventBus {
     this.handlerCount = 0;
   }
 
-  on<T extends EventType>(
-    event: T,
-    handler: (payload: NotificationEventMap[T]) => Promise<void> | void,
-  ): void {
+  on<T extends EventType>(event: T, handler: (payload: NotificationEventMap[T]) => Promise<void> | void): void {
     this.emitter.on(event, handler as (...args: unknown[]) => void);
     this.handlerCount++;
   }
@@ -119,7 +116,7 @@ describe('MTU-Q2 event-bus: 이벤트 구독 및 발행', () => {
         email: 'test@example.com',
         tenantId: 't-1',
         name: '테스트',
-      })
+      }),
     ).resolves.not.toThrow();
   });
 

@@ -23,7 +23,10 @@ describe('FR-GW.1: IP 접근 제어', () => {
   it('IP 블랙리스트 파싱이 올바르다', () => {
     const envValue = '192.168.1.100, 10.0.0.50, 172.16.0.1';
     const blacklist = new Set(
-      envValue.split(',').map((ip) => ip.trim()).filter(Boolean),
+      envValue
+        .split(',')
+        .map((ip) => ip.trim())
+        .filter(Boolean),
     );
     expect(blacklist.size).toBe(3);
     expect(blacklist.has('192.168.1.100')).toBe(true);
@@ -33,7 +36,10 @@ describe('FR-GW.1: IP 접근 제어', () => {
   it('빈 블랙리스트는 모든 IP를 허용한다', () => {
     const envValue = '';
     const blacklist = new Set(
-      envValue.split(',').map((ip) => ip.trim()).filter(Boolean),
+      envValue
+        .split(',')
+        .map((ip) => ip.trim())
+        .filter(Boolean),
     );
     expect(blacklist.size).toBe(0);
     expect(blacklist.has('127.0.0.1')).toBe(false);
@@ -185,11 +191,11 @@ describe('FR-GW.5: 느린 요청 감지', () => {
 describe('API 게이트웨이 보안 강화 종합 검증', () => {
   it('CSAP D-10 네트워크 보안 요건이 모두 구현되었다', () => {
     const d10Features = {
-      ipAccessControl: true,    // FR-GW.1
-      payloadSizeLimit: true,   // FR-GW.2
-      securityHeaders: true,    // FR-GW.4
-      rateLimiting: true,       // 기존 구현
-      cors: true,               // 기존 구현
+      ipAccessControl: true, // FR-GW.1
+      payloadSizeLimit: true, // FR-GW.2
+      securityHeaders: true, // FR-GW.4
+      rateLimiting: true, // 기존 구현
+      cors: true, // 기존 구현
     };
 
     expect(Object.values(d10Features).every(Boolean)).toBe(true);
@@ -197,10 +203,10 @@ describe('API 게이트웨이 보안 강화 종합 검증', () => {
 
   it('운영 모니터링 기능이 구현되었다', () => {
     const monitoringFeatures = {
-      circuitBreakerStatus: true,  // FR-GW.3
-      slowRequestDetection: true,  // FR-GW.5
-      healthCheck: true,           // 기존 구현
-      auditLogging: true,          // 기존 구현
+      circuitBreakerStatus: true, // FR-GW.3
+      slowRequestDetection: true, // FR-GW.5
+      healthCheck: true, // 기존 구현
+      auditLogging: true, // 기존 구현
     };
 
     expect(Object.values(monitoringFeatures).every(Boolean)).toBe(true);

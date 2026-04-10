@@ -49,9 +49,7 @@ async function getPublicKey(): Promise<KeyLike> {
  * @param payload - 토큰 페이로드
  * @returns JWT 토큰 문자열
  */
-export async function signAccessToken(
-  payload: Omit<TokenPayload, 'iat' | 'exp'>,
-): Promise<string> {
+export async function signAccessToken(payload: Omit<TokenPayload, 'iat' | 'exp'>): Promise<string> {
   const privateKey = await getPrivateKey();
 
   // Plan SC: FR-AUTH.5 — kid 헤더 포함 (키 회전 지원)
@@ -74,10 +72,7 @@ export async function signAccessToken(
  * @param tenantId - 테넌트 ID
  * @returns JWT 갱신 토큰 문자열
  */
-export async function signRefreshToken(
-  userId: string,
-  tenantId: string,
-): Promise<string> {
+export async function signRefreshToken(userId: string, tenantId: string): Promise<string> {
   const privateKey = await getPrivateKey();
 
   // Plan SC: FR-AUTH.5 — kid 헤더 포함 (키 회전 지원)

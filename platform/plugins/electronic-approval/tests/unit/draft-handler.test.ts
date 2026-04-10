@@ -47,7 +47,7 @@ describe('POST /drafts (기안 생성)', () => {
       }),
     });
     expect(res.status).toBe(201);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('id');
     expect(data.status).toBe('draft');
     expect(data.tenantId).toBe('test-tenant-001');
@@ -59,7 +59,9 @@ describe('POST /drafts (기안 생성)', () => {
       method: 'POST',
       headers: NO_AUTH_HEADERS,
       body: JSON.stringify({
-        title: '테스트', content: '본문', category: 'general',
+        title: '테스트',
+        content: '본문',
+        category: 'general',
       }),
     });
     expect(res.status).toBe(401);
@@ -71,11 +73,13 @@ describe('POST /drafts (기안 생성)', () => {
       method: 'POST',
       headers: AUTH_HEADERS,
       body: JSON.stringify({
-        title: '', content: '본문', category: 'general',
+        title: '',
+        content: '본문',
+        category: 'general',
       }),
     });
     expect(res.status).toBe(400);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('error');
   });
 
@@ -84,7 +88,9 @@ describe('POST /drafts (기안 생성)', () => {
       method: 'POST',
       headers: AUTH_HEADERS,
       body: JSON.stringify({
-        title: '제목', content: '본문', category: 'invalid',
+        title: '제목',
+        content: '본문',
+        category: 'invalid',
       }),
     });
     expect(res.status).toBe(400);
@@ -100,7 +106,7 @@ describe('GET /drafts (기안 목록 조회)', () => {
       headers: AUTH_HEADERS,
     });
     expect(res.status).toBe(200);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('items');
     expect(data).toHaveProperty('total');
   });
@@ -123,7 +129,7 @@ describe('GET /drafts/:id (기안 상세 조회)', () => {
       headers: AUTH_HEADERS,
     });
     expect(res.status).toBe(200);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('id');
   });
 
@@ -146,7 +152,7 @@ describe('PUT /drafts/:id (기안 수정)', () => {
       body: JSON.stringify({ title: '수정된 제목' }),
     });
     expect(res.status).toBe(200);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('updatedAt');
   });
 
@@ -178,7 +184,7 @@ describe('DELETE /drafts/:id (기안 삭제)', () => {
       headers: AUTH_HEADERS,
     });
     expect(res.status).toBe(200);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('deleted', true);
   });
 
@@ -206,7 +212,7 @@ describe('POST /drafts/:id/lines (결재선 설정)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('approvers');
   });
 
@@ -239,7 +245,7 @@ describe('POST /drafts/:id/approve (승인)', () => {
       body: JSON.stringify({ comment: '승인합니다' }),
     });
     expect(res.status).toBe(200);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('action', 'approved');
   });
 
@@ -262,7 +268,7 @@ describe('POST /drafts/:id/reject (반려)', () => {
       body: JSON.stringify({ comment: '수정 후 재제출 바랍니다' }),
     });
     expect(res.status).toBe(200);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('action', 'rejected');
   });
 
@@ -285,7 +291,7 @@ describe('POST /drafts/:id/hold (보류)', () => {
       body: JSON.stringify({ comment: '추가 검토 필요' }),
     });
     expect(res.status).toBe(200);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('action', 'held');
   });
 
@@ -307,7 +313,7 @@ describe('GET /documents (문서 목록 조회)', () => {
       headers: AUTH_HEADERS,
     });
     expect(res.status).toBe(200);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('items');
     expect(data).toHaveProperty('total');
   });

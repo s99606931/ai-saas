@@ -40,9 +40,7 @@ export async function computeHash(entry: AuditEntry): Promise<string> {
  * @param entries - 시간순으로 정렬된 감사 로그 엔트리 배열
  * @returns 무결성 검증 결과
  */
-export async function verifyChainIntegrity(
-  entries: AuditEntry[],
-): Promise<{ valid: boolean; brokenAt?: number }> {
+export async function verifyChainIntegrity(entries: AuditEntry[]): Promise<{ valid: boolean; brokenAt?: number }> {
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
     if (!entry) continue;

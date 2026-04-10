@@ -65,11 +65,7 @@ describe('FR-SUB.3: expiringSubscriptionsHandler', () => {
   });
 
   it('만료일 오름차순 정렬', () => {
-    const dates = [
-      new Date('2026-04-20'),
-      new Date('2026-04-12'),
-      new Date('2026-04-18'),
-    ];
+    const dates = [new Date('2026-04-20'), new Date('2026-04-12'), new Date('2026-04-18')];
     const sorted = [...dates].sort((a, b) => a.getTime() - b.getTime());
     expect(sorted[0]!.getDate()).toBe(12);
   });
@@ -139,10 +135,7 @@ describe('FR-SUB.4: subscriptionStatsHandler', () => {
 
 describe('CSAP 준수: Subscription Stats', () => {
   it('D-08-05: 두 핸들러 모두 테넌트 격리 적용', () => {
-    const handlersWithIsolation = [
-      'expiringSubscriptionsHandler',
-      'subscriptionStatsHandler',
-    ];
+    const handlersWithIsolation = ['expiringSubscriptionsHandler', 'subscriptionStatsHandler'];
     expect(handlersWithIsolation).toHaveLength(2);
   });
 

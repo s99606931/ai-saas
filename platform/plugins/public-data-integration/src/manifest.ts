@@ -9,16 +9,7 @@ export const manifest = {
   port: 3021,
   routes: {
     prefix: '/api/v1',
-    endpoints: [
-      'GET    /datasets',
-      'GET    /datasets/:id',
-      'GET    /datasets/:id/data',
-      'POST   /datasets/transform',
-    ],
+    endpoints: ['GET    /datasets', 'GET    /datasets/:id', 'GET    /datasets/:id/data', 'POST   /datasets/transform'],
   },
-  permissions: [
-    'dataset:search',
-    'dataset:read',
-    'dataset:transform',
-  ],
+  permissions: ['dataset:search', 'dataset:read', 'dataset:transform'],
 } as const;

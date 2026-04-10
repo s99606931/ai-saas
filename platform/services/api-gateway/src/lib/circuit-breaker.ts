@@ -23,7 +23,7 @@ interface CircuitBreakerOptions {
 
 const DEFAULT_OPTIONS: CircuitBreakerOptions = {
   failureThreshold: 5,
-  resetTimeout: 30000,   // 30초
+  resetTimeout: 30000, // 30초
   requestTimeout: 10000, // 10초
 };
 
@@ -81,10 +81,7 @@ class CircuitBreakerManager {
         circuit.state = 'HALF_OPEN';
         circuit.successCount = 0;
       } else {
-        throw new CircuitOpenError(
-          serviceId,
-          this.options.resetTimeout - elapsed,
-        );
+        throw new CircuitOpenError(serviceId, this.options.resetTimeout - elapsed);
       }
     }
 
@@ -177,7 +174,9 @@ export class CircuitOpenError extends Error {
   public readonly retryAfterMs: number;
 
   constructor(serviceId: string, retryAfterMs: number) {
-    super(`Circuit breaker OPEN: 서비스 '${serviceId}'가 일시적으로 차단되었습니다. ${Math.ceil(retryAfterMs / 1000)}초 후 재시도하세요.`);
+    super(
+      `Circuit breaker OPEN: 서비스 '${serviceId}'가 일시적으로 차단되었습니다. ${Math.ceil(retryAfterMs / 1000)}초 후 재시도하세요.`,
+    );
     this.name = 'CircuitOpenError';
     this.serviceId = serviceId;
     this.retryAfterMs = retryAfterMs;
@@ -187,7 +186,7 @@ export class CircuitOpenError extends Error {
 /** 싱글턴 인스턴스 */
 export const circuitBreaker = new CircuitBreakerManager({
   failureThreshold: 5,
-  resetTimeout: 30000,   // 30초
+  resetTimeout: 30000, // 30초
   requestTimeout: 10000, // 10초
 });
 

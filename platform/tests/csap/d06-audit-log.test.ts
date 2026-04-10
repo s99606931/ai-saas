@@ -105,6 +105,8 @@ function findTsFiles(dir: string): string[] {
         files.push(fullPath);
       }
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return files;
 }

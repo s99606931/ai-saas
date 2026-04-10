@@ -35,8 +35,7 @@ describe('FR-SEC.1: 보안 대시보드', () => {
 
   it('AI_GRADE_VIOLATION은 critical이다', () => {
     const action = 'AI_GRADE_VIOLATION';
-    const severity = (action === 'AI_GRADE_VIOLATION' || action === 'SESSION_HIJACK_ATTEMPT')
-      ? 'critical' : 'high';
+    const severity = action === 'AI_GRADE_VIOLATION' || action === 'SESSION_HIJACK_ATTEMPT' ? 'critical' : 'high';
     expect(severity).toBe('critical');
   });
 });
@@ -72,7 +71,8 @@ describe('FR-SEC.2: IP 차단 만료 정리', () => {
 // ── FR-SEC.3: IP 형식 검증 ──
 
 describe('FR-SEC.3: IP 형식 검증', () => {
-  const IP_PATTERN = /^(?:(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?|[0-9a-fA-F:]+(?:\/\d{1,3})?|::1|::ffff:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/;
+  const IP_PATTERN =
+    /^(?:(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?|[0-9a-fA-F:]+(?:\/\d{1,3})?|::1|::ffff:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/;
 
   it('유효한 IPv4를 허용한다', () => {
     expect(IP_PATTERN.test('192.168.1.1')).toBe(true);
@@ -174,8 +174,11 @@ describe('CSAP 준수: 보안 서비스', () => {
 
   it('보안 이벤트 5종이 모니터링된다', () => {
     const events = [
-      'LOGIN_FAILED', 'IP_BLOCKED', 'AI_GRADE_VIOLATION',
-      'UNAUTHORIZED_ACCESS', 'SESSION_HIJACK_ATTEMPT',
+      'LOGIN_FAILED',
+      'IP_BLOCKED',
+      'AI_GRADE_VIOLATION',
+      'UNAUTHORIZED_ACCESS',
+      'SESSION_HIJACK_ATTEMPT',
     ];
     expect(events).toHaveLength(5);
   });

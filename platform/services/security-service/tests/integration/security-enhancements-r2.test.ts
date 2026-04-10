@@ -40,7 +40,8 @@ describe('IP 차단 고도화', () => {
   });
 
   it('CIDR 표기 IPv4가 허용된다', () => {
-    const IP_PATTERN = /^(?:(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?|[0-9a-fA-F:]+(?:\/\d{1,3})?|::1|::ffff:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/;
+    const IP_PATTERN =
+      /^(?:(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?|[0-9a-fA-F:]+(?:\/\d{1,3})?|::1|::ffff:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/;
     expect(IP_PATTERN.test('192.168.0.0/24')).toBe(true);
     expect(IP_PATTERN.test('10.0.0.0/8')).toBe(true);
     expect(IP_PATTERN.test('not-an-ip')).toBe(false);
@@ -61,8 +62,11 @@ describe('위협 추이 고도화', () => {
 describe('CSAP 강화: 보안 서비스', () => {
   it('보안 이벤트 5종이 모두 모니터링된다', () => {
     const events = [
-      'LOGIN_FAILED', 'IP_BLOCKED', 'AI_GRADE_VIOLATION',
-      'UNAUTHORIZED_ACCESS', 'SESSION_HIJACK_ATTEMPT',
+      'LOGIN_FAILED',
+      'IP_BLOCKED',
+      'AI_GRADE_VIOLATION',
+      'UNAUTHORIZED_ACCESS',
+      'SESSION_HIJACK_ATTEMPT',
     ];
     expect(events).toHaveLength(5);
   });

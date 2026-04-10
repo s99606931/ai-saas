@@ -10,10 +10,7 @@ import { prisma } from '../lib/prisma.js';
 const PERMANENT_LOCK = new Date('9999-12-31T23:59:59.000Z');
 
 /** 기본 비활성 기준 일수 */
-const DEFAULT_INACTIVE_DAYS = parseInt(
-  process.env['INACTIVE_THRESHOLD_DAYS'] ?? '90',
-  10,
-);
+const DEFAULT_INACTIVE_DAYS = parseInt(process.env['INACTIVE_THRESHOLD_DAYS'] ?? '90', 10);
 
 /**
  * 비활성 계정 목록 조회
@@ -44,9 +41,7 @@ export async function listInactiveUsersHandler(
   const jwtRole = request.headers['x-user-role'] as string | undefined;
 
   // CSAP D-08-05: 테넌트 격리
-  const tenantId = jwtRole === 'SUPER_ADMIN'
-    ? (request.query.tenantId ?? jwtTenantId)
-    : jwtTenantId;
+  const tenantId = jwtRole === 'SUPER_ADMIN' ? (request.query.tenantId ?? jwtTenantId) : jwtTenantId;
 
   if (!tenantId) {
     await reply.status(400).send({
@@ -64,10 +59,7 @@ export async function listInactiveUsersHandler(
   // 영구 비활성화(소프트 삭제)된 사용자는 제외
   const where = {
     tenantId,
-    OR: [
-      { lastLoginAt: null },
-      { lastLoginAt: { lt: thresholdDate } },
-    ],
+    OR: [{ lastLoginAt: null }, { lastLoginAt: { lt: thresholdDate } }],
     // 영구 비활성화 제외
     NOT: { lockedUntil: PERMANENT_LOCK },
   };

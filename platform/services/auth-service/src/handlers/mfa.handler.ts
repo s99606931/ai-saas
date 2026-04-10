@@ -24,10 +24,7 @@ const MFA_PENDING_TTL_SECONDS = 600; // 10분 (setup 후 verify까지 허용 시
  * POST /auth/mfa/setup
  * 인증 필요 (request.user 존재)
  */
-export async function mfaSetupHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function mfaSetupHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   if (!request.user) {
     await reply.status(401).send({
       success: false,
@@ -83,18 +80,19 @@ export async function mfaSetupHandler(
 
   // CSAP D-08-08: Redis에 임시 시크릿 저장 (verify 전까지 서버 측 관리)
   // 클라이언트가 시크릿을 변조하여 verify하는 것을 방지
-  await redis.set(
-    MFA_PENDING_KEY(user.sub),
-    secret,
-    'EX',
-    MFA_PENDING_TTL_SECONDS,
-  );
+  await redis.set(MFA_PENDING_KEY(user.sub), secret, 'EX', MFA_PENDING_TTL_SECONDS);
 
   // otpauth URI 생성
   const issuer = 'PublicSaaS';
   const otpauthUri = `otpauth://totp/${issuer}:${dbUser.email}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
 
-  await logAuthEvent('MFA_SETUP_STARTED', user.sub, dbUser.tenantId, request.ip, request.headers['user-agent'] ?? 'unknown');
+  await logAuthEvent(
+    'MFA_SETUP_STARTED',
+    user.sub,
+    dbUser.tenantId,
+    request.ip,
+    request.headers['user-agent'] ?? 'unknown',
+  );
 
   await reply.status(200).send({
     success: true,
@@ -110,10 +108,7 @@ export async function mfaSetupHandler(
  *
  * POST /auth/mfa/verify
  */
-export async function mfaVerifyHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function mfaVerifyHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   if (!request.user) {
     await reply.status(401).send({
       success: false,
@@ -180,10 +175,7 @@ export async function mfaVerifyHandler(
  *
  * DELETE /auth/mfa
  */
-export async function mfaDisableHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function mfaDisableHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   if (!request.user) {
     await reply.status(401).send({
       success: false,

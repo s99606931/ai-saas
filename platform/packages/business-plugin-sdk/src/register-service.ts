@@ -51,9 +51,7 @@ export interface ServiceRegistration {
  * });
  * ```
  */
-export async function registerService(
-  manifest: ServiceManifest,
-): Promise<ServiceRegistration> {
+export async function registerService(manifest: ServiceManifest): Promise<ServiceRegistration> {
   // NOTE: 실제 구현은 MTU-P18에서 API 게이트웨이 연동으로 완성
   // 현재는 인터페이스 스켈레톤
   const basePath = `/api/v1/${manifest.id}`;

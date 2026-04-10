@@ -89,10 +89,7 @@ export const SERVICE_REGISTRY: Record<string, ServiceEntry> = {
  */
 const dynamicServices: Map<string, ServiceEntry> = new Map();
 
-export function registerBusinessService(
-  id: string,
-  entry: ServiceEntry,
-): void {
+export function registerBusinessService(id: string, entry: ServiceEntry): void {
   dynamicServices.set(id, entry);
 }
 

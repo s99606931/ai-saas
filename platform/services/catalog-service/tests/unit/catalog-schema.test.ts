@@ -8,7 +8,11 @@ import { z } from 'zod';
 
 const createServiceSchema = z.object({
   name: z.string().min(1, '서비스명은 필수입니다').max(200),
-  slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/),
+  slug: z
+    .string()
+    .min(2)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/),
   description: z.string().optional(),
   category: z.string().min(1),
   version: z.string().default('1.0.0'),
@@ -43,47 +47,77 @@ describe('createServiceSchema (CSAP D-12 입력 검증)', () => {
   });
 
   it('빈 서비스명을 거부한다', () => {
-    expect(createServiceSchema.safeParse({
-      name: '', slug: 'ab', category: 'test',
-    }).success).toBe(false);
+    expect(
+      createServiceSchema.safeParse({
+        name: '',
+        slug: 'ab',
+        category: 'test',
+      }).success,
+    ).toBe(false);
   });
 
   it('서비스명 200자 초과를 거부한다', () => {
-    expect(createServiceSchema.safeParse({
-      name: 'a'.repeat(201), slug: 'ab', category: 'test',
-    }).success).toBe(false);
+    expect(
+      createServiceSchema.safeParse({
+        name: 'a'.repeat(201),
+        slug: 'ab',
+        category: 'test',
+      }).success,
+    ).toBe(false);
   });
 
   it('slug에 대문자를 거부한다', () => {
-    expect(createServiceSchema.safeParse({
-      name: 'Test', slug: 'InvalidSlug', category: 'test',
-    }).success).toBe(false);
+    expect(
+      createServiceSchema.safeParse({
+        name: 'Test',
+        slug: 'InvalidSlug',
+        category: 'test',
+      }).success,
+    ).toBe(false);
   });
 
   it('slug에 특수문자를 거부한다 (하이픈 제외)', () => {
-    expect(createServiceSchema.safeParse({
-      name: 'T', slug: 'a_b', category: 'test',
-    }).success).toBe(false);
-    expect(createServiceSchema.safeParse({
-      name: 'T', slug: 'a.b', category: 'test',
-    }).success).toBe(false);
+    expect(
+      createServiceSchema.safeParse({
+        name: 'T',
+        slug: 'a_b',
+        category: 'test',
+      }).success,
+    ).toBe(false);
+    expect(
+      createServiceSchema.safeParse({
+        name: 'T',
+        slug: 'a.b',
+        category: 'test',
+      }).success,
+    ).toBe(false);
   });
 
   it('slug 최소 2자를 요구한다', () => {
-    expect(createServiceSchema.safeParse({
-      name: 'T', slug: 'a', category: 'test',
-    }).success).toBe(false);
+    expect(
+      createServiceSchema.safeParse({
+        name: 'T',
+        slug: 'a',
+        category: 'test',
+      }).success,
+    ).toBe(false);
   });
 
   it('빈 category를 거부한다', () => {
-    expect(createServiceSchema.safeParse({
-      name: 'T', slug: 'ab', category: '',
-    }).success).toBe(false);
+    expect(
+      createServiceSchema.safeParse({
+        name: 'T',
+        slug: 'ab',
+        category: '',
+      }).success,
+    ).toBe(false);
   });
 
   it('isBuiltIn 기본값 false가 적용된다', () => {
     const result = createServiceSchema.safeParse({
-      name: 'T', slug: 'ab', category: 'test',
+      name: 'T',
+      slug: 'ab',
+      category: 'test',
     });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.isBuiltIn).toBe(false);
@@ -91,7 +125,9 @@ describe('createServiceSchema (CSAP D-12 입력 검증)', () => {
 
   it('config 객체를 허용한다', () => {
     const result = createServiceSchema.safeParse({
-      name: 'T', slug: 'ab', category: 'test',
+      name: 'T',
+      slug: 'ab',
+      category: 'test',
       config: { maxRetries: 3, timeout: 5000 },
     });
     expect(result.success).toBe(true);

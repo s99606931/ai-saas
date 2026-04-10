@@ -32,13 +32,8 @@ export interface VerifyTokenOptions {
  * });
  * ```
  */
-export async function verifyToken(
-  _token: string,
-  _options: VerifyTokenOptions,
-): Promise<TokenPayload> {
+export async function verifyToken(_token: string, _options: VerifyTokenOptions): Promise<TokenPayload> {
   // NOTE: 실제 구현은 MTU-P01 (인증 서비스)에서 jsonwebtoken 또는 jose 라이브러리로 구현
   // 현재는 인터페이스 스켈레톤
-  throw new Error(
-    'verifyToken은 MTU-P01 구현 시 완성됩니다. jose 라이브러리 RS256 검증 사용 예정.',
-  );
+  throw new Error('verifyToken은 MTU-P01 구현 시 완성됩니다. jose 라이브러리 RS256 검증 사용 예정.');
 }

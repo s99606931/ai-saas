@@ -29,11 +29,7 @@ describe('CRM 계약 만료 고도화', () => {
 
 describe('CRM 통계 고도화', () => {
   it('계약 금액 합계/평균이 올바르다', () => {
-    const contracts = [
-      { value: 1000000 },
-      { value: 2000000 },
-      { value: 3000000 },
-    ];
+    const contracts = [{ value: 1000000 }, { value: 2000000 }, { value: 3000000 }];
     const sum = contracts.reduce((s, c) => s + c.value, 0);
     const avg = sum / contracts.length;
     expect(sum).toBe(6000000);

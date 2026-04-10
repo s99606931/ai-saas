@@ -29,10 +29,7 @@ import { decryptMfaSecret } from '../lib/mfa-crypto.js';
  * 8. 세션 생성 (Redis, 최대 3개)
  * 9. 감사 로그 기록 (CSAP D-06)
  */
-export async function loginHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function loginHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // 1. 입력 검증
   const parseResult = loginSchema.safeParse(request.body);
   if (!parseResult.success) {
@@ -101,9 +98,7 @@ export async function loginHandler(
 
     // 5회 실패 → 30분 잠금 (CSAP D-08-06)
     if (newFailedCount >= AUTH_CONSTANTS.MAX_LOGIN_ATTEMPTS) {
-      updateData['lockedUntil'] = new Date(
-        Date.now() + AUTH_CONSTANTS.ACCOUNT_LOCK_DURATION_SECONDS * 1000,
-      );
+      updateData['lockedUntil'] = new Date(Date.now() + AUTH_CONSTANTS.ACCOUNT_LOCK_DURATION_SECONDS * 1000);
     }
 
     await prisma.user.update({

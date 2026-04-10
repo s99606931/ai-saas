@@ -6,10 +6,7 @@
 import bcrypt from 'bcryptjs';
 
 /** 비밀번호 이력 보관 수 (환경 변수, 기본 5개) */
-const HISTORY_COUNT = parseInt(
-  process.env['PASSWORD_HISTORY_COUNT'] ?? '5',
-  10,
-);
+const HISTORY_COUNT = parseInt(process.env['PASSWORD_HISTORY_COUNT'] ?? '5', 10);
 
 /**
  * 인메모리 비밀번호 이력 저장소
@@ -29,10 +26,7 @@ const passwordHistoryStore = new Map<string, string[]>();
  * @param newPassword - 새 비밀번호 (평문)
  * @returns true이면 재사용, false이면 신규
  */
-export async function isPasswordReused(
-  userId: string,
-  newPassword: string,
-): Promise<boolean> {
+export async function isPasswordReused(userId: string, newPassword: string): Promise<boolean> {
   const history = passwordHistoryStore.get(userId) ?? [];
 
   for (const oldHash of history) {
@@ -51,10 +45,7 @@ export async function isPasswordReused(
  * @param userId - 사용자 ID
  * @param passwordHash - bcrypt 해시된 비밀번호
  */
-export function addPasswordHistory(
-  userId: string,
-  passwordHash: string,
-): void {
+export function addPasswordHistory(userId: string, passwordHash: string): void {
   const history = passwordHistoryStore.get(userId) ?? [];
   history.unshift(passwordHash);
 

@@ -27,10 +27,7 @@ const topNQuerySchema = z.object({
  *
  * 지정 필드별 이벤트 수를 집계합니다.
  */
-export async function analyticsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function analyticsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = analyticsQuerySchema.safeParse(request.query);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -76,10 +73,7 @@ export async function analyticsHandler(
  * FR-AUDIT.2: 행위자별 Top-N
  * GET /audit/analytics/top-actors
  */
-export async function topActorsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function topActorsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = topNQuerySchema.safeParse(request.query);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -121,10 +115,7 @@ export async function topActorsHandler(
  * FR-AUDIT.2: 행위별 Top-N
  * GET /audit/analytics/top-actions
  */
-export async function topActionsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function topActionsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = topNQuerySchema.safeParse(request.query);
   if (!parseResult.success) {
     await reply.status(400).send({

@@ -28,9 +28,7 @@ describe('FR-TENANT.1: 테넌트 리소스 사용량', () => {
 
     expect(response.data.users.utilizationPercent).toBe(50);
     expect(response.data.storage.utilizationPercent).toBe(50);
-    expect(parseInt(response.data.storage.usedBytes)).toBeLessThanOrEqual(
-      parseInt(response.data.storage.maxBytes),
-    );
+    expect(parseInt(response.data.storage.usedBytes)).toBeLessThanOrEqual(parseInt(response.data.storage.maxBytes));
   });
 
   it('사용률 계산이 올바르다', () => {

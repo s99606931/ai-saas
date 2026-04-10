@@ -25,7 +25,7 @@ describe('인증 플로우 E2E', () => {
 
     // 2. 보호된 API 접근 (인증 있음)
     const protectedRes = await fetch(`${BASE_URL}/users/me`, {
-      headers: { 'Authorization': `Bearer ${accessToken}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     expect(protectedRes.status).toBe(200);
 

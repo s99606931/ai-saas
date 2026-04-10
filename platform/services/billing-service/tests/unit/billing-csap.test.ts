@@ -9,11 +9,15 @@ import { z } from 'zod';
 const generateInvoiceSchema = z.object({
   tenantId: z.string().min(1),
   period: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'YYYY-MM 형식 필수'),
-  items: z.array(z.object({
-    description: z.string().min(1),
-    quantity: z.number().int().min(1),
-    unitPrice: z.number().min(0),
-  })).min(1, '최소 1개 항목 필수'),
+  items: z
+    .array(
+      z.object({
+        description: z.string().min(1),
+        quantity: z.number().int().min(1),
+        unitPrice: z.number().min(0),
+      }),
+    )
+    .min(1, '최소 1개 항목 필수'),
 });
 
 const payInvoiceSchema = z.object({
@@ -33,51 +37,63 @@ describe('CSAP D-12: 과금 입력 검증', () => {
   });
 
   it('잘못된 기간 형식을 거부한다', () => {
-    expect(generateInvoiceSchema.safeParse({
-      tenantId: 'tenant-1',
-      period: '2026/04',
-      items: [{ description: '이용료', quantity: 1, unitPrice: 50000 }],
-    }).success).toBe(false);
+    expect(
+      generateInvoiceSchema.safeParse({
+        tenantId: 'tenant-1',
+        period: '2026/04',
+        items: [{ description: '이용료', quantity: 1, unitPrice: 50000 }],
+      }).success,
+    ).toBe(false);
   });
 
   it('빈 항목 배열을 거부한다', () => {
-    expect(generateInvoiceSchema.safeParse({
-      tenantId: 'tenant-1',
-      period: '2026-04',
-      items: [],
-    }).success).toBe(false);
+    expect(
+      generateInvoiceSchema.safeParse({
+        tenantId: 'tenant-1',
+        period: '2026-04',
+        items: [],
+      }).success,
+    ).toBe(false);
   });
 
   it('음수 단가를 거부한다', () => {
-    expect(generateInvoiceSchema.safeParse({
-      tenantId: 'tenant-1',
-      period: '2026-04',
-      items: [{ description: '이용료', quantity: 1, unitPrice: -100 }],
-    }).success).toBe(false);
+    expect(
+      generateInvoiceSchema.safeParse({
+        tenantId: 'tenant-1',
+        period: '2026-04',
+        items: [{ description: '이용료', quantity: 1, unitPrice: -100 }],
+      }).success,
+    ).toBe(false);
   });
 
   it('수량 0을 거부한다', () => {
-    expect(generateInvoiceSchema.safeParse({
-      tenantId: 'tenant-1',
-      period: '2026-04',
-      items: [{ description: '이용료', quantity: 0, unitPrice: 100 }],
-    }).success).toBe(false);
+    expect(
+      generateInvoiceSchema.safeParse({
+        tenantId: 'tenant-1',
+        period: '2026-04',
+        items: [{ description: '이용료', quantity: 0, unitPrice: 100 }],
+      }).success,
+    ).toBe(false);
   });
 
   it('잘못된 결제 수단을 거부한다', () => {
-    expect(payInvoiceSchema.safeParse({
-      invoiceId: 'inv-1',
-      method: 'BITCOIN',
-      amount: 50000,
-    }).success).toBe(false);
+    expect(
+      payInvoiceSchema.safeParse({
+        invoiceId: 'inv-1',
+        method: 'BITCOIN',
+        amount: 50000,
+      }).success,
+    ).toBe(false);
   });
 
   it('음수 결제 금액을 거부한다', () => {
-    expect(payInvoiceSchema.safeParse({
-      invoiceId: 'inv-1',
-      method: 'CARD',
-      amount: -1,
-    }).success).toBe(false);
+    expect(
+      payInvoiceSchema.safeParse({
+        invoiceId: 'inv-1',
+        method: 'CARD',
+        amount: -1,
+      }).success,
+    ).toBe(false);
   });
 });
 
@@ -96,12 +112,7 @@ describe('CSAP D-09: 과금 데이터 보안', () => {
 
 describe('CSAP D-06: 과금 감사 로그', () => {
   it('과금 이벤트가 정의된다', () => {
-    const events = [
-      'INVOICE_GENERATED',
-      'INVOICE_PAID',
-      'PAYMENT_RECEIVED',
-      'TAX_INVOICE_GENERATED',
-    ];
+    const events = ['INVOICE_GENERATED', 'INVOICE_PAID', 'PAYMENT_RECEIVED', 'TAX_INVOICE_GENERATED'];
     expect(events.length).toBe(4);
   });
 

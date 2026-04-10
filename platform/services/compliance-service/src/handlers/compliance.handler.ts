@@ -31,13 +31,13 @@ const CSAP_DOMAINS: CsapDomainConfig[] = [
   { id: 'D-02', name: '정보보호 조직', items: 3, implementedItems: 3 },
   { id: 'D-03', name: '자산 관리', items: 4, implementedItems: 4 },
   { id: 'D-04', name: '인적 보안', items: 5, implementedItems: 5 },
-  { id: 'D-05', name: '물리적 보안', items: 4, implementedItems: 3 },   // 물리 보안 1항목: 운영 환경 구성 시 충족
+  { id: 'D-05', name: '물리적 보안', items: 4, implementedItems: 3 }, // 물리 보안 1항목: 운영 환경 구성 시 충족
   { id: 'D-06', name: '침해사고 관리', items: 5, implementedItems: 5 },
-  { id: 'D-07', name: '서비스 연속성', items: 3, implementedItems: 2 },  // DR/백업 1항목: 인프라 구성 시 충족
+  { id: 'D-07', name: '서비스 연속성', items: 3, implementedItems: 2 }, // DR/백업 1항목: 인프라 구성 시 충족
   { id: 'D-08', name: '접근 통제', items: 12, implementedItems: 12 },
   { id: 'D-09', name: '암호화', items: 4, implementedItems: 4 },
-  { id: 'D-10', name: '네트워크 보안', items: 8, implementedItems: 6 },  // 방화벽/IDS 2항목: 인프라 구성 시 충족
-  { id: 'D-11', name: '시스템 보안', items: 7, implementedItems: 6 },    // OS 보안 1항목: 운영 환경 구성 시 충족
+  { id: 'D-10', name: '네트워크 보안', items: 8, implementedItems: 6 }, // 방화벽/IDS 2항목: 인프라 구성 시 충족
+  { id: 'D-11', name: '시스템 보안', items: 7, implementedItems: 6 }, // OS 보안 1항목: 운영 환경 구성 시 충족
   { id: 'D-12', name: '시스템 개발 보안', items: 10, implementedItems: 10 },
   { id: 'D-13', name: '공급망 보안', items: 10, implementedItems: 10 },
 ];
@@ -51,7 +51,7 @@ interface N2sfDomainConfig {
 }
 
 const N2SF_DOMAINS: N2sfDomainConfig[] = [
-  { id: 'N-01', name: '네트워크 분리', items: 3, implementedItems: 2, status: 'partial' },  // 물리 망분리 1항목: 인프라 구성 시 충족
+  { id: 'N-01', name: '네트워크 분리', items: 3, implementedItems: 2, status: 'partial' }, // 물리 망분리 1항목: 인프라 구성 시 충족
   { id: 'N-02', name: '데이터 등급 분류', items: 4, implementedItems: 4, status: 'pass' },
   { id: 'N-03', name: '접근 통제', items: 3, implementedItems: 3, status: 'pass' },
   { id: 'N-04', name: '인증 강화', items: 2, implementedItems: 2, status: 'pass' },
@@ -63,10 +63,7 @@ const N2SF_DOMAINS: N2sfDomainConfig[] = [
  * FR-P14.1: CSAP 79항목 준수율 조회
  * GET /compliance/csap
  */
-export async function csapComplianceHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function csapComplianceHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const totalItems = 79; // CSAP 표준등급 13개 분야 79항목 (checklist-master.md 기준)
 
   const domainResults = CSAP_DOMAINS.map((domain) => ({
@@ -92,10 +89,7 @@ export async function csapComplianceHandler(
  * FR-P14.2: N2SF 6영역 현황 조회
  * GET /compliance/n2sf
  */
-export async function n2sfComplianceHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function n2sfComplianceHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const totalItems = N2SF_DOMAINS.reduce((sum, d) => sum + d.items, 0);
   const totalPass = N2SF_DOMAINS.reduce((sum, d) => sum + d.implementedItems, 0);
 
@@ -121,10 +115,7 @@ export async function n2sfComplianceHandler(
  * FR-P14.3: 감리 준비도 점수 계산
  * GET /compliance/readiness
  */
-export async function readinessHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function readinessHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP 동적 준수율 계산
   const csapTotalItems = CSAP_DOMAINS.reduce((sum, d) => sum + d.items, 0);
   const csapTotalPass = CSAP_DOMAINS.reduce((sum, d) => sum + d.implementedItems, 0);
@@ -138,9 +129,7 @@ export async function readinessHandler(
   // 문서 완비율 (PDCA 문서 기준 — 현재 Phase 1 완료 상태)
   const docCompleteness = 100;
 
-  const readinessScore = Math.round(
-    csapRate * 0.4 + n2sfRate * 0.3 + docCompleteness * 0.3,
-  );
+  const readinessScore = Math.round(csapRate * 0.4 + n2sfRate * 0.3 + docCompleteness * 0.3);
 
   await logComplianceEvent('READINESS_CHECK', { readinessScore });
 
@@ -165,10 +154,7 @@ export async function readinessHandler(
  * FR-P14.4: OpenTelemetry 메트릭 수집
  * GET /compliance/metrics
  */
-export async function metricsHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function metricsHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   await reply.send({
     service: 'compliance-service',
     uptime: process.uptime(),
@@ -211,20 +197,15 @@ interface ComplianceGap {
  * GET /compliance/csap/gaps
  * Design Ref: SVC-COMP-R1 DESIGN
  */
-export async function csapGapsHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
-  const gaps: ComplianceGap[] = CSAP_DOMAINS
-    .filter((d) => d.implementedItems < d.items)
-    .map((d) => ({
-      domainId: d.id,
-      domainName: d.name,
-      totalItems: d.items,
-      implementedItems: d.implementedItems,
-      gapCount: d.items - d.implementedItems,
-      recommendation: getGapRecommendation(d.id),
-    }));
+export async function csapGapsHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const gaps: ComplianceGap[] = CSAP_DOMAINS.filter((d) => d.implementedItems < d.items).map((d) => ({
+    domainId: d.id,
+    domainName: d.name,
+    totalItems: d.items,
+    implementedItems: d.implementedItems,
+    gapCount: d.items - d.implementedItems,
+    recommendation: getGapRecommendation(d.id),
+  }));
 
   const totalGaps = gaps.reduce((sum, g) => sum + g.gapCount, 0);
 

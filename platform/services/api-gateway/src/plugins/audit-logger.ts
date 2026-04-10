@@ -10,10 +10,7 @@ import fp from 'fastify-plugin';
 const EXCLUDED_PATHS = new Set(['/health', '/ready', '/health/services']);
 
 /** FR-GW.5: 느린 요청 감지 임계값 (ms) */
-const SLOW_REQUEST_THRESHOLD_MS = parseInt(
-  process.env['SLOW_REQUEST_THRESHOLD_MS'] ?? '5000',
-  10,
-);
+const SLOW_REQUEST_THRESHOLD_MS = parseInt(process.env['SLOW_REQUEST_THRESHOLD_MS'] ?? '5000', 10);
 
 /** 민감 헤더 마스킹 (N2SF 데이터 등급 준수) */
 function maskAuthHeader(value: string | undefined): string {

@@ -61,10 +61,7 @@ const statsQuerySchema = z.object({
  * FR-P13.1: 감사 로그 기록 (append-only)
  * POST /audit/logs
  */
-export async function createAuditLogHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function createAuditLogHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-12: safeParse로 입력 검증 (에러 시 스택 트레이스 미노출)
   const parsed = createAuditLogSchema.safeParse(request.body);
   if (!parsed.success) {
@@ -82,10 +79,7 @@ export async function createAuditLogHandler(
  * FR-P13.3: 감사 로그 조회 (필터, 페이지네이션)
  * GET /audit/logs
  */
-export async function listAuditLogsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function listAuditLogsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-12: safeParse로 입력 검증
   const parseResult = queryAuditLogSchema.safeParse(request.query);
   if (!parseResult.success) {
@@ -134,10 +128,7 @@ export async function listAuditLogsHandler(
  * FR-P13.2, FR-P13.4: SHA-256 체인 무결성 검증
  * POST /audit/verify
  */
-export async function verifyIntegrityHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function verifyIntegrityHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-12: safeParse로 입력 검증
   const parsed = verifySchema.safeParse(request.body);
   if (!parsed.success) {
@@ -160,10 +151,7 @@ export async function verifyIntegrityHandler(
  * FR-P13.6: 감사 로그 내보내기 (CSV, JSON)
  * GET /audit/export
  */
-export async function exportAuditLogsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function exportAuditLogsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-12: safeParse로 입력 검증
   const parseResult = exportSchema.safeParse(request.query);
   if (!parseResult.success) {
@@ -226,10 +214,7 @@ export async function exportAuditLogsHandler(
  * FR-P13.5: 감사 로그 통계 (보존 현황)
  * GET /audit/stats
  */
-export async function auditStatsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function auditStatsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-12: safeParse로 쿼리 파라미터 검증
   const parseResult = statsQuerySchema.safeParse(request.query);
   if (!parseResult.success) {

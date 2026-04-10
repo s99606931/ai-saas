@@ -4,12 +4,7 @@
 // CSAP: D-11 시스템 보안 -- 캐시 무결성 검증
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  getCached,
-  setCache,
-  invalidateCache,
-  getCacheStats,
-} from '../../src/lib/cache';
+import { getCached, setCache, invalidateCache, getCacheStats } from '../../src/lib/cache';
 
 // 테스트 격리를 위해 각 테스트 전에 캐시를 초기화
 // 캐시 모듈 내부 Map을 직접 접근할 수 없으므로 고유 키를 사용
@@ -93,7 +88,7 @@ describe('캐시 TTL (만료)', () => {
     const key = uniqueKey('ttl-expired');
     await setCache(key, 'data', 0);
     // 약간의 지연 후 조회
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
     const cached = await getCached(key);
     expect(cached).toBeNull();
   });

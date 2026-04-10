@@ -9,7 +9,11 @@ import { prisma } from '../lib/prisma.js';
 
 const createServiceSchema = z.object({
   name: z.string().min(1, '서비스명은 필수입니다').max(200),
-  slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/),
+  slug: z
+    .string()
+    .min(2)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/),
   description: z.string().optional(),
   category: z.string().min(1),
   version: z.string().default('1.0.0'),
@@ -110,10 +114,7 @@ export async function getServiceHandler(
  * 서비스 등록
  * Plan SC: FR-P06.1
  */
-export async function createServiceHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function createServiceHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = createServiceSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({

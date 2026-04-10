@@ -60,10 +60,7 @@ const confirmResetSchema = z.object({
  *
  * 보안: 사용자 존재 여부와 무관하게 동일 응답 (계정 열거 방지)
  */
-export async function requestPasswordResetHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function requestPasswordResetHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = requestResetSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -132,10 +129,7 @@ export async function requestPasswordResetHandler(
  * 비밀번호 재설정 확인
  * CSAP D-08-07: 토큰 검증 + 비밀번호 정책 + 1회 사용 폐기
  */
-export async function confirmPasswordResetHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function confirmPasswordResetHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = confirmResetSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({

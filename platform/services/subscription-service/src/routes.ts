@@ -13,10 +13,7 @@ import {
   downgradeHandler,
   cancelHandler,
 } from './handlers/subscription.handler.js';
-import {
-  expiringSubscriptionsHandler,
-  subscriptionStatsHandler,
-} from './handlers/subscription-stats.handler.js';
+import { expiringSubscriptionsHandler, subscriptionStatsHandler } from './handlers/subscription-stats.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {

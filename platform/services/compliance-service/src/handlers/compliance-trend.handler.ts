@@ -80,10 +80,7 @@ export async function complianceTrendHandler(
  *
  * CSAP + N2SF + 감리 준비도를 단일 응답으로 통합.
  */
-export async function complianceSummaryHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function complianceSummaryHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const csapTotal = 79;
   const csapPass = 74;
   const n2sfTotal = 18;
@@ -98,12 +95,10 @@ export async function complianceSummaryHandler(
     { phase: '인증', rate: 0 },
   ];
 
-  const overallReadiness = Math.round(
-    auditPhases.reduce((sum, p) => sum + p.rate, 0) / auditPhases.length,
-  );
+  const overallReadiness = Math.round(auditPhases.reduce((sum, p) => sum + p.rate, 0) / auditPhases.length);
 
   // 잔여 항목 (미충족)
-  const remainingItems = (csapTotal - csapPass) + (n2sfTotal - n2sfPass);
+  const remainingItems = csapTotal - csapPass + (n2sfTotal - n2sfPass);
 
   await reply.send({
     success: true,

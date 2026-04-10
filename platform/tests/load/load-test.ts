@@ -68,7 +68,8 @@ async function runLoadTest(
           fetchOptions.body = options.body;
         }
         const res = await fetch(`${BASE_URL}${endpoint}`, fetchOptions);
-        if (res.ok) successCount++; else errorCount++;
+        if (res.ok) successCount++;
+        else errorCount++;
       } catch {
         errorCount++;
       }
@@ -83,14 +84,24 @@ async function runLoadTest(
 
   if (totalRequests === 0) {
     return {
-      endpoint, method, totalRequests: 0, successCount: 0, errorCount: 0,
-      avgResponseMs: 0, p50ResponseMs: 0, p95ResponseMs: 0, p99ResponseMs: 0,
-      minResponseMs: 0, maxResponseMs: 0, rps: 0, errorRate: '0%',
+      endpoint,
+      method,
+      totalRequests: 0,
+      successCount: 0,
+      errorCount: 0,
+      avgResponseMs: 0,
+      p50ResponseMs: 0,
+      p95ResponseMs: 0,
+      p99ResponseMs: 0,
+      minResponseMs: 0,
+      maxResponseMs: 0,
+      rps: 0,
+      errorRate: '0%',
     };
   }
 
   const avgResponseMs = responseTimes.reduce((s, v) => s + v, 0) / totalRequests;
-  const p50Index = Math.floor(totalRequests * 0.50);
+  const p50Index = Math.floor(totalRequests * 0.5);
   const p95Index = Math.floor(totalRequests * 0.95);
   const p99Index = Math.floor(totalRequests * 0.99);
   const errorRate = ((errorCount / totalRequests) * 100).toFixed(1);
@@ -123,7 +134,7 @@ async function getAuthToken(): Promise<string | null> {
       body: JSON.stringify({ email: TEST_EMAIL, password: TEST_PASSWORD }),
     });
     if (!res.ok) return null;
-    const data = await res.json() as { data?: { accessToken?: string } };
+    const data = (await res.json()) as { data?: { accessToken?: string } };
     return data.data?.accessToken ?? null;
   } catch {
     return null;
@@ -132,8 +143,12 @@ async function getAuthToken(): Promise<string | null> {
 
 function printResult(result: LoadResult): void {
   console.log(`[${result.method} ${result.endpoint}]`);
-  console.log(`  총 요청: ${result.totalRequests}, 성공: ${result.successCount}, 실패: ${result.errorCount} (${result.errorRate})`);
-  console.log(`  응답시간: 평균=${result.avgResponseMs}ms, P50=${result.p50ResponseMs}ms, P95=${result.p95ResponseMs}ms, P99=${result.p99ResponseMs}ms`);
+  console.log(
+    `  총 요청: ${result.totalRequests}, 성공: ${result.successCount}, 실패: ${result.errorCount} (${result.errorRate})`,
+  );
+  console.log(
+    `  응답시간: 평균=${result.avgResponseMs}ms, P50=${result.p50ResponseMs}ms, P95=${result.p95ResponseMs}ms, P99=${result.p99ResponseMs}ms`,
+  );
   console.log(`  범위: 최소=${result.minResponseMs}ms, 최대=${result.maxResponseMs}ms`);
   console.log(`  RPS: ${result.rps}`);
   console.log('---');
@@ -157,8 +172,8 @@ function printSummary(results: LoadResult[]): void {
   // SLA 기준 판정 (CSAP 성능 요건)
   const SLA_P95_MS = 500;
   const SLA_ERROR_RATE = 1;
-  const p95Pass = results.every(r => r.p95ResponseMs <= SLA_P95_MS);
-  const errorPass = ((totalErrors / totalReqs) * 100) <= SLA_ERROR_RATE;
+  const p95Pass = results.every((r) => r.p95ResponseMs <= SLA_P95_MS);
+  const errorPass = (totalErrors / totalReqs) * 100 <= SLA_ERROR_RATE;
 
   console.log(`SLA 판정 (P95 <= ${SLA_P95_MS}ms): ${p95Pass ? 'PASS' : 'FAIL'}`);
   console.log(`SLA 판정 (오류율 <= ${SLA_ERROR_RATE}%): ${errorPass ? 'PASS' : 'FAIL'}`);
@@ -177,11 +192,7 @@ async function main() {
 
   // ── 시나리오 1: 헬스체크 ──
   console.log('=== 시나리오 1: 헬스체크 ===');
-  const healthEndpoints = [
-    '/health',
-    '/api/v1/auth/health',
-    '/api/v1/users/health',
-  ];
+  const healthEndpoints = ['/health', '/api/v1/auth/health', '/api/v1/users/health'];
 
   for (const ep of healthEndpoints) {
     const result = await runLoadTest(ep, DURATION_SEC, CONCURRENT);

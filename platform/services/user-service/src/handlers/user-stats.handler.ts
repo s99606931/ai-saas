@@ -15,10 +15,7 @@ const PERMANENT_LOCK = new Date('9999-12-31T23:59:59.000Z');
  * Design Ref: SVC-USER-R2 DESIGN
  * CSAP D-08-05: 테넌트 격리 — SUPER_ADMIN은 전체, 그 외 본인 테넌트
  */
-export async function userStatsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function userStatsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
 
@@ -27,14 +24,7 @@ export async function userStatsHandler(
     where['tenantId'] = jwtTenantId;
   }
 
-  const [
-    totalUsers,
-    roleDistribution,
-    mfaEnabled,
-    lockedUsers,
-    deactivatedUsers,
-    recentLogins,
-  ] = await Promise.all([
+  const [totalUsers, roleDistribution, mfaEnabled, lockedUsers, deactivatedUsers, recentLogins] = await Promise.all([
     prisma.user.count({ where }),
     prisma.user.groupBy({
       by: ['role'],
@@ -60,9 +50,7 @@ export async function userStatsHandler(
     }),
   ]);
 
-  const mfaAdoptionRate = totalUsers > 0
-    ? Math.round((mfaEnabled / totalUsers) * 100)
-    : 0;
+  const mfaAdoptionRate = totalUsers > 0 ? Math.round((mfaEnabled / totalUsers) * 100) : 0;
 
   await reply.send({
     success: true,
@@ -89,10 +77,7 @@ export async function userStatsHandler(
  * Design Ref: SVC-USER-R2 DESIGN
  * CSAP D-08-05: 테넌트 격리
  */
-export async function loginActivityHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function loginActivityHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
 

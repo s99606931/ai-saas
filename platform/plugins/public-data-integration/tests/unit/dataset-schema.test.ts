@@ -30,7 +30,16 @@ describe('datasetSearchSchema (CSAP D-12 입력 검증)', () => {
   });
 
   it('유효한 카테고리만 허용한다', () => {
-    const categories = ['general', 'economy', 'society', 'education', 'health', 'environment', 'transportation', 'culture'];
+    const categories = [
+      'general',
+      'economy',
+      'society',
+      'education',
+      'health',
+      'environment',
+      'transportation',
+      'culture',
+    ];
     for (const category of categories) {
       expect(datasetSearchSchema.safeParse({ category }).success).toBe(true);
     }
@@ -60,7 +69,11 @@ describe('datasetSearchSchema (CSAP D-12 입력 검증)', () => {
 
   it('복합 검색을 허용한다', () => {
     const result = datasetSearchSchema.safeParse({
-      keyword: '인구통계', category: 'society', format: 'csv', page: '2', limit: '50',
+      keyword: '인구통계',
+      category: 'society',
+      format: 'csv',
+      page: '2',
+      limit: '50',
     });
     expect(result.success).toBe(true);
     if (result.success) {
@@ -79,14 +92,17 @@ describe('transformSchema (FR-ECO3.8 데이터 변환)', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.targetFormat).toBe('json'); // 기본값
-      expect(result.data.encoding).toBe('utf-8');    // 기본값
+      expect(result.data.encoding).toBe('utf-8'); // 기본값
     }
   });
 
   it('빈 데이터를 거부한다', () => {
-    expect(transformSchema.safeParse({
-      data: '', sourceFormat: 'xml',
-    }).success).toBe(false);
+    expect(
+      transformSchema.safeParse({
+        data: '',
+        sourceFormat: 'xml',
+      }).success,
+    ).toBe(false);
   });
 
   it('유효한 원본 포맷만 허용한다 (xml, csv)', () => {
@@ -100,15 +116,21 @@ describe('transformSchema (FR-ECO3.8 데이터 변환)', () => {
 
   it('euc-kr 인코딩을 허용한다', () => {
     const result = transformSchema.safeParse({
-      data: 'd', sourceFormat: 'csv', encoding: 'euc-kr',
+      data: 'd',
+      sourceFormat: 'csv',
+      encoding: 'euc-kr',
     });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.encoding).toBe('euc-kr');
   });
 
   it('잘못된 인코딩을 거부한다', () => {
-    expect(transformSchema.safeParse({
-      data: 'd', sourceFormat: 'csv', encoding: 'ascii',
-    }).success).toBe(false);
+    expect(
+      transformSchema.safeParse({
+        data: 'd',
+        sourceFormat: 'csv',
+        encoding: 'ascii',
+      }).success,
+    ).toBe(false);
   });
 });

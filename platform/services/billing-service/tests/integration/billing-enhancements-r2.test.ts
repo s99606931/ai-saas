@@ -28,11 +28,7 @@ describe('수익 추이 고도화', () => {
 
 describe('연체 관리 고도화', () => {
   it('연체 총액이 올바르다', () => {
-    const overdue = [
-      { amount: 100000 },
-      { amount: 250000 },
-      { amount: 50000 },
-    ];
+    const overdue = [{ amount: 100000 }, { amount: 250000 }, { amount: 50000 }];
     const total = overdue.reduce((sum, o) => sum + o.amount, 0);
     expect(total).toBe(400000);
   });

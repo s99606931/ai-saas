@@ -22,8 +22,12 @@ vi.mock('../../src/lib/prisma.js', () => ({
     contract: {
       findMany: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockResolvedValue({
-        id: 'contract-1', title: 'Contract 1', customerId: 'cust-1',
-        value: 1000000, startDate: new Date(), endDate: new Date(),
+        id: 'contract-1',
+        title: 'Contract 1',
+        customerId: 'cust-1',
+        value: 1000000,
+        startDate: new Date(),
+        endDate: new Date(),
       }),
       update: vi.fn().mockResolvedValue({ id: 'contract-1', title: 'Updated', status: 'active' }),
       count: vi.fn().mockResolvedValue(0),
@@ -64,11 +68,11 @@ function createMockReply() {
   const reply = {
     statusCode: 200,
     body: null as unknown,
-    status: vi.fn().mockImplementation(function(this: typeof reply, code: number) {
+    status: vi.fn().mockImplementation(function (this: typeof reply, code: number) {
       this.statusCode = code;
       return this;
     }),
-    send: vi.fn().mockImplementation(function(this: typeof reply, data: unknown) {
+    send: vi.fn().mockImplementation(function (this: typeof reply, data: unknown) {
       this.body = data;
       return this;
     }),
@@ -146,7 +150,10 @@ describe('CRM 핸들러 통합 테스트', () => {
 
     it('CSAP D-08-05: 타 테넌트 고객 접근 시 403 반환', async () => {
       vi.mocked(prisma.customer.findUnique).mockResolvedValue({
-        id: 'cust-1', tenantId: 'other-tenant', contacts: [], contracts: [],
+        id: 'cust-1',
+        tenantId: 'other-tenant',
+        contacts: [],
+        contracts: [],
       } as never);
 
       const req = createMockRequest({
@@ -203,9 +210,7 @@ describe('CRM 핸들러 통합 테스트', () => {
       const reply = createMockReply();
       await listContactsHandler(req, reply);
 
-      expect(prisma.contact.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ take: 200 }),
-      );
+      expect(prisma.contact.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 200 }));
     });
 
     it('CSAP D-12: 잘못된 이메일로 담당자 등록 시 400 반환', async () => {

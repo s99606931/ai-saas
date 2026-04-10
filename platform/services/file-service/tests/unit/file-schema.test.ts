@@ -27,27 +27,51 @@ describe('uploadSchema (CSAP D-12 입력 검증)', () => {
   });
 
   it('빈 파일명을 거부한다', () => {
-    expect(uploadSchema.safeParse({
-      tenantId: 't1', name: '', mimeType: 'text/plain', size: 1, uploadedBy: 'u1',
-    }).success).toBe(false);
+    expect(
+      uploadSchema.safeParse({
+        tenantId: 't1',
+        name: '',
+        mimeType: 'text/plain',
+        size: 1,
+        uploadedBy: 'u1',
+      }).success,
+    ).toBe(false);
   });
 
   it('파일명 255자 초과를 거부한다', () => {
-    expect(uploadSchema.safeParse({
-      tenantId: 't1', name: 'a'.repeat(256), mimeType: 'text/plain', size: 1, uploadedBy: 'u1',
-    }).success).toBe(false);
+    expect(
+      uploadSchema.safeParse({
+        tenantId: 't1',
+        name: 'a'.repeat(256),
+        mimeType: 'text/plain',
+        size: 1,
+        uploadedBy: 'u1',
+      }).success,
+    ).toBe(false);
   });
 
   it('크기 0을 거부한다 (빈 파일)', () => {
-    expect(uploadSchema.safeParse({
-      tenantId: 't1', name: 'f.txt', mimeType: 'text/plain', size: 0, uploadedBy: 'u1',
-    }).success).toBe(false);
+    expect(
+      uploadSchema.safeParse({
+        tenantId: 't1',
+        name: 'f.txt',
+        mimeType: 'text/plain',
+        size: 0,
+        uploadedBy: 'u1',
+      }).success,
+    ).toBe(false);
   });
 
   it('음수 크기를 거부한다', () => {
-    expect(uploadSchema.safeParse({
-      tenantId: 't1', name: 'f.txt', mimeType: 'text/plain', size: -1, uploadedBy: 'u1',
-    }).success).toBe(false);
+    expect(
+      uploadSchema.safeParse({
+        tenantId: 't1',
+        name: 'f.txt',
+        mimeType: 'text/plain',
+        size: -1,
+        uploadedBy: 'u1',
+      }).success,
+    ).toBe(false);
   });
 
   it('필수 필드 누락을 거부한다', () => {

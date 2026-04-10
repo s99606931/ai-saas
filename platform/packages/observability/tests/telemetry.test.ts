@@ -40,9 +40,7 @@ describe('@public-saas/observability -- telemetry', () => {
     // SDK 미활성화 상태
     expect(isTelemetryActive()).toBe(false);
     // stderr에 경고 출력
-    expect(stderrSpy).toHaveBeenCalledWith(
-      expect.stringContaining('OpenTelemetry 패키지가 설치되지 않았습니다'),
-    );
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('OpenTelemetry 패키지가 설치되지 않았습니다'));
 
     stderrSpy.mockRestore();
   });

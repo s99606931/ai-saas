@@ -33,10 +33,7 @@ interface SessionData {
  * 7. 모든 기존 세션 무효화 (CSAP D-08-03)
  * 8. 감사 로그 기록 (CSAP D-06)
  */
-export async function passwordChangeHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function passwordChangeHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // 1. 인증 확인
   if (!request.user) {
     await reply.status(401).send({

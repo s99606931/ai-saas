@@ -127,12 +127,8 @@ export async function anomalyDetectionHandler(
 
   // 통계 계산
   const counts = dailyCounts.map((d) => d.count);
-  const mean = counts.length > 0
-    ? counts.reduce((sum, c) => sum + c, 0) / counts.length
-    : 0;
-  const variance = counts.length > 0
-    ? counts.reduce((sum, c) => sum + Math.pow(c - mean, 2), 0) / counts.length
-    : 0;
+  const mean = counts.length > 0 ? counts.reduce((sum, c) => sum + c, 0) / counts.length : 0;
+  const variance = counts.length > 0 ? counts.reduce((sum, c) => sum + Math.pow(c - mean, 2), 0) / counts.length : 0;
   const stddev = Math.sqrt(variance);
   const anomalyThreshold = mean + threshold * stddev;
 

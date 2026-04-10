@@ -8,7 +8,11 @@ import { z } from 'zod';
 
 const createPlanSchema = z.object({
   name: z.string().min(1, '플랜명은 필수입니다').max(100),
-  slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/),
+  slug: z
+    .string()
+    .min(2)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/),
   price: z.number().min(0),
   currency: z.string().default('KRW'),
   interval: z.enum(['monthly', 'yearly']).default('monthly'),
@@ -38,52 +42,92 @@ describe('createPlanSchema (CSAP D-12)', () => {
   });
 
   it('빈 플랜명을 거부한다', () => {
-    expect(createPlanSchema.safeParse({
-      name: '', slug: 'ab', price: 0, maxUsers: 1, maxStorage: 0,
-    }).success).toBe(false);
+    expect(
+      createPlanSchema.safeParse({
+        name: '',
+        slug: 'ab',
+        price: 0,
+        maxUsers: 1,
+        maxStorage: 0,
+      }).success,
+    ).toBe(false);
   });
 
   it('음수 가격을 거부한다', () => {
-    expect(createPlanSchema.safeParse({
-      name: 'T', slug: 'ab', price: -1, maxUsers: 1, maxStorage: 0,
-    }).success).toBe(false);
+    expect(
+      createPlanSchema.safeParse({
+        name: 'T',
+        slug: 'ab',
+        price: -1,
+        maxUsers: 1,
+        maxStorage: 0,
+      }).success,
+    ).toBe(false);
   });
 
   it('무료 플랜(0원)을 허용한다', () => {
-    expect(createPlanSchema.safeParse({
-      name: '무료', slug: 'free', price: 0, maxUsers: 1, maxStorage: 0,
-    }).success).toBe(true);
+    expect(
+      createPlanSchema.safeParse({
+        name: '무료',
+        slug: 'free',
+        price: 0,
+        maxUsers: 1,
+        maxStorage: 0,
+      }).success,
+    ).toBe(true);
   });
 
   it('monthly/yearly 간격만 허용한다', () => {
-    expect(createPlanSchema.safeParse({
-      name: 'T', slug: 'ab', price: 0, maxUsers: 1, maxStorage: 0, interval: 'weekly',
-    }).success).toBe(false);
+    expect(
+      createPlanSchema.safeParse({
+        name: 'T',
+        slug: 'ab',
+        price: 0,
+        maxUsers: 1,
+        maxStorage: 0,
+        interval: 'weekly',
+      }).success,
+    ).toBe(false);
   });
 
   it('maxUsers 최소 1을 요구한다', () => {
-    expect(createPlanSchema.safeParse({
-      name: 'T', slug: 'ab', price: 0, maxUsers: 0, maxStorage: 0,
-    }).success).toBe(false);
+    expect(
+      createPlanSchema.safeParse({
+        name: 'T',
+        slug: 'ab',
+        price: 0,
+        maxUsers: 0,
+        maxStorage: 0,
+      }).success,
+    ).toBe(false);
   });
 });
 
 describe('subscribeSchema (CSAP D-12)', () => {
   it('유효한 구독 요청을 허용한다', () => {
-    expect(subscribeSchema.safeParse({
-      tenantId: 'tenant-1', planId: 'plan-1',
-    }).success).toBe(true);
+    expect(
+      subscribeSchema.safeParse({
+        tenantId: 'tenant-1',
+        planId: 'plan-1',
+      }).success,
+    ).toBe(true);
   });
 
   it('빈 tenantId를 거부한다', () => {
-    expect(subscribeSchema.safeParse({
-      tenantId: '', planId: 'plan-1',
-    }).success).toBe(false);
+    expect(
+      subscribeSchema.safeParse({
+        tenantId: '',
+        planId: 'plan-1',
+      }).success,
+    ).toBe(false);
   });
 
   it('빈 planId를 거부한다', () => {
-    expect(subscribeSchema.safeParse({
-      tenantId: 'tenant-1', planId: '',
-    }).success).toBe(false);
+    expect(
+      subscribeSchema.safeParse({
+        tenantId: 'tenant-1',
+        planId: '',
+      }).success,
+    ).toBe(false);
   });
 });

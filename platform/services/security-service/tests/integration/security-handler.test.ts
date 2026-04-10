@@ -43,11 +43,11 @@ function createMockReply() {
   const reply = {
     statusCode: 200,
     body: null as unknown,
-    status: vi.fn().mockImplementation(function(this: typeof reply, code: number) {
+    status: vi.fn().mockImplementation(function (this: typeof reply, code: number) {
       this.statusCode = code;
       return this;
     }),
-    send: vi.fn().mockImplementation(function(this: typeof reply, data: unknown) {
+    send: vi.fn().mockImplementation(function (this: typeof reply, data: unknown) {
       this.body = data;
       return this;
     }),
@@ -143,9 +143,7 @@ describe('FR-P15.3: IP 차단 목록 관리', () => {
     await addIpBlocklistHandler(req, reply);
 
     expect(reply.status).toHaveBeenCalledWith(201);
-    expect(reply.send).toHaveBeenCalledWith(
-      expect.objectContaining({ success: true, ip: '192.168.1.100' }),
-    );
+    expect(reply.send).toHaveBeenCalledWith(expect.objectContaining({ success: true, ip: '192.168.1.100' }));
   });
 
   it('CSAP D-12: IP 없이 차단 요청 시 400 반환', async () => {
@@ -161,9 +159,7 @@ describe('FR-P15.3: IP 차단 목록 관리', () => {
     const reply = createMockReply();
     await getIpBlocklistHandler(req, reply);
 
-    expect(reply.send).toHaveBeenCalledWith(
-      expect.objectContaining({ total: expect.any(Number) }),
-    );
+    expect(reply.send).toHaveBeenCalledWith(expect.objectContaining({ total: expect.any(Number) }));
   });
 
   it('존재하지 않는 IP 해제 시 404 반환', async () => {
@@ -181,8 +177,12 @@ describe('FR-P15.4: 보안 이벤트 알림', () => {
   it('보안 이벤트 알림 목록을 반환한다', async () => {
     vi.mocked(prisma.auditLog.findMany).mockResolvedValue([
       {
-        id: 'log-1', action: 'LOGIN_FAILED', actorId: 'user-1',
-        ip: '1.2.3.4', metadata: {}, createdAt: new Date(),
+        id: 'log-1',
+        action: 'LOGIN_FAILED',
+        actorId: 'user-1',
+        ip: '1.2.3.4',
+        metadata: {},
+        createdAt: new Date(),
       },
     ] as never);
 
@@ -190,16 +190,18 @@ describe('FR-P15.4: 보안 이벤트 알림', () => {
     const reply = createMockReply();
     await securityAlertsHandler(req, reply);
 
-    expect(reply.send).toHaveBeenCalledWith(
-      expect.objectContaining({ total: 1 }),
-    );
+    expect(reply.send).toHaveBeenCalledWith(expect.objectContaining({ total: 1 }));
   });
 
   it('AI_GRADE_VIOLATION은 critical 등급이다', async () => {
     vi.mocked(prisma.auditLog.findMany).mockResolvedValue([
       {
-        id: 'log-2', action: 'AI_GRADE_VIOLATION', actorId: null,
-        ip: null, metadata: {}, createdAt: new Date(),
+        id: 'log-2',
+        action: 'AI_GRADE_VIOLATION',
+        actorId: null,
+        ip: null,
+        metadata: {},
+        createdAt: new Date(),
       },
     ] as never);
 

@@ -117,7 +117,7 @@ describe('FR-AUTH.1: MFA 로그인 흐름 검증', () => {
       email: 'admin@gov.kr',
       password: 'MyP@ssw0rd!',
       tenantSlug: 'gov-agency',
-      mfaCode: '12345',  // 5자리
+      mfaCode: '12345', // 5자리
     };
 
     const result = loginSchema.safeParse(loginInput);

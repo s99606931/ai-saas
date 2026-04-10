@@ -2,48 +2,46 @@
 // Plan SC: FR-UP.4
 // CSAP: D-08 접근 통제, D-12 입력 검증 (페이지네이션 파라미터)
 
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getAuthContext, isSuperAdmin } from '@/lib/auth-guard'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getAuthContext, isSuperAdmin } from '@/lib/auth-guard';
 
 // DB 의존 API — 빌드 시 정적 생성 방지
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export interface TenantListItem {
-  id: string
-  name: string
-  slug: string
-  status: string
-  userCount: number
-  createdAt: string
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  userCount: number;
+  createdAt: string;
 }
 
 export interface TenantListResponse {
-  tenants: TenantListItem[]
-  total: number
+  tenants: TenantListItem[];
+  total: number;
 }
 
 // Plan SC: FR-UP.4 — 테넌트 목록 페이지네이션 조회
 // CSAP D-08-01: 인증 필수, D-08-05: 슈퍼 관리자 전용
-export async function GET(
-  request: NextRequest
-): Promise<NextResponse<TenantListResponse | { error: string }>> {
+export async function GET(request: NextRequest): Promise<NextResponse<TenantListResponse | { error: string }>> {
   // CSAP D-08: 인증 + RBAC 검사 (테넌트 목록은 슈퍼 관리자 전용)
-  const auth = await getAuthContext()
+  const auth = await getAuthContext();
   if (!auth) {
-    return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 })
+    return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 });
   }
   if (!isSuperAdmin(auth)) {
-    return NextResponse.json({ error: '테넌트 목록 조회 권한이 없습니다' }, { status: 403 })
+    return NextResponse.json({ error: '테넌트 목록 조회 권한이 없습니다' }, { status: 403 });
   }
 
   try {
-    const { searchParams } = request.nextUrl
+    const { searchParams } = request.nextUrl;
 
     // CSAP D-12: 입력 검증 — 페이지네이션 파라미터 범위 제한
-    const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10))
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') ?? '20', 10)))
-    const skip = (page - 1) * limit
+    const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') ?? '20', 10)));
+    const skip = (page - 1) * limit;
 
     const [tenants, total] = await Promise.all([
       prisma.tenant.findMany({
@@ -63,7 +61,7 @@ export async function GET(
       prisma.tenant.count({
         where: { slug: { not: 'platform-internal' } },
       }),
-    ])
+    ]);
 
     const tenantList: TenantListItem[] = tenants.map((tenant) => ({
       id: tenant.id,
@@ -72,14 +70,11 @@ export async function GET(
       status: tenant.status,
       userCount: tenant._count.users,
       createdAt: tenant.createdAt.toISOString(),
-    }))
+    }));
 
-    return NextResponse.json({ tenants: tenantList, total })
+    return NextResponse.json({ tenants: tenantList, total });
   } catch (error) {
-    process.stderr.write(`[API] /api/tenants 오류: ${String(error)}\n`)
-    return NextResponse.json(
-      { error: '테넌트 목록 조회 중 오류가 발생했습니다.' },
-      { status: 500 }
-    )
+    process.stderr.write(`[API] /api/tenants 오류: ${String(error)}\n`);
+    return NextResponse.json({ error: '테넌트 목록 조회 중 오류가 발생했습니다.' }, { status: 500 });
   }
 }

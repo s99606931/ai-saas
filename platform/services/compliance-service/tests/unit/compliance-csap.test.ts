@@ -8,9 +8,19 @@ import { describe, it, expect } from 'vitest';
 describe('CSAP 준수현황 검증', () => {
   it('CSAP 표준등급 79개 통제항목이 정의된다', () => {
     const csapDomains = [
-      'D-01', 'D-02', 'D-03', 'D-04', 'D-05',
-      'D-06', 'D-07', 'D-08', 'D-09', 'D-10',
-      'D-11', 'D-12', 'D-13',
+      'D-01',
+      'D-02',
+      'D-03',
+      'D-04',
+      'D-05',
+      'D-06',
+      'D-07',
+      'D-08',
+      'D-09',
+      'D-10',
+      'D-11',
+      'D-12',
+      'D-13',
     ];
     expect(csapDomains.length).toBe(13);
   });
@@ -46,11 +56,7 @@ describe('CSAP 준수현황 검증', () => {
   });
 
   it('ISMS-P 체크리스트가 포함된다', () => {
-    const ismsCategories = [
-      '관리체계 수립 및 운영',
-      '보호대책 구현',
-      '개인정보 보호조치',
-    ];
+    const ismsCategories = ['관리체계 수립 및 운영', '보호대책 구현', '개인정보 보호조치'];
     expect(ismsCategories).toHaveLength(3);
   });
 });
@@ -73,11 +79,7 @@ describe('준수현황 대시보드 보안', () => {
 
 describe('CSAP D-06: 준수현황 감사 로그', () => {
   it('준수현황 조회도 감사 대상이다', () => {
-    const events = [
-      'COMPLIANCE_REPORT_VIEWED',
-      'COMPLIANCE_REPORT_EXPORTED',
-      'READINESS_CHECK_EXECUTED',
-    ];
+    const events = ['COMPLIANCE_REPORT_VIEWED', 'COMPLIANCE_REPORT_EXPORTED', 'READINESS_CHECK_EXECUTED'];
     expect(events.length).toBe(3);
   });
 });

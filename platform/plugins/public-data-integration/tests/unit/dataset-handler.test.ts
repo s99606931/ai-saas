@@ -51,7 +51,7 @@ describe('GET /datasets (데이터셋 검색)', () => {
       headers: AUTH_HEADERS,
     });
     expect(res.status).toBe(400);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('error');
   });
 
@@ -128,7 +128,7 @@ describe('POST /datasets/transform (데이터 변환)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('rowCount', 2);
     expect(data).toHaveProperty('data');
   });
@@ -144,7 +144,7 @@ describe('POST /datasets/transform (데이터 변환)', () => {
       }),
     });
     expect(res.status).toBe(200);
-    const data = await res.json() as Record<string, unknown>;
+    const data = (await res.json()) as Record<string, unknown>;
     expect(data).toHaveProperty('rowCount', 1);
   });
 
@@ -154,7 +154,8 @@ describe('POST /datasets/transform (데이터 변환)', () => {
       method: 'POST',
       headers: NO_AUTH_HEADERS,
       body: JSON.stringify({
-        data: 'test', sourceFormat: 'csv',
+        data: 'test',
+        sourceFormat: 'csv',
       }),
     });
     expect(res.status).toBe(401);
@@ -166,7 +167,8 @@ describe('POST /datasets/transform (데이터 변환)', () => {
       method: 'POST',
       headers: AUTH_HEADERS,
       body: JSON.stringify({
-        data: '', sourceFormat: 'csv',
+        data: '',
+        sourceFormat: 'csv',
       }),
     });
     expect(res.status).toBe(400);
@@ -177,7 +179,8 @@ describe('POST /datasets/transform (데이터 변환)', () => {
       method: 'POST',
       headers: AUTH_HEADERS,
       body: JSON.stringify({
-        data: '{"key": "value"}', sourceFormat: 'json',
+        data: '{"key": "value"}',
+        sourceFormat: 'json',
       }),
     });
     expect(res.status).toBe(400);

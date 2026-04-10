@@ -11,10 +11,7 @@ import {
   removeIpBlocklistHandler,
   securityAlertsHandler,
 } from './handlers/security.handler.js';
-import {
-  securityDashboardHandler,
-  threatTrendHandler,
-} from './handlers/security-stats.handler.js';
+import { securityDashboardHandler, threatTrendHandler } from './handlers/security-stats.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {

@@ -12,10 +12,7 @@ import { z } from 'zod';
  */
 export const passwordChangeSchema = z.object({
   /** 현재 비밀번호 */
-  currentPassword: z
-    .string()
-    .min(1, '현재 비밀번호를 입력하세요')
-    .max(128, '비밀번호는 128자 이하여야 합니다'),
+  currentPassword: z.string().min(1, '현재 비밀번호를 입력하세요').max(128, '비밀번호는 128자 이하여야 합니다'),
   /** 새 비밀번호 */
   newPassword: z
     .string()

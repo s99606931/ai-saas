@@ -18,10 +18,7 @@ import type { DataGrade } from '@public-saas/types';
  */
 export function validateDataGrade(grade: DataGrade): void {
   if (grade === 'C' || grade === 'S') {
-    throw new DataGradeViolationError(
-      `BLOCKED: ${grade}등급 데이터는 AI API 전송이 금지됩니다 (N2SF N-05)`,
-      grade,
-    );
+    throw new DataGradeViolationError(`BLOCKED: ${grade}등급 데이터는 AI API 전송이 금지됩니다 (N2SF N-05)`, grade);
   }
 }
 
@@ -46,10 +43,7 @@ export class DataGradeViolationError extends Error {
  * @param requestGrade - 요청 데이터 등급
  * @returns 전송 가능 여부
  */
-export function canSendToModel(
-  modelMaxGrade: DataGrade,
-  requestGrade: DataGrade,
-): boolean {
+export function canSendToModel(modelMaxGrade: DataGrade, requestGrade: DataGrade): boolean {
   const gradeOrder: Record<DataGrade, number> = { O: 0, S: 1, C: 2 };
   return gradeOrder[requestGrade] <= gradeOrder[modelMaxGrade];
 }

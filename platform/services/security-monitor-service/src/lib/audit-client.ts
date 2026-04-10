@@ -39,11 +39,7 @@ class AuditServiceClient {
    * @param fromDate 조회 시작일 (ISO 8601)
    * @param limit 최대 조회 건수
    */
-  async queryLogs(params: {
-    action: string;
-    fromDate: string;
-    limit?: number;
-  }): Promise<AuditLogQueryResult> {
+  async queryLogs(params: { action: string; fromDate: string; limit?: number }): Promise<AuditLogQueryResult> {
     const { action, fromDate, limit = 100 } = params;
     const url = `${this.baseUrl}/audit/logs?action=${encodeURIComponent(action)}&fromDate=${encodeURIComponent(fromDate)}&limit=${limit}`;
 
@@ -55,7 +51,7 @@ class AuditServiceClient {
       const data = (await response.json()) as { items?: AuditLogItem[]; total?: number };
       return {
         items: data.items ?? [],
-        total: data.total ?? (data.items?.length ?? 0),
+        total: data.total ?? data.items?.length ?? 0,
       };
     } catch {
       // 감사 서비스 연결 실패 시 빈 결과 반환 (서비스 가용성 유지)

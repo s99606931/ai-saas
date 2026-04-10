@@ -16,11 +16,11 @@ export function csvToJson(csvData: string, delimiter: string = ','): Record<stri
     throw new Error('CSV 데이터에 헤더와 최소 1개의 데이터 행이 필요합니다');
   }
 
-  const headers = lines[0].split(delimiter).map(h => h.trim().replace(/^"(.*)"$/, '$1'));
+  const headers = lines[0].split(delimiter).map((h) => h.trim().replace(/^"(.*)"$/, '$1'));
   const result: Record<string, string>[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(delimiter).map(v => v.trim().replace(/^"(.*)"$/, '$1'));
+    const values = lines[i].split(delimiter).map((v) => v.trim().replace(/^"(.*)"$/, '$1'));
     const row: Record<string, string> = {};
     for (let j = 0; j < headers.length; j++) {
       row[headers[j]] = values[j] || '';

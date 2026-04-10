@@ -12,10 +12,7 @@ import {
   generateTaxInvoiceHandler,
   dashboardHandler,
 } from './handlers/billing.handler.js';
-import {
-  overdueInvoicesHandler,
-  revenueTrendHandler,
-} from './handlers/billing-stats.handler.js';
+import { overdueInvoicesHandler, revenueTrendHandler } from './handlers/billing-stats.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {

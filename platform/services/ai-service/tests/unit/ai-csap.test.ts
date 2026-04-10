@@ -8,10 +8,14 @@ import { z } from 'zod';
 
 const chatSchema = z.object({
   modelId: z.string().min(1),
-  messages: z.array(z.object({
-    role: z.enum(['system', 'user', 'assistant']),
-    content: z.string().min(1).max(32000),
-  })).min(1),
+  messages: z
+    .array(
+      z.object({
+        role: z.enum(['system', 'user', 'assistant']),
+        content: z.string().min(1).max(32000),
+      }),
+    )
+    .min(1),
   temperature: z.number().min(0).max(2).default(0.7),
   maxTokens: z.number().int().min(1).max(4096).default(1024),
   dataGrade: z.enum(['O', 'C', 'S']).default('O'),
@@ -48,17 +52,11 @@ describe('N2SF N-05: AI 데이터 등급 분류', () => {
     const content = '주민번호: 900101-1234567, 전화: 010-1234-5678';
 
     // 주민번호 마스킹
-    const maskedRRN = content.replace(
-      /(\d{6})-(\d{7})/g,
-      '$1-*******',
-    );
+    const maskedRRN = content.replace(/(\d{6})-(\d{7})/g, '$1-*******');
     expect(maskedRRN).toContain('900101-*******');
 
     // 전화번호 마스킹
-    const maskedPhone = maskedRRN.replace(
-      /(\d{3})-(\d{4})-(\d{4})/g,
-      '$1-****-$3',
-    );
+    const maskedPhone = maskedRRN.replace(/(\d{3})-(\d{4})-(\d{4})/g, '$1-****-$3');
     expect(maskedPhone).toContain('010-****-5678');
   });
 
@@ -94,49 +92,61 @@ describe('CSAP D-12: AI 입력 검증', () => {
   });
 
   it('빈 메시지 배열을 거부한다', () => {
-    expect(chatSchema.safeParse({
-      modelId: 'llama-3',
-      messages: [],
-    }).success).toBe(false);
+    expect(
+      chatSchema.safeParse({
+        modelId: 'llama-3',
+        messages: [],
+      }).success,
+    ).toBe(false);
   });
 
   it('과도한 토큰 수를 거부한다', () => {
-    expect(chatSchema.safeParse({
-      modelId: 'llama-3',
-      messages: [{ role: 'user', content: '안녕' }],
-      maxTokens: 999999,
-    }).success).toBe(false);
+    expect(
+      chatSchema.safeParse({
+        modelId: 'llama-3',
+        messages: [{ role: 'user', content: '안녕' }],
+        maxTokens: 999999,
+      }).success,
+    ).toBe(false);
   });
 
   it('temperature 범위를 벗어나면 거부한다', () => {
-    expect(chatSchema.safeParse({
-      modelId: 'llama-3',
-      messages: [{ role: 'user', content: '안녕' }],
-      temperature: 5,
-    }).success).toBe(false);
+    expect(
+      chatSchema.safeParse({
+        modelId: 'llama-3',
+        messages: [{ role: 'user', content: '안녕' }],
+        temperature: 5,
+      }).success,
+    ).toBe(false);
   });
 
   it('잘못된 역할을 거부한다', () => {
-    expect(chatSchema.safeParse({
-      modelId: 'llama-3',
-      messages: [{ role: 'hacker', content: '테스트' }],
-    }).success).toBe(false);
+    expect(
+      chatSchema.safeParse({
+        modelId: 'llama-3',
+        messages: [{ role: 'hacker', content: '테스트' }],
+      }).success,
+    ).toBe(false);
   });
 
   it('모델 등록 시 유효한 URL이 필요하다', () => {
-    expect(registerModelSchema.safeParse({
-      name: 'LLama 3',
-      provider: 'LM_STUDIO',
-      endpoint: 'not-a-url',
-    }).success).toBe(false);
+    expect(
+      registerModelSchema.safeParse({
+        name: 'LLama 3',
+        provider: 'LM_STUDIO',
+        endpoint: 'not-a-url',
+      }).success,
+    ).toBe(false);
   });
 
   it('유효한 모델 등록을 허용한다', () => {
-    expect(registerModelSchema.safeParse({
-      name: 'LLama 3',
-      provider: 'LM_STUDIO',
-      endpoint: 'http://localhost:1234/v1',
-    }).success).toBe(true);
+    expect(
+      registerModelSchema.safeParse({
+        name: 'LLama 3',
+        provider: 'LM_STUDIO',
+        endpoint: 'http://localhost:1234/v1',
+      }).success,
+    ).toBe(true);
   });
 });
 

@@ -8,7 +8,11 @@ import { z } from 'zod';
 
 const createTenantSchema = z.object({
   name: z.string().min(1, '테넌트명은 필수입니다').max(200),
-  slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, 'slug는 소문자, 숫자, 하이픈만 허용'),
+  slug: z
+    .string()
+    .min(2)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/, 'slug는 소문자, 숫자, 하이픈만 허용'),
   maxUsers: z.number().int().min(1).max(10000).default(10),
   maxStorage: z.number().int().min(0).default(1073741824),
 });
@@ -18,12 +22,14 @@ const updateTenantSchema = z.object({
   maxUsers: z.number().int().min(1).max(10000).optional(),
   maxStorage: z.number().int().min(0).optional(),
   config: z.record(z.unknown()).optional(),
-  theme: z.object({
-    primaryColor: z.string().optional(),
-    logoUrl: z.string().url().optional(),
-    faviconUrl: z.string().url().optional(),
-    sidebarVariant: z.enum(['default', 'compact', 'floating']).optional(),
-  }).optional(),
+  theme: z
+    .object({
+      primaryColor: z.string().optional(),
+      logoUrl: z.string().url().optional(),
+      faviconUrl: z.string().url().optional(),
+      sidebarVariant: z.enum(['default', 'compact', 'floating']).optional(),
+    })
+    .optional(),
 });
 
 const updateStatusSchema = z.object({
@@ -75,15 +81,22 @@ describe('createTenantSchema (CSAP D-12, N2SF N-03)', () => {
   });
 
   it('maxUsers를 10000으로 제한한다', () => {
-    expect(createTenantSchema.safeParse({
-      name: 'T', slug: 'ab', maxUsers: 10001,
-    }).success).toBe(false);
+    expect(
+      createTenantSchema.safeParse({
+        name: 'T',
+        slug: 'ab',
+        maxUsers: 10001,
+      }).success,
+    ).toBe(false);
   });
 
   it('slug 최소 2자를 요구한다', () => {
-    expect(createTenantSchema.safeParse({
-      name: 'T', slug: 'a',
-    }).success).toBe(false);
+    expect(
+      createTenantSchema.safeParse({
+        name: 'T',
+        slug: 'a',
+      }).success,
+    ).toBe(false);
   });
 });
 

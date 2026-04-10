@@ -25,9 +25,7 @@ export function generateServiceToken(serviceName: string = 'user-service'): stri
   }
 
   const timestamp = Date.now().toString();
-  const hmac = createHmac('sha256', SERVICE_AUTH_SECRET)
-    .update(`${serviceName}:${timestamp}`)
-    .digest('hex');
+  const hmac = createHmac('sha256', SERVICE_AUTH_SECRET).update(`${serviceName}:${timestamp}`).digest('hex');
 
   return `${serviceName}:${timestamp}:${hmac}`;
 }

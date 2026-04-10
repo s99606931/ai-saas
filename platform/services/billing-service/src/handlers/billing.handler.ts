@@ -15,7 +15,9 @@ import { prisma } from '../lib/prisma.js';
  * Security Ref: FR-N08.4
  */
 export async function listInvoicesHandler(
-  request: FastifyRequest<{ Querystring: { subscriptionId?: string; status?: string; page?: string; pageSize?: string } }>,
+  request: FastifyRequest<{
+    Querystring: { subscriptionId?: string; status?: string; page?: string; pageSize?: string };
+  }>,
   reply: FastifyReply,
 ): Promise<void> {
   const page = parseInt(request.query.page ?? '1', 10);
@@ -93,10 +95,7 @@ export async function getInvoiceHandler(
  * 인보이스 자동 생성 (구독 기반)
  * Plan SC: FR-P08.1
  */
-export async function generateInvoiceHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function generateInvoiceHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const schema = z.object({ subscriptionId: z.string().min(1) });
   const parseResult = schema.safeParse(request.body);
   if (!parseResult.success) {
@@ -343,10 +342,7 @@ export async function generateTaxInvoiceHandler(
  * Plan SC: FR-P08.4
  * CSAP D-08-05: 테넌트 격리
  */
-export async function dashboardHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function dashboardHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-08-05: 테넌트 격리 (Design Ref: SVC-BILL-R1 DESIGN)
   const dashJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const dashJwtRole = request.headers['x-user-role'] as string | undefined;

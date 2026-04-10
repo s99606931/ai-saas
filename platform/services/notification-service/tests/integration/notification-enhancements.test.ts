@@ -222,28 +222,28 @@ describe('기존 기능 회귀: 라우트 등록', () => {
   });
 
   it('unread-count 라우트가 추가되었다', () => {
-    const route = expectedRoutes.find(r => r.path.includes('unread-count'));
+    const route = expectedRoutes.find((r) => r.path.includes('unread-count'));
     expect(route).toBeDefined();
   });
 
   it('read-all 라우트가 추가되었다', () => {
-    const route = expectedRoutes.find(r => r.path.includes('read-all'));
+    const route = expectedRoutes.find((r) => r.path.includes('read-all'));
     expect(route).toBeDefined();
   });
 
   it('stats 라우트가 추가되었다', () => {
-    const route = expectedRoutes.find(r => r.path === '/notification/stats');
+    const route = expectedRoutes.find((r) => r.path === '/notification/stats');
     expect(route).toBeDefined();
   });
 
   it('기존 알림 CRUD 라우트가 유지된다', () => {
-    expect(expectedRoutes.find(r => r.path === '/notification/send')).toBeDefined();
-    expect(expectedRoutes.find(r => r.path === '/notification/send-template')).toBeDefined();
-    expect(expectedRoutes.find(r => r.path === '/notification/history')).toBeDefined();
+    expect(expectedRoutes.find((r) => r.path === '/notification/send')).toBeDefined();
+    expect(expectedRoutes.find((r) => r.path === '/notification/send-template')).toBeDefined();
+    expect(expectedRoutes.find((r) => r.path === '/notification/history')).toBeDefined();
   });
 
   it('기존 템플릿 CRUD 라우트가 유지된다', () => {
-    const templateRoutes = expectedRoutes.filter(r => r.path.includes('/notification/templates'));
+    const templateRoutes = expectedRoutes.filter((r) => r.path.includes('/notification/templates'));
     expect(templateRoutes.length).toBeGreaterThanOrEqual(4);
   });
 });

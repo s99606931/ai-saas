@@ -81,9 +81,7 @@ export async function deliveryRateHandler(
         totalSent,
         totalDelivered,
         totalFailed: trend.reduce((sum, t) => sum + t.failed, 0),
-        overallDeliveryRate: totalSent > 0
-          ? Number(((totalDelivered / totalSent) * 100).toFixed(1))
-          : 0,
+        overallDeliveryRate: totalSent > 0 ? Number(((totalDelivered / totalSent) * 100).toFixed(1)) : 0,
       },
       days,
       generatedAt: new Date().toISOString(),
@@ -97,10 +95,7 @@ export async function deliveryRateHandler(
  * Design Ref: SVC-NOTIF-R2 DESIGN
  * CSAP D-08-05: 테넌트 격리
  */
-export async function channelAnalyticsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function channelAnalyticsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-08-05: 테넌트 격리
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
@@ -117,7 +112,8 @@ export async function channelAnalyticsHandler(
     _count: { id: true },
   });
 
-  const channelStats: { channel: string; total: number; delivered: number; failed: number; deliveryRate: number }[] = [];
+  const channelStats: { channel: string; total: number; delivered: number; failed: number; deliveryRate: number }[] =
+    [];
 
   for (const ch of channels) {
     const [delivered, failed] = await Promise.all([
@@ -130,9 +126,7 @@ export async function channelAnalyticsHandler(
       total: ch._count.id,
       delivered,
       failed,
-      deliveryRate: ch._count.id > 0
-        ? Number(((delivered / ch._count.id) * 100).toFixed(1))
-        : 0,
+      deliveryRate: ch._count.id > 0 ? Number(((delivered / ch._count.id) * 100).toFixed(1)) : 0,
     });
   }
 
@@ -143,9 +137,7 @@ export async function channelAnalyticsHandler(
     data: {
       channels: channelStats.map((c) => ({
         ...c,
-        sharePercent: totalAll > 0
-          ? Number(((c.total / totalAll) * 100).toFixed(1))
-          : 0,
+        sharePercent: totalAll > 0 ? Number(((c.total / totalAll) * 100).toFixed(1)) : 0,
       })),
       totalNotifications: totalAll,
       generatedAt: new Date().toISOString(),

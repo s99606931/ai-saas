@@ -34,10 +34,7 @@ export function encryptMfaSecret(secret: string): string {
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv(ALGORITHM, key, iv);
 
-  const encrypted = Buffer.concat([
-    cipher.update(secret, 'utf8'),
-    cipher.final(),
-  ]);
+  const encrypted = Buffer.concat([cipher.update(secret, 'utf8'), cipher.final()]);
   const authTag = cipher.getAuthTag();
 
   // IV(16) + AuthTag(16) + 암호문
@@ -58,8 +55,5 @@ export function decryptMfaSecret(encryptedHex: string): string {
   const decipher = createDecipheriv(ALGORITHM, key, iv);
   decipher.setAuthTag(authTag);
 
-  return Buffer.concat([
-    decipher.update(encrypted),
-    decipher.final(),
-  ]).toString('utf8');
+  return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
 }

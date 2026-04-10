@@ -11,10 +11,7 @@ import { isTokenBlacklisted } from '../lib/session.js';
  *
  * Authorization 헤더의 Bearer 토큰을 검증하고 페이로드를 반환합니다.
  */
-export async function verifyHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function verifyHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const authHeader = request.headers.authorization;
 
   if (!authHeader?.startsWith('Bearer ')) {

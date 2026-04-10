@@ -26,9 +26,7 @@ describe('FR-CRM.1: 고객사 검색', () => {
   });
 
   it('검색과 필터를 조합할 수 있다', () => {
-    const results = customers.filter(
-      (c) => c.name.includes('삼성') && c.industry === 'IT',
-    );
+    const results = customers.filter((c) => c.name.includes('삼성') && c.industry === 'IT');
     expect(results).toHaveLength(1);
   });
 
@@ -57,9 +55,7 @@ describe('FR-CRM.2: 계약 만료 임박', () => {
       { id: '3', endDate: new Date(now.getTime() + 10 * 86400000), status: 'active' },
     ];
 
-    const expiring = contracts.filter(
-      (c) => c.endDate >= now && c.endDate <= threshold,
-    );
+    const expiring = contracts.filter((c) => c.endDate >= now && c.endDate <= threshold);
     expect(expiring).toHaveLength(2);
   });
 
@@ -168,17 +164,17 @@ describe('기존 기능 회귀: 라우트', () => {
 
 describe('CSAP 준수: CRM 서비스', () => {
   it('D-06: 감사 이벤트 5종이 완비되었다', () => {
-    const events = [
-      'CUSTOMER_CREATED', 'CUSTOMER_UPDATED',
-      'CONTACT_CREATED', 'CONTRACT_CREATED', 'CONTRACT_UPDATED',
-    ];
+    const events = ['CUSTOMER_CREATED', 'CUSTOMER_UPDATED', 'CONTACT_CREATED', 'CONTRACT_CREATED', 'CONTRACT_UPDATED'];
     expect(events).toHaveLength(5);
   });
 
   it('D-08: 테넌트 격리가 주요 핸들러에 적용된다', () => {
     const isolated = [
-      'listCustomersHandler', 'getCustomerHandler', 'updateCustomerHandler',
-      'listContractsHandler', 'pipelineHandler',
+      'listCustomersHandler',
+      'getCustomerHandler',
+      'updateCustomerHandler',
+      'listContractsHandler',
+      'pipelineHandler',
     ];
     expect(isolated.length).toBeGreaterThanOrEqual(5);
   });

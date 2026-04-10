@@ -102,8 +102,7 @@ export function createMockToken(user: TestUser): string {
     exp: Math.floor(Date.now() / 1000) + 3600, // 1시간
   };
 
-  const encodeBase64 = (obj: object): string =>
-    Buffer.from(JSON.stringify(obj)).toString('base64url');
+  const encodeBase64 = (obj: object): string => Buffer.from(JSON.stringify(obj)).toString('base64url');
 
   return `${encodeBase64(header)}.${encodeBase64(payload)}.mock-signature`;
 }
@@ -123,8 +122,7 @@ export function createExpiredToken(user: TestUser): string {
     exp: Math.floor(Date.now() / 1000) - 3600, // 1시간 전 만료
   };
 
-  const encodeBase64 = (obj: object): string =>
-    Buffer.from(JSON.stringify(obj)).toString('base64url');
+  const encodeBase64 = (obj: object): string => Buffer.from(JSON.stringify(obj)).toString('base64url');
 
   return `${encodeBase64(header)}.${encodeBase64(payload)}.expired-mock-signature`;
 }

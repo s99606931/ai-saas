@@ -14,13 +14,14 @@ const ipBlocklist = new Map<string, { reason: string; blockedAt: string; expires
 // --- Zod 스키마 (CSAP D-12: 모든 입력 검증) ---
 
 // FR-SEC.3: IP 형식 검증 (IPv4/IPv6/CIDR, Design Ref: SVC-SEC-R1 DESIGN)
-const IP_PATTERN = /^(?:(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?|[0-9a-fA-F:]+(?:\/\d{1,3})?|::1|::ffff:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/;
+const IP_PATTERN =
+  /^(?:(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?|[0-9a-fA-F:]+(?:\/\d{1,3})?|::1|::ffff:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/;
 
 const ipBlockSchema = z.object({
-  ip: z.string().min(1, 'IP 주소는 필수입니다').refine(
-    (ip) => IP_PATTERN.test(ip),
-    { message: '유효하지 않은 IP 형식입니다 (IPv4/IPv6/CIDR)' },
-  ),
+  ip: z
+    .string()
+    .min(1, 'IP 주소는 필수입니다')
+    .refine((ip) => IP_PATTERN.test(ip), { message: '유효하지 않은 IP 형식입니다 (IPv4/IPv6/CIDR)' }),
   reason: z.string().min(1, '차단 사유는 필수입니다'),
   durationMinutes: z.number().int().positive().optional(),
 });
@@ -47,10 +48,7 @@ const alertsQuerySchema = z.object({
  *
  * 최근 N분 내 로그인 실패 5회 이상인 계정/IP를 탐지합니다.
  */
-export async function loginFailuresHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function loginFailuresHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-12: safeParse로 쿼리 파라미터 검증
   const parseResult = loginFailuresQuerySchema.safeParse(request.query);
   if (!parseResult.success) {
@@ -99,10 +97,7 @@ export async function loginFailuresHandler(
  *
  * 동시 다중 IP 로그인, 비정상 시간대 접근, 단시간 대량 요청 등
  */
-export async function anomaliesHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function anomaliesHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-12: safeParse로 쿼리 파라미터 검증
   const parseResult = anomaliesQuerySchema.safeParse(request.query);
   if (!parseResult.success) {
@@ -151,7 +146,7 @@ export async function anomaliesHandler(
       actorId: m.actorId,
       ip: null as string | null,
       count: m._count.id,
-      severity: m._count.id >= 5 ? 'critical' as const : 'high' as const,
+      severity: m._count.id >= 5 ? ('critical' as const) : ('high' as const),
     })),
     // 단시간 대량 요청 (DDoS/크롤러 의심)
     ...highVolume.map((h) => ({
@@ -159,7 +154,7 @@ export async function anomaliesHandler(
       actorId: null as string | null,
       ip: h.ip,
       count: h._count.id,
-      severity: h._count.id >= 500 ? 'critical' as const : 'high' as const,
+      severity: h._count.id >= 500 ? ('critical' as const) : ('high' as const),
     })),
   ];
 
@@ -175,10 +170,7 @@ export async function anomaliesHandler(
  * FR-P15.3: IP 차단 목록 조회
  * GET /security/ip-blocklist
  */
-export async function getIpBlocklistHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function getIpBlocklistHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const now = new Date().toISOString();
 
   // FR-SEC.2: 만료된 항목 자동 정리 (Design Ref: SVC-SEC-R1 DESIGN)
@@ -190,8 +182,7 @@ export async function getIpBlocklistHandler(
     }
   }
 
-  const entries = Array.from(ipBlocklist.entries())
-    .map(([ip, v]) => ({ ip, ...v }));
+  const entries = Array.from(ipBlocklist.entries()).map(([ip, v]) => ({ ip, ...v }));
 
   await reply.send({ entries, total: entries.length, expiredCleaned });
 }
@@ -200,10 +191,7 @@ export async function getIpBlocklistHandler(
  * FR-P15.3: IP 차단 등록
  * POST /security/ip-blocklist
  */
-export async function addIpBlocklistHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function addIpBlocklistHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-12: safeParse로 입력 검증
   const parsed = ipBlockSchema.safeParse(request.body);
   if (!parsed.success) {
@@ -235,10 +223,7 @@ export async function addIpBlocklistHandler(
  * FR-P15.3: IP 차단 해제
  * DELETE /security/ip-blocklist/:ip
  */
-export async function removeIpBlocklistHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function removeIpBlocklistHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const { ip } = request.params as { ip: string };
 
   if (!ipBlocklist.has(ip)) {
@@ -256,10 +241,7 @@ export async function removeIpBlocklistHandler(
  * FR-P15.4: 보안 이벤트 알림 목록
  * GET /security/alerts
  */
-export async function securityAlertsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function securityAlertsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-12: safeParse로 쿼리 파라미터 검증
   const parseResult = alertsQuerySchema.safeParse(request.query);
   if (!parseResult.success) {
@@ -273,13 +255,7 @@ export async function securityAlertsHandler(
 
   const where: Record<string, unknown> = {
     action: {
-      in: [
-        'LOGIN_FAILED',
-        'IP_BLOCKED',
-        'AI_GRADE_VIOLATION',
-        'UNAUTHORIZED_ACCESS',
-        'SESSION_HIJACK_ATTEMPT',
-      ],
+      in: ['LOGIN_FAILED', 'IP_BLOCKED', 'AI_GRADE_VIOLATION', 'UNAUTHORIZED_ACCESS', 'SESSION_HIJACK_ATTEMPT'],
     },
   };
 
@@ -300,11 +276,12 @@ export async function securityAlertsHandler(
   await reply.send({
     alerts: alerts.map((a) => ({
       ...a,
-      severity: a.action === 'AI_GRADE_VIOLATION' || a.action === 'SESSION_HIJACK_ATTEMPT'
-        ? 'critical'
-        : a.action === 'IP_BLOCKED'
-          ? 'high'
-          : 'medium',
+      severity:
+        a.action === 'AI_GRADE_VIOLATION' || a.action === 'SESSION_HIJACK_ATTEMPT'
+          ? 'critical'
+          : a.action === 'IP_BLOCKED'
+            ? 'high'
+            : 'medium',
     })),
     total: alerts.length,
   });

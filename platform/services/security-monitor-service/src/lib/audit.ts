@@ -9,10 +9,7 @@ const auditLogger = createAuditLogger({
   transport: createStandardTransport('security-monitor-service'),
 });
 
-export async function logSecurityEvent(
-  action: string,
-  metadata?: Record<string, unknown>,
-): Promise<void> {
+export async function logSecurityEvent(action: string, metadata?: Record<string, unknown>): Promise<void> {
   await auditLogger.log({
     actor: 'system:security-monitor',
     action,

@@ -55,10 +55,11 @@ function pushAlert(alert: SecurityAlert): void {
 const IP_PATTERN = /^(?:(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?|[0-9a-fA-F:]+(?:\/\d{1,3})?)$/;
 
 const ipBlockSchema = z.object({
-  ip: z.string().min(1).max(45).refine(
-    (val) => IP_PATTERN.test(val),
-    { message: '유효한 IPv4, IPv6 또는 CIDR 형식이어야 합니다' },
-  ),
+  ip: z
+    .string()
+    .min(1)
+    .max(45)
+    .refine((val) => IP_PATTERN.test(val), { message: '유효한 IPv4, IPv6 또는 CIDR 형식이어야 합니다' }),
   reason: z.string().min(1).max(255),
   expiresAt: z.string().optional(),
 });
@@ -77,10 +78,7 @@ const alertsQuerySchema = z.object({
  * FR-P15.1: 로그인 실패 패턴 탐지
  * GET /security/login-failures
  */
-export async function loginFailuresHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function loginFailuresHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-12: safeParse로 쿼리 파라미터 검증
   const parseResult = loginFailuresQuerySchema.safeParse(request.query);
   if (!parseResult.success) {
@@ -153,10 +151,7 @@ export async function loginFailuresHandler(
  * FR-P15.2: 이상 접근 패턴 탐지
  * GET /security/anomalies
  */
-export async function anomaliesHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function anomaliesHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // 이상 접근 패턴 분석 (동시 다중 IP, 비정상 시간대, 대량 요청)
   const anomalyRules = [
     {
@@ -201,10 +196,7 @@ export async function anomaliesHandler(
  * GET /security/ip-blocklist
  * FR-SECMON.4: 만료된 엔트리 자동 정리 (Design Ref: SVC-SECMON-R1 DESIGN)
  */
-export async function getBlocklistHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function getBlocklistHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // FR-SECMON.4: 만료된 엔트리 자동 정리
   const now = new Date();
   let expiredCount = 0;
@@ -227,10 +219,7 @@ export async function getBlocklistHandler(
  * FR-P15.3: IP 차단 등록
  * POST /security/ip-blocklist
  */
-export async function addBlocklistHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function addBlocklistHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parsed = ipBlockSchema.safeParse(request.body);
 
   if (!parsed.success) {
@@ -256,10 +245,7 @@ export async function addBlocklistHandler(
  * FR-P15.3: IP 차단 해제
  * DELETE /security/ip-blocklist/:ip
  */
-export async function removeBlocklistHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function removeBlocklistHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const { ip } = request.params as { ip: string };
 
   if (!ipBlocklist.has(ip)) {
@@ -277,10 +263,7 @@ export async function removeBlocklistHandler(
  * FR-P15.4: 보안 이벤트 알림 목록
  * GET /security/alerts
  */
-export async function alertsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function alertsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-12: safeParse로 쿼리 파라미터 검증
   const parseResult = alertsQuerySchema.safeParse(request.query);
   if (!parseResult.success) {
@@ -359,10 +342,7 @@ export async function acknowledgeAlertHandler(
  * GET /security/alerts/summary
  * Design Ref: SVC-SECMON-R1 DESIGN
  */
-export async function alertsSummaryHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function alertsSummaryHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const summary = {
     total: alerts.length,
     unacknowledged: alerts.filter((a) => !a.acknowledged).length,
@@ -372,9 +352,10 @@ export async function alertsSummaryHandler(
       medium: alerts.filter((a) => a.severity === 'medium').length,
       low: alerts.filter((a) => a.severity === 'low').length,
     },
-    latestAlert: alerts.length > 0
-      ? alerts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
-      : null,
+    latestAlert:
+      alerts.length > 0
+        ? alerts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+        : null,
   };
 
   await reply.send({ success: true, data: summary });

@@ -30,9 +30,7 @@ describe('FR-BILL.2: 연체 인보이스', () => {
       { id: '2', status: 'issued', dueDate: new Date(now.getTime() + 86400000) },
       { id: '3', status: 'paid', dueDate: new Date(now.getTime() - 86400000) },
     ];
-    const overdue = invoices.filter(
-      (i) => i.status === 'issued' && i.dueDate < now,
-    );
+    const overdue = invoices.filter((i) => i.status === 'issued' && i.dueDate < now);
     expect(overdue).toHaveLength(1);
     expect(overdue[0]!.id).toBe('1');
   });
@@ -150,20 +148,12 @@ describe('기존 기능 회귀: 라우트', () => {
 
 describe('CSAP 준수: 빌링 서비스', () => {
   it('D-06: 감사 이벤트 4종이 완비되었다', () => {
-    const events = [
-      'INVOICE_GENERATED', 'PAYMENT_COMPLETED',
-      'TAX_INVOICE_GENERATED',
-    ];
+    const events = ['INVOICE_GENERATED', 'PAYMENT_COMPLETED', 'TAX_INVOICE_GENERATED'];
     expect(events.length).toBeGreaterThanOrEqual(3);
   });
 
   it('D-08: 테넌트 격리가 모든 조회에 적용된다', () => {
-    const isolatedHandlers = [
-      'listInvoicesHandler',
-      'getInvoiceHandler',
-      'payInvoiceHandler',
-      'listPaymentsHandler',
-    ];
+    const isolatedHandlers = ['listInvoicesHandler', 'getInvoiceHandler', 'payInvoiceHandler', 'listPaymentsHandler'];
     expect(isolatedHandlers).toHaveLength(4);
   });
 

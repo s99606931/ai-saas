@@ -52,11 +52,7 @@ describe('FR-FILE.2: 파일 검색/필터', () => {
   const VALID_SORT_FIELDS = ['name', 'size', 'createdAt', 'mimeType'];
 
   it('이름 검색이 부분 일치를 지원한다', () => {
-    const files = [
-      { name: 'report-2026-Q1.pdf' },
-      { name: 'report-2026-Q2.pdf' },
-      { name: 'invoice-2026.xlsx' },
-    ];
+    const files = [{ name: 'report-2026-Q1.pdf' }, { name: 'report-2026-Q2.pdf' }, { name: 'invoice-2026.xlsx' }];
     const search = 'report';
     const filtered = files.filter((f) => f.name.toLowerCase().includes(search.toLowerCase()));
     expect(filtered).toHaveLength(2);
@@ -125,12 +121,14 @@ describe('FR-FILE.2: 파일 검색/필터', () => {
   it('검색과 필터를 조합할 수 있다', () => {
     const files = [
       { name: 'report.pdf', mimeType: 'application/pdf', size: 1024 },
-      { name: 'report.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', size: 2048 },
+      {
+        name: 'report.xlsx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        size: 2048,
+      },
       { name: 'invoice.pdf', mimeType: 'application/pdf', size: 512 },
     ];
-    const filtered = files.filter(
-      (f) => f.name.includes('report') && f.mimeType === 'application/pdf',
-    );
+    const filtered = files.filter((f) => f.name.includes('report') && f.mimeType === 'application/pdf');
     expect(filtered).toHaveLength(1);
     expect(filtered[0]!.name).toBe('report.pdf');
   });
@@ -356,20 +354,36 @@ describe('CSAP 준수: 파일 서비스', () => {
 
   it('D-12: 실행 파일 확장자 차단이 적용된다', () => {
     const BLOCKED_EXTENSIONS = [
-      '.exe', '.bat', '.cmd', '.sh', '.ps1', '.vbs', '.js',
-      '.msi', '.com', '.scr', '.pif', '.hta', '.cpl', '.msp',
-      '.jar', '.wsf', '.wsh', '.reg',
+      '.exe',
+      '.bat',
+      '.cmd',
+      '.sh',
+      '.ps1',
+      '.vbs',
+      '.js',
+      '.msi',
+      '.com',
+      '.scr',
+      '.pif',
+      '.hta',
+      '.cpl',
+      '.msp',
+      '.jar',
+      '.wsf',
+      '.wsh',
+      '.reg',
     ];
     expect(BLOCKED_EXTENSIONS.length).toBeGreaterThanOrEqual(17);
   });
 
   it('D-12: Path Traversal 방어가 적용된다', () => {
-    const sanitize = (f: string): string => f
-      .replace(/[/\\]/g, '_')
-      .replace(/\0/g, '')
-      .replace(/\.\./g, '_')
-      .replace(/^[\s.]+|[\s.]+$/g, '')
-      .slice(0, 255);
+    const sanitize = (f: string): string =>
+      f
+        .replace(/[/\\]/g, '_')
+        .replace(/\0/g, '')
+        .replace(/\.\./g, '_')
+        .replace(/^[\s.]+|[\s.]+$/g, '')
+        .slice(0, 255);
 
     expect(sanitize('../../../etc/passwd')).not.toContain('..');
     expect(sanitize('file\0name.pdf')).not.toContain('\0');
@@ -377,11 +391,15 @@ describe('CSAP 준수: 파일 서비스', () => {
 
   it('D-12: MIME 타입 허용 목록이 정의된다', () => {
     const ALLOWED = [
-      'application/pdf', 'application/msword',
+      'application/pdf',
+      'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'image/png', 'image/jpeg', 'text/plain', 'text/csv',
+      'image/png',
+      'image/jpeg',
+      'text/plain',
+      'text/csv',
     ];
     expect(ALLOWED).toContain('application/pdf');
     expect(ALLOWED).not.toContain('application/x-executable');

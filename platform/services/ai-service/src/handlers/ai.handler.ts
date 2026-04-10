@@ -35,10 +35,7 @@ const chatSchema = z.object({
  * AI 모델 목록 조회
  * Plan SC: FR-P10.1
  */
-export async function listModelsHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function listModelsHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-10: 페이지네이션으로 DoS 방어 (최대 100건)
   const models = await prisma.aiModel.findMany({
     where: { isActive: true },
@@ -53,10 +50,7 @@ export async function listModelsHandler(
  * AI 모델 등록
  * Plan SC: FR-P10.1
  */
-export async function createModelHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function createModelHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = createModelSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -66,7 +60,9 @@ export async function createModelHandler(
     return;
   }
 
-  const model = await prisma.aiModel.create({ data: parseResult.data as Parameters<typeof prisma.aiModel.create>[0]['data'] });
+  const model = await prisma.aiModel.create({
+    data: parseResult.data as Parameters<typeof prisma.aiModel.create>[0]['data'],
+  });
 
   const modelActor = (request.headers['x-user-id'] as string) || 'system';
   await logAiEvent(
@@ -119,10 +115,7 @@ export async function updateModelHandler(
  * Plan SC: FR-P10.2, FR-P10.3
  * CSAP: N2SF N-05 — C/S등급 전송 절대 금지
  */
-export async function chatHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function chatHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = chatSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({

@@ -42,9 +42,7 @@ export class AuditLogger {
    *
    * @param entry - 로그 엔트리 (id, timestamp, hash, previousHash는 자동 생성)
    */
-  async log(
-    entry: Omit<AuditEntry, 'id' | 'timestamp' | 'hash' | 'previousHash'>,
-  ): Promise<void> {
+  async log(entry: Omit<AuditEntry, 'id' | 'timestamp' | 'hash' | 'previousHash'>): Promise<void> {
     const timestamp = new Date().toISOString();
     const id = `${this.serviceName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 

@@ -45,20 +45,28 @@ describe('ipBlockSchema (CSAP D-12 입력 검증, D-10 네트워크 보안)', ()
   });
 
   it('빈 IP를 거부한다', () => {
-    expect(ipBlockSchema.safeParse({
-      ip: '', reason: '테스트',
-    }).success).toBe(false);
+    expect(
+      ipBlockSchema.safeParse({
+        ip: '',
+        reason: '테스트',
+      }).success,
+    ).toBe(false);
   });
 
   it('빈 사유를 거부한다', () => {
-    expect(ipBlockSchema.safeParse({
-      ip: '1.2.3.4', reason: '',
-    }).success).toBe(false);
+    expect(
+      ipBlockSchema.safeParse({
+        ip: '1.2.3.4',
+        reason: '',
+      }).success,
+    ).toBe(false);
   });
 
   it('차단 기간을 선택적으로 허용한다 (분 단위)', () => {
     const result = ipBlockSchema.safeParse({
-      ip: '1.2.3.4', reason: '테스트', durationMinutes: 60,
+      ip: '1.2.3.4',
+      reason: '테스트',
+      durationMinutes: 60,
     });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.durationMinutes).toBe(60);
@@ -66,22 +74,31 @@ describe('ipBlockSchema (CSAP D-12 입력 검증, D-10 네트워크 보안)', ()
 
   it('기간 없으면 영구 차단 (undefined)', () => {
     const result = ipBlockSchema.safeParse({
-      ip: '1.2.3.4', reason: '테스트',
+      ip: '1.2.3.4',
+      reason: '테스트',
     });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.durationMinutes).toBeUndefined();
   });
 
   it('음수 기간을 거부한다', () => {
-    expect(ipBlockSchema.safeParse({
-      ip: '1.2.3.4', reason: '테스트', durationMinutes: -30,
-    }).success).toBe(false);
+    expect(
+      ipBlockSchema.safeParse({
+        ip: '1.2.3.4',
+        reason: '테스트',
+        durationMinutes: -30,
+      }).success,
+    ).toBe(false);
   });
 
   it('0분 기간을 거부한다', () => {
-    expect(ipBlockSchema.safeParse({
-      ip: '1.2.3.4', reason: '테스트', durationMinutes: 0,
-    }).success).toBe(false);
+    expect(
+      ipBlockSchema.safeParse({
+        ip: '1.2.3.4',
+        reason: '테스트',
+        durationMinutes: 0,
+      }).success,
+    ).toBe(false);
   });
 });
 
@@ -97,7 +114,8 @@ describe('loginFailuresQuerySchema (FR-P15.1 로그인 실패 탐지)', () => {
 
   it('문자열 숫자를 coerce로 변환한다', () => {
     const result = loginFailuresQuerySchema.safeParse({
-      minutes: '30', threshold: '10',
+      minutes: '30',
+      threshold: '10',
     });
     expect(result.success).toBe(true);
     if (result.success) {

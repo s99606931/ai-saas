@@ -21,9 +21,7 @@ export async function notificationStatsHandler(
   const jwtRole = request.headers['x-user-role'] as string | undefined;
 
   // 테넌트 격리
-  const tenantId = jwtRole === 'SUPER_ADMIN'
-    ? (request.query.tenantId ?? jwtTenantId)
-    : jwtTenantId;
+  const tenantId = jwtRole === 'SUPER_ADMIN' ? (request.query.tenantId ?? jwtTenantId) : jwtTenantId;
 
   const where: Record<string, unknown> = {};
   if (tenantId) {

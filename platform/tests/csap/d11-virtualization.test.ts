@@ -31,10 +31,7 @@ describe('CSAP D-11: 가상화 보안 — Dockerfile 검증', () => {
   ];
 
   for (const service of services) {
-    const dockerfilePath = resolve(
-      PROJECT_ROOT,
-      `platform/services/${service}/Dockerfile`,
-    );
+    const dockerfilePath = resolve(PROJECT_ROOT, `platform/services/${service}/Dockerfile`);
 
     describe(`${service} Dockerfile`, () => {
       it('D-11-01: Dockerfile 존재 확인', () => {
@@ -112,10 +109,7 @@ describe('CSAP D-11: 가상화 보안 — docker-compose 검증', () => {
 });
 
 describe('CSAP D-11: 가상화 보안 — k8s 매니페스트 검증', () => {
-  const microservicesPath = resolve(
-    PROJECT_ROOT,
-    'k8s/services/microservices.yaml',
-  );
+  const microservicesPath = resolve(PROJECT_ROOT, 'k8s/services/microservices.yaml');
   const namespacePath = resolve(PROJECT_ROOT, 'k8s/config/namespace.yaml');
 
   it('D-11-10: k8s 네임스페이스 격리', () => {
@@ -128,9 +122,7 @@ describe('CSAP D-11: 가상화 보안 — k8s 매니페스트 검증', () => {
     const content = readFileSync(microservicesPath, 'utf-8');
 
     // 모든 Deployment에 resources.limits 설정 확인
-    const deploymentBlocks = content.split('---').filter((b) =>
-      b.includes('kind: Deployment'),
-    );
+    const deploymentBlocks = content.split('---').filter((b) => b.includes('kind: Deployment'));
 
     for (const block of deploymentBlocks) {
       expect(block).toContain('resources:');
@@ -142,9 +134,7 @@ describe('CSAP D-11: 가상화 보안 — k8s 매니페스트 검증', () => {
   it('D-11-12: k8s readinessProbe 설정 (/ready 엔드포인트)', () => {
     const content = readFileSync(microservicesPath, 'utf-8');
 
-    const deploymentBlocks = content.split('---').filter((b) =>
-      b.includes('kind: Deployment'),
-    );
+    const deploymentBlocks = content.split('---').filter((b) => b.includes('kind: Deployment'));
 
     for (const block of deploymentBlocks) {
       expect(block).toContain('readinessProbe:');
@@ -155,9 +145,7 @@ describe('CSAP D-11: 가상화 보안 — k8s 매니페스트 검증', () => {
   it('D-11-14: k8s terminationGracePeriodSeconds 설정', () => {
     const content = readFileSync(microservicesPath, 'utf-8');
 
-    const deploymentBlocks = content.split('---').filter((b) =>
-      b.includes('kind: Deployment'),
-    );
+    const deploymentBlocks = content.split('---').filter((b) => b.includes('kind: Deployment'));
 
     for (const block of deploymentBlocks) {
       expect(block).toContain('terminationGracePeriodSeconds:');

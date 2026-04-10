@@ -8,18 +8,9 @@ import { z } from 'zod';
 
 // login.schema.ts 스키마 재현
 const loginSchema = z.object({
-  email: z
-    .string()
-    .email('유효한 이메일 주소를 입력하세요')
-    .max(255, '이메일은 255자 이하여야 합니다'),
-  password: z
-    .string()
-    .min(1, '비밀번호를 입력하세요')
-    .max(128, '비밀번호는 128자 이하여야 합니다'),
-  tenantSlug: z
-    .string()
-    .min(1, '테넌트를 선택하세요')
-    .max(100),
+  email: z.string().email('유효한 이메일 주소를 입력하세요').max(255, '이메일은 255자 이하여야 합니다'),
+  password: z.string().min(1, '비밀번호를 입력하세요').max(128, '비밀번호는 128자 이하여야 합니다'),
+  tenantSlug: z.string().min(1, '테넌트를 선택하세요').max(100),
   mfaCode: z
     .string()
     .length(6, 'MFA 코드는 6자리여야 합니다')
@@ -60,62 +51,76 @@ describe('CSAP D-12: 로그인 입력 검증', () => {
   });
 
   it('이메일 형식이 아닌 입력을 거부한다', () => {
-    expect(loginSchema.safeParse({
-      email: 'not-an-email',
-      password: 'test',
-      tenantSlug: 'test',
-    }).success).toBe(false);
+    expect(
+      loginSchema.safeParse({
+        email: 'not-an-email',
+        password: 'test',
+        tenantSlug: 'test',
+      }).success,
+    ).toBe(false);
   });
 
   it('빈 비밀번호를 거부한다', () => {
-    expect(loginSchema.safeParse({
-      email: 'admin@example.com',
-      password: '',
-      tenantSlug: 'test',
-    }).success).toBe(false);
+    expect(
+      loginSchema.safeParse({
+        email: 'admin@example.com',
+        password: '',
+        tenantSlug: 'test',
+      }).success,
+    ).toBe(false);
   });
 
   it('비밀번호 128자 초과를 거부한다 (자원 고갈 방지)', () => {
-    expect(loginSchema.safeParse({
-      email: 'admin@example.com',
-      password: 'a'.repeat(129),
-      tenantSlug: 'test',
-    }).success).toBe(false);
+    expect(
+      loginSchema.safeParse({
+        email: 'admin@example.com',
+        password: 'a'.repeat(129),
+        tenantSlug: 'test',
+      }).success,
+    ).toBe(false);
   });
 
   it('이메일 255자 초과를 거부한다', () => {
     const longEmail = 'a'.repeat(250) + '@b.com';
-    expect(loginSchema.safeParse({
-      email: longEmail,
-      password: 'test',
-      tenantSlug: 'test',
-    }).success).toBe(false);
+    expect(
+      loginSchema.safeParse({
+        email: longEmail,
+        password: 'test',
+        tenantSlug: 'test',
+      }).success,
+    ).toBe(false);
   });
 
   it('빈 테넌트 슬러그를 거부한다', () => {
-    expect(loginSchema.safeParse({
-      email: 'admin@example.com',
-      password: 'test',
-      tenantSlug: '',
-    }).success).toBe(false);
+    expect(
+      loginSchema.safeParse({
+        email: 'admin@example.com',
+        password: 'test',
+        tenantSlug: '',
+      }).success,
+    ).toBe(false);
   });
 
   it('MFA 코드가 6자리가 아니면 거부한다', () => {
-    expect(loginSchema.safeParse({
-      email: 'admin@example.com',
-      password: 'test',
-      tenantSlug: 'test',
-      mfaCode: '12345',
-    }).success).toBe(false);
+    expect(
+      loginSchema.safeParse({
+        email: 'admin@example.com',
+        password: 'test',
+        tenantSlug: 'test',
+        mfaCode: '12345',
+      }).success,
+    ).toBe(false);
   });
 
   it('MFA 코드에 문자가 포함되면 거부한다', () => {
-    expect(loginSchema.safeParse({
-      email: 'admin@example.com',
-      password: 'test',
-      tenantSlug: 'test',
-      mfaCode: 'abcdef',
-    }).success).toBe(false);
+    expect(
+      loginSchema.safeParse({
+        email: 'admin@example.com',
+        password: 'test',
+        tenantSlug: 'test',
+        mfaCode: 'abcdef',
+      }).success,
+    ).toBe(false);
   });
 
   it('MFA 코드는 선택적이다', () => {
@@ -149,9 +154,11 @@ describe('CSAP D-12: 토큰 갱신/로그아웃 스키마', () => {
   });
 
   it('유효한 갱신 토큰을 허용한다', () => {
-    expect(refreshSchema.safeParse({
-      refreshToken: 'eyJhbGciOiJSUzI1NiJ9.test.sig',
-    }).success).toBe(true);
+    expect(
+      refreshSchema.safeParse({
+        refreshToken: 'eyJhbGciOiJSUzI1NiJ9.test.sig',
+      }).success,
+    ).toBe(true);
   });
 
   it('로그아웃 시 빈 토큰을 거부한다', () => {

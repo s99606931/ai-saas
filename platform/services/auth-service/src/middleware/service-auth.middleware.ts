@@ -21,10 +21,7 @@ const TOKEN_MAX_AGE_SECONDS = 300; // 5분
  * @param request - Fastify 요청 객체
  * @param reply - Fastify 응답 객체
  */
-export async function requireServiceAuth(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function requireServiceAuth(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const serviceKey = process.env['INTERNAL_SERVICE_KEY'];
   if (!serviceKey) {
     request.log.error('INTERNAL_SERVICE_KEY 환경 변수가 설정되지 않았습니다');
@@ -84,19 +81,13 @@ export async function requireServiceAuth(
   // HMAC 검증
   const urlPath = request.url.split('?')[0] ?? request.url;
   const message = `${serviceName}:${timestampStr}:${urlPath}`;
-  const expectedHmac = crypto
-    .createHmac('sha256', serviceKey)
-    .update(message)
-    .digest('hex');
+  const expectedHmac = crypto.createHmac('sha256', serviceKey).update(message).digest('hex');
 
   // Timing-safe 비교 (CSAP D-09: 타이밍 공격 방지)
   const isValid =
     providedHmac !== undefined &&
     providedHmac.length === expectedHmac.length &&
-    crypto.timingSafeEqual(
-      Buffer.from(providedHmac, 'utf8'),
-      Buffer.from(expectedHmac, 'utf8'),
-    );
+    crypto.timingSafeEqual(Buffer.from(providedHmac, 'utf8'), Buffer.from(expectedHmac, 'utf8'));
 
   if (!isValid) {
     await reply.status(403).send({

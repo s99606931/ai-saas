@@ -12,17 +12,13 @@ describe('E2E: 테넌트 격리 검증 (FR-N01.8, CSAP D-08, N2SF N-03)', () => 
 
   describe('테넌트 ID 전파 검증', () => {
     it('API 게이트웨이가 인증 후 x-user-tenant-id 헤더를 주입해야 한다', () => {
-      const proxyContent = readServiceFile(
-        'platform/services/api-gateway/src/routes/proxy.ts',
-      );
+      const proxyContent = readServiceFile('platform/services/api-gateway/src/routes/proxy.ts');
       expect(proxyContent).toContain('x-user-tenant-id');
       expect(proxyContent).toContain('data.tenantId');
     });
 
     it('동적 플러그인 프록시에서도 x-tenant-id 헤더를 전파해야 한다', () => {
-      const proxyContent = readServiceFile(
-        'platform/services/api-gateway/src/routes/proxy.ts',
-      );
+      const proxyContent = readServiceFile('platform/services/api-gateway/src/routes/proxy.ts');
       expect(proxyContent).toContain("'x-tenant-id'");
     });
   });
@@ -31,10 +27,10 @@ describe('E2E: 테넌트 격리 검증 (FR-N01.8, CSAP D-08, N2SF N-03)', () => 
 
   describe('테넌트 서비스 격리 검증', () => {
     it('tenant-service에 테넌트 격리 기반 CRUD가 존재해야 한다', () => {
-      const result = serviceFileContains(
-        'platform/services/tenant-service/src/handlers/tenant.handler.ts',
-        ['prisma.tenant', 'FastifyRequest'],
-      );
+      const result = serviceFileContains('platform/services/tenant-service/src/handlers/tenant.handler.ts', [
+        'prisma.tenant',
+        'FastifyRequest',
+      ]);
       expect(result.exists).toBe(true);
     });
   });
@@ -43,16 +39,12 @@ describe('E2E: 테넌트 격리 검증 (FR-N01.8, CSAP D-08, N2SF N-03)', () => 
 
   describe('사용자 서비스 테넌트 격리 검증', () => {
     it('user-service에 tenantId 기반 필터링이 존재해야 한다', () => {
-      const handlerContent = readServiceFile(
-        'platform/services/user-service/src/handlers/user.handler.ts',
-      );
+      const handlerContent = readServiceFile('platform/services/user-service/src/handlers/user.handler.ts');
       expect(handlerContent).toContain('tenantId');
     });
 
     it('비밀번호 변경 시 테넌트 격리가 적용되어야 한다', () => {
-      const handlerContent = readServiceFile(
-        'platform/services/user-service/src/handlers/user.handler.ts',
-      );
+      const handlerContent = readServiceFile('platform/services/user-service/src/handlers/user.handler.ts');
       // 비밀번호 변경 관련 코드에서 tenantId 확인
       expect(handlerContent).toContain('password');
       expect(handlerContent).toContain('tenantId');
@@ -63,9 +55,7 @@ describe('E2E: 테넌트 격리 검증 (FR-N01.8, CSAP D-08, N2SF N-03)', () => 
 
   describe('감사 서비스 테넌트 격리 검증', () => {
     it('audit-service에 tenantId 기반 필터링이 존재해야 한다', () => {
-      const handlerContent = readServiceFile(
-        'platform/services/audit-service/src/handlers/audit.handler.ts',
-      );
+      const handlerContent = readServiceFile('platform/services/audit-service/src/handlers/audit.handler.ts');
       expect(handlerContent).toContain('tenantId');
     });
   });
@@ -74,9 +64,7 @@ describe('E2E: 테넌트 격리 검증 (FR-N01.8, CSAP D-08, N2SF N-03)', () => 
 
   describe('플러그인 테넌트 격리 검증', () => {
     it('전자결재 플러그인에 테넌트 격리가 적용되어야 한다', () => {
-      const handlerContent = readServiceFile(
-        'platform/plugins/electronic-approval/src/handlers/draft.handler.ts',
-      );
+      const handlerContent = readServiceFile('platform/plugins/electronic-approval/src/handlers/draft.handler.ts');
       expect(handlerContent).toContain('tenantId');
       expect(handlerContent).toContain('x-tenant-id');
     });
@@ -117,16 +105,12 @@ describe('E2E: 테넌트 격리 검증 (FR-N01.8, CSAP D-08, N2SF N-03)', () => 
 
   describe('Cross-Tenant 접근 차단 검증', () => {
     it('API 게이트웨이 인증 시 tenantId가 JWT에서 추출되어야 한다', () => {
-      const proxyContent = readServiceFile(
-        'platform/services/api-gateway/src/routes/proxy.ts',
-      );
+      const proxyContent = readServiceFile('platform/services/api-gateway/src/routes/proxy.ts');
       expect(proxyContent).toContain('tenantId');
     });
 
     it('서비스 간 내부 통신 시 x-internal-service-key 헤더를 사용해야 한다', () => {
-      const proxyContent = readServiceFile(
-        'platform/services/api-gateway/src/routes/proxy.ts',
-      );
+      const proxyContent = readServiceFile('platform/services/api-gateway/src/routes/proxy.ts');
       expect(proxyContent).toContain('x-internal-service-key');
       expect(proxyContent).toContain('INTERNAL_SERVICE_KEY');
     });

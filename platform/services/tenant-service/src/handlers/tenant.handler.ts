@@ -21,7 +21,11 @@ const tenantIdParamSchema = z.object({
 
 const createTenantSchema = z.object({
   name: z.string().min(1, '테넌트명은 필수입니다').max(200),
-  slug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, 'slug는 소문자, 숫자, 하이픈만 허용'),
+  slug: z
+    .string()
+    .min(2)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/, 'slug는 소문자, 숫자, 하이픈만 허용'),
   maxUsers: z.number().int().min(1).max(10000).default(10),
   maxStorage: z.number().int().min(0).default(1073741824), // 1GB
 });
@@ -31,12 +35,14 @@ const updateTenantSchema = z.object({
   maxUsers: z.number().int().min(1).max(10000).optional(),
   maxStorage: z.number().int().min(0).optional(),
   config: z.record(z.unknown()).optional(),
-  theme: z.object({
-    primaryColor: z.string().optional(),
-    logoUrl: z.string().url().optional(),
-    faviconUrl: z.string().url().optional(),
-    sidebarVariant: z.enum(['default', 'compact', 'floating']).optional(),
-  }).optional(),
+  theme: z
+    .object({
+      primaryColor: z.string().optional(),
+      logoUrl: z.string().url().optional(),
+      faviconUrl: z.string().url().optional(),
+      sidebarVariant: z.enum(['default', 'compact', 'floating']).optional(),
+    })
+    .optional(),
 });
 
 const updateStatusSchema = z.object({
@@ -53,14 +59,23 @@ const VALID_SORT_FIELDS = ['name', 'createdAt', 'status', 'maxUsers'] as const;
  * CSAP D-12: Zod 입력 검증, sortBy/sortOrder 지원
  */
 export async function listTenantsHandler(
-  request: FastifyRequest<{ Querystring: { page?: string; pageSize?: string; status?: string; sortBy?: string; sortOrder?: string; search?: string } }>,
+  request: FastifyRequest<{
+    Querystring: {
+      page?: string;
+      pageSize?: string;
+      status?: string;
+      sortBy?: string;
+      sortOrder?: string;
+      search?: string;
+    };
+  }>,
   reply: FastifyReply,
 ): Promise<void> {
   const page = parseInt(request.query.page ?? '1', 10);
   const pageSize = Math.min(parseInt(request.query.pageSize ?? '20', 10), 100);
   const status = request.query.status;
   const sortBy = (VALID_SORT_FIELDS as readonly string[]).includes(request.query.sortBy ?? '')
-    ? (request.query.sortBy as typeof VALID_SORT_FIELDS[number])
+    ? (request.query.sortBy as (typeof VALID_SORT_FIELDS)[number])
     : 'createdAt';
   const sortOrder = request.query.sortOrder === 'asc' ? 'asc' : 'desc';
 
@@ -135,10 +150,7 @@ export async function getTenantHandler(
  * 테넌트 생성
  * Plan SC: FR-P03.1
  */
-export async function createTenantHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function createTenantHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = createTenantSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -434,12 +446,14 @@ export async function updateTenantConfigHandler(
 
   const configSchema = z.object({
     config: z.record(z.unknown()).optional(),
-    theme: z.object({
-      primaryColor: z.string().optional(),
-      logoUrl: z.string().url().optional(),
-      faviconUrl: z.string().url().optional(),
-      sidebarVariant: z.enum(['default', 'compact', 'floating']).optional(),
-    }).optional(),
+    theme: z
+      .object({
+        primaryColor: z.string().optional(),
+        logoUrl: z.string().url().optional(),
+        faviconUrl: z.string().url().optional(),
+        sidebarVariant: z.enum(['default', 'compact', 'floating']).optional(),
+      })
+      .optional(),
   });
 
   const parseResult = configSchema.safeParse(request.body);
@@ -490,10 +504,7 @@ export async function updateTenantConfigHandler(
  * auth-service의 /auth/sessions/invalidate 엔드포인트를 호출하여
  * 해당 테넌트의 모든 사용자 세션을 무효화합니다.
  */
-async function invalidateTenantSessions(
-  tenantId: string,
-  _callerIp: string,
-): Promise<void> {
+async function invalidateTenantSessions(tenantId: string, _callerIp: string): Promise<void> {
   const authServiceUrl = process.env['AUTH_SVC_URL'] ?? 'http://auth-service:3001';
   const serviceKey = process.env['INTERNAL_SERVICE_KEY'];
 

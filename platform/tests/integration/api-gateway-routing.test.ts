@@ -11,9 +11,20 @@ describe('API 게이트웨이 라우팅', () => {
   // FR-P04.1: 서비스 프록시 라우팅
   it('FR-P04.1: /api/v1/{service} 경로로 프록시 라우팅', async () => {
     const services = [
-      'auth', 'users', 'tenants', 'menus', 'services',
-      'subscriptions', 'billing', 'crm', 'ai',
-      'notifications', 'files', 'audit', 'compliance', 'security',
+      'auth',
+      'users',
+      'tenants',
+      'menus',
+      'services',
+      'subscriptions',
+      'billing',
+      'crm',
+      'ai',
+      'notifications',
+      'files',
+      'audit',
+      'compliance',
+      'security',
     ];
 
     for (const svc of services) {
@@ -29,9 +40,7 @@ describe('API 게이트웨이 라우팅', () => {
 
   // FR-P04.2: 인증 필요 서비스에 대한 토큰 검증
   it('FR-P04.2: 인증 필요 서비스 — 토큰 없이 접근 시 401', async () => {
-    const protectedServices = [
-      'users', 'tenants', 'subscriptions', 'billing', 'audit',
-    ];
+    const protectedServices = ['users', 'tenants', 'subscriptions', 'billing', 'audit'];
 
     for (const svc of protectedServices) {
       try {
@@ -84,7 +93,7 @@ describe('API 게이트웨이 라우팅', () => {
         headers: {
           'Content-Type': 'application/json',
           'X-Data-Grade': 'C', // 기밀 등급
-          'Authorization': 'Bearer test-token',
+          Authorization: 'Bearer test-token',
         },
         body: JSON.stringify({ message: 'test' }),
       });
@@ -159,7 +168,7 @@ describe('API 게이트웨이 라우팅', () => {
     try {
       const res = await fetch(`${GATEWAY_URL}/api/v1/plugins/nonexistent/test`, {
         headers: {
-          'Authorization': 'Bearer test-token',
+          Authorization: 'Bearer test-token',
         },
       });
 

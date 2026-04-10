@@ -2,25 +2,25 @@
 // Plan SC: FR-UP.6
 // CSAP: D-08, D-12 — 79개 통제항목 13개 분야 준수율 계산
 
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getAuthContext } from '@/lib/auth-guard'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getAuthContext } from '@/lib/auth-guard';
 
 // DB 의존 API — 빌드 시 정적 생성 방지
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export interface CsapDomain {
-  id: string
-  name: string
-  totalItems: number
-  passCount: number
-  rate: number
+  id: string;
+  name: string;
+  totalItems: number;
+  passCount: number;
+  rate: number;
 }
 
 export interface CsapComplianceResponse {
-  domains: CsapDomain[]
-  overallRate: number
-  activeTenantCount: number
+  domains: CsapDomain[];
+  overallRate: number;
+  activeTenantCount: number;
 }
 
 // CSAP 13개 분야 기준 데이터 (D-01 ~ D-13)
@@ -40,15 +40,15 @@ const CSAP_DOMAIN_BASE: Omit<CsapDomain, 'passCount' | 'rate'>[] = [
   { id: 'D-11', name: '시스템 보안', totalItems: 7 },
   { id: 'D-12', name: '시스템 개발 보안', totalItems: 10 },
   { id: 'D-13', name: '공급망 보안', totalItems: 10 },
-]
+];
 
 // Plan SC: FR-UP.6 — CSAP 준수 현황 조회
 // CSAP D-08-01: 인증 필수
 export async function GET(): Promise<NextResponse<CsapComplianceResponse | { error: string }>> {
   // CSAP D-08: 인증 검사
-  const auth = await getAuthContext()
+  const auth = await getAuthContext();
   if (!auth) {
-    return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 })
+    return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 });
   }
 
   try {
@@ -56,30 +56,27 @@ export async function GET(): Promise<NextResponse<CsapComplianceResponse | { err
     const [activeTenantCount, auditLogCount] = await Promise.all([
       prisma.tenant.count({ where: { status: 'ACTIVE' } }),
       prisma.auditLog.count({ where: { action: 'COMPLIANCE_CHECK' } }),
-    ])
+    ]);
 
     // 감사 로그 수에 따라 준수율 변동 (데모용 계산 로직)
     // 실 환경: 별도 ComplianceResult 테이블에서 집계
-    const basePassRate = activeTenantCount > 0 ? 0.95 : 0.8
-    const auditBonus = Math.min(auditLogCount * 0.001, 0.05)
-    const effectiveRate = Math.min(1.0, basePassRate + auditBonus)
+    const basePassRate = activeTenantCount > 0 ? 0.95 : 0.8;
+    const auditBonus = Math.min(auditLogCount * 0.001, 0.05);
+    const effectiveRate = Math.min(1.0, basePassRate + auditBonus);
 
     const domains: CsapDomain[] = CSAP_DOMAIN_BASE.map((domain) => {
-      const passCount = Math.floor(domain.totalItems * effectiveRate)
-      const rate = Math.round((passCount / domain.totalItems) * 100)
-      return { ...domain, passCount, rate }
-    })
+      const passCount = Math.floor(domain.totalItems * effectiveRate);
+      const rate = Math.round((passCount / domain.totalItems) * 100);
+      return { ...domain, passCount, rate };
+    });
 
-    const totalItems = domains.reduce((sum, d) => sum + d.totalItems, 0)
-    const totalPass = domains.reduce((sum, d) => sum + d.passCount, 0)
-    const overallRate = Math.round((totalPass / totalItems) * 100)
+    const totalItems = domains.reduce((sum, d) => sum + d.totalItems, 0);
+    const totalPass = domains.reduce((sum, d) => sum + d.passCount, 0);
+    const overallRate = Math.round((totalPass / totalItems) * 100);
 
-    return NextResponse.json({ domains, overallRate, activeTenantCount })
+    return NextResponse.json({ domains, overallRate, activeTenantCount });
   } catch (error) {
-    process.stderr.write(`[API] /api/compliance/csap 오류: ${String(error)}\n`)
-    return NextResponse.json(
-      { error: 'CSAP 준수 현황 조회 중 오류가 발생했습니다.' },
-      { status: 500 }
-    )
+    process.stderr.write(`[API] /api/compliance/csap 오류: ${String(error)}\n`);
+    return NextResponse.json({ error: 'CSAP 준수 현황 조회 중 오류가 발생했습니다.' }, { status: 500 });
   }
 }

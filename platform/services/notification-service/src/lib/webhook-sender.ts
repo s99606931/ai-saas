@@ -13,13 +13,7 @@ function isInternalUrl(urlString: string): boolean {
     const hostname = url.hostname.toLowerCase();
 
     // 내부 IP 대역 차단
-    const blockedPatterns = [
-      'localhost',
-      '127.0.0.1',
-      '0.0.0.0',
-      '::1',
-      '[::1]',
-    ];
+    const blockedPatterns = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'];
 
     if (blockedPatterns.includes(hostname)) return true;
 
@@ -59,10 +53,7 @@ interface WebhookResult {
  * 웹훅 HTTP POST 발송 (재시도 + SSRF 방지)
  * Design Ref: DESIGN-MTU-Q2 §2
  */
-export async function sendWebhook(
-  webhookUrl: string,
-  payload: WebhookPayload,
-): Promise<WebhookResult> {
+export async function sendWebhook(webhookUrl: string, payload: WebhookPayload): Promise<WebhookResult> {
   // SSRF 방지: 내부 URL 차단
   if (isInternalUrl(webhookUrl)) {
     return {

@@ -10,7 +10,11 @@ const uploadSchema = z.object({
   tenantId: z.string().min(1),
   filename: z.string().min(1).max(255),
   mimeType: z.string().regex(/^[a-z]+\/[a-z0-9.+-]+$/i),
-  size: z.number().int().min(1).max(100 * 1024 * 1024), // 100MB 제한
+  size: z
+    .number()
+    .int()
+    .min(1)
+    .max(100 * 1024 * 1024), // 100MB 제한
   classification: z.enum(['PUBLIC', 'INTERNAL', 'CONFIDENTIAL']).default('INTERNAL'),
 });
 
@@ -18,14 +22,32 @@ const ALLOWED_MIME_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'image/png', 'image/jpeg', 'image/gif',
-  'text/plain', 'text/csv',
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'text/plain',
+  'text/csv',
 ];
 
 const BLOCKED_EXTENSIONS = [
-  '.exe', '.bat', '.cmd', '.sh', '.ps1', '.vbs', '.js',
-  '.msi', '.com', '.scr', '.pif', '.hta', '.cpl', '.msp',
-  '.jar', '.wsf', '.wsh', '.reg',
+  '.exe',
+  '.bat',
+  '.cmd',
+  '.sh',
+  '.ps1',
+  '.vbs',
+  '.js',
+  '.msi',
+  '.com',
+  '.scr',
+  '.pif',
+  '.hta',
+  '.cpl',
+  '.msp',
+  '.jar',
+  '.wsf',
+  '.wsh',
+  '.reg',
 ];
 
 describe('CSAP D-12: 파일 업로드 보안', () => {
@@ -40,29 +62,31 @@ describe('CSAP D-12: 파일 업로드 보안', () => {
   });
 
   it('100MB 초과 파일을 거부한다', () => {
-    expect(uploadSchema.safeParse({
-      tenantId: 'tenant-1',
-      filename: 'large.pdf',
-      mimeType: 'application/pdf',
-      size: 200 * 1024 * 1024,
-    }).success).toBe(false);
+    expect(
+      uploadSchema.safeParse({
+        tenantId: 'tenant-1',
+        filename: 'large.pdf',
+        mimeType: 'application/pdf',
+        size: 200 * 1024 * 1024,
+      }).success,
+    ).toBe(false);
   });
 
   it('0 바이트 파일을 거부한다', () => {
-    expect(uploadSchema.safeParse({
-      tenantId: 'tenant-1',
-      filename: 'empty.pdf',
-      mimeType: 'application/pdf',
-      size: 0,
-    }).success).toBe(false);
+    expect(
+      uploadSchema.safeParse({
+        tenantId: 'tenant-1',
+        filename: 'empty.pdf',
+        mimeType: 'application/pdf',
+        size: 0,
+      }).success,
+    ).toBe(false);
   });
 
   it('실행 파일 확장자를 차단해야 한다', () => {
     BLOCKED_EXTENSIONS.forEach((ext) => {
       const filename = `malicious${ext}`;
-      const isBlocked = BLOCKED_EXTENSIONS.some((blocked) =>
-        filename.toLowerCase().endsWith(blocked),
-      );
+      const isBlocked = BLOCKED_EXTENSIONS.some((blocked) => filename.toLowerCase().endsWith(blocked));
       expect(isBlocked).toBe(true);
     });
   });
@@ -74,12 +98,13 @@ describe('CSAP D-12: 파일 업로드 보안', () => {
 
   it('경로 탐색(Path Traversal) 방어가 적용된다', () => {
     // sanitizeFilename 로직 재현
-    const sanitize = (f: string): string => f
-      .replace(/[/\\]/g, '_')
-      .replace(/\0/g, '')
-      .replace(/\.\./g, '_')
-      .replace(/^[\s.]+|[\s.]+$/g, '')
-      .slice(0, 255);
+    const sanitize = (f: string): string =>
+      f
+        .replace(/[/\\]/g, '_')
+        .replace(/\0/g, '')
+        .replace(/\.\./g, '_')
+        .replace(/^[\s.]+|[\s.]+$/g, '')
+        .slice(0, 255);
 
     expect(sanitize('../../../etc/passwd')).not.toContain('/');
     expect(sanitize('../../../etc/passwd')).not.toContain('..');
@@ -103,12 +128,14 @@ describe('CSAP D-12: 파일 업로드 보안', () => {
   });
 
   it('잘못된 MIME 타입 형식을 거부한다', () => {
-    expect(uploadSchema.safeParse({
-      tenantId: 'tenant-1',
-      filename: 'test.pdf',
-      mimeType: 'invalid',
-      size: 1024,
-    }).success).toBe(false);
+    expect(
+      uploadSchema.safeParse({
+        tenantId: 'tenant-1',
+        filename: 'test.pdf',
+        mimeType: 'invalid',
+        size: 1024,
+      }).success,
+    ).toBe(false);
   });
 });
 
@@ -142,10 +169,7 @@ describe('CSAP D-08: 파일 접근 통제', () => {
 
 describe('CSAP D-06: 파일 감사 로그', () => {
   it('파일 이벤트가 정의된다', () => {
-    const events = [
-      'FILE_UPLOADED', 'FILE_DOWNLOADED',
-      'FILE_DELETED', 'FILE_ACCESS_DENIED',
-    ];
+    const events = ['FILE_UPLOADED', 'FILE_DOWNLOADED', 'FILE_DELETED', 'FILE_ACCESS_DENIED'];
     expect(events.length).toBe(4);
   });
 });

@@ -13,10 +13,7 @@ import {
   listFlagsHandler,
   toggleFlagHandler,
 } from './handlers/catalog.handler.js';
-import {
-  listCategoriesHandler,
-  catalogStatsHandler,
-} from './handlers/catalog-stats.handler.js';
+import { listCategoriesHandler, catalogStatsHandler } from './handlers/catalog-stats.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {

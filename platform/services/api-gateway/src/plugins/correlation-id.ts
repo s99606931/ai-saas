@@ -20,9 +20,7 @@ const HEADER_NAME = 'x-request-id';
 async function correlationIdPlugin(app: FastifyInstance): Promise<void> {
   app.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
     const incomingId = request.headers[HEADER_NAME];
-    const correlationId = typeof incomingId === 'string' && incomingId.length > 0
-      ? incomingId
-      : randomUUID();
+    const correlationId = typeof incomingId === 'string' && incomingId.length > 0 ? incomingId : randomUUID();
 
     // Fastify request.id에 바인딩 (pino 로그에 reqId로 자동 포함)
     (request as FastifyRequest & { id: string }).id = correlationId;

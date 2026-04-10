@@ -35,7 +35,7 @@ const PERMANENT_LOCK = new Date('9999-12-31T23:59:59.000Z');
 
 /** 유효한 정렬 필드 */
 const VALID_SORT_FIELDS = ['name', 'email', 'createdAt', 'lastLoginAt'] as const;
-type SortField = typeof VALID_SORT_FIELDS[number];
+type SortField = (typeof VALID_SORT_FIELDS)[number];
 
 /**
  * 사용자 목록 조회 (검색/필터링/정렬 지원)
@@ -68,9 +68,7 @@ export async function listUsersHandler(
   const jwtRole = request.headers['x-user-role'] as string | undefined;
 
   // SUPER_ADMIN은 쿼리 파라미터로 테넌트 지정 가능, 그 외는 JWT 테넌트로 강제
-  const tenantId = jwtRole === 'SUPER_ADMIN'
-    ? (request.query.tenantId ?? jwtTenantId)
-    : jwtTenantId;
+  const tenantId = jwtRole === 'SUPER_ADMIN' ? (request.query.tenantId ?? jwtTenantId) : jwtTenantId;
 
   if (!tenantId) {
     await reply.status(400).send({
@@ -103,10 +101,7 @@ export async function listUsersHandler(
     where['OR_status'] = undefined; // clear
     where['AND'] = [
       {
-        OR: [
-          { lockedUntil: null },
-          { lockedUntil: { lt: now } },
-        ],
+        OR: [{ lockedUntil: null }, { lockedUntil: { lt: now } }],
       },
     ];
   } else if (status === 'inactive') {
@@ -119,9 +114,7 @@ export async function listUsersHandler(
   }
 
   // 정렬 (기본: createdAt desc)
-  const validSortBy: SortField = VALID_SORT_FIELDS.includes(sortBy as SortField)
-    ? (sortBy as SortField)
-    : 'createdAt';
+  const validSortBy: SortField = VALID_SORT_FIELDS.includes(sortBy as SortField) ? (sortBy as SortField) : 'createdAt';
   const validSortOrder: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
 
   const [users, total] = await Promise.all([
@@ -210,10 +203,7 @@ export async function getUserHandler(
  * CSAP D-08-07: 비밀번호 정책 적용
  * Plan SC: FR-P02.9: 테넌트 사용자 수 제한
  */
-export async function createUserHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function createUserHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = createUserSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({

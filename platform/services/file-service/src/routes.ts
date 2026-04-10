@@ -10,10 +10,7 @@ import {
   deleteFileHandler,
   getFileMetaHandler,
 } from './handlers/file.handler.js';
-import {
-  storageUsageHandler,
-  fileStatsHandler,
-} from './handlers/file-stats.handler.js';
+import { storageUsageHandler, fileStatsHandler } from './handlers/file-stats.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {

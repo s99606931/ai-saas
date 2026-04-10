@@ -25,10 +25,7 @@ export function csapGuard(options: CsapGuardOptions = {}) {
   const auditUrl = options.auditServiceUrl ?? process.env['AUDIT_SERVICE_URL'] ?? 'http://localhost:3012';
   const shouldAudit = options.audit !== false;
 
-  return async function csapGuardHook(
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ): Promise<void> {
+  return async function csapGuardHook(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     // D-08: 인증 확인
     const authHeader = request.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {

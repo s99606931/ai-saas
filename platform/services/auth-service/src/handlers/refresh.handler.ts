@@ -20,10 +20,7 @@ import { getUserPermissions } from '../lib/permissions.js';
  * - 새 접근 토큰 + 새 갱신 토큰 발급
  * - 탈취된 토큰 재사용 방지
  */
-export async function refreshHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function refreshHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = refreshSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -86,13 +83,7 @@ export async function refreshHandler(
     });
 
     // 감사 로그
-    await logAuthEvent(
-      'TOKEN_REFRESH',
-      user.id,
-      user.tenantId,
-      request.ip,
-      request.headers['user-agent'] ?? 'unknown',
-    );
+    await logAuthEvent('TOKEN_REFRESH', user.id, user.tenantId, request.ip, request.headers['user-agent'] ?? 'unknown');
 
     await reply.status(200).send({
       success: true,

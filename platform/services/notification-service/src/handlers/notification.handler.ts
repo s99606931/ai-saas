@@ -31,10 +31,7 @@ const sendFromTemplateSchema = z.object({
  * 알림 발송
  * Plan SC: FR-P11.2
  */
-export async function sendNotificationHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function sendNotificationHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = sendNotificationSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -98,10 +95,7 @@ export async function sendNotificationHandler(
  * Design Ref: DESIGN-MTU-Q2 §1
  * Plan SC: FR-P11.1
  */
-export async function sendFromTemplateHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function sendFromTemplateHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = sendFromTemplateSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -386,7 +380,9 @@ const historyQuerySchema = z.object({
  * CSAP D-08-05: 테넌트 격리 강화 (Design Ref: SVC-NOTIF-R1 DESIGN §4)
  */
 export async function listHistoryHandler(
-  request: FastifyRequest<{ Querystring: { channel?: string; status?: string; tenantId?: string; page?: string; pageSize?: string } }>,
+  request: FastifyRequest<{
+    Querystring: { channel?: string; status?: string; tenantId?: string; page?: string; pageSize?: string };
+  }>,
   reply: FastifyReply,
 ): Promise<void> {
   const queryResult = historyQuerySchema.safeParse(request.query);

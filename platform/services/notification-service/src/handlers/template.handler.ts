@@ -96,10 +96,7 @@ export function renderTemplate(template: string, variables: Record<string, strin
 /**
  * 템플릿 생성
  */
-export async function createTemplateHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function createTemplateHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = createTemplateSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({

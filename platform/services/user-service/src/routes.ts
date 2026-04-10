@@ -3,7 +3,14 @@
 // Plan SC: FR-P02.1~FR-P02.10, FR-USR.1~FR-USR.6
 
 import type { FastifyInstance } from 'fastify';
-import { listUsersHandler, getUserHandler, createUserHandler, updateUserHandler, deleteUserHandler, reactivateUserHandler } from './handlers/user.handler.js';
+import {
+  listUsersHandler,
+  getUserHandler,
+  createUserHandler,
+  updateUserHandler,
+  deleteUserHandler,
+  reactivateUserHandler,
+} from './handlers/user.handler.js';
 import { changeRoleHandler } from './handlers/role.handler.js';
 import { changePasswordHandler } from './handlers/password.handler.js';
 import { requestPasswordResetHandler, confirmPasswordResetHandler } from './handlers/password-reset.handler.js';

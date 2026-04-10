@@ -153,9 +153,7 @@ describe('기존 기능 회귀: 감사 라우트', () => {
 
 describe('CSAP 준수: 감사 서비스 Round 2', () => {
   it('D-06: 이상 행위 탐지로 침해사고 조기 감지가 가능하다', () => {
-    const anomalies = [
-      { date: '2026-04-08', count: 150, zScore: 3.5 },
-    ];
+    const anomalies = [{ date: '2026-04-08', count: 150, zScore: 3.5 }];
     expect(anomalies[0].zScore).toBeGreaterThan(2);
   });
 

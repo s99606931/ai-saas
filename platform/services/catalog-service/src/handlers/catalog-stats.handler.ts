@@ -11,10 +11,7 @@ import { prisma } from '../lib/prisma.js';
  * GET /catalog/categories
  * Design Ref: SVC-CAT-R1 DESIGN
  */
-export async function listCategoriesHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function listCategoriesHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const categories = await prisma.service.groupBy({
     by: ['category'],
     _count: { id: true },
@@ -36,10 +33,7 @@ export async function listCategoriesHandler(
  * GET /catalog/stats
  * Design Ref: SVC-CAT-R1 DESIGN
  */
-export async function catalogStatsHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function catalogStatsHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const [total, activeCount, categoryDistribution, flagCount] = await Promise.all([
     prisma.service.count(),
     prisma.service.count({ where: { isActive: true } }),

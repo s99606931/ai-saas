@@ -41,21 +41,27 @@ describe('CSAP D-12: 메뉴 XSS/인젝션 방어', () => {
 
   it('tenantId가 없으면 거부한다 (N2SF N-03 격리)', () => {
     const result = createMenuSchema.safeParse({
-      label: '메뉴', path: '/path',
+      label: '메뉴',
+      path: '/path',
     });
     expect(result.success).toBe(false);
   });
 
   it('order가 소수점이면 거부한다', () => {
     const result = createMenuSchema.safeParse({
-      tenantId: 't1', label: '메뉴', path: '/path', order: 1.5,
+      tenantId: 't1',
+      label: '메뉴',
+      path: '/path',
+      order: 1.5,
     });
     expect(result.success).toBe(false);
   });
 
   it('roles에 빈 문자열이 포함되어도 스키마는 통과한다', () => {
     const result = createMenuSchema.safeParse({
-      tenantId: 't1', label: '메뉴', path: '/path',
+      tenantId: 't1',
+      label: '메뉴',
+      path: '/path',
       roles: ['ADMIN', ''],
     });
     expect(result.success).toBe(true);

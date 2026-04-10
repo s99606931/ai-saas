@@ -8,10 +8,7 @@ import { prisma } from '../lib/prisma.js';
 
 const RETENTION_DAYS = 365;
 
-export async function retentionStatsHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function retentionStatsHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const totalLogs = await prisma.auditLog.count();
 
   const oldestLog = await prisma.auditLog.findFirst({
@@ -41,10 +38,7 @@ export async function retentionStatsHandler(
   });
 }
 
-export async function retentionCleanupHandler(
-  _request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function retentionCleanupHandler(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-06: 1년 보존 후 아카이브 (삭제가 아닌 아카이브 플래그)
   // 실제 환경에서는 아카이브 테이블로 이동
   const retentionCutoff = new Date();

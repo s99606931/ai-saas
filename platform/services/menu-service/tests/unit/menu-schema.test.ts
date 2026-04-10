@@ -46,45 +46,71 @@ describe('createMenuSchema (CSAP D-12 입력 검증)', () => {
   });
 
   it('빈 tenantId를 거부한다', () => {
-    expect(createMenuSchema.safeParse({
-      tenantId: '', label: '메뉴', path: '/path',
-    }).success).toBe(false);
+    expect(
+      createMenuSchema.safeParse({
+        tenantId: '',
+        label: '메뉴',
+        path: '/path',
+      }).success,
+    ).toBe(false);
   });
 
   it('빈 메뉴명을 거부한다', () => {
-    expect(createMenuSchema.safeParse({
-      tenantId: 't1', label: '', path: '/path',
-    }).success).toBe(false);
+    expect(
+      createMenuSchema.safeParse({
+        tenantId: 't1',
+        label: '',
+        path: '/path',
+      }).success,
+    ).toBe(false);
   });
 
   it('메뉴명 100자 초과를 거부한다', () => {
-    expect(createMenuSchema.safeParse({
-      tenantId: 't1', label: 'a'.repeat(101), path: '/path',
-    }).success).toBe(false);
+    expect(
+      createMenuSchema.safeParse({
+        tenantId: 't1',
+        label: 'a'.repeat(101),
+        path: '/path',
+      }).success,
+    ).toBe(false);
   });
 
   it('빈 경로를 거부한다', () => {
-    expect(createMenuSchema.safeParse({
-      tenantId: 't1', label: '메뉴', path: '',
-    }).success).toBe(false);
+    expect(
+      createMenuSchema.safeParse({
+        tenantId: 't1',
+        label: '메뉴',
+        path: '',
+      }).success,
+    ).toBe(false);
   });
 
   it('parentId를 null로 허용한다 (최상위 메뉴)', () => {
     const result = createMenuSchema.safeParse({
-      tenantId: 't1', label: '메뉴', path: '/path', parentId: null,
+      tenantId: 't1',
+      label: '메뉴',
+      path: '/path',
+      parentId: null,
     });
     expect(result.success).toBe(true);
   });
 
   it('음수 order를 거부한다', () => {
-    expect(createMenuSchema.safeParse({
-      tenantId: 't1', label: '메뉴', path: '/path', order: -1,
-    }).success).toBe(false);
+    expect(
+      createMenuSchema.safeParse({
+        tenantId: 't1',
+        label: '메뉴',
+        path: '/path',
+        order: -1,
+      }).success,
+    ).toBe(false);
   });
 
   it('roles 배열을 허용한다 (CSAP D-08-05 역할 기반 접근 통제)', () => {
     const result = createMenuSchema.safeParse({
-      tenantId: 't1', label: '관리자 메뉴', path: '/admin',
+      tenantId: 't1',
+      label: '관리자 메뉴',
+      path: '/admin',
       roles: ['SUPER_ADMIN', 'ADMIN'],
     });
     expect(result.success).toBe(true);
@@ -93,7 +119,9 @@ describe('createMenuSchema (CSAP D-12 입력 검증)', () => {
 
   it('roles 없이도 허용한다 (전체 공개)', () => {
     const result = createMenuSchema.safeParse({
-      tenantId: 't1', label: '메뉴', path: '/path',
+      tenantId: 't1',
+      label: '메뉴',
+      path: '/path',
     });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.roles).toBeUndefined();
@@ -140,14 +168,20 @@ describe('reorderSchema (FR-P05.3 드래그앤드롭)', () => {
   });
 
   it('parentId 이동 (하위 메뉴로 이동)을 허용한다', () => {
-    expect(reorderSchema.safeParse({
-      order: 0, parentId: 'menu-parent-1',
-    }).success).toBe(true);
+    expect(
+      reorderSchema.safeParse({
+        order: 0,
+        parentId: 'menu-parent-1',
+      }).success,
+    ).toBe(true);
   });
 
   it('parentId null (최상위로 이동)을 허용한다', () => {
-    expect(reorderSchema.safeParse({
-      order: 0, parentId: null,
-    }).success).toBe(true);
+    expect(
+      reorderSchema.safeParse({
+        order: 0,
+        parentId: null,
+      }).success,
+    ).toBe(true);
   });
 });

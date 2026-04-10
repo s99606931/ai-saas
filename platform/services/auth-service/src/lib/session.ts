@@ -26,10 +26,7 @@ interface SessionData {
  * @param userId - 사용자 ID
  * @param sessionData - 세션 데이터
  */
-export async function createSession(
-  userId: string,
-  sessionData: SessionData,
-): Promise<void> {
+export async function createSession(userId: string, sessionData: SessionData): Promise<void> {
   const key = SESSION_KEY(userId);
   const sessions = await redis.lrange(key, 0, -1);
 
@@ -56,10 +53,7 @@ export async function createSession(
  * @param userId - 사용자 ID
  * @param token - 접근 토큰
  */
-export async function removeSession(
-  userId: string,
-  token: string,
-): Promise<void> {
+export async function removeSession(userId: string, token: string): Promise<void> {
   const key = SESSION_KEY(userId);
   const sessions = await redis.lrange(key, 0, -1);
 
@@ -87,12 +81,7 @@ export async function removeSession(
  * @param token - 블랙리스트에 등록할 토큰
  */
 export async function blacklistToken(token: string): Promise<void> {
-  await redis.set(
-    BLACKLIST_KEY(token),
-    '1',
-    'EX',
-    AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRES_SECONDS,
-  );
+  await redis.set(BLACKLIST_KEY(token), '1', 'EX', AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRES_SECONDS);
 }
 
 /**

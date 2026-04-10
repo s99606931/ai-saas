@@ -136,9 +136,7 @@ describe('감리 준비도 계산 (FR-P14.3)', () => {
 
     const docCompleteness = 100;
 
-    const readinessScore = Math.round(
-      csapRate * 0.4 + n2sfRate * 0.3 + docCompleteness * 0.3,
-    );
+    const readinessScore = Math.round(csapRate * 0.4 + n2sfRate * 0.3 + docCompleteness * 0.3);
 
     expect(readinessScore).toBeGreaterThanOrEqual(80);
     expect(readinessScore).toBeLessThanOrEqual(100);
@@ -146,31 +144,22 @@ describe('감리 준비도 계산 (FR-P14.3)', () => {
 
   it('90점 이상이면 "감리 대응 준비 완료" 판정이다', () => {
     const score = 92;
-    const recommendation = score >= 90
-      ? '감리 대응 준비 완료'
-      : score >= 70
-        ? '일부 보완 후 감리 대응 가능'
-        : '감리 대응 준비 미흡';
+    const recommendation =
+      score >= 90 ? '감리 대응 준비 완료' : score >= 70 ? '일부 보완 후 감리 대응 가능' : '감리 대응 준비 미흡';
     expect(recommendation).toBe('감리 대응 준비 완료');
   });
 
   it('70~89점이면 "일부 보완 후 감리 대응 가능" 판정이다', () => {
     const score = 75;
-    const recommendation = score >= 90
-      ? '감리 대응 준비 완료'
-      : score >= 70
-        ? '일부 보완 후 감리 대응 가능'
-        : '감리 대응 준비 미흡';
+    const recommendation =
+      score >= 90 ? '감리 대응 준비 완료' : score >= 70 ? '일부 보완 후 감리 대응 가능' : '감리 대응 준비 미흡';
     expect(recommendation).toBe('일부 보완 후 감리 대응 가능');
   });
 
   it('70점 미만이면 "감리 대응 준비 미흡" 판정이다', () => {
     const score = 55;
-    const recommendation = score >= 90
-      ? '감리 대응 준비 완료'
-      : score >= 70
-        ? '일부 보완 후 감리 대응 가능'
-        : '감리 대응 준비 미흡';
+    const recommendation =
+      score >= 90 ? '감리 대응 준비 완료' : score >= 70 ? '일부 보완 후 감리 대응 가능' : '감리 대응 준비 미흡';
     expect(recommendation).toBe('감리 대응 준비 미흡');
   });
 });

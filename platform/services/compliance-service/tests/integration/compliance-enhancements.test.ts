@@ -18,7 +18,7 @@ describe('FR-COMP.2: CSAP 미준수 항목 상세', () => {
       { id: 'D-10', items: 8, implemented: 6 },
       { id: 'D-11', items: 7, implemented: 6 },
     ];
-    const gaps = domains.filter(d => d.implemented < d.items);
+    const gaps = domains.filter((d) => d.implemented < d.items);
     expect(gaps).toHaveLength(4);
   });
 

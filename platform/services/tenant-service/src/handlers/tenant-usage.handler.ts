@@ -97,16 +97,13 @@ export async function getTenantUsageHandler(
       users: {
         current: tenant._count.users,
         max: tenant.maxUsers,
-        utilizationPercent: tenant.maxUsers > 0
-          ? Math.round((tenant._count.users / tenant.maxUsers) * 100)
-          : 0,
+        utilizationPercent: tenant.maxUsers > 0 ? Math.round((tenant._count.users / tenant.maxUsers) * 100) : 0,
       },
       storage: {
         usedBytes: storageUsed.toString(),
         maxBytes: tenant.maxStorage.toString(),
-        utilizationPercent: tenant.maxStorage > BigInt(0)
-          ? Math.round(Number((storageUsed * BigInt(100)) / tenant.maxStorage))
-          : 0,
+        utilizationPercent:
+          tenant.maxStorage > BigInt(0) ? Math.round(Number((storageUsed * BigInt(100)) / tenant.maxStorage)) : 0,
       },
       subscriptions: {
         active: tenant._count.subscriptions,

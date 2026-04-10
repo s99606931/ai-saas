@@ -32,9 +32,7 @@ export function canTransition(from: DocumentStatus, to: DocumentStatus): boolean
  */
 export function transition(from: DocumentStatus, to: DocumentStatus): DocumentStatus {
   if (!canTransition(from, to)) {
-    throw new Error(
-      `상태 전이 불가: ${from} -> ${to}. 가능한 전이: ${validTransitions[from].join(', ') || '없음'}`
-    );
+    throw new Error(`상태 전이 불가: ${from} -> ${to}. 가능한 전이: ${validTransitions[from].join(', ') || '없음'}`);
   }
   return to;
 }

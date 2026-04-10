@@ -7,12 +7,18 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 
 /** IP 블랙리스트 (쉼표 구분, 환경 변수) */
 const IP_BLACKLIST: Set<string> = new Set(
-  (process.env['IP_BLACKLIST'] ?? '').split(',').map((ip) => ip.trim()).filter(Boolean),
+  (process.env['IP_BLACKLIST'] ?? '')
+    .split(',')
+    .map((ip) => ip.trim())
+    .filter(Boolean),
 );
 
 /** IP 화이트리스트 (쉼표 구분, 환경 변수) — 화이트리스트 우선 */
 const IP_WHITELIST: Set<string> = new Set(
-  (process.env['IP_WHITELIST'] ?? '').split(',').map((ip) => ip.trim()).filter(Boolean),
+  (process.env['IP_WHITELIST'] ?? '')
+    .split(',')
+    .map((ip) => ip.trim())
+    .filter(Boolean),
 );
 
 /**
@@ -28,10 +34,7 @@ const IP_WHITELIST: Set<string> = new Set(
  * @param request - Fastify 요청 객체
  * @param reply - Fastify 응답 객체
  */
-export async function ipFilterMiddleware(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function ipFilterMiddleware(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const clientIp = request.ip;
 
   // 화이트리스트 우선
@@ -41,10 +44,7 @@ export async function ipFilterMiddleware(
 
   // 블랙리스트 확인
   if (IP_BLACKLIST.has(clientIp)) {
-    request.log.warn(
-      { ip: clientIp, action: 'IP_BLOCKED' },
-      `차단된 IP 접근 시도: ${clientIp}`,
-    );
+    request.log.warn({ ip: clientIp, action: 'IP_BLOCKED' }, `차단된 IP 접근 시도: ${clientIp}`);
     await reply.status(403).send({
       success: false,
       error: {

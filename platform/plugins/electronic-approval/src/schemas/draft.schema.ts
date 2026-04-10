@@ -20,12 +20,16 @@ export const updateDraftSchema = createDraftSchema.partial();
  * 결재선 설정 스키마
  */
 export const approvalLineSchema = z.object({
-  approvers: z.array(z.object({
-    userId: z.string().uuid(),
-    order: z.number().int().positive(),
-    type: z.enum(['serial', 'parallel']),
-    role: z.enum(['approver', 'reviewer', 'final-approver']),
-  })).min(1, '결재자는 1명 이상 필요합니다'),
+  approvers: z
+    .array(
+      z.object({
+        userId: z.string().uuid(),
+        order: z.number().int().positive(),
+        type: z.enum(['serial', 'parallel']),
+        role: z.enum(['approver', 'reviewer', 'final-approver']),
+      }),
+    )
+    .min(1, '결재자는 1명 이상 필요합니다'),
 });
 
 /**

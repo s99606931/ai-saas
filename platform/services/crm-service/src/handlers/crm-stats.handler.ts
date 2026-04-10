@@ -77,10 +77,7 @@ export async function expiringContractsHandler(
  * Design Ref: SVC-CRM-R1 DESIGN
  * CSAP D-08-05: 테넌트 격리
  */
-export async function crmStatsHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function crmStatsHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   // CSAP D-08-05: 테넌트 격리 (Design Ref: SVC-CRM-R1 DESIGN)
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
@@ -95,13 +92,7 @@ export async function crmStatsHandler(
     contactWhere['customer'] = { is: { tenantId: jwtTenantId } };
   }
 
-  const [
-    totalCustomers,
-    customersByStatus,
-    totalContracts,
-    contractValue,
-    totalContacts,
-  ] = await Promise.all([
+  const [totalCustomers, customersByStatus, totalContracts, contractValue, totalContacts] = await Promise.all([
     prisma.customer.count({ where: customerWhere }),
     prisma.customer.groupBy({
       by: ['status'],

@@ -40,15 +40,21 @@ describe('processPaymentSchema (CSAP D-12)', () => {
   });
 
   it('음수 금액을 거부한다', () => {
-    expect(processPaymentSchema.safeParse({
-      amount: -1, method: 'card',
-    }).success).toBe(false);
+    expect(
+      processPaymentSchema.safeParse({
+        amount: -1,
+        method: 'card',
+      }).success,
+    ).toBe(false);
   });
 
   it('0원 결제를 허용한다', () => {
-    expect(processPaymentSchema.safeParse({
-      amount: 0, method: 'card',
-    }).success).toBe(true);
+    expect(
+      processPaymentSchema.safeParse({
+        amount: 0,
+        method: 'card',
+      }).success,
+    ).toBe(true);
   });
 
   it('유효한 결제 방법만 허용한다', () => {
@@ -58,14 +64,21 @@ describe('processPaymentSchema (CSAP D-12)', () => {
   });
 
   it('잘못된 결제 방법을 거부한다', () => {
-    expect(processPaymentSchema.safeParse({
-      amount: 100, method: 'bitcoin',
-    }).success).toBe(false);
+    expect(
+      processPaymentSchema.safeParse({
+        amount: 100,
+        method: 'bitcoin',
+      }).success,
+    ).toBe(false);
   });
 
   it('참조 번호가 선택적이다', () => {
-    expect(processPaymentSchema.safeParse({
-      amount: 100, method: 'card', reference: 'REF-001',
-    }).success).toBe(true);
+    expect(
+      processPaymentSchema.safeParse({
+        amount: 100,
+        method: 'card',
+        reference: 'REF-001',
+      }).success,
+    ).toBe(true);
   });
 });

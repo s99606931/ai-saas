@@ -25,9 +25,24 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 // CSAP D-12: 실행 파일 확장자 차단 (악성 파일 업로드 방지)
 const BLOCKED_EXTENSIONS = [
-  '.exe', '.bat', '.cmd', '.sh', '.ps1', '.vbs', '.js',
-  '.msi', '.com', '.scr', '.pif', '.hta', '.cpl', '.msp',
-  '.jar', '.wsf', '.wsh', '.reg',
+  '.exe',
+  '.bat',
+  '.cmd',
+  '.sh',
+  '.ps1',
+  '.vbs',
+  '.js',
+  '.msi',
+  '.com',
+  '.scr',
+  '.pif',
+  '.hta',
+  '.cpl',
+  '.msp',
+  '.jar',
+  '.wsf',
+  '.wsh',
+  '.reg',
 ];
 
 /**
@@ -40,11 +55,11 @@ const BLOCKED_EXTENSIONS = [
  */
 function sanitizeFilename(filename: string): string {
   return filename
-    .replace(/[/\\]/g, '_')          // 경로 구분자 → 언더스코어
-    .replace(/\0/g, '')              // null 바이트 제거
-    .replace(/\.\./g, '_')           // 상위 디렉토리 탐색 방지
+    .replace(/[/\\]/g, '_') // 경로 구분자 → 언더스코어
+    .replace(/\0/g, '') // null 바이트 제거
+    .replace(/\.\./g, '_') // 상위 디렉토리 탐색 방지
     .replace(/^[\s.]+|[\s.]+$/g, '') // 선행/후행 공백·점 제거
-    .slice(0, 255);                  // 최대 길이 제한
+    .slice(0, 255); // 최대 길이 제한
 }
 
 /**
@@ -70,10 +85,7 @@ const uploadSchema = z.object({
  * CSAP D-12: MIME 타입 + 크기 검증
  * CSAP D-09: AES-256 암호화 저장 (MinIO 서버 사이드 또는 앱 레벨)
  */
-export async function uploadFileHandler(
-  request: FastifyRequest,
-  reply: FastifyReply,
-): Promise<void> {
+export async function uploadFileHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = uploadSchema.safeParse(request.body);
   if (!parseResult.success) {
     await reply.status(400).send({
@@ -255,9 +267,8 @@ export async function listFilesHandler(
   // CSAP D-08-05: 테넌트 격리 — JWT 클레임 기반 (SUPER_ADMIN은 쿼리 파라미터로 지정 가능)
   const listJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const listJwtRole = request.headers['x-user-role'] as string | undefined;
-  const effectiveTenantId = listJwtRole === 'SUPER_ADMIN'
-    ? (request.query.tenantId ?? listJwtTenantId)
-    : listJwtTenantId;
+  const effectiveTenantId =
+    listJwtRole === 'SUPER_ADMIN' ? (request.query.tenantId ?? listJwtTenantId) : listJwtTenantId;
 
   if (!effectiveTenantId) {
     await reply.status(400).send({

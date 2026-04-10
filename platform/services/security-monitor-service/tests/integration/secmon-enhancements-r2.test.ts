@@ -58,8 +58,12 @@ describe('FR-SECMON.7: 보안 이벤트 통계', () => {
 
   it('보안 이벤트 유형이 6가지이다', () => {
     const actions = [
-      'LOGIN_FAILED', 'IP_BLOCKED', 'IP_UNBLOCKED',
-      'AI_GRADE_VIOLATION', 'UNAUTHORIZED_ACCESS', 'SESSION_HIJACK_ATTEMPT',
+      'LOGIN_FAILED',
+      'IP_BLOCKED',
+      'IP_UNBLOCKED',
+      'AI_GRADE_VIOLATION',
+      'UNAUTHORIZED_ACCESS',
+      'SESSION_HIJACK_ATTEMPT',
     ];
     expect(actions).toHaveLength(6);
   });

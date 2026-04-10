@@ -21,10 +21,7 @@ export type MfaSetupRequest = z.infer<typeof mfaSetupSchema>;
  */
 export const mfaVerifySchema = z.object({
   /** TOTP 6자리 코드 */
-  code: z
-    .string()
-    .length(6, 'MFA 코드는 6자리여야 합니다')
-    .regex(/^\d+$/, 'MFA 코드는 숫자만 허용됩니다'),
+  code: z.string().length(6, 'MFA 코드는 6자리여야 합니다').regex(/^\d+$/, 'MFA 코드는 숫자만 허용됩니다'),
 });
 
 export type MfaVerifyRequest = z.infer<typeof mfaVerifySchema>;
@@ -36,10 +33,7 @@ export const mfaDisableSchema = z.object({
   /** 현재 비밀번호 (보안 확인) */
   password: z.string().min(1, '비밀번호를 입력하세요'),
   /** TOTP 6자리 코드 (현재 MFA 확인) */
-  code: z
-    .string()
-    .length(6, 'MFA 코드는 6자리여야 합니다')
-    .regex(/^\d+$/, 'MFA 코드는 숫자만 허용됩니다'),
+  code: z.string().length(6, 'MFA 코드는 6자리여야 합니다').regex(/^\d+$/, 'MFA 코드는 숫자만 허용됩니다'),
 });
 
 export type MfaDisableRequest = z.infer<typeof mfaDisableSchema>;

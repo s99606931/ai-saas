@@ -6,10 +6,7 @@
 import { prisma } from './prisma.js';
 
 /** 일일 토큰 한도 (환경 변수, 기본 100,000) */
-const DAILY_TOKEN_LIMIT = parseInt(
-  process.env['AI_DAILY_TOKEN_LIMIT'] ?? '100000',
-  10,
-);
+const DAILY_TOKEN_LIMIT = parseInt(process.env['AI_DAILY_TOKEN_LIMIT'] ?? '100000', 10);
 
 /**
  * 사용량 제한 검사 결과
@@ -33,9 +30,7 @@ export interface UsageLimitResult {
  * @param tenantId - 테넌트 ID
  * @returns 사용량 제한 검사 결과
  */
-export async function checkUsageLimit(
-  tenantId: string,
-): Promise<UsageLimitResult> {
+export async function checkUsageLimit(tenantId: string): Promise<UsageLimitResult> {
   // 오늘 시작 시각 (UTC)
   const todayStart = new Date();
   todayStart.setUTCHours(0, 0, 0, 0);

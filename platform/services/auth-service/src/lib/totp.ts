@@ -101,10 +101,7 @@ export function verifyTotp(secret: string, code: string, window = 1): boolean {
     const counter = time + i;
     const generated = generateTotp(secretBuffer, counter);
     // CSAP D-09: timing-safe 비교 (타이밍 공격 방지)
-    if (
-      generated.length === code.length &&
-      crypto.timingSafeEqual(Buffer.from(generated), Buffer.from(code))
-    ) {
+    if (generated.length === code.length && crypto.timingSafeEqual(Buffer.from(generated), Buffer.from(code))) {
       return true;
     }
   }

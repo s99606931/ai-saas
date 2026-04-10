@@ -26,64 +26,99 @@ describe('createDraftSchema (CSAP D-12 입력 검증)', () => {
   });
 
   it('빈 제목을 거부한다', () => {
-    expect(createDraftSchema.safeParse({
-      title: '', content: '본문', category: 'general',
-    }).success).toBe(false);
+    expect(
+      createDraftSchema.safeParse({
+        title: '',
+        content: '본문',
+        category: 'general',
+      }).success,
+    ).toBe(false);
   });
 
   it('제목 200자 초과를 거부한다', () => {
-    expect(createDraftSchema.safeParse({
-      title: 'a'.repeat(201), content: '본문', category: 'general',
-    }).success).toBe(false);
+    expect(
+      createDraftSchema.safeParse({
+        title: 'a'.repeat(201),
+        content: '본문',
+        category: 'general',
+      }).success,
+    ).toBe(false);
   });
 
   it('빈 본문을 거부한다', () => {
-    expect(createDraftSchema.safeParse({
-      title: '제목', content: '', category: 'general',
-    }).success).toBe(false);
+    expect(
+      createDraftSchema.safeParse({
+        title: '제목',
+        content: '',
+        category: 'general',
+      }).success,
+    ).toBe(false);
   });
 
   it('본문 10000자 초과를 거부한다', () => {
-    expect(createDraftSchema.safeParse({
-      title: '제목', content: 'a'.repeat(10001), category: 'general',
-    }).success).toBe(false);
+    expect(
+      createDraftSchema.safeParse({
+        title: '제목',
+        content: 'a'.repeat(10001),
+        category: 'general',
+      }).success,
+    ).toBe(false);
   });
 
   it('유효한 카테고리만 허용한다', () => {
     for (const cat of ['general', 'expense', 'leave', 'purchase', 'contract']) {
-      expect(createDraftSchema.safeParse({
-        title: 'T', content: 'C', category: cat,
-      }).success).toBe(true);
+      expect(
+        createDraftSchema.safeParse({
+          title: 'T',
+          content: 'C',
+          category: cat,
+        }).success,
+      ).toBe(true);
     }
   });
 
   it('잘못된 카테고리를 거부한다', () => {
-    expect(createDraftSchema.safeParse({
-      title: 'T', content: 'C', category: 'invalid',
-    }).success).toBe(false);
+    expect(
+      createDraftSchema.safeParse({
+        title: 'T',
+        content: 'C',
+        category: 'invalid',
+      }).success,
+    ).toBe(false);
   });
 
   it('유효한 긴급도만 허용한다', () => {
     for (const urg of ['normal', 'urgent', 'emergency']) {
-      expect(createDraftSchema.safeParse({
-        title: 'T', content: 'C', category: 'general', urgency: urg,
-      }).success).toBe(true);
+      expect(
+        createDraftSchema.safeParse({
+          title: 'T',
+          content: 'C',
+          category: 'general',
+          urgency: urg,
+        }).success,
+      ).toBe(true);
     }
   });
 
   it('첨부파일 UUID 배열을 허용한다', () => {
     const result = createDraftSchema.safeParse({
-      title: 'T', content: 'C', category: 'general',
+      title: 'T',
+      content: 'C',
+      category: 'general',
       attachments: ['550e8400-e29b-41d4-a716-446655440000'],
     });
     expect(result.success).toBe(true);
   });
 
   it('잘못된 UUID 형식의 첨부파일을 거부한다', () => {
-    expect(createDraftSchema.safeParse({
-      title: 'T', content: 'C', category: 'general',
-      attachments: ['not-a-uuid'],
-    }).success).toBe(false);
+    expect(
+      createDraftSchema.safeParse({
+        title: 'T',
+        content: 'C',
+        category: 'general',
+        attachments: ['not-a-uuid'],
+      }).success,
+    ).toBe(false);
   });
 });
 
@@ -117,30 +152,48 @@ describe('approvalLineSchema (FR-ECO3.2 결재선 설정)', () => {
   });
 
   it('잘못된 결재 유형을 거부한다', () => {
-    expect(approvalLineSchema.safeParse({
-      approvers: [{
-        userId: '550e8400-e29b-41d4-a716-446655440000',
-        order: 1, type: 'concurrent', role: 'approver',
-      }],
-    }).success).toBe(false);
+    expect(
+      approvalLineSchema.safeParse({
+        approvers: [
+          {
+            userId: '550e8400-e29b-41d4-a716-446655440000',
+            order: 1,
+            type: 'concurrent',
+            role: 'approver',
+          },
+        ],
+      }).success,
+    ).toBe(false);
   });
 
   it('잘못된 역할을 거부한다', () => {
-    expect(approvalLineSchema.safeParse({
-      approvers: [{
-        userId: '550e8400-e29b-41d4-a716-446655440000',
-        order: 1, type: 'serial', role: 'manager',
-      }],
-    }).success).toBe(false);
+    expect(
+      approvalLineSchema.safeParse({
+        approvers: [
+          {
+            userId: '550e8400-e29b-41d4-a716-446655440000',
+            order: 1,
+            type: 'serial',
+            role: 'manager',
+          },
+        ],
+      }).success,
+    ).toBe(false);
   });
 
   it('order가 0 이하이면 거부한다', () => {
-    expect(approvalLineSchema.safeParse({
-      approvers: [{
-        userId: '550e8400-e29b-41d4-a716-446655440000',
-        order: 0, type: 'serial', role: 'approver',
-      }],
-    }).success).toBe(false);
+    expect(
+      approvalLineSchema.safeParse({
+        approvers: [
+          {
+            userId: '550e8400-e29b-41d4-a716-446655440000',
+            order: 0,
+            type: 'serial',
+            role: 'approver',
+          },
+        ],
+      }).success,
+    ).toBe(false);
   });
 });
 
