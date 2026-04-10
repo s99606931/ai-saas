@@ -23,7 +23,7 @@ describe('user-service E2E -- 관측성 및 보안 (FR-E2E.3)', () => {
       return;
     }
     const body = req.body as { name: string; email: string; role?: string };
-    const id = `u-${Date.now()}`;
+    const id = `u-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const user = { id, name: body.name, email: body.email, tenantId, role: body.role ?? 'USER' };
     users.set(id, user);
     return { success: true, data: user };

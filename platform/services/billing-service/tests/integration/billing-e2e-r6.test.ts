@@ -117,7 +117,7 @@ describe('billing-service E2E -- 인보이스 생명주기 (CSAP D-06, D-08-05)'
     }
 
     const payment: Payment = {
-      id: `pay-${Date.now()}`,
+      id: `pay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       invoiceId: id,
       amount: body.amount ?? invoice.amount,
       method: body.method ?? 'CARD',

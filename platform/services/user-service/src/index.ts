@@ -49,6 +49,9 @@ async function main(): Promise<void> {
   await registerUserRoutes(app);
 
   await app.listen({ port: PORT, host: HOST });
+  // CSAP D-07: HTTP Keep-Alive 설정 (k8s 연결 재사용 최적화)
+  app.server.keepAliveTimeout = 65000; // ALB 기본 60초보다 길게
+  app.server.headersTimeout = 66000;
   app.log.info(`사용자 관리 서비스 기동: http://${HOST}:${PORT}`);
 
   // Graceful Shutdown (CSAP D-07: k8s terminationGracePeriod 연동)

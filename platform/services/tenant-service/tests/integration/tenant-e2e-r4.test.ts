@@ -17,7 +17,7 @@ describe('tenant-service E2E -- 테넌트 격리 + 관측성', () => {
 
   app.post('/tenants', async (req) => {
     const body = req.body as { name: string; plan?: string };
-    const id = `t-${Date.now()}`;
+    const id = `t-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const tenant = { id, name: body.name, plan: body.plan ?? 'BASIC', status: 'ACTIVE' };
     tenants.set(id, tenant);
     return { success: true, data: tenant };
