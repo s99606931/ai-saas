@@ -26,8 +26,7 @@ tenant-service:
   enabled: true
 menu-service:
   enabled: true
-saas-catalog-service:
-  enabled: true
+# NOTE: saas-catalog-service 제거 — catalog-service로 통합 (L-02)
 subscription-service:
   enabled: true
 billing-service:

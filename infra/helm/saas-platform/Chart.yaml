@@ -62,10 +62,7 @@ dependencies:
     repository: "file://charts/menu-service"
     condition: menu-service.enabled
 
-  - name: saas-catalog-service
-    version: 0.1.0
-    repository: "file://charts/saas-catalog-service"
-    condition: saas-catalog-service.enabled
+  # NOTE: saas-catalog-service 제거 — catalog-service로 통합 (L-02)
 
   - name: subscription-service
     version: 0.1.0

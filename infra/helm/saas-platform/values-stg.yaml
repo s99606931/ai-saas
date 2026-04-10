@@ -18,9 +18,7 @@ tenant-service:
 menu-service:
   enabled: true
   replicaCount: 1
-saas-catalog-service:
-  enabled: true
-  replicaCount: 1
+# NOTE: saas-catalog-service 제거 — catalog-service로 통합 (L-02)
 subscription-service:
   enabled: true
   replicaCount: 1
