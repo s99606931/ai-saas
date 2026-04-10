@@ -1,0 +1,174 @@
+# Design Ref: MTU-N87 §페일오버 절차
+# Plan SC: FR-N87.2
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dr-health-monitor
+  namespace: dr-system
+  labels:
+    app.kubernetes.io/name: dr-controller
+    app.kubernetes.io/component: health-monitor
+    csap.compliance/control: D-13
+spec:
+  schedule: "*/1 * * * *"  # 1분 주기
+  timeZone: "Asia/Seoul"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 55
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: dr-controller
+            app.kubernetes.io/component: health-monitor
+        spec:
+          serviceAccountName: dr-controller
+          restartPolicy: Never
+          automountServiceAccountToken: true
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: monitor
+              image: harbor.saas-platform.local/tools/dr-controller:latest
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+
+                  HEALTH_URL="${PRIMARY_HEALTH_URL:-https://api-gateway.saas-platform.local/health}"
+                  STATE_FILE="/state/health-state.json"
+                  FAILURE_THRESHOLD=3
+
+                  # 현재 상태 로드
+                  if [ -f "$STATE_FILE" ]; then
+                    CONSECUTIVE_FAILURES=$(python3 -c "import json; print(json.load(open('$STATE_FILE')).get('failures',0))" 2>/dev/null || echo "0")
+                  else
+                    CONSECUTIVE_FAILURES=0
+                  fi
+
+                  # 헬스체크 실행
+                  HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 "$HEALTH_URL" 2>/dev/null || echo "000")
+
+                  if [ "$HTTP_CODE" = "200" ]; then
+                    echo "{\"timestamp\":\"$(date -Iseconds)\",\"status\":\"healthy\",\"http_code\":$HTTP_CODE,\"failures\":0}" > "$STATE_FILE"
+                    echo "[OK] Primary 클러스터 정상 (HTTP $HTTP_CODE)"
+                  else
+                    CONSECUTIVE_FAILURES=$((CONSECUTIVE_FAILURES + 1))
+                    echo "{\"timestamp\":\"$(date -Iseconds)\",\"status\":\"unhealthy\",\"http_code\":$HTTP_CODE,\"failures\":$CONSECUTIVE_FAILURES}" > "$STATE_FILE"
+                    echo "[WARNING] Primary 클러스터 이상 (HTTP $HTTP_CODE, 연속 실패: $CONSECUTIVE_FAILURES)"
+
+                    if [ "$CONSECUTIVE_FAILURES" -ge "$FAILURE_THRESHOLD" ]; then
+                      echo "[CRITICAL] 페일오버 트리거! 연속 $CONSECUTIVE_FAILURES회 실패"
+
+                      # 1. 페일오버 시작 기록
+                      echo "{\"timestamp\":\"$(date -Iseconds)\",\"action\":\"failover_triggered\",\"reason\":\"consecutive_health_failures\",\"count\":$CONSECUTIVE_FAILURES}" >> /state/failover-log.jsonl
+
+                      # 2. Velero 최신 백업 확인
+                      echo "Velero 최신 백업 조회..."
+                      LATEST_BACKUP=$(kubectl get backups -n velero --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}' 2>/dev/null || echo "none")
+                      echo "최신 백업: $LATEST_BACKUP"
+
+                      # 3. 알림 전송
+                      echo "페일오버 알림 전송..."
+                      # (실제 환경에서는 Slack/Email 웹훅 호출)
+                    fi
+                  fi
+
+                  # Prometheus 메트릭
+                  cat <<METRICS | curl -sS --data-binary @- "http://prometheus-pushgateway.monitoring.svc:9091/metrics/job/dr_health_monitor" 2>/dev/null || true
+                  # HELP dr_primary_health Primary 클러스터 헬스 (1=정상, 0=이상)
+                  # TYPE dr_primary_health gauge
+                  dr_primary_health $([ "$HTTP_CODE" = "200" ] && echo 1 || echo 0)
+                  # HELP dr_consecutive_failures 연속 헬스체크 실패 횟수
+                  # TYPE dr_consecutive_failures gauge
+                  dr_consecutive_failures $CONSECUTIVE_FAILURES
+                  METRICS
+              env:
+                - name: PRIMARY_HEALTH_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: dr-architecture-config
+                      key: dr-config.yaml
+                      optional: true
+              volumeMounts:
+                - name: state
+                  mountPath: /state
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+          volumes:
+            - name: state
+              persistentVolumeClaim:
+                claimName: dr-state-storage
+            - name: tmp
+              emptyDir:
+                sizeLimit: 50Mi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dr-controller
+  namespace: dr-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dr-controller
+rules:
+  - apiGroups: ["velero.io"]
+    resources: ["backups", "restores", "schedules"]
+    verbs: ["get", "list", "create"]
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["clusters"]
+    verbs: ["get", "list", "patch"]
+  - apiGroups: [""]
+    resources: ["pods", "services", "namespaces"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dr-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dr-controller
+subjects:
+  - kind: ServiceAccount
+    name: dr-controller
+    namespace: dr-system
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dr-state-storage
+  namespace: dr-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi

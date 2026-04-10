@@ -1,0 +1,80 @@
+# Design Ref: MTU-N87 §페일오버 절차
+# Plan SC: FR-N87.2
+# CSAP D-13: 재해복구 알림 규칙
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: dr-failover-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: dr-controller
+    app.kubernetes.io/component: alerting
+    csap.compliance/control: D-13
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: disaster-recovery
+      interval: 30s
+      rules:
+        # Primary 클러스터 헬스 이상
+        - alert: DRPrimaryClusterUnhealthy
+          expr: dr_primary_health == 0
+          for: 2m
+          labels:
+            severity: critical
+            csap_control: D-13
+          annotations:
+            summary: "Primary 클러스터 헬스체크 실패"
+            description: >-
+              Primary 클러스터가 2분 이상 헬스체크에 실패하고 있습니다.
+              연속 실패 횟수: {{ $value }}. 페일오버 트리거 임계값: 3.
+            runbook: "https://docs.saas-platform.local/runbooks/dr-failover"
+
+        # 페일오버 트리거
+        - alert: DRFailoverTriggered
+          expr: dr_consecutive_failures >= 3
+          for: 0m
+          labels:
+            severity: critical
+            csap_control: D-13
+          annotations:
+            summary: "DR 페일오버 트리거!"
+            description: >-
+              Primary 클러스터 연속 3회 헬스체크 실패.
+              자동 페일오버가 시작됩니다. RTO 목표: 15분.
+
+        # Velero 백업 지연
+        - alert: DRBackupDelayed
+          expr: |
+            (time() - velero_backup_last_successful_timestamp) > 600
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-13
+          annotations:
+            summary: "Velero 백업 10분 이상 지연"
+            description: "RPO 목표(5분) 초과 가능성. 백업 스케줄을 확인하십시오."
+
+        # DR 테스트 실패
+        - alert: DRTestFailed
+          expr: dr_test_fail > 0
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-13
+          annotations:
+            summary: "주간 DR 테스트 실패 항목 발견"
+            description: "{{ $value }}개 DR 테스트 항목이 실패했습니다."
+
+        # DB 복제 지연
+        - alert: DRDatabaseReplicationLag
+          expr: |
+            cnpg_pg_replication_lag > 300
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-13
+          annotations:
+            summary: "DB 복제 지연 5분 초과"
+            description: "RPO 위반 가능성. DB 복제 상태를 확인하십시오."

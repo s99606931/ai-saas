@@ -1,0 +1,71 @@
+# Design Ref: MTU-N86 §Golden Path 구조
+# Plan SC: FR-N86.3, FR-N86.6
+# PSS Restricted 준수 Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ "{{" }} .Release.Name {{ "}}" }}
+  labels:
+    app.kubernetes.io/name: {{ "{{" }} .Chart.Name {{ "}}" }}
+    app.kubernetes.io/instance: {{ "{{" }} .Release.Name {{ "}}" }}
+    app.kubernetes.io/version: {{ "{{" }} .Chart.AppVersion {{ "}}" }}
+    app.kubernetes.io/part-of: saas-platform
+    csap.compliance/control: D-12
+spec:
+  replicas: {{ "{{" }} .Values.replicaCount {{ "}}" }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ "{{" }} .Chart.Name {{ "}}" }}
+      app.kubernetes.io/instance: {{ "{{" }} .Release.Name {{ "}}" }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ "{{" }} .Chart.Name {{ "}}" }}
+        app.kubernetes.io/instance: {{ "{{" }} .Release.Name {{ "}}" }}
+    spec:
+      serviceAccountName: {{ "{{" }} .Release.Name {{ "}}" }}
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: {{ "{{" }} .Chart.Name {{ "}}" }}
+          image: "{{ "{{" }} .Values.image.repository {{ "}}" }}:{{ "{{" }} .Values.image.tag {{ "}}" }}"
+          imagePullPolicy: {{ "{{" }} .Values.image.pullPolicy {{ "}}" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 3000
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3000
+            initialDelaySeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 100Mi

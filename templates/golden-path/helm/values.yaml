@@ -1,0 +1,85 @@
+# Design Ref: MTU-N86 §Design Anchor
+# Plan SC: FR-N86.3, FR-N86.6
+# CSAP 보안 기본값 내장
+
+# 이미지 설정
+image:
+  repository: "harbor.saas-platform.local/saas/{{SERVICE_NAME}}"
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# 레플리카
+replicaCount: 2
+
+# 서비스 설정
+service:
+  type: ClusterIP
+  port: 3000
+
+# 보안 컨텍스트 (PSS Restricted 준수) — CSAP D-08
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# 리소스 제한
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# 프로브
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: 3000
+  initialDelaySeconds: 10
+  periodSeconds: 15
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 3000
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+# 라벨
+commonLabels:
+  app.kubernetes.io/part-of: saas-platform
+  csap.compliance/control: D-12
+
+# ServiceAccount
+serviceAccount:
+  create: true
+  automountServiceAccountToken: false
+
+# NetworkPolicy 기본 활성화 — CSAP D-08
+networkPolicy:
+  enabled: true
+  ingressRules:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: saas-system
+      ports:
+        - protocol: TCP
+          port: 3000
+
+# ServiceMonitor
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  path: /metrics

@@ -38,7 +38,16 @@ const createContractSchema = z.object({
  * Security Ref: FR-N08.3
  */
 export async function listCustomersHandler(
-  request: FastifyRequest<{ Querystring: { status?: string; page?: string; pageSize?: string; tenantId?: string } }>,
+  request: FastifyRequest<{
+    Querystring: {
+      status?: string;
+      search?: string;
+      industry?: string;
+      page?: string;
+      pageSize?: string;
+      tenantId?: string;
+    };
+  }>,
   reply: FastifyReply,
 ): Promise<void> {
   const page = parseInt(request.query.page ?? '1', 10);
@@ -51,9 +60,16 @@ export async function listCustomersHandler(
     ? (request.query.tenantId ?? jwtTenantId)
     : jwtTenantId;
 
+  // FR-CRM.1: 검색/필터 (Design Ref: SVC-CRM-R1 DESIGN)
   const where: Record<string, unknown> = {};
   if (request.query.status) where['status'] = request.query.status;
   if (effectiveTenantId) where['tenantId'] = effectiveTenantId;
+  if (request.query.industry) where['industry'] = request.query.industry;
+
+  // FR-CRM.1: 이름 검색 (부분 일치)
+  if (request.query.search) {
+    where['name'] = { contains: request.query.search, mode: 'insensitive' };
+  }
 
   const [customers, total] = await Promise.all([
     prisma.customer.findMany({
@@ -270,7 +286,8 @@ export async function createContactHandler(
 
 /**
  * 계약 목록
- * Plan SC: FR-P09.3
+ * Plan SC: FR-P09.3, FR-CRM.4
+ * CSAP D-08-05: 테넌트 격리 (Design Ref: SVC-CRM-R1 DESIGN)
  */
 export async function listContractsHandler(
   request: FastifyRequest<{ Querystring: { status?: string; page?: string; pageSize?: string } }>,
@@ -278,7 +295,18 @@ export async function listContractsHandler(
 ): Promise<void> {
   const page = parseInt(request.query.page ?? '1', 10);
   const pageSize = Math.min(parseInt(request.query.pageSize ?? '20', 10), 100);
-  const where = request.query.status ? { status: request.query.status } : {};
+
+  // FR-CRM.4: 테넌트 격리 (CSAP D-08-05, Design Ref: SVC-CRM-R1 DESIGN)
+  const contractJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const contractJwtRole = request.headers['x-user-role'] as string | undefined;
+
+  const where: Record<string, unknown> = {};
+  if (request.query.status) where['status'] = request.query.status;
+
+  // SUPER_ADMIN이 아닌 경우 본인 테넌트의 고객 계약만 조회
+  if (contractJwtRole !== 'SUPER_ADMIN' && contractJwtTenantId) {
+    where['customer'] = { is: { tenantId: contractJwtTenantId } };
+  }
 
   const [contracts, total] = await Promise.all([
     prisma.contract.findMany({

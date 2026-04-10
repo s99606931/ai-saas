@@ -1,0 +1,93 @@
+# Design Ref: MTU-N86 §Golden Path 구조
+# Plan SC: FR-N86.4
+# CSAP D-12 준수 CI/CD 파이프라인 템플릿
+name: "{{SERVICE_NAME}} CI/CD"
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: harbor.saas-platform.local
+  IMAGE_NAME: saas/{{SERVICE_NAME}}
+
+jobs:
+  # Stage 1: 린트 + 타입 검사
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run type-check
+
+  # Stage 2: 테스트
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test
+
+  # Stage 3: 보안 스캔 (CSAP D-12)
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: npm audit
+        run: npm audit --audit-level=high
+      - name: Trivy 파일시스템 스캔
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+
+  # Stage 4: 빌드 + 서명
+  build:
+    runs-on: ubuntu-latest
+    needs: security-scan
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docker 빌드
+        run: |
+          docker build -t $REGISTRY/$IMAGE_NAME:$GITHUB_SHA .
+          docker tag $REGISTRY/$IMAGE_NAME:$GITHUB_SHA $REGISTRY/$IMAGE_NAME:latest
+      - name: Harbor 푸시
+        run: |
+          docker push $REGISTRY/$IMAGE_NAME:$GITHUB_SHA
+          docker push $REGISTRY/$IMAGE_NAME:latest
+      - name: Cosign 서명
+        run: |
+          cosign sign --yes $REGISTRY/$IMAGE_NAME:$GITHUB_SHA
+      - name: SBOM 생성
+        run: |
+          syft $REGISTRY/$IMAGE_NAME:$GITHUB_SHA -o cyclonedx-json > sbom.json
+          cosign attest --yes --predicate sbom.json $REGISTRY/$IMAGE_NAME:$GITHUB_SHA
+
+  # Stage 5: 스테이징 배포
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Helm 배포
+        run: |
+          helm upgrade --install {{SERVICE_NAME}} ./helm \
+            --namespace saas-staging \
+            --set image.tag=$GITHUB_SHA \
+            --wait --timeout 300s

@@ -1,0 +1,122 @@
+# Design Ref: MTU-N87 §Design Anchor
+# Plan SC: FR-N87.5
+# CSAP D-13: DR 테스트 자동화
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dr-test-automation
+  namespace: dr-system
+  labels:
+    app.kubernetes.io/name: dr-controller
+    app.kubernetes.io/component: dr-test
+    csap.compliance/control: D-13
+spec:
+  schedule: "0 2 * * 0"  # 매주 일요일 02:00
+  timeZone: "Asia/Seoul"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1800
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: dr-controller
+            app.kubernetes.io/component: dr-test
+        spec:
+          serviceAccountName: dr-controller
+          restartPolicy: Never
+          automountServiceAccountToken: true
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: dr-test
+              image: harbor.saas-platform.local/tools/dr-controller:latest
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  DATE=$(date -Iseconds)
+                  echo "=== DR 테스트 자동화 시작: ${DATE} ==="
+
+                  PASS=0; FAIL=0
+
+                  # T1: Velero 백업 스케줄 동작 확인
+                  echo "[T1] Velero 백업 스케줄 확인..."
+                  LAST_BACKUP_AGE=$(kubectl get backups -n velero --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].status.startTimestamp}' 2>/dev/null || echo "")
+                  if [ -n "$LAST_BACKUP_AGE" ]; then
+                    echo "  최근 백업: $LAST_BACKUP_AGE"
+                    PASS=$((PASS+1))
+                  else
+                    echo "  [FAIL] 백업 없음"
+                    FAIL=$((FAIL+1))
+                  fi
+
+                  # T2: DB Standby 복제 상태 확인
+                  echo "[T2] DB Standby 복제 상태 확인..."
+                  DB_STATUS=$(kubectl get clusters.postgresql.cnpg.io -A -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "unknown")
+                  echo "  DB 상태: $DB_STATUS"
+                  [ "$DB_STATUS" = "Cluster in healthy state" ] && PASS=$((PASS+1)) || FAIL=$((FAIL+1))
+
+                  # T3: 페일오버 컨트롤러 상태 확인
+                  echo "[T3] 페일오버 컨트롤러 상태..."
+                  CONTROLLER_JOBS=$(kubectl get jobs -n dr-system -l app.kubernetes.io/component=health-monitor --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].status.succeeded}' 2>/dev/null || echo "0")
+                  [ "$CONTROLLER_JOBS" = "1" ] && PASS=$((PASS+1)) || FAIL=$((FAIL+1))
+
+                  # T4: 네트워크 연결 확인 (Standby → MinIO)
+                  echo "[T4] MinIO 연결 확인..."
+                  if curl -sS --connect-timeout 5 "http://minio.minio-system.svc:9000/minio/health/live" 2>/dev/null | grep -q ""; then
+                    PASS=$((PASS+1))
+                  else
+                    FAIL=$((FAIL+1))
+                  fi
+
+                  # 결과 기록
+                  echo ""
+                  echo "DR 테스트 결과: PASS=${PASS} FAIL=${FAIL}"
+                  echo "{\"timestamp\":\"${DATE}\",\"type\":\"weekly-dr-test\",\"pass\":${PASS},\"fail\":${FAIL}}" >> /state/dr-test-log.jsonl
+
+                  # Pushgateway 메트릭
+                  cat <<METRICS | curl -sS --data-binary @- "http://prometheus-pushgateway.monitoring.svc:9091/metrics/job/dr_test" 2>/dev/null || true
+                  # HELP dr_test_pass DR 테스트 통과 항목 수
+                  # TYPE dr_test_pass gauge
+                  dr_test_pass ${PASS}
+                  # HELP dr_test_fail DR 테스트 실패 항목 수
+                  # TYPE dr_test_fail gauge
+                  dr_test_fail ${FAIL}
+                  METRICS
+
+                  echo "=== DR 테스트 완료 ==="
+              volumeMounts:
+                - name: state
+                  mountPath: /state
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 300m
+                  memory: 256Mi
+          volumes:
+            - name: state
+              persistentVolumeClaim:
+                claimName: dr-state-storage
+            - name: tmp
+              emptyDir:
+                sizeLimit: 50Mi

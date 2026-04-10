@@ -1,0 +1,14 @@
+# Design Ref: MTU-N86 §Golden Path 구조
+# Plan SC: FR-N86.3
+apiVersion: v2
+name: "{{SERVICE_NAME}}"
+description: "공공기관 SaaS 프레임워크 — {{SERVICE_NAME}}"
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - saas
+  - public-sector
+  - csap
+maintainers:
+  - name: SaaS Platform Team
