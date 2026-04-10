@@ -36,7 +36,23 @@ async function authPreHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const authHeader = request.headers.authorization;
+  let authHeader = request.headers.authorization;
+
+  // FR-L03.3: Authorization 헤더 없으면 쿠키에서 accessToken 추출 (HttpOnly 쿠키 지원)
+  // Design Ref: L-03-HTTPONLY-COOKIE.design.md §3
+  if (!authHeader?.startsWith('Bearer ')) {
+    const cookieHeader = request.headers.cookie;
+    if (cookieHeader) {
+      const tokenMatch = cookieHeader.split(';').map(c => c.trim()).find(c => c.startsWith('accessToken='));
+      if (tokenMatch) {
+        const token = tokenMatch.split('=')[1];
+        if (token) {
+          authHeader = `Bearer ${token}`;
+        }
+      }
+    }
+  }
+
   if (!authHeader?.startsWith('Bearer ')) {
     await reply.status(401).send({
       success: false,

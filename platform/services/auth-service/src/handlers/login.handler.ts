@@ -191,6 +191,14 @@ export async function loginHandler(
   // 10. 감사 로그
   await logAuthEvent('LOGIN_SUCCESS', user.id, tenant.id, ip, userAgent);
 
+  // FR-L03.1: HttpOnly 쿠키로 토큰 전송 (CSAP D-08-04, OWASP A07:2021)
+  // Design Ref: L-03-HTTPONLY-COOKIE.design.md §1
+  const isProduction = process.env['NODE_ENV'] === 'production';
+  void reply.header('Set-Cookie', [
+    `accessToken=${accessToken}; HttpOnly; ${isProduction ? 'Secure; ' : ''}SameSite=Strict; Path=/; Max-Age=${AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRES_SECONDS}`,
+    `refreshToken=${refreshToken}; HttpOnly; ${isProduction ? 'Secure; ' : ''}SameSite=Strict; Path=/auth/refresh; Max-Age=${AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRES_SECONDS}`,
+  ]);
+
   await reply.status(200).send({
     success: true,
     data: {

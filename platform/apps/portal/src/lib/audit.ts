@@ -20,9 +20,10 @@ export async function sendAuditLog(entry: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // FR-UP.21 (SG-02 해결): 인증 헤더 포함
-        'Authorization': `Bearer ${getAccessToken()}`,
       },
+      // FR-L03.2: HttpOnly 쿠키 자동 전송 (localStorage 토큰 제거)
+      // Design Ref: L-03-HTTPONLY-COOKIE.design.md §2
+      credentials: 'include',
       body: JSON.stringify(entry),
     });
   } catch {
@@ -34,7 +35,6 @@ export async function sendAuditLog(entry: {
   }
 }
 
-function getAccessToken(): string {
-  if (typeof window === 'undefined') return '';
-  return localStorage.getItem('accessToken') ?? '';
-}
+// NOTE: getAccessToken() 제거 — localStorage 토큰 저장은 XSS 취약점
+// FR-L03.2: HttpOnly 쿠키로 전환, credentials: 'include'로 자동 전송
+// Design Ref: L-03-HTTPONLY-COOKIE.design.md §2
