@@ -1,0 +1,215 @@
+# =============================================================================
+# Grafana 대시보드 최적화 Recording Rules
+# Design Ref: MTU-N90 Design §2.1
+# Plan SC: FR-N90.1
+# CSAP: D-06(모니터링 성능 최적화)
+#
+# 이 Recording Rules는 Grafana 대시보드에서 자주 사용되는 복합 PromQL 쿼리를
+# 사전 계산하여 대시보드 로드 시간을 단축합니다.
+#
+# 적용: kubectl apply -f infra/monitoring/grafana-optimized-recording-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: grafana-optimized-recording-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 — 대시보드 쿼리 사전 계산으로 실시간 모니터링 응답 시간 단축"
+spec:
+  groups:
+    # =========================================================================
+    # 그룹 1: 클러스터 개요 대시보드 최적화
+    # Design Ref: MTU-N90 Design §2.1
+    # =========================================================================
+    - name: dashboard:cluster_overview
+      interval: 30s
+      rules:
+        # 클러스터 전체 CPU 사용률
+        - record: cluster:cpu_usage:ratio
+          expr: |
+            1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))
+          labels:
+            dashboard: "cluster-overview"
+
+        # 클러스터 전체 메모리 사용률
+        - record: cluster:memory_usage:ratio
+          expr: |
+            1 - (
+              sum(node_memory_MemAvailable_bytes)
+              / sum(node_memory_MemTotal_bytes)
+            )
+          labels:
+            dashboard: "cluster-overview"
+
+        # 클러스터 전체 디스크 사용률
+        - record: cluster:disk_usage:ratio
+          expr: |
+            1 - (
+              sum(node_filesystem_avail_bytes{mountpoint="/"})
+              / sum(node_filesystem_size_bytes{mountpoint="/"})
+            )
+          labels:
+            dashboard: "cluster-overview"
+
+        # 클러스터 Pod 수 (Running / Total)
+        - record: cluster:pods_running:count
+          expr: |
+            count(kube_pod_status_phase{phase="Running"})
+          labels:
+            dashboard: "cluster-overview"
+
+        - record: cluster:pods_total:count
+          expr: |
+            count(kube_pod_info)
+          labels:
+            dashboard: "cluster-overview"
+
+        # 클러스터 네트워크 수신/송신 합계
+        - record: cluster:network_receive:bytes_rate5m
+          expr: |
+            sum(rate(node_network_receive_bytes_total{device!~"lo|veth.*|cni.*|flannel.*"}[5m]))
+          labels:
+            dashboard: "cluster-overview"
+
+        - record: cluster:network_transmit:bytes_rate5m
+          expr: |
+            sum(rate(node_network_transmit_bytes_total{device!~"lo|veth.*|cni.*|flannel.*"}[5m]))
+          labels:
+            dashboard: "cluster-overview"
+
+    # =========================================================================
+    # 그룹 2: 네임스페이스별 리소스 사용량 (멀티테넌트)
+    # Design Ref: MTU-N90 Design §2.1
+    # =========================================================================
+    - name: dashboard:namespace_resources
+      interval: 30s
+      rules:
+        # 네임스페이스별 CPU 사용률
+        - record: namespace:cpu_usage:sum_rate5m
+          expr: |
+            sum by (namespace) (
+              rate(container_cpu_usage_seconds_total{container!="", container!="POD"}[5m])
+            )
+          labels:
+            dashboard: "namespace-resources"
+
+        # 네임스페이스별 메모리 사용량
+        - record: namespace:memory_usage:sum_bytes
+          expr: |
+            sum by (namespace) (
+              container_memory_working_set_bytes{container!="", container!="POD"}
+            )
+          labels:
+            dashboard: "namespace-resources"
+
+        # 네임스페이스별 Pod 수
+        - record: namespace:pod_count:sum
+          expr: |
+            count by (namespace) (kube_pod_info)
+          labels:
+            dashboard: "namespace-resources"
+
+        # 네임스페이스별 CPU 요청 대비 사용률
+        - record: namespace:cpu_utilization:ratio
+          expr: |
+            sum by (namespace) (rate(container_cpu_usage_seconds_total{container!="", container!="POD"}[5m]))
+            / sum by (namespace) (kube_pod_container_resource_requests{resource="cpu", container!=""})
+          labels:
+            dashboard: "namespace-resources"
+
+        # 네임스페이스별 메모리 요청 대비 사용률
+        - record: namespace:memory_utilization:ratio
+          expr: |
+            sum by (namespace) (container_memory_working_set_bytes{container!="", container!="POD"})
+            / sum by (namespace) (kube_pod_container_resource_requests{resource="memory", container!=""})
+          labels:
+            dashboard: "namespace-resources"
+
+    # =========================================================================
+    # 그룹 3: 서비스 가용성 사전 계산 (SLO 대시보드)
+    # Design Ref: MTU-N90 Design §2.1
+    # =========================================================================
+    - name: dashboard:service_availability
+      interval: 60s
+      rules:
+        # 서비스별 1시간 가용성
+        - record: service:availability:ratio1h
+          expr: |
+            1 - (
+              sum by (service) (increase(http_requests_total{code=~"5.."}[1h]))
+              / clamp_min(sum by (service) (increase(http_requests_total[1h])), 1)
+            )
+          labels:
+            dashboard: "slo-overview"
+
+        # 서비스별 24시간 가용성
+        - record: service:availability:ratio24h
+          expr: |
+            1 - (
+              sum by (service) (increase(http_requests_total{code=~"5.."}[24h]))
+              / clamp_min(sum by (service) (increase(http_requests_total[24h])), 1)
+            )
+          labels:
+            dashboard: "slo-overview"
+
+        # 서비스별 P99 지연 시간
+        - record: service:latency_p99:seconds
+          expr: |
+            histogram_quantile(0.99,
+              sum by (service, le) (rate(http_request_duration_seconds_bucket[5m]))
+            )
+          labels:
+            dashboard: "slo-overview"
+
+        # 서비스별 처리량 (RPS)
+        - record: service:throughput:rate5m
+          expr: |
+            sum by (service) (rate(http_requests_total[5m]))
+          labels:
+            dashboard: "slo-overview"
+
+    # =========================================================================
+    # 그룹 4: 노드별 상세 리소스 (Node Detail 대시보드)
+    # Design Ref: MTU-N90 Design §2.1
+    # =========================================================================
+    - name: dashboard:node_detail
+      interval: 30s
+      rules:
+        # 노드별 CPU 사용률
+        - record: node:cpu_usage:ratio
+          expr: |
+            1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))
+          labels:
+            dashboard: "node-detail"
+
+        # 노드별 메모리 사용률
+        - record: node:memory_usage:ratio
+          expr: |
+            1 - (
+              node_memory_MemAvailable_bytes
+              / node_memory_MemTotal_bytes
+            )
+          labels:
+            dashboard: "node-detail"
+
+        # 노드별 디스크 사용률
+        - record: node:disk_usage:ratio
+          expr: |
+            1 - (
+              node_filesystem_avail_bytes{mountpoint="/"}
+              / node_filesystem_size_bytes{mountpoint="/"}
+            )
+          labels:
+            dashboard: "node-detail"
+
+        # 노드별 디스크 IO 사용률
+        - record: node:disk_io:utilization
+          expr: |
+            rate(node_disk_io_time_seconds_total[5m])
+          labels:
+            dashboard: "node-detail"

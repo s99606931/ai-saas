@@ -87,6 +87,28 @@ prometheus:
     # Remote Write (Tempo metrics_generator 수신)
     enableRemoteWriteReceiver: true
 
+    # VictoriaMetrics 장기 저장소 연동 (remote_write)
+    # Design Ref: MTU-N89 Design §2.2
+    # Plan SC: FR-N89.2
+    # CSAP D-06: 1년 메트릭 보존을 위한 원격 저장소
+    remoteWrite:
+      - url: "http://victoria-metrics-server.monitoring.svc:8428/api/v1/write"
+        queueConfig:
+          maxSamplesPerSend: 10000
+          capacity: 20000
+          maxShards: 10
+          minShards: 1
+          batchSendDeadline: 5s
+        writeRelabelConfigs:
+          # __name__이 빈 메트릭 제외
+          - sourceLabels: [__name__]
+            regex: "^$"
+            action: drop
+          # 고카디널리티 메트릭 제외 (저장소 절약)
+          - sourceLabels: [__name__]
+            regex: "go_gc_.*|go_memstats_.*"
+            action: drop
+
     # 추가 스크랩 설정 (수동 타겟)
     additionalScrapeConfigs:
       # Gitea 메트릭 수집
@@ -180,6 +202,9 @@ grafana:
   grafana.ini:
     server:
       root_url: "%(protocol)s://%(domain)s:%(http_port)s/"
+      # 동시 렌더링 요청 제한 (리소스 보호)
+      # Design Ref: MTU-N90 Design §2.5
+      concurrent_render_request_limit: 10
     auth:
       disable_login_form: false
     auth.anonymous:
@@ -198,6 +223,15 @@ grafana:
       default_timezone: Asia/Seoul
     users:
       default_theme: light
+    # 대시보드 성능 최적화 설정
+    # Design Ref: MTU-N90 Design §2.2, §2.5
+    # Plan SC: FR-N90.2, FR-N90.5
+    dataproxy:
+      max_conns_per_host: 10
+      timeout: 30
+      keep_alive_seconds: 30
+    dashboards:
+      min_refresh_interval: 5s
 
 # ---------------------------------------------------------------------------
 # AlertManager 설정

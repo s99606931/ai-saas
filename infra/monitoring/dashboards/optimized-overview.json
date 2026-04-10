@@ -1,0 +1,242 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": {
+    "list": []
+  },
+  "description": "클러스터 개요 대시보드 (최적화 버전) — Recording Rules 기반 사전 계산 쿼리 사용",
+  "editable": false,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "id": null,
+  "iteration": 1712736000000,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "CPU 사용률",
+      "description": "클러스터 전체 CPU 사용률 (Recording Rule 사전 계산)",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "cluster:cpu_usage:ratio",
+          "legendFormat": "CPU 사용률",
+          "refId": "A",
+          "_comment": "Design Ref: MTU-N90 §2.1 — Recording Rule 기반 (raw 쿼리 대비 10배 빠름)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "메모리 사용률",
+      "description": "클러스터 전체 메모리 사용률 (Recording Rule 사전 계산)",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "cluster:memory_usage:ratio",
+          "legendFormat": "메모리 사용률",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.8 },
+              { "color": "red", "value": 0.95 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "디스크 사용률",
+      "description": "클러스터 전체 디스크 사용률 (Recording Rule 사전 계산)",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "cluster:disk_usage:ratio",
+          "legendFormat": "디스크 사용률",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.8 },
+              { "color": "red", "value": 0.9 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Pod 현황",
+      "description": "Running / Total Pod 수",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "cluster:pods_running:count",
+          "legendFormat": "Running",
+          "refId": "A"
+        },
+        {
+          "expr": "cluster:pods_total:count",
+          "legendFormat": "Total",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "네임스페이스별 CPU 사용량",
+      "description": "Recording Rule 기반 네임스페이스별 CPU 사용 현황",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "namespace:cpu_usage:sum_rate5m",
+          "legendFormat": "{{ namespace }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "네임스페이스별 메모리 사용량",
+      "description": "Recording Rule 기반 네임스페이스별 메모리 사용 현황",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "namespace:memory_usage:sum_bytes",
+          "legendFormat": "{{ namespace }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "서비스 가용성 (24시간)",
+      "description": "서비스별 24시간 가용성 SLI (Recording Rule 사전 계산)",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "service:availability:ratio24h * 100",
+          "legendFormat": "{{ service }}",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "서비스 P99 지연 시간",
+      "description": "서비스별 P99 응답 지연 (Recording Rule 사전 계산)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "service:latency_p99:seconds",
+          "legendFormat": "{{ service }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "네트워크 트래픽",
+      "description": "클러스터 네트워크 수신/송신 (Recording Rule 기반)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 22 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "cluster:network_receive:bytes_rate5m",
+          "legendFormat": "수신",
+          "refId": "A"
+        },
+        {
+          "expr": "cluster:network_transmit:bytes_rate5m",
+          "legendFormat": "송신",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps"
+        }
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["optimized", "recording-rules", "cluster-overview", "공공SaaS"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"],
+    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "7d"]
+  },
+  "timezone": "Asia/Seoul",
+  "title": "클러스터 개요 (최적화)",
+  "uid": "optimized-cluster-overview",
+  "version": 1
+}

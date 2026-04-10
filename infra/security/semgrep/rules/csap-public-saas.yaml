@@ -1,0 +1,187 @@
+# 공공기관 SaaS Semgrep 커스텀 규칙
+# Design Ref: MTU-N91 Design §1
+# Plan SC: FR-N91.2
+# CSAP: D-08, D-09, D-12, D-06
+
+rules:
+  # === CSAP 보안 규칙 ===
+
+  - id: hardcoded-secret
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $KEY = "sk-..."
+          - pattern: |
+              $KEY = "Bearer ..."
+          - pattern: |
+              const $SECRET = '$VALUE'
+          - pattern: |
+              apiKey: '$VALUE'
+    message: |
+      하드코딩된 시크릿 탐지 (CSAP D-09 위반).
+      환경 변수 또는 External Secrets Operator 사용 필수.
+    severity: ERROR
+    metadata:
+      csap: D-09-01
+      category: security
+      confidence: HIGH
+
+  - id: sql-injection
+    patterns:
+      - pattern: |
+          $DB.execute(`... ${$INPUT} ...`)
+      - pattern: |
+          $DB.query(`... ${$INPUT} ...`)
+    message: |
+      SQL 직접 결합 탐지 (CSAP D-12 위반).
+      매개변수화 쿼리 사용 필수: db.execute('SELECT * FROM t WHERE id = $1', [id])
+    severity: ERROR
+    metadata:
+      csap: D-12-04
+      category: security
+      confidence: HIGH
+
+  - id: xss-raw-html
+    patterns:
+      - pattern: |
+          dangerouslySetInnerHTML={{__html: $INPUT}}
+    message: |
+      새니타이제이션 없는 HTML 직접 렌더링 (CSAP D-12 위반).
+      DOMPurify.sanitize() 사용 필수.
+    severity: WARNING
+    metadata:
+      csap: D-12-05
+      category: security
+
+  - id: missing-audit-log
+    patterns:
+      - pattern: |
+          async function delete$FUNC(...) {
+            ...
+            await $DB.delete(...)
+            ...
+          }
+      - pattern-not: |
+          async function delete$FUNC(...) {
+            ...
+            auditLog(...)
+            ...
+          }
+    message: |
+      삭제 작업에 감사 로그 누락 (CSAP D-06 위반).
+      모든 민감 작업(삭제, 권한변경, 인증)에 auditLog() 호출 필수.
+    severity: WARNING
+    metadata:
+      csap: D-06-01
+      category: security
+
+  - id: plaintext-password
+    patterns:
+      - pattern: |
+          password: $INPUT
+      - pattern-not: |
+          password: bcrypt.hash(...)
+      - pattern-not: |
+          password_hash: ...
+    message: |
+      평문 비밀번호 저장 가능성 (CSAP D-09 위반).
+      bcrypt(12) 해시 사용 필수.
+    severity: ERROR
+    metadata:
+      csap: D-09-02
+      category: security
+
+  - id: n2sf-data-leak
+    patterns:
+      - pattern: |
+          fetch($EXTERNAL_URL, { body: JSON.stringify($DATA) })
+      - metavariable-pattern:
+          metavariable: $DATA
+          pattern: |
+            { ..., grade: "C", ... }
+    message: |
+      C/S등급 데이터 외부 전송 시도 (N2SF N-05 위반).
+      C/S등급 데이터는 AI API 포함 외부 전송 절대 금지.
+    severity: ERROR
+    metadata:
+      n2sf: N-05
+      category: security
+      confidence: HIGH
+
+  - id: pii-exposure
+    patterns:
+      - pattern-either:
+          - pattern: |
+              console.log(..., $USER.email, ...)
+          - pattern: |
+              logger.info(..., $USER.name, ...)
+          - pattern: |
+              console.log(..., $USER.phone, ...)
+    message: |
+      PII(개인식별정보) 로그 출력 탐지.
+      PII는 마스킹 후 로깅: maskPII(user.email)
+    severity: WARNING
+    metadata:
+      csap: D-09-01
+      n2sf: N-05
+      category: privacy
+
+  # === 코드 품질 규칙 ===
+
+  - id: function-too-long
+    patterns:
+      - pattern: |
+          function $FUNC(...) {
+            ...
+          }
+    options:
+      max_lines: 80
+    message: |
+      80줄 초과 함수 탐지. 단일 책임 원칙에 따라 분리 필요.
+    severity: WARNING
+    metadata:
+      category: code-quality
+
+  - id: deep-nesting
+    patterns:
+      - pattern: |
+          if (...) {
+            if (...) {
+              if (...) {
+                if (...) {
+                  ...
+                }
+              }
+            }
+          }
+    message: |
+      4단계 초과 중첩 탐지. 조기 반환(early return) 패턴으로 리팩토링 필요.
+    severity: WARNING
+    metadata:
+      category: code-quality
+
+  - id: error-swallow
+    patterns:
+      - pattern: |
+          catch ($ERR) {}
+      - pattern: |
+          catch ($ERR) { /* ... */ }
+    message: |
+      에러 무시 패턴 탐지. 최소한 로깅 필수: logger.error('Error', { error: err })
+    severity: WARNING
+    metadata:
+      category: code-quality
+
+  - id: encryption-required
+    patterns:
+      - pattern: |
+          await $DB.create({ ..., email: $EMAIL, ... })
+      - pattern-not: |
+          await $DB.create({ ..., email: encrypt($EMAIL), ... })
+    message: |
+      PII 저장 시 암호화 누락 가능성 (CSAP D-09).
+      email, name 등 PII 컬럼은 AES-256-GCM 암호화 필수.
+    severity: WARNING
+    metadata:
+      csap: D-09-01
+      category: security

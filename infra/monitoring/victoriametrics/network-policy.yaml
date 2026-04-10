@@ -1,0 +1,54 @@
+# =============================================================================
+# NetworkPolicy — VictoriaMetrics 접근통제
+# Design Ref: MTU-N89 Design §2.5
+# Plan SC: FR-N89.5
+# CSAP: D-08(접근통제 — monitoring NS 내부만 접근 허용)
+#
+# 정책:
+#   - Prometheus → VictoriaMetrics: remote_write 허용 (8428/TCP)
+#   - Grafana → VictoriaMetrics: 쿼리 허용 (8428/TCP)
+#   - 기타 모든 Ingress: 차단
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: victoriametrics-network-policy
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: observability-stack
+    security.policy/type: network-isolation
+  annotations:
+    csap.ref/d08: "접근통제 — VictoriaMetrics 접근을 monitoring NS 내부 Prometheus/Grafana로 제한"
+    n2sf.ref/n03: "격리 — 모니터링 네임스페이스 내부 통신만 허용"
+spec:
+  podSelector:
+    matchLabels:
+      app: server
+      app.kubernetes.io/name: victoria-metrics-single
+  policyTypes:
+    - Ingress
+  ingress:
+    # Prometheus remote_write 허용
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 8428
+    # Grafana 쿼리 허용
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
+      ports:
+        - protocol: TCP
+          port: 8428
+    # VictoriaMetrics 자체 메트릭 스크랩 (Prometheus ServiceMonitor)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - protocol: TCP
+          port: 8428

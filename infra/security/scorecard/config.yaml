@@ -1,0 +1,115 @@
+# OpenSSF Scorecard 설정
+# Design Ref: MTU-N90 Design §2
+# Plan SC: FR-N90.1
+# CSAP: D-05 공급망 보안
+
+apiVersion: scorecard/v1
+kind: ScorecardConfig
+metadata:
+  name: ai-saas-scorecard
+  namespace: compliance
+  labels:
+    app: openssf-scorecard
+    csap: D-05
+    mtu: N90
+
+spec:
+  # 스캔 대상 저장소
+  repository:
+    type: local
+    path: "."
+
+  # 실행 스케줄
+  schedule:
+    cron: "0 3 * * 1"  # 매주 월요일 03:00
+    timezone: Asia/Seoul
+
+  # 점수 기준
+  thresholds:
+    minimum: 5.0       # 5.0 미만 시 빌드 실패
+    target: 7.0        # 7.0 목표 점수
+    excellent: 9.0     # 9.0 이상 우수
+
+  # 검사 항목 가중치 (CSAP 매핑 기반)
+  checks:
+    # D-05 공급망 보안 (높은 가중치)
+    Binary-Artifacts:
+      weight: 10
+      csap: D-05-01
+    Dependency-Update-Tool:
+      weight: 10
+      csap: D-05-03
+    Pinned-Dependencies:
+      weight: 10
+      csap: D-05-02
+    Vulnerabilities:
+      weight: 10
+      csap: D-05-01
+
+    # D-12 개발 보안
+    Branch-Protection:
+      weight: 8
+      csap: D-12-06
+    CI-Tests:
+      weight: 8
+      csap: D-12-09
+    Code-Review:
+      weight: 8
+      csap: D-12-07
+    SAST:
+      weight: 8
+      csap: D-12-08
+
+    # D-09 암호화
+    Signed-Releases:
+      weight: 9
+      csap: D-09-04
+
+    # D-08 접근 통제
+    Token-Permissions:
+      weight: 9
+      csap: D-08-11
+
+    # D-01 정보보호 정책
+    Security-Policy:
+      weight: 7
+      csap: D-01-01
+
+    # 일반 검사
+    CII-Best-Practices:
+      weight: 5
+    Contributors:
+      weight: 3
+    Dangerous-Workflow:
+      weight: 8
+    Fuzzing:
+      weight: 5
+    License:
+      weight: 5
+    Maintained:
+      weight: 5
+    Packaging:
+      weight: 5
+
+  # 알림 설정
+  notifications:
+    scoreDecrease:
+      enabled: true
+      threshold: 0.5     # 0.5점 이상 하락 시 알림
+    checkFailed:
+      enabled: true
+      severity: ["high"]  # HIGH 이상 실패 시 알림
+
+  # 리포트 설정
+  reporting:
+    formats:
+      - json
+      - sarif
+    archiveDays: 365     # 1년 보존 (CSAP D-06)
+    outputDir: "reports/scorecard"
+
+  # Grafana 연동
+  grafana:
+    enabled: true
+    dashboard: "openssf-scorecard"
+    datasource: "prometheus"
