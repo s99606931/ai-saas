@@ -13,8 +13,14 @@ const ipBlocklist = new Map<string, { reason: string; blockedAt: string; expires
 
 // --- Zod 스키마 (CSAP D-12: 모든 입력 검증) ---
 
+// FR-SEC.3: IP 형식 검증 (IPv4/IPv6/CIDR, Design Ref: SVC-SEC-R1 DESIGN)
+const IP_PATTERN = /^(?:(?:\d{1,3}\.){3}\d{1,3}(?:\/\d{1,2})?|[0-9a-fA-F:]+(?:\/\d{1,3})?|::1|::ffff:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/;
+
 const ipBlockSchema = z.object({
-  ip: z.string().min(1, 'IP 주소는 필수입니다'),
+  ip: z.string().min(1, 'IP 주소는 필수입니다').refine(
+    (ip) => IP_PATTERN.test(ip),
+    { message: '유효하지 않은 IP 형식입니다 (IPv4/IPv6/CIDR)' },
+  ),
   reason: z.string().min(1, '차단 사유는 필수입니다'),
   durationMinutes: z.number().int().positive().optional(),
 });
@@ -174,11 +180,20 @@ export async function getIpBlocklistHandler(
   reply: FastifyReply,
 ): Promise<void> {
   const now = new Date().toISOString();
+
+  // FR-SEC.2: 만료된 항목 자동 정리 (Design Ref: SVC-SEC-R1 DESIGN)
+  let expiredCleaned = 0;
+  for (const [ip, v] of ipBlocklist.entries()) {
+    if (v.expiresAt && v.expiresAt <= now) {
+      ipBlocklist.delete(ip);
+      expiredCleaned++;
+    }
+  }
+
   const entries = Array.from(ipBlocklist.entries())
-    .filter(([, v]) => !v.expiresAt || v.expiresAt > now)
     .map(([ip, v]) => ({ ip, ...v }));
 
-  await reply.send({ entries, total: entries.length });
+  await reply.send({ entries, total: entries.length, expiredCleaned });
 }
 
 /**

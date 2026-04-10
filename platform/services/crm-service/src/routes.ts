@@ -16,6 +16,10 @@ import {
   updateContractHandler,
   pipelineHandler,
 } from './handlers/crm.handler.js';
+import {
+  expiringContractsHandler,
+  crmStatsHandler,
+} from './handlers/crm-stats.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
@@ -52,11 +56,17 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.get('/crm/customers/:id/contacts', { preHandler: readLimiter }, listContactsHandler as never);
   app.post('/crm/customers/:id/contacts', { preHandler: writeLimiter }, createContactHandler as never);
 
-  // FR-P09.3: 계약 CRUD
+  // FR-CRM.3: CRM 통계
+  app.get('/crm/stats', { preHandler: readLimiter }, crmStatsHandler as never);
+
+  // FR-CRM.2: 계약 만료 임박 (정적 경로 우선)
+  app.get('/crm/contracts/expiring', { preHandler: readLimiter }, expiringContractsHandler as never);
+
+  // FR-P09.3 + FR-CRM.4: 계약 CRUD (테넌트 격리)
   app.get('/crm/contracts', { preHandler: readLimiter }, listContractsHandler as never);
   app.post('/crm/contracts', { preHandler: writeLimiter }, createContractHandler as never);
   app.put('/crm/contracts/:id', { preHandler: writeLimiter }, updateContractHandler as never);
 
-  // FR-P09.4: 영업 파이프라인
+  // FR-P09.4 + FR-CRM.5: 영업 파이프라인 (테넌트 격리)
   app.get('/crm/pipeline', { preHandler: readLimiter }, pipelineHandler as never);
 }

@@ -413,17 +413,26 @@ export async function updateContractHandler(
 
 /**
  * 영업 파이프라인 조회
- * Plan SC: FR-P09.4
+ * Plan SC: FR-P09.4, FR-CRM.5
+ * CSAP D-08-05: 테넌트 격리 (Design Ref: SVC-CRM-R1 DESIGN)
  */
 export async function pipelineHandler(
-  _request: FastifyRequest,
+  request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
   const stages = ['prospect', 'qualified', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
 
+  // FR-CRM.5: 테넌트 격리 (CSAP D-08-05, Design Ref: SVC-CRM-R1 DESIGN)
+  const pipelineJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const pipelineJwtRole = request.headers['x-user-role'] as string | undefined;
+
   const pipeline = await Promise.all(
     stages.map(async (status) => {
-      const count = await prisma.customer.count({ where: { status } });
+      const where: Record<string, unknown> = { status };
+      if (pipelineJwtRole !== 'SUPER_ADMIN' && pipelineJwtTenantId) {
+        where['tenantId'] = pipelineJwtTenantId;
+      }
+      const count = await prisma.customer.count({ where });
       return { stage: status, count };
     }),
   );

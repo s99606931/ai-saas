@@ -11,6 +11,10 @@ import {
   removeIpBlocklistHandler,
   securityAlertsHandler,
 } from './handlers/security.handler.js';
+import {
+  securityDashboardHandler,
+  threatTrendHandler,
+} from './handlers/security-stats.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
@@ -36,6 +40,12 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   // CSAP D-08-06: Rate Limiting (보안 API는 엄격 제한)
   const readLimiter = createRateLimiter(60, 60, 'rl:sec:read');
   const writeLimiter = createRateLimiter(20, 60, 'rl:sec:write');
+
+  // FR-SEC.1: 보안 대시보드
+  app.get('/security/dashboard', { preHandler: readLimiter }, securityDashboardHandler as never);
+
+  // FR-SEC.4: 위협 추이
+  app.get('/security/threat-trend', { preHandler: readLimiter }, threatTrendHandler as never);
 
   // FR-P15.1: 로그인 실패 패턴 탐지
   app.get('/security/login-failures', { preHandler: readLimiter }, loginFailuresHandler);

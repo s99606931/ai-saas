@@ -341,16 +341,29 @@ export async function generateTaxInvoiceHandler(
 /**
  * 수익 대시보드 데이터
  * Plan SC: FR-P08.4
+ * CSAP D-08-05: 테넌트 격리
  */
 export async function dashboardHandler(
-  _request: FastifyRequest,
+  request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
+  // CSAP D-08-05: 테넌트 격리 (Design Ref: SVC-BILL-R1 DESIGN)
+  const dashJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
+  const dashJwtRole = request.headers['x-user-role'] as string | undefined;
+
+  const invoiceWhere: Record<string, unknown> = {};
+  const paymentWhere: Record<string, unknown> = {};
+
+  if (dashJwtRole !== 'SUPER_ADMIN' && dashJwtTenantId) {
+    invoiceWhere['subscription'] = { is: { tenantId: dashJwtTenantId } };
+    paymentWhere['invoice'] = { is: { subscription: { is: { tenantId: dashJwtTenantId } } } };
+  }
+
   const [totalRevenue, invoiceCount, paidCount, pendingCount] = await Promise.all([
-    prisma.payment.aggregate({ _sum: { amount: true } }),
-    prisma.invoice.count(),
-    prisma.invoice.count({ where: { status: 'paid' } }),
-    prisma.invoice.count({ where: { status: 'issued' } }),
+    prisma.payment.aggregate({ where: paymentWhere, _sum: { amount: true } }),
+    prisma.invoice.count({ where: invoiceWhere }),
+    prisma.invoice.count({ where: { ...invoiceWhere, status: 'paid' } }),
+    prisma.invoice.count({ where: { ...invoiceWhere, status: 'issued' } }),
   ]);
 
   await reply.send({
