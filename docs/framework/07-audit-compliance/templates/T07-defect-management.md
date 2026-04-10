@@ -108,16 +108,34 @@ DEF-{MTU}-{일련번호}
 
 ---
 
+### 4.3 CI/CD 고도화 결함 기록 (MTU-N37~N88)
+
+<!-- Design Ref: MTU-N89 Design §4 — 결함관리대장 갱신 -->
+<!-- Plan SC: FR-N89.4 -->
+
+| 결함 ID | 발견일 | 발견 단계 | 심각도 | 결함 설명 | 조치 | 상태 |
+|---------|-------|---------|--------|---------|------|------|
+| DEF-N31-001 | 2026-04-08 | 시험 | MEDIUM | Kyverno Audit→Enforce 전환 시 기존 워크로드 일부 정책 위반 | exclude 규칙 추가 후 Enforce 적용 | CLOSED |
+| DEF-N39-001 | 2026-04-09 | 시험 | LOW | Sealed Secrets 컨트롤러 재시작 시 복호화 키 동기화 지연 | 키 백업 스크립트 + 헬스체크 보강 | CLOSED |
+| DEF-N47-001 | 2026-04-09 | 시험 | MEDIUM | Flux Drift Detection 오탐 (CRD 자동 필드 변경) | ignorePaths 설정으로 CRD 관리 필드 제외 | CLOSED |
+| DEF-N54-001 | 2026-04-09 | 시험 | LOW | Linkerd proxy 리소스 할당 미설정 | proxy-cpu-request/limit 명시적 설정 | CLOSED |
+| DEF-N67-001 | 2026-04-10 | 시험 | MEDIUM | ConfigMap 드리프트 감사 시 Helm 관리 ConfigMap 오탐 | helm.sh/hook 어노테이션 필터 추가 | CLOSED |
+| DEF-N71-001 | 2026-04-10 | 시험 | HIGH | PSS Restricted 적용 시 monitoring 네임스페이스 일부 Pod 보안 컨텍스트 미설정 | securityContext 명시적 설정 + 네임스페이스별 단계적 적용 | CLOSED |
+| DEF-N75-001 | 2026-04-10 | 시험 | MEDIUM | Admission Webhook 타임아웃 시 fail-open 동작 | failurePolicy: Fail 설정 + 타임아웃 30s→10s 조정 | CLOSED |
+| DEF-N83-001 | 2026-04-10 | 시험 | LOW | Prophet ML 모델 초기 학습 시 메모리 초과 | 학습 데이터 기간 30일→7일 축소 + 메모리 리밋 상향 | CLOSED |
+
+---
+
 ## 5. 결함 이력 통계
 
 | 구분 | CRITICAL | HIGH | MEDIUM | LOW | 합계 |
 |------|---------|------|--------|-----|------|
-| 발견 건수 | — | — | — | — | — |
-| 조치 완료 | — | — | — | — | — |
-| 미결 건수 | — | — | — | — | — |
-| 종결률 (%) | — | — | — | — | — |
+| 발견 건수 | 0 | 1 | 4 | 3 | 8 |
+| 조치 완료 | 0 | 1 | 4 | 3 | 8 |
+| 미결 건수 | 0 | 0 | 0 | 0 | 0 |
+| 종결률 (%) | - | 100% | 100% | 100% | 100% |
 
-**감리 합격 조건**: CRITICAL 0건, HIGH 0건 (미결 기준)
+**감리 합격 조건**: CRITICAL 0건, HIGH 0건 (미결 기준) -- **충족**
 
 ---
 

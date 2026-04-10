@@ -80,6 +80,59 @@
 | FR-10.1 | SBOM 자동 생성 | `08-infra/supply-chain/sbom-guide.md` | TC-C8-001~003 | CSAP-D05-02 | 완료 | C8 |
 | FR-10.2 | 이미지 서명 검증 | `08-infra/supply-chain/sigstore-signing.md` | TC-C8-004~007 | CSAP-D05-03 | 완료 | C8 |
 
+### FR-N.x CI/CD·DevOps 고도화 (MTU-N37~N88)
+
+<!-- Design Ref: MTU-N89 Design §2 — CI/CD FR 추적 -->
+<!-- Plan SC: FR-N89.2 -->
+
+| FR ID | 요구사항명 | 구현 산출물 | 테스트 케이스 | 관련 CSAP | 상태 | MTU |
+|-------|---------|---------|------------|---------|------|-----|
+| FR-N37.1 | SBOM+Grype 파이프라인 | infra/cicd/sbom/, .gitea/workflows/sbom-scan.yaml | test-sbom.sh | D-05 | 완료 | N37 |
+| FR-N38.1 | 워크플로우 캐싱+병렬화 | .gitea/workflows/ 최적화 | test-cache-perf.sh | D-12 | 완료 | N38 |
+| FR-N39.1 | Sealed Secrets GitOps | infra/sealed-secrets/ | test-sealed-secrets.sh | D-09 | 완료 | N39 |
+| FR-N40.1 | Flagger 카나리 배포 | infra/flagger/ | test-canary.sh | D-12 | 완료 | N40 |
+| FR-N41.1 | 멀티환경 GitOps 분리 | infra/flux/environments/ | test-multi-env.sh | D-12 | 완료 | N41 |
+| FR-N42.1 | Semantic Release 자동화 | .releaserc, CHANGELOG 자동 | test-release.sh | D-12 | 완료 | N42 |
+| FR-N43.1 | 파이프라인 벤치마크 | scripts/benchmark-pipeline.sh | test-benchmark.sh | D-12 | 완료 | N43 |
+| FR-N45.1 | Falco 런타임 보안 | infra/falco/ | test-falco.sh | D-06 | 완료 | N45 |
+| FR-N46.1 | SLSA Level 3 Provenance | scripts/generate-provenance.sh | test-slsa.sh | D-12 | 완료 | N46 |
+| FR-N47.1 | Flux Drift Detection | infra/flux/drift/ | test-drift-detection.sh | D-12 | 완료 | N47 |
+| FR-N48.1 | OTel 분산 추적 | infra/monitoring/tempo/ | test-tracing.sh | D-06 | 완료 | N48 |
+| FR-N49.1 | SLO/SLI 자동화 (Sloth) | infra/slo/ | test-slo.sh | D-06 | 완료 | N49 |
+| FR-N50.1 | 카오스 엔지니어링 | infra/chaos/ | test-chaos.sh | D-07 | 완료 | N50 |
+| FR-N51.1 | Matrix Build 최적화 | .gitea/workflows/matrix.yaml | test-matrix.sh | D-12 | 완료 | N51 |
+| FR-N53.1 | Gatekeeper 정책 | infra/gatekeeper/ | test-gatekeeper.sh | D-08 | 완료 | N53 |
+| FR-N54.1 | Linkerd 서비스 메시 | infra/linkerd/ | test-linkerd.sh | D-09,D-10 | 완료 | N54 |
+| FR-N55.1 | Velero 재해 복구 | infra/velero/ | test-velero.sh | D-07 | 완료 | N55 |
+| FR-N56.1 | KEDA 오토스케일 | infra/keda/ | test-keda.sh | D-11 | 완료 | N56 |
+| FR-N57.1 | Prometheus Recording Rules | infra/monitoring/recording-rules/ | test-recording-rules.sh | D-06 | 완료 | N57 |
+| FR-N58.1 | devcontainer 표준화 | .devcontainer/ | test-devcontainer.sh | D-12 | 완료 | N58 |
+| FR-N59.1 | FinOps 비용 대시보드 | infra/finops/ | test-finops.sh | D-04 | 완료 | N59 |
+| FR-N61.1 | Grafana 특화 대시보드 | infra/monitoring/grafana/ | test-grafana-dashboards.sh | D-06 | 완료 | N61 |
+| FR-N62.1 | cert-manager TLS 자동화 | infra/cert-manager/ | test-cert-manager.sh | D-09 | 완료 | N62 |
+| FR-N63.1 | Trivy Operator 스캔 | infra/trivy-operator/ | test-trivy-operator.sh | D-05 | 완료 | N63 |
+| FR-N64.1 | CloudNativePG HA | infra/cloudnative-pg/ | test-cnpg.sh | D-07 | 완료 | N64 |
+| FR-N65.1 | Gateway API+Traefik | infra/gateway-api/ | test-gateway-api.sh | D-10 | 완료 | N65 |
+| FR-N66.1 | External Secrets Operator | infra/external-secrets/ | test-external-secrets.sh | D-09 | 완료 | N66 |
+| FR-N67.1 | Drift Detection 강화 | infra/flux/drift-v2/ | test-drift-v2.sh | D-12 | 완료 | N67 |
+| FR-N69.1 | LogQL+TraceQL 고급 쿼리 | infra/monitoring/queries/ | test-logql.sh | D-06 | 완료 | N69 |
+| FR-N71.1 | PSS Restricted 프로필 | infra/security/pod-security-standards/ | test-pss.sh | D-08,D-11 | 완료 | N71 |
+| FR-N72.1 | VPA+OpenCost FinOps | infra/finops/vpa/ | test-vpa.sh | D-04 | 완료 | N72 |
+| FR-N73.1 | vCluster PR Preview | infra/vcluster/ | test-vcluster.sh | D-12 | 완료 | N73 |
+| FR-N74.1 | SRE Runbook 10종 | scripts/runbook-automation/ | test-runbooks.sh | D-06,D-07 | 완료 | N74 |
+| FR-N75.1 | Admission Webhook 5종 | infra/webhook/ | test-admission-webhook.sh | D-08 | 완료 | N75 |
+| FR-N76.1 | 용량계획+ResourceQuota | infra/resource-management/ | test-resource-quota.sh | D-11 | 완료 | N76 |
+| FR-N77.1 | AI 기반 CI/CD 통합 | infra/cicd/ai/ | test-ai-cicd.sh | D-12 | 완료 | N77 |
+| FR-N79.1 | Renovate Bot 자동화 | infra/renovate/ | test-renovate.sh | D-05 | 완료 | N79 |
+| FR-N80.1 | S2C2F Level 3 | infra/security/s2c2f/ | test-s2c2f.sh | D-05 | 완료 | N80 |
+| FR-N81.1 | CVE 자동 패치 | infra/security/vuln-patch/ | test-vuln-patch.sh | D-05 | 완료 | N81 |
+| FR-N82.1 | Pyroscope 프로파일링 | infra/pyroscope/ | test-pyroscope.sh | D-06 | 완료 | N82 |
+| FR-N83.1 | ML 이상탐지 | infra/anomaly-detection/ | test-anomaly.sh | D-06 | 완료 | N83 |
+| FR-N84.1 | CSAP 증거 자동 수집 | infra/compliance/evidence-collector/ | test-evidence.sh | D-06 | 완료 | N84 |
+| FR-N85.1 | 감사 보고서 자동 생성 | infra/compliance/report-generator/ | test-report-gen.sh | D-06 | 완료 | N85 |
+| FR-N86.1 | IDP Golden Path | infra/golden-path/ | test-golden-path.sh | D-12 | 완료 | N86 |
+| FR-N87.1 | DR 자동 페일오버 | infra/dr/ | test-dr.sh | D-07 | 완료 | N87 |
+
 ---
 
 ## 2. 역방향 추적 (CSAP → FR → 산출물)
@@ -152,6 +205,51 @@
 | I5 | 3 | FR-3.6 | 1 | 완료 |
 | C6a | 3 | FR-2.4 | 4 | 완료 |
 | A3a | 4 | FR-4.1~4.3 | 4 | 완료 |
+| N37 | CI/CD R1 | FR-N37.1 | 2 | 완료 |
+| N38 | CI/CD R1 | FR-N38.1 | 2 | 완료 |
+| N39 | CI/CD R1 | FR-N39.1 | 2 | 완료 |
+| N40 | CI/CD R1 | FR-N40.1 | 2 | 완료 |
+| N41 | CI/CD R1 | FR-N41.1 | 2 | 완료 |
+| N42 | CI/CD R1 | FR-N42.1 | 2 | 완료 |
+| N43 | CI/CD R1 | FR-N43.1 | 1 | 완료 |
+| N45 | CI/CD R2 | FR-N45.1 | 3 | 완료 |
+| N46 | CI/CD R2 | FR-N46.1 | 2 | 완료 |
+| N47 | CI/CD R2 | FR-N47.1 | 2 | 완료 |
+| N48 | CI/CD R2 | FR-N48.1 | 2 | 완료 |
+| N49 | CI/CD R2 | FR-N49.1 | 2 | 완료 |
+| N50 | CI/CD R2 | FR-N50.1 | 2 | 완료 |
+| N51 | CI/CD R2 | FR-N51.1 | 1 | 완료 |
+| N53 | CI/CD R3 | FR-N53.1 | 2 | 완료 |
+| N54 | CI/CD R3 | FR-N54.1 | 3 | 완료 |
+| N55 | CI/CD R3 | FR-N55.1 | 2 | 완료 |
+| N56 | CI/CD R3 | FR-N56.1 | 2 | 완료 |
+| N57 | CI/CD R3 | FR-N57.1 | 2 | 완료 |
+| N58 | CI/CD R3 | FR-N58.1 | 2 | 완료 |
+| N59 | CI/CD R3 | FR-N59.1 | 2 | 완료 |
+| N61 | CI/CD R4 | FR-N61.1 | 3 | 완료 |
+| N62 | CI/CD R4 | FR-N62.1 | 2 | 완료 |
+| N63 | CI/CD R4 | FR-N63.1 | 2 | 완료 |
+| N64 | CI/CD R4 | FR-N64.1 | 2 | 완료 |
+| N65 | CI/CD R4 | FR-N65.1 | 2 | 완료 |
+| N66 | CI/CD R4 | FR-N66.1 | 2 | 완료 |
+| N67 | CI/CD R4 | FR-N67.1 | 2 | 완료 |
+| N69 | CI/CD R5 | FR-N69.1 | 2 | 완료 |
+| N71 | CI/CD R5 | FR-N71.1 | 2 | 완료 |
+| N72 | CI/CD R5 | FR-N72.1 | 2 | 완료 |
+| N73 | CI/CD R5 | FR-N73.1 | 2 | 완료 |
+| N74 | CI/CD R5 | FR-N74.1 | 3 | 완료 |
+| N75 | CI/CD R5 | FR-N75.1 | 2 | 완료 |
+| N76 | CI/CD R5 | FR-N76.1 | 2 | 완료 |
+| N77 | CI/CD R5 | FR-N77.1 | 2 | 완료 |
+| N79 | CI/CD R6 | FR-N79.1 | 2 | 완료 |
+| N80 | CI/CD R6 | FR-N80.1 | 2 | 완료 |
+| N81 | CI/CD R6 | FR-N81.1 | 2 | 완료 |
+| N82 | CI/CD R6 | FR-N82.1 | 2 | 완료 |
+| N83 | CI/CD R6 | FR-N83.1 | 2 | 완료 |
+| N84 | CI/CD R6 | FR-N84.1 | 2 | 완료 |
+| N85 | CI/CD R6 | FR-N85.1 | 2 | 완료 |
+| N86 | CI/CD R6 | FR-N86.1 | 2 | 완료 |
+| N87 | CI/CD R6 | FR-N87.1 | 2 | 완료 |
 
 ---
 
@@ -159,13 +257,16 @@
 
 | 추적 방향 | 전체 항목 | 매핑 완료 | 미매핑 | 커버리지 |
 |---------|---------|---------|--------|---------|
-| FR → 산출물 | 20 | 20 | 0 | 100% |
-| FR → 테스트 | 20 | 20 | 0 | 100% |
-| FR → CSAP | 20 | 15 | 5 (CSAP 미해당) | 100% |
+| FR → 산출물 (기반) | 20 | 20 | 0 | 100% |
+| FR → 산출물 (CI/CD) | 44 | 44 | 0 | 100% |
+| FR → 테스트 (기반) | 20 | 20 | 0 | 100% |
+| FR → 테스트 (CI/CD) | 44 | 44 | 0 | 100% |
+| FR → CSAP | 64 | 59 | 5 (CSAP 미해당) | 100% |
 | CSAP → FR | 79 | 79 | 0 | 100% |
 | N2SF → FR | 6 영역 | 6 | 0 | 100% |
+| MTU → FR (전체) | 66 MTU | 66 | 0 | 100% |
 
-> **결론**: 모든 FR이 산출물·테스트·CSAP와 4방향으로 추적 가능합니다. 감리관이 임의의 FR ID를 선택하면 해당 산출물, 테스트 케이스, CSAP 통제 항목을 즉시 확인할 수 있습니다.
+> **결론**: 기반 프레임워크 20개 FR + CI/CD 고도화 44개 FR = 총 64개 FR이 산출물, 테스트 케이스, CSAP 통제 항목과 4방향으로 완전 추적 가능합니다. CSAP 79개 통제항목 전수가 최소 1개 이상의 FR 및 구현 산출물과 매핑되어 있습니다.
 
 ---
 
@@ -174,3 +275,4 @@
 | 버전 | 일자 | 내용 | 작성자 |
 |------|------|------|--------|
 | 1.0.0 | 2026-04-05 | 최초 작성 — FR↔산출물↔테스트↔CSAP 4방향 매트릭스 | Claude Code |
+| 2.0.0 | 2026-04-10 | CI/CD 고도화 FR-N37~N87 (44개 FR) 추적성 추가, MTU 역방향 추적 66건 확장 — MTU-N89 | PM Agent |

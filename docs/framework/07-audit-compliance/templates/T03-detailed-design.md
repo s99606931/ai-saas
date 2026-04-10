@@ -286,8 +286,153 @@ users ──┬── sessions
 
 ---
 
+## 6. CI/CD 파이프라인 아키텍처 (MTU-N37~N88)
+
+<!-- Design Ref: MTU-N89 Design §1 — CI/CD 아키텍처 확장 -->
+<!-- Plan SC: FR-N89.1 -->
+
+### 6.1 공급망 보안 계층
+
+| 구성요소 | 기능 | CSAP 매핑 | MTU |
+|---------|------|----------|-----|
+| Syft SBOM 생성 | 빌드 시 SPDX JSON SBOM 자동 생성 | D-05-02 | N37 |
+| Grype 취약점 스캔 | SBOM 기반 CVE 스캔 + CRITICAL 차단 | D-05-01 | N37 |
+| SLSA Level 3 | 빌드 Provenance 증명 생성 | D-12-08 | N46 |
+| Cosign 이미지 서명 | 컨테이너 이미지 무결성 서명 + 검증 | D-09-04 | N27 |
+| S2C2F Level 3 | 공급망 보안 성숙도 프레임워크 | D-05 | N80 |
+| Renovate Bot | 의존성 자동 업데이트 PR 생성 | D-05-03 | N79 |
+| CVE 자동 패치 | CRITICAL/HIGH CVE 발견 시 자동 패치 PR | D-05-01 | N81 |
+
+### 6.2 배포 자동화 계층
+
+| 구성요소 | 기능 | CSAP 매핑 | MTU |
+|---------|------|----------|-----|
+| Flux GitOps | Git 소스 기반 클러스터 상태 동기화 | D-12-06 | I3, N24 |
+| Flagger 카나리 | 점진적 트래픽 전환 (10%->50%->100%) | D-12-07 | N40 |
+| 멀티환경 GitOps | dev/stg/prod 환경 분리 배포 | D-12-06 | N41 |
+| Sealed Secrets | GitOps 호환 시크릿 암호화 | D-09-01 | N39 |
+| External Secrets | 외부 시크릿 저장소 연동 | D-09-01 | N66 |
+| vCluster Preview | PR별 격리 환경 자동 생성/삭제 | D-12-09 | N73 |
+| Semantic Release | 자동 버전 관리 + CHANGELOG 생성 | D-12-10 | N42 |
+
+### 6.3 관측성 계층 (4대 신호)
+
+| 신호 | 구성요소 | 기능 | MTU |
+|------|---------|------|-----|
+| 메트릭 | Prometheus + Recording Rules | 시계열 메트릭 수집 + 집계 | N57 |
+| 메트릭 | VPA + OpenCost | 리소스 Right-Sizing + 비용 분석 | N72 |
+| 메트릭 | SLO/SLI (Sloth) | 서비스 수준 목표 자동화 | N49 |
+| 로그 | Loki + LogQL | 구조화 로그 수집 + 고급 쿼리 | N69 |
+| 트레이스 | Tempo + OTel + TraceQL | 분산 추적 + 서비스 맵 | N48, N69 |
+| 프로파일 | Pyroscope | 연속 CPU/메모리 프로파일링 | N82 |
+| 대시보드 | Grafana 특화 대시보드 | 공공 SaaS 전용 시각화 | N61 |
+| 이상탐지 | Z-Score + Prophet ML | 자동 이상 패턴 탐지 | N83 |
+
+### 6.4 보안 계층
+
+| 구성요소 | 기능 | CSAP 매핑 | MTU |
+|---------|------|----------|-----|
+| Falco | 런타임 위협 탐지 (시스템콜 모니터링) | D-06-03 | N45 |
+| PSS Restricted | Pod 보안 표준 최고 수준 적용 | D-08-10 | N71 |
+| Trivy Operator | 클러스터 전체 보안 스캔 (이미지+설정) | D-05-01 | N63 |
+| Admission Webhook | 커스텀 보안 검증 5종 | D-08-11 | N75 |
+| Kyverno Enforce | 정책 위반 차단 모드 | D-08-09 | N31 |
+| Gatekeeper | OPA 기반 정책 관리 | D-08-09 | N53 |
+| NetworkPolicy | 네임스페이스 간 트래픽 격리 | D-10-01 | N28 |
+| cert-manager | TLS 인증서 자동 발급/갱신 | D-09-02 | N62 |
+| Linkerd mTLS | 서비스 간 상호 TLS 암호화 | D-09-03 | N54 |
+
+### 6.5 안정성 계층
+
+| 구성요소 | 기능 | MTU |
+|---------|------|-----|
+| 카오스 엔지니어링 (Litmus) | 장애 주입 테스트 자동화 | N50 |
+| SRE Runbook 10종 | 장애 대응 자동화 (황금 신호 기반) | N74 |
+| DR 자동 페일오버 (Velero) | 재해 복구 백업/복원 자동화 | N55, N87 |
+| KEDA 오토스케일 | 이벤트 기반 자동 확장/축소 | N56 |
+| Flux Drift Detection | 클러스터 상태 드리프트 자동 탐지 | N47, N67 |
+| 용량 계획 + ResourceQuota | 리소스 용량 예측 + 3등급 할당 | N76 |
+
+### 6.6 CI/CD 파이프라인 전체 흐름
+
+```
+[개발자]
+  │
+  ├── git push → Gitea
+  │                │
+  │                ├── Gitea Actions 트리거
+  │                │     ├── 1. 린트 + 단위 테스트
+  │                │     ├── 2. Syft SBOM 생성
+  │                │     ├── 3. Grype 취약점 스캔 (CRITICAL=차단)
+  │                │     ├── 4. Docker 빌드 + Harbor 푸시
+  │                │     ├── 5. Cosign 이미지 서명
+  │                │     ├── 6. SLSA Provenance 생성
+  │                │     └── 7. Semantic Release + CHANGELOG
+  │                │
+  │                └── Flux 감지 → k3s 배포
+  │                      ├── Kyverno 정책 검증
+  │                      ├── Admission Webhook 보안 검사
+  │                      ├── Flagger 카나리 배포
+  │                      └── SLO 기반 자동 롤백
+  │
+  └── 모니터링
+        ├── Prometheus 메트릭 수집
+        ├── Loki 로그 수집
+        ├── Tempo 트레이스 수집
+        ├── Pyroscope 프로파일 수집
+        ├── Falco 런타임 보안 감시
+        └── ML 이상탐지 알림
+```
+
+---
+
+## 7. 인프라 컴포넌트 목록 (37개)
+
+| # | 컴포넌트 | 버전 | 용도 | 네임스페이스 |
+|---|---------|------|------|------------|
+| 1 | k3s | v1.30+ | 경량 Kubernetes | - |
+| 2 | Gitea | 1.22+ | Git 호스팅 + CI/CD | gitea |
+| 3 | Harbor | 2.10+ | 컨테이너 레지스트리 + 스캔 | harbor |
+| 4 | Flux | v2.3+ | GitOps 컨트롤러 | flux-system |
+| 5 | Flagger | 1.37+ | 카나리 배포 | flagger-system |
+| 6 | Falco | 0.38+ | 런타임 보안 | falco |
+| 7 | Litmus | 3.8+ | 카오스 엔지니어링 | litmus |
+| 8 | OTel Collector | 0.96+ | 텔레메트리 수집 | monitoring |
+| 9 | Tempo | 2.4+ | 분산 트레이스 저장소 | monitoring |
+| 10 | Grafana | 10.3+ | 관측성 대시보드 | monitoring |
+| 11 | Prometheus | 2.51+ | 메트릭 저장소 | monitoring |
+| 12 | Loki | 2.9+ | 로그 저장소 | monitoring |
+| 13 | cert-manager | 1.14+ | TLS 인증서 자동화 | cert-manager |
+| 14 | Trivy Operator | 0.19+ | 클러스터 보안 스캔 | trivy-system |
+| 15 | CloudNativePG | 1.22+ | PostgreSQL 오퍼레이터 | cnpg-system |
+| 16 | Traefik | 3.0+ | 인그레스 + Gateway API | traefik |
+| 17 | External Secrets | 0.9+ | 외부 시크릿 관리 | external-secrets |
+| 18 | Kyverno | 1.11+ | 정책 관리 (Enforce) | kyverno |
+| 19 | Sealed Secrets | 0.26+ | GitOps 시크릿 암호화 | kube-system |
+| 20 | Sloth | 0.11+ | SLO/SLI 자동화 | monitoring |
+| 21 | MinIO | 2024+ | 오브젝트 스토리지 | minio |
+| 22 | Velero | 1.13+ | 백업/복원 | velero |
+| 23 | Policy Reporter | 2.18+ | 정책 위반 보고 | policy-reporter |
+| 24 | VPA | 1.0+ | 수직 Pod 오토스케일러 | kube-system |
+| 25 | OpenCost | 1.10+ | 비용 모니터링 | opencost |
+| 26 | vCluster | 0.19+ | 가상 클러스터 (PR Preview) | vcluster |
+| 27 | KEDA | 2.13+ | 이벤트 기반 오토스케일 | keda |
+| 28 | Gatekeeper | 3.15+ | OPA 정책 관리 | gatekeeper-system |
+| 29 | Linkerd | 2.14+ | 서비스 메시 + mTLS | linkerd |
+| 30 | Pyroscope | 1.4+ | 연속 프로파일링 | monitoring |
+| 31 | Renovate Bot | 37+ | 의존성 자동 업데이트 | gitea |
+| 32 | Admission Webhook | custom | 보안 검증기 5종 | webhook |
+| 33 | Cosign | 2.2+ | 이미지 서명/검증 | (CI 도구) |
+| 34 | Syft/Grype | 1.0+ | SBOM/취약점 스캔 | (CI 도구) |
+| 35 | Prophet ML | custom | 이상탐지 | monitoring |
+| 36 | CSAP Collector | custom | 증거 자동 수집 | compliance |
+| 37 | ResourceQuota Mgr | custom | 용량 관리 3등급 | kube-system |
+
+---
+
 ## 변경 이력
 
 | 버전 | 일자 | 내용 | 작성자 |
 |------|------|------|--------|
 | 1.0.0 | 2026-04-05 | 최초 작성 — 아키텍처+DB+API+보안 4영역 설계 | Claude Code |
+| 2.0.0 | 2026-04-10 | CI/CD 파이프라인 아키텍처 (6장), 인프라 컴포넌트 37개 목록 (7장) 추가 — MTU-N89 | PM Agent |
