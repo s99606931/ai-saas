@@ -1,0 +1,86 @@
+# etcd 클러스터 상태 Recording Rules
+# Design Ref: MTU-N176.design.md
+# Plan SC: FR-N176.3
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: etcd-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: etcd-monitoring
+    mtu: N176
+spec:
+  groups:
+    - name: etcd.recording
+      interval: 30s
+      rules:
+        # etcd 리더 변경 횟수 (1시간)
+        - record: etcd:leader_changes_1h
+          expr: |
+            increase(etcd_server_leader_changes_seen_total[1h])
+          labels:
+            component: etcd
+
+        # etcd 제안 실패율
+        - record: etcd:proposal_failure_rate_5m
+          expr: |
+            rate(etcd_server_proposals_failed_total[5m])
+          labels:
+            component: etcd
+
+        # etcd 디스크 WAL fsync P99
+        - record: etcd:disk_wal_fsync_p99_5m
+          expr: |
+            histogram_quantile(0.99,
+              rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m])
+            )
+          labels:
+            component: etcd
+
+        # etcd 디스크 백엔드 커밋 P99
+        - record: etcd:disk_backend_commit_p99_5m
+          expr: |
+            histogram_quantile(0.99,
+              rate(etcd_disk_backend_commit_duration_seconds_bucket[5m])
+            )
+          labels:
+            component: etcd
+
+        # etcd DB 크기 (bytes)
+        - record: etcd:db_size_bytes
+          expr: |
+            etcd_mvcc_db_total_size_in_bytes
+          labels:
+            component: etcd
+
+        # etcd DB 사용률 (%)
+        - record: etcd:db_usage_percent
+          expr: |
+            (etcd_mvcc_db_total_size_in_use_in_bytes / etcd_mvcc_db_total_size_in_bytes) * 100
+          labels:
+            component: etcd
+
+        # etcd 네트워크 피어 왕복 시간 P99
+        - record: etcd:network_peer_rtt_p99_5m
+          expr: |
+            histogram_quantile(0.99,
+              rate(etcd_network_peer_round_trip_time_seconds_bucket[5m])
+            )
+          labels:
+            component: etcd
+
+        # etcd gRPC 요청률
+        - record: etcd:grpc_request_rate_5m
+          expr: |
+            sum(rate(grpc_server_started_total{grpc_service=~"etcdserverpb.*"}[5m]))
+          labels:
+            component: etcd
+
+        # etcd 컴팩션 수행 횟수
+        - record: etcd:compaction_count_1h
+          expr: |
+            increase(etcd_debugging_mvcc_db_compaction_total_duration_milliseconds_count[1h])
+          labels:
+            component: etcd

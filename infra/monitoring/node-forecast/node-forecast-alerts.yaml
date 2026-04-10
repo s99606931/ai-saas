@@ -1,0 +1,117 @@
+# 노드 리소스 예측 알림
+# Design Ref: MTU-N177.design.md
+# Plan SC: FR-N177.2
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: node-forecast-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: node-forecasting
+    mtu: N177
+spec:
+  groups:
+    - name: node.forecast.alerts
+      rules:
+        # CPU 24시간 내 90% 도달 예측
+        - alert: NodeCPUForecast90In24h
+          expr: |
+            node:cpu_hours_until_90_percent > 0
+            and
+            node:cpu_hours_until_90_percent < 24
+          for: 30m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-09
+            mtu: N177
+          annotations:
+            summary: "노드 CPU 24시간 내 90% 도달 예측: {{ $labels.instance }}"
+            description: |
+              현재 증가율로 노드 {{ $labels.instance }}의 CPU가
+              약 {{ $value | printf "%.0f" }}시간 후 90%에 도달합니다.
+
+        # 메모리 24시간 내 90% 도달 예측
+        - alert: NodeMemoryForecast90In24h
+          expr: |
+            node:memory_hours_until_90_percent > 0
+            and
+            node:memory_hours_until_90_percent < 24
+          for: 30m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-09
+            mtu: N177
+          annotations:
+            summary: "노드 메모리 24시간 내 90% 도달 예측: {{ $labels.instance }}"
+            description: |
+              현재 증가율로 노드 {{ $labels.instance }}의 메모리가
+              약 {{ $value | printf "%.0f" }}시간 후 90%에 도달합니다.
+
+        # CPU 현재 90% 초과
+        - alert: NodeCPUUsageHigh
+          expr: |
+            node:cpu_usage_percent > 90
+          for: 10m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-09
+            mtu: N177
+          annotations:
+            summary: "노드 CPU 90% 초과: {{ $labels.instance }}"
+
+        # 메모리 현재 90% 초과
+        - alert: NodeMemoryUsageHigh
+          expr: |
+            node:memory_usage_percent > 90
+          for: 10m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-09
+            mtu: N177
+          annotations:
+            summary: "노드 메모리 90% 초과: {{ $labels.instance }}"
+
+        # 스케줄링 가능 CPU 부족
+        - alert: NodeSchedulableCPULow
+          expr: |
+            node:schedulable_cpu_cores < 0.5
+          for: 10m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N177
+          annotations:
+            summary: "노드 스케줄링 가능 CPU 부족: {{ $labels.node }}"
+            description: |
+              노드 {{ $labels.node }}의 스케줄링 가능 CPU가
+              {{ $value | printf "%.2f" }} 코어만 남았습니다.
+
+        # 파드 밀도 90% 초과
+        - alert: NodePodDensityHigh
+          expr: |
+            node:pod_density_percent > 90
+          for: 10m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N177
+          annotations:
+            summary: "노드 파드 밀도 90% 초과: {{ $labels.node }}"
+
+        # 디스크 사용률 85% 초과
+        - alert: NodeDiskUsageHigh
+          expr: |
+            node:disk_usage_percent > 85
+          for: 10m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N177
+          annotations:
+            summary: "노드 디스크 사용률 85% 초과: {{ $labels.instance }}"

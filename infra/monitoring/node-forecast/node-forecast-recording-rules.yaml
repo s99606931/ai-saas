@@ -1,0 +1,95 @@
+# 노드 리소스 예측 Recording Rules
+# Design Ref: MTU-N177.design.md
+# Plan SC: FR-N177.3
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: node-forecast-recording-rules
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: node-forecasting
+    mtu: N177
+spec:
+  groups:
+    - name: node.forecast.recording
+      interval: 60s
+      rules:
+        # 노드 CPU 사용률 (%)
+        - record: node:cpu_usage_percent
+          expr: |
+            (1 - avg by (instance) (
+              rate(node_cpu_seconds_total{mode="idle"}[5m])
+            )) * 100
+
+        # 노드 메모리 사용률 (%)
+        - record: node:memory_usage_percent
+          expr: |
+            (1 - (
+              node_memory_MemAvailable_bytes
+              /
+              node_memory_MemTotal_bytes
+            )) * 100
+
+        # 노드 CPU 사용률 증가 속도 (%/hour)
+        - record: node:cpu_usage_growth_rate_1h
+          expr: |
+            deriv(
+              (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100
+              [1h:]
+            ) * 3600
+
+        # 노드 메모리 사용률 증가 속도 (%/hour)
+        - record: node:memory_usage_growth_rate_1h
+          expr: |
+            deriv(
+              (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+              [1h:]
+            ) * 3600
+
+        # CPU 90% 도달까지 남은 시간 (시간)
+        - record: node:cpu_hours_until_90_percent
+          expr: |
+            (90 - node:cpu_usage_percent)
+            /
+            (node:cpu_usage_growth_rate_1h > 0)
+
+        # 메모리 90% 도달까지 남은 시간 (시간)
+        - record: node:memory_hours_until_90_percent
+          expr: |
+            (90 - node:memory_usage_percent)
+            /
+            (node:memory_usage_growth_rate_1h > 0)
+
+        # 파드 스케줄링 가능 CPU (할당 가능 - 요청 합계)
+        - record: node:schedulable_cpu_cores
+          expr: |
+            sum by (node) (kube_node_status_allocatable{resource="cpu"})
+            -
+            sum by (node) (kube_pod_container_resource_requests{resource="cpu"})
+
+        # 파드 스케줄링 가능 메모리 (bytes)
+        - record: node:schedulable_memory_bytes
+          expr: |
+            sum by (node) (kube_node_status_allocatable{resource="memory"})
+            -
+            sum by (node) (kube_pod_container_resource_requests{resource="memory"})
+
+        # 노드 파드 밀도 (파드 수 / 최대 파드 수)
+        - record: node:pod_density_percent
+          expr: |
+            (
+              sum by (node) (kubelet_running_pods)
+              /
+              sum by (node) (kube_node_status_allocatable{resource="pods"})
+            ) * 100
+
+        # 디스크 사용률
+        - record: node:disk_usage_percent
+          expr: |
+            (1 - (
+              node_filesystem_avail_bytes{mountpoint="/"}
+              /
+              node_filesystem_size_bytes{mountpoint="/"}
+            )) * 100

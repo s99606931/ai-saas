@@ -1,0 +1,79 @@
+{
+  "description": "노드 리소스 예측 대시보드 (MTU-N177)",
+  "editable": true,
+  "panels": [
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 800, "title": "현재 리소스 사용률", "type": "row" },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] } } },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 1 }, "id": 1,
+      "title": "CPU 사용률", "type": "gauge",
+      "targets": [{ "expr": "node:cpu_usage_percent", "legendFormat": "{{ instance }}" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] } } },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 1 }, "id": 2,
+      "title": "메모리 사용률", "type": "gauge",
+      "targets": [{ "expr": "node:memory_usage_percent", "legendFormat": "{{ instance }}" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] } } },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 1 }, "id": 3,
+      "title": "디스크 사용률", "type": "gauge",
+      "targets": [{ "expr": "node:disk_usage_percent", "legendFormat": "{{ instance }}" }]
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 }, "id": 801, "title": "리소스 예측", "type": "row" },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }, "id": 4,
+      "title": "CPU 사용률 추이 + 예측선", "type": "timeseries",
+      "targets": [
+        { "expr": "node:cpu_usage_percent", "legendFormat": "실제 CPU" },
+        { "expr": "predict_linear(node:cpu_usage_percent[6h], 24*3600)", "legendFormat": "24h 예측" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }, "id": 5,
+      "title": "메모리 사용률 추이 + 예측선", "type": "timeseries",
+      "targets": [
+        { "expr": "node:memory_usage_percent", "legendFormat": "실제 메모리" },
+        { "expr": "predict_linear(node:memory_usage_percent[6h], 24*3600)", "legendFormat": "24h 예측" }
+      ]
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 }, "id": 802, "title": "스케줄링 용량", "type": "row" },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 1 }, { "color": "green", "value": 2 }] } } },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 17 }, "id": 6,
+      "title": "스케줄링 가능 CPU (cores)", "type": "bargauge",
+      "targets": [{ "expr": "node:schedulable_cpu_cores", "legendFormat": "{{ node }}" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 17 }, "id": 7,
+      "title": "스케줄링 가능 메모리", "type": "bargauge",
+      "targets": [{ "expr": "node:schedulable_memory_bytes", "legendFormat": "{{ node }}" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "custom": { "drawStyle": "line" } } },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 23 }, "id": 8,
+      "title": "파드 밀도 추이", "type": "timeseries",
+      "targets": [{ "expr": "node:pod_density_percent", "legendFormat": "{{ node }}" }]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["노드", "리소스", "예측", "MTU-N177"],
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "노드 리소스 예측 모니터링",
+  "uid": "node-forecast-n177",
+  "version": 1
+}

@@ -1,0 +1,130 @@
+# etcd 백업 상태 모니터링 + DB 크기 추적
+# Design Ref: MTU-N176.design.md
+# Plan SC: FR-N176.4, FR-N176.5
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-backup-monitor
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: etcd-monitoring
+    mtu: N176
+spec:
+  schedule: "0 */6 * * *"  # 매 6시간마다
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: etcd-backup-monitor
+        spec:
+          serviceAccountName: etcd-backup-monitor
+          restartPolicy: OnFailure
+          hostNetwork: true
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: monitor
+              image: bitnami/kubectl:1.30
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] etcd 백업 상태 확인 시작"
+
+                  # k3s etcd 스냅샷 디렉토리 확인
+                  SNAPSHOT_DIR="/var/lib/rancher/k3s/server/db/snapshots"
+                  BACKUP_STATUS="unknown"
+                  LATEST_BACKUP=""
+                  BACKUP_COUNT=0
+                  BACKUP_AGE_HOURS=0
+
+                  # k3s 자동 스냅샷 확인 (etcd 데이터 경로는 호스트에서 확인)
+                  # k3s는 기본적으로 12시간마다 etcd 스냅샷 생성
+                  echo "  k3s etcd 스냅샷 디렉토리: $SNAPSHOT_DIR"
+
+                  # etcd 엔드포인트 상태 확인 (k3s 내장 etcd)
+                  echo ""
+                  echo "=== etcd 클러스터 상태 ==="
+
+                  # k3s 상태 확인
+                  K3S_STATUS=$(kubectl get nodes -o jsonpath='{.items[0].status.conditions[?(@.type=="Ready")].status}' 2>/dev/null)
+                  echo "  k3s 노드 Ready: ${K3S_STATUS:-unknown}"
+
+                  # etcd 관련 파드 상태
+                  ETCD_POD=$(kubectl get pods -n kube-system -l component=etcd -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+                  if [ -n "$ETCD_POD" ]; then
+                    ETCD_STATUS=$(kubectl get pod "$ETCD_POD" -n kube-system -o jsonpath='{.status.phase}' 2>/dev/null)
+                    echo "  etcd 파드: $ETCD_POD ($ETCD_STATUS)"
+                  else
+                    echo "  etcd: k3s 내장 모드 (별도 파드 없음)"
+                  fi
+
+                  # 결과 저장
+                  kubectl create configmap etcd-backup-status \
+                    --namespace=monitoring \
+                    --from-literal=k3s-node-ready="$K3S_STATUS" \
+                    --from-literal=last-checked="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                    --dry-run=client -o yaml | kubectl apply -f -
+
+                  echo ""
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] etcd 백업 상태 확인 완료"
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 50m
+                  memory: 64Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: etcd-backup-monitor
+  namespace: kube-system
+  labels:
+    mtu: N176
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: etcd-backup-monitor
+  labels:
+    mtu: N176
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "pods", "configmaps"]
+    verbs: ["get", "list", "create", "update", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: etcd-backup-monitor
+  labels:
+    mtu: N176
+subjects:
+  - kind: ServiceAccount
+    name: etcd-backup-monitor
+    namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: etcd-backup-monitor

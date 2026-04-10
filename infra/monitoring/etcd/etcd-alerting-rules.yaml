@@ -1,0 +1,137 @@
+# etcd 클러스터 알림 규칙
+# Design Ref: MTU-N176.design.md
+# Plan SC: FR-N176.2
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: etcd-health-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/component: etcd-monitoring
+    mtu: N176
+spec:
+  groups:
+    - name: etcd.health.alerts
+      rules:
+        # etcd 리더 없음
+        - alert: EtcdNoLeader
+          expr: |
+            etcd_server_has_leader == 0
+          for: 1m
+          labels:
+            severity: critical
+            team: infra
+            csap: D-09
+            mtu: N176
+          annotations:
+            summary: "etcd 리더 없음 — 클러스터 중단 위험"
+            description: |
+              etcd 인스턴스 {{ $labels.instance }}에 리더가 없습니다.
+              K8s API 서버가 작동하지 않을 수 있습니다.
+
+        # etcd 리더 빈번한 변경
+        - alert: EtcdHighLeaderChanges
+          expr: |
+            etcd:leader_changes_1h > 3
+          for: 5m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N176
+          annotations:
+            summary: "etcd 리더 변경 빈번: 1시간 내 {{ $value }}회"
+            description: |
+              etcd 리더가 1시간 내 3회 이상 변경되었습니다.
+              네트워크 또는 디스크 I/O 문제를 확인하십시오.
+
+        # etcd 디스크 WAL fsync 지연
+        - alert: EtcdWALFsyncSlow
+          expr: |
+            etcd:disk_wal_fsync_p99_5m > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            team: infra
+            csap: D-09
+            mtu: N176
+          annotations:
+            summary: "etcd WAL fsync 지연: P99={{ $value | humanizeDuration }}"
+            description: |
+              etcd WAL fsync P99이 100ms를 초과합니다.
+              디스크 I/O 성능 저하가 의심됩니다.
+
+        # etcd 백엔드 커밋 지연
+        - alert: EtcdBackendCommitSlow
+          expr: |
+            etcd:disk_backend_commit_p99_5m > 0.25
+          for: 5m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N176
+          annotations:
+            summary: "etcd 백엔드 커밋 지연: P99={{ $value | humanizeDuration }}"
+            description: |
+              etcd 백엔드 커밋 P99이 250ms를 초과합니다.
+
+        # etcd DB 크기 경고 (4GB)
+        - alert: EtcdDBSizeWarning
+          expr: |
+            etcd:db_size_bytes > 4 * 1024 * 1024 * 1024
+          for: 10m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N176
+          annotations:
+            summary: "etcd DB 크기 4GB 초과"
+            description: |
+              etcd DB 크기가 {{ $value | humanize1024 }}입니다.
+              컴팩션 또는 정리가 필요합니다.
+
+        # etcd DB 크기 긴급 (6GB)
+        - alert: EtcdDBSizeCritical
+          expr: |
+            etcd:db_size_bytes > 6 * 1024 * 1024 * 1024
+          for: 5m
+          labels:
+            severity: critical
+            team: infra
+            mtu: N176
+          annotations:
+            summary: "etcd DB 크기 긴급: 6GB 초과"
+            description: |
+              etcd DB 크기가 {{ $value | humanize1024 }}입니다.
+              8GB 하드 리밋에 근접합니다. 즉시 조치하십시오.
+
+        # etcd 제안 실패
+        - alert: EtcdProposalsFailing
+          expr: |
+            etcd:proposal_failure_rate_5m > 0
+          for: 15m
+          labels:
+            severity: warning
+            team: infra
+            mtu: N176
+          annotations:
+            summary: "etcd 합의 제안 실패 발생"
+            description: |
+              etcd 합의 제안이 실패하고 있습니다.
+              클러스터 멤버 간 통신 문제를 확인하십시오.
+
+        # etcd 메트릭 부재
+        - alert: EtcdMetricsAbsent
+          expr: |
+            absent(etcd_server_has_leader)
+          for: 10m
+          labels:
+            severity: critical
+            team: infra
+            mtu: N176
+          annotations:
+            summary: "etcd 메트릭 수집 실패"
+            description: |
+              etcd 메트릭이 10분 이상 수집되지 않습니다.
+              etcd 또는 Prometheus 설정을 확인하십시오.

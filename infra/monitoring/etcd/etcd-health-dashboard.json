@@ -1,0 +1,73 @@
+{
+  "description": "etcd 클러스터 상태 모니터링 (MTU-N176)",
+  "editable": true,
+  "panels": [
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 700, "title": "etcd 클러스터 현황", "type": "row" },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 }, "id": 1,
+      "title": "리더 상태", "type": "stat",
+      "targets": [{ "expr": "etcd_server_has_leader", "legendFormat": "리더" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 3 }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 }, "id": 2,
+      "title": "리더 변경 (1h)", "type": "stat",
+      "targets": [{ "expr": "etcd:leader_changes_1h", "legendFormat": "변경" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 }, "id": 3,
+      "title": "DB 크기", "type": "stat",
+      "targets": [{ "expr": "etcd:db_size_bytes", "legendFormat": "크기" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 }, "id": 4,
+      "title": "gRPC 요청률", "type": "stat",
+      "targets": [{ "expr": "etcd:grpc_request_rate_5m", "legendFormat": "req/s" }]
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 }, "id": 701, "title": "디스크 I/O 성능", "type": "row" },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "lineWidth": 2 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 }, "id": 5,
+      "title": "WAL fsync P99", "type": "timeseries",
+      "targets": [{ "expr": "etcd:disk_wal_fsync_p99_5m", "legendFormat": "P99" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "lineWidth": 2 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 }, "id": 6,
+      "title": "백엔드 커밋 P99", "type": "timeseries",
+      "targets": [{ "expr": "etcd:disk_backend_commit_p99_5m", "legendFormat": "P99" }]
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 }, "id": 702, "title": "DB 및 네트워크", "type": "row" },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "fillOpacity": 20 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 }, "id": 7,
+      "title": "DB 크기 추이", "type": "timeseries",
+      "targets": [{ "expr": "etcd:db_size_bytes", "legendFormat": "DB 크기" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line" } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 }, "id": 8,
+      "title": "피어 RTT P99", "type": "timeseries",
+      "targets": [{ "expr": "etcd:network_peer_rtt_p99_5m", "legendFormat": "{{ To }}" }]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["etcd", "클러스터", "상태", "MTU-N176"],
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "etcd 클러스터 상태 모니터링",
+  "uid": "etcd-health-n176",
+  "version": 1
+}
