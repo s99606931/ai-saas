@@ -1,0 +1,67 @@
+# Semgrep SAST 코드 품질 게이트
+# Design Ref: MTU-N91 Design §1
+# Plan SC: FR-N91.1, FR-N91.4
+# CSAP: D-12 시스템 개발 보안
+
+name: Semgrep SAST
+
+on:
+  pull_request:
+    branches: [main, stg]
+  push:
+    branches: [main, stg]
+  workflow_dispatch:
+
+env:
+  SEMGREP_RULES: "infra/security/semgrep/rules/"
+
+jobs:
+  semgrep-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: 소스코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Semgrep 설치
+        run: |
+          pip install semgrep
+          semgrep --version
+
+      - name: 커스텀 규칙으로 SAST 스캔
+        run: |
+          echo "=== Semgrep SAST 스캔 시작 ==="
+          semgrep scan \
+            --config ${SEMGREP_RULES} \
+            --json \
+            --output semgrep-results.json \
+            --severity ERROR \
+            --severity WARNING \
+            src/ packages/ 2>&1 || true
+
+          # 결과 요약
+          if [ -f semgrep-results.json ]; then
+            ERRORS=$(jq '[.results[] | select(.extra.severity == "ERROR")] | length' semgrep-results.json)
+            WARNINGS=$(jq '[.results[] | select(.extra.severity == "WARNING")] | length' semgrep-results.json)
+            echo "ERROR: $ERRORS / WARNING: $WARNINGS"
+
+            if [ "$ERRORS" -gt 0 ]; then
+              echo "::error::Semgrep ERROR $ERRORS건 발견 — PR 차단"
+              jq -r '.results[] | select(.extra.severity == "ERROR") | "\(.path):\(.start.line) [\(.check_id)] \(.extra.message)"' semgrep-results.json
+              exit 1
+            fi
+          fi
+
+      - name: 기술 부채 측정
+        run: |
+          if [ -f scripts/tech-debt-measure.sh ]; then
+            bash scripts/tech-debt-measure.sh || true
+          fi
+
+      - name: 감사 로그 기록
+        run: |
+          ERRORS=$(jq '[.results[] | select(.extra.severity == "ERROR")] | length' semgrep-results.json 2>/dev/null || echo "0")
+          echo "{\"timestamp\":\"$(date -Iseconds)\",\"action\":\"SEMGREP_SCAN\",\"errors\":$ERRORS,\"csap\":\"D-12\"}" >> .claude/audit.jsonl || true

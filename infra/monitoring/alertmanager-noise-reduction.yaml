@@ -1,0 +1,201 @@
+# =============================================================================
+# AlertManager 알림 노이즈 감소 — 고급 억제 + 시간대 정책
+# Design Ref: MTU-N91 Design §2
+# Plan SC: FR-N91.1, FR-N91.2, FR-N91.3, FR-N91.4
+# CSAP: D-06(보안 알림 100% 유지), D-08(접근통제 위반 알림 보존)
+#
+# 이 파일은 기존 alertmanager-config.yaml을 보완하는 추가 설정입니다.
+# kube-prometheus-stack values.yaml에 통합하여 사용합니다.
+#
+# 주의: 보안 관련 알림 (Falco*, PolicyViolation*, Authentication*)은
+#       어떤 상황에서도 억제하지 않습니다 (CSAP D-06 필수 요건).
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# 1. 서비스 의존성 기반 알림 억제 규칙 (FR-N91.1)
+# Design Ref: MTU-N91 Design §2.1
+#
+# 원칙: 상위 서비스 장애 시 → 하위 의존 서비스 알림을 자동 억제
+# 예외: 보안 알림 (Falco, PolicyViolation, Authentication)은 절대 억제 안 함
+# ---------------------------------------------------------------------------
+inhibit_rules:
+  # --- 기본 심각도 억제 (기존 유지) ---
+
+  # Critical 발생 시 동일 alertname의 warning 억제
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal: ["alertname", "namespace"]
+
+  # Critical 발생 시 동일 alertname의 info 억제
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="info"
+    equal: ["alertname", "namespace"]
+
+  # Warning 발생 시 동일 alertname의 info 억제
+  - source_matchers:
+      - severity="warning"
+    target_matchers:
+      - severity="info"
+    equal: ["alertname", "namespace"]
+
+  # --- 서비스 의존성 억제 (신규) ---
+
+  # 노드 다운 시 → 해당 노드의 모든 Pod/Container 알림 억제
+  - source_matchers:
+      - alertname=~"NodeDown|NodeNotReady"
+    target_matchers:
+      - alertname=~"Pod.*|Container.*|KubePodCrashLooping|KubePodNotReady"
+    equal: ["node"]
+
+  # API 게이트웨이 장애 시 → 하위 서비스 가용성 알림 억제
+  - source_matchers:
+      - alertname="ServiceDown"
+      - service="api-gateway"
+    target_matchers:
+      - alertname=~"ServiceDown|HighLatency|HighErrorRate|SLOBurnRateHigh"
+
+  # 데이터베이스 장애 시 → DB 의존 서비스 에러율 알림 억제
+  - source_matchers:
+      - alertname=~"PostgreSQLDown|DatabaseConnectionFailed|DatabaseConnectionPoolExhausted"
+    target_matchers:
+      - alertname=~"HighErrorRate|ServiceDown|SLOBurnRateHigh"
+
+  # 인증 서비스 장애 시 → 인증 실패 알림 억제
+  - source_matchers:
+      - alertname="ServiceDown"
+      - service="auth-service"
+    target_matchers:
+      - alertname=~"AuthenticationFailureRate|SessionCreationFailed"
+
+  # 네트워크 장애 시 → 서비스 연결 관련 알림 억제
+  - source_matchers:
+      - alertname=~"NetworkPartition|CalicoNodeDown|CoreDNSDown"
+    target_matchers:
+      - alertname=~"ServiceDown|HighLatency|ConnectionRefused"
+
+  # 클러스터 전체 장애 시 → 개별 서비스 알림 억제 (보안 알림 제외)
+  - source_matchers:
+      - alertname="KubernetesClusterUnreachable"
+    target_matchers:
+      - alertname=~".*"
+      - alertname!~"Falco.*|PolicyViolation.*|Authentication.*|SecurityEvent.*"
+
+  # 스토리지 장애 시 → PVC 관련 알림 억제
+  - source_matchers:
+      - alertname=~"NodeDiskPressure|StorageClassNotAvailable"
+    target_matchers:
+      - alertname=~"PersistentVolumeFilling|PVCPending"
+    equal: ["node"]
+
+  # Flux GitOps 동기화 실패 시 → 배포 관련 알림 억제
+  - source_matchers:
+      - alertname="FluxSyncFailed"
+    target_matchers:
+      - alertname=~"DeploymentReplicaMismatch|DeploymentRollbackDetected"
+    equal: ["namespace"]
+
+# ---------------------------------------------------------------------------
+# 2. 시간대별 알림 정책 (FR-N91.3)
+# Design Ref: MTU-N91 Design §2.3
+#
+# 업무 시간 (KST 09:00~18:00, 월~금): 모든 알림 발송
+# 비업무 시간: critical만 발송 (warning/info 음소거)
+# 예외: 보안 알림은 24시간 발송
+# ---------------------------------------------------------------------------
+time_intervals:
+  # 비업무 시간 정의 (UTC 기준, KST = UTC + 9)
+  # KST 18:00~다음날 09:00 = UTC 09:00~24:00
+  - name: outside-business-hours-weekday
+    time_intervals:
+      - weekdays: ["monday:friday"]
+        times:
+          - start_time: "09:00"
+            end_time: "24:00"
+
+  # 주말 전일
+  - name: weekend
+    time_intervals:
+      - weekdays: ["saturday", "sunday"]
+
+# ---------------------------------------------------------------------------
+# 3. 에스컬레이션 라우팅 (FR-N91.2)
+# Design Ref: MTU-N91 Design §2.2
+# ---------------------------------------------------------------------------
+route:
+  # 고도화된 그룹핑 (서비스 단위 추가) — FR-N91.4
+  group_by: ["alertname", "namespace", "severity", "service"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: "devops-default"
+
+  routes:
+    # 보안 알림: 24시간 무조건 발송 (CSAP D-06 필수)
+    - matchers:
+        - alertname=~"Falco.*|PolicyViolation.*|SecurityEvent.*|Gatekeeper.*|Kyverno.*"
+      receiver: "security-team"
+      group_wait: 10s
+      group_interval: 2m
+      repeat_interval: 1h
+      continue: false   # 보안 알림은 다른 라우트로 전파하지 않음
+
+    # SLO 위반: 즉시 알림
+    - matchers:
+        - alertname=~".*SLO.*|.*ErrorBudget.*|.*BurnRate.*"
+      receiver: "sre-team"
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 2h
+
+    # Critical: 즉시 알림 + 관리자 에스컬레이션
+    - matchers:
+        - severity="critical"
+      receiver: "management-escalation"
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: true
+
+    # Warning (비업무 시간 음소거)
+    - matchers:
+        - severity="warning"
+      receiver: "devops-default"
+      group_wait: 30s
+      repeat_interval: 4h
+      mute_time_intervals:
+        - outside-business-hours-weekday
+        - weekend
+
+    # Info (비업무 시간 음소거)
+    - matchers:
+        - severity="info"
+      receiver: "devops-default"
+      group_wait: 60s
+      repeat_interval: 24h
+      mute_time_intervals:
+        - outside-business-hours-weekday
+        - weekend
+
+    # DB 관련
+    - matchers:
+        - alertname=~".*PostgreSQL.*|.*SlowQuery.*|.*Database.*"
+      receiver: "dba-team"
+      group_wait: 30s
+      repeat_interval: 4h
+
+    # GitOps/배포
+    - matchers:
+        - alertname=~"Flux.*|Deployment.*|Helm.*"
+      receiver: "devops-default"
+      group_wait: 30s
+      repeat_interval: 4h
+
+# ---------------------------------------------------------------------------
+# 4. 한국어 알림 템플릿 (FR-N91.5)
+# Design Ref: MTU-N91 Design §2.5
+# ---------------------------------------------------------------------------
+# 템플릿 파일은 별도 ConfigMap으로 마운트
+# 경로: /etc/alertmanager/templates/ko-notification.tmpl

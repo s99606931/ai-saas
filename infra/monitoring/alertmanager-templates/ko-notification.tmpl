@@ -1,0 +1,58 @@
+{{/* =======================================================================
+  한국어 알림 메시지 템플릿 — 공공기관 SaaS 플랫폼
+  Design Ref: MTU-N91 Design §2.5
+  Plan SC: FR-N91.5
+  CSAP: D-06(침해사고 알림 한국어 표준)
+  ======================================================================= */}}
+
+{{/* 알림 제목 */}}
+{{ define "ko.title" -}}
+[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }} ({{ .GroupLabels.severity | default "unknown" }})
+{{- end }}
+
+{{/* 알림 본문 — 단일 알림 */}}
+{{ define "ko.body" -}}
+{{ range .Alerts }}
+--------------------------------------------------
+상태: {{ .Status | toUpper }}
+알림명: {{ .Labels.alertname }}
+심각도: {{ .Labels.severity | default "N/A" }}
+서비스: {{ .Labels.service | default "N/A" }}
+네임스페이스: {{ .Labels.namespace | default "N/A" }}
+인스턴스: {{ .Labels.instance | default "N/A" }}
+
+시작 시간: {{ .StartsAt.Local.Format "2006-01-02 15:04:05 KST" }}
+{{ if eq .Status "resolved" -}}
+종료 시간: {{ .EndsAt.Local.Format "2006-01-02 15:04:05 KST" }}
+지속 시간: {{ .EndsAt.Sub .StartsAt }}
+{{ end -}}
+
+설명: {{ .Annotations.description | default "설명 없음" }}
+요약: {{ .Annotations.summary | default "요약 없음" }}
+
+조치 가이드: {{ .Annotations.runbook_url | default "해당 Runbook 없음" }}
+--------------------------------------------------
+{{ end }}
+
+총 {{ .Alerts | len }}건의 알림
+{{ end }}
+
+{{/* 알림 요약 — 그룹핑된 알림 */}}
+{{ define "ko.summary" -}}
+[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}
+총 {{ .Alerts | len }}건 | 심각도: {{ .GroupLabels.severity | default "mixed" }}
+네임스페이스: {{ .GroupLabels.namespace | default "multiple" }}
+서비스: {{ .GroupLabels.service | default "multiple" }}
+{{ end }}
+
+{{/* 보안 알림 전용 템플릿 (CSAP D-06) */}}
+{{ define "ko.security" -}}
+[보안 알림] {{ .GroupLabels.alertname }}
+{{ range .Alerts }}
+심각도: {{ .Labels.severity }}
+감지 시간: {{ .StartsAt.Local.Format "2006-01-02 15:04:05 KST" }}
+설명: {{ .Annotations.description }}
+CSAP 관련: {{ .Labels.csap_ref | default "N/A" }}
+즉시 조치 필요 여부: {{ if eq .Labels.severity "critical" }}예{{ else }}아니오{{ end }}
+{{ end }}
+{{ end }}
