@@ -11,12 +11,7 @@ import {
   updateCatalog,
   deleteCatalog,
 } from './handlers/catalog.handler.js';
-import {
-  submitCatalog,
-  approveCatalog,
-  rejectCatalog,
-  deprecateCatalog,
-} from './handlers/workflow.handler.js';
+import { submitCatalog, approveCatalog, rejectCatalog, deprecateCatalog } from './handlers/workflow.handler.js';
 import { getCatalogStats } from './handlers/stats.handler.js';
 
 /**

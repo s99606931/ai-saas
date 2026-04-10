@@ -68,7 +68,12 @@ describe('CSAP D-08-05: 테넌트 격리', () => {
     // 다른 테넌트로 접근
     const operations = [
       app.inject({ method: 'GET', url: `/saas-catalog/${id}`, headers: { 'x-tenant-id': 'tenant-other' } }),
-      app.inject({ method: 'PUT', url: `/saas-catalog/${id}`, headers: { 'x-tenant-id': 'tenant-other', 'content-type': 'application/json' }, payload: { name: 'hack' } }),
+      app.inject({
+        method: 'PUT',
+        url: `/saas-catalog/${id}`,
+        headers: { 'x-tenant-id': 'tenant-other', 'content-type': 'application/json' },
+        payload: { name: 'hack' },
+      }),
       app.inject({ method: 'DELETE', url: `/saas-catalog/${id}`, headers: { 'x-tenant-id': 'tenant-other' } }),
       app.inject({ method: 'POST', url: `/saas-catalog/${id}/submit`, headers: { 'x-tenant-id': 'tenant-other' } }),
     ];

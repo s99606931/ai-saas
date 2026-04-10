@@ -18,7 +18,10 @@ function generateId(): string {
 /** 항목 생성 */
 export function createItem(
   tenantId: string,
-  data: Omit<SaasCatalogItem, 'id' | 'tenantId' | 'status' | 'rejectionReason' | 'createdAt' | 'updatedAt' | 'deletedAt'>,
+  data: Omit<
+    SaasCatalogItem,
+    'id' | 'tenantId' | 'status' | 'rejectionReason' | 'createdAt' | 'updatedAt' | 'deletedAt'
+  >,
 ): SaasCatalogItem {
   const now = new Date().toISOString();
   const item: SaasCatalogItem = {
@@ -57,9 +60,7 @@ export function listItems(
     order: 'asc' | 'desc';
   },
 ): { items: SaasCatalogItem[]; total: number; page: number; limit: number; totalPages: number } {
-  let items = Array.from(store.values()).filter(
-    (item) => item.tenantId === tenantId && item.deletedAt === null,
-  );
+  let items = Array.from(store.values()).filter((item) => item.tenantId === tenantId && item.deletedAt === null);
 
   // 카테고리 필터
   if (options.category) {
@@ -75,9 +76,7 @@ export function listItems(
   if (options.search) {
     const keyword = options.search.toLowerCase();
     items = items.filter(
-      (item) =>
-        item.name.toLowerCase().includes(keyword) ||
-        item.description.toLowerCase().includes(keyword),
+      (item) => item.name.toLowerCase().includes(keyword) || item.description.toLowerCase().includes(keyword),
     );
   }
 
@@ -98,11 +97,7 @@ export function listItems(
 }
 
 /** 항목 수정 */
-export function updateItem(
-  id: string,
-  tenantId: string,
-  data: Partial<SaasCatalogItem>,
-): SaasCatalogItem | null {
+export function updateItem(id: string, tenantId: string, data: Partial<SaasCatalogItem>): SaasCatalogItem | null {
   const item = getItem(id, tenantId);
   if (!item) return null;
 
@@ -134,9 +129,7 @@ export function getStats(tenantId: string): {
   byCategory: Record<string, number>;
   total: number;
 } {
-  const items = Array.from(store.values()).filter(
-    (item) => item.tenantId === tenantId && item.deletedAt === null,
-  );
+  const items = Array.from(store.values()).filter((item) => item.tenantId === tenantId && item.deletedAt === null);
 
   const byStatus: Record<string, number> = {};
   const byCategory: Record<string, number> = {};

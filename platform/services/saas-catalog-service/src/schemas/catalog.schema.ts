@@ -18,13 +18,7 @@ export const CatalogCategory = z.enum([
 export type CatalogCategory = z.infer<typeof CatalogCategory>;
 
 /** 카탈로그 상태 */
-export const CatalogStatus = z.enum([
-  'DRAFT',
-  'PENDING',
-  'APPROVED',
-  'REJECTED',
-  'DEPRECATED',
-]);
+export const CatalogStatus = z.enum(['DRAFT', 'PENDING', 'APPROVED', 'REJECTED', 'DEPRECATED']);
 export type CatalogStatus = z.infer<typeof CatalogStatus>;
 
 /** CSAP 등급 */

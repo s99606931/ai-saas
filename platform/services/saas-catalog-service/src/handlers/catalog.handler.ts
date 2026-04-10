@@ -4,12 +4,7 @@
 // CSAP: D-08-05 테넌트 격리, D-12 입력 검증
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import {
-  createCatalogSchema,
-  updateCatalogSchema,
-  listQuerySchema,
-  CATEGORY_LIST,
-} from '../schemas/catalog.schema.js';
+import { createCatalogSchema, updateCatalogSchema, listQuerySchema, CATEGORY_LIST } from '../schemas/catalog.schema.js';
 import { createItem, getItem, listItems, updateItem, deleteItem } from '../lib/store.js';
 import { recordAudit } from '../lib/audit.js';
 
