@@ -20,6 +20,7 @@ import {
   deleteTemplateHandler,
 } from './handlers/template.handler.js';
 import { notificationStatsHandler } from './handlers/stats.handler.js';
+import { deliveryRateHandler, channelAnalyticsHandler } from './handlers/delivery-analytics.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
@@ -72,6 +73,12 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
 
   // FR-NOTIF.5: 알림 통계
   app.get('/notification/stats', { preHandler: readLimiter }, notificationStatsHandler as never);
+
+  // FR-NOTIF.6: 전달률 추이
+  app.get('/notification/analytics/delivery', { preHandler: readLimiter }, deliveryRateHandler as never);
+
+  // FR-NOTIF.7: 채널별 전달 분석
+  app.get('/notification/analytics/channels', { preHandler: readLimiter }, channelAnalyticsHandler as never);
 
   // 템플릿 CRUD (FR-P11.1)
   app.post('/notification/templates', { preHandler: templateLimiter }, createTemplateHandler as never);
