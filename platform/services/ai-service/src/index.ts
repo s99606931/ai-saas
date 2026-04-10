@@ -1,8 +1,13 @@
 // AI 서비스 관리 서비스 진입점
-// Design Ref: DESIGN-MTU-P10
-// Plan SC: MTU-P10
+// Design Ref: DESIGN-MTU-P10, SVC-OTEL-R3 DESIGN
+// Plan SC: MTU-P10, FR-OTEL.3
+
+import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
+
+initTelemetry({ serviceName: 'ai-service', serviceVersion: '0.1.0' });
 
 import Fastify from 'fastify';
+import { responseTimePlugin } from '@public-saas/observability';
 
 const PORT = parseInt(process.env['AI-SERVICE_PORT'] ?? '3009', 10);
 const HOST = '0.0.0.0';
@@ -11,6 +16,8 @@ async function main(): Promise<void> {
   const app = Fastify({
     logger: { level: process.env['LOG_LEVEL'] ?? 'info' },
   });
+
+  await app.register(responseTimePlugin);
 
   app.get('/health', async () => ({ status: 'ok', service: 'ai-service' }));
 
@@ -40,10 +47,10 @@ async function main(): Promise<void> {
   await app.listen({ port: PORT, host: HOST });
   app.log.info(`AI 서비스 관리 서비스 기동: http://${HOST}:${PORT}`);
 
-  // Graceful Shutdown (CSAP D-07: k8s terminationGracePeriod 연동)
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`${signal} 수신, graceful shutdown 시작`);
     await app.close();
+    await shutdownTelemetry();
     process.exit(0);
   };
   process.on('SIGTERM', () => void shutdown('SIGTERM'));

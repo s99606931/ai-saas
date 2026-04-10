@@ -1,16 +1,17 @@
 // 인증 서비스 진입점
-// Design Ref: MTU-P01 DESIGN-MTU-P01, SVC-AUTH-R1 DESIGN
-// Plan SC: FR-P01.1~FR-P01.12, FR-AUTH.1~FR-AUTH.7
+// Design Ref: MTU-P01 DESIGN-MTU-P01, SVC-AUTH-R1 DESIGN, SVC-OTEL-R3 DESIGN
+// Plan SC: FR-P01.1~FR-P01.12, FR-AUTH.1~FR-AUTH.7, FR-OTEL.3
 // CSAP: D-08 접근 통제
 
-import { initTelemetry, shutdownTelemetry } from './lib/telemetry.js';
+import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
 
-// OpenTelemetry 초기화 (모든 import 전에 실행 — 자동 계측 hook 등록)
-// Plan SC: FR-AUTH.6
-initTelemetry();
+// OpenTelemetry 초기화 (모든 import 전에 실행 -- 자동 계측 hook 등록)
+// Plan SC: FR-AUTH.6, FR-OTEL.3
+initTelemetry({ serviceName: 'auth-service', serviceVersion: '0.2.0' });
 
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import { responseTimePlugin } from '@public-saas/observability';
 import authMiddleware from './middleware/auth.middleware.js';
 import { registerAuthRoutes } from './routes.js';
 
@@ -28,6 +29,9 @@ async function main(): Promise<void> {
     },
   });
 
+  // X-Response-Time (Plan SC: FR-OTEL.2, CSAP D-10)
+  await app.register(responseTimePlugin);
+
   // CORS 설정 (CSAP D-10: 허용 메서드/헤더 명시적 제한)
   await app.register(cors, {
     origin: process.env['CORS_ORIGIN']?.split(',') ?? ['http://localhost:3000'],
@@ -42,7 +46,7 @@ async function main(): Promise<void> {
   // 헬스체크
   app.get('/health', async () => ({ status: 'ok', service: 'auth-service' }));
   app.get('/ready', async (_request, reply) => {
-    // CSAP D-07: k8s readinessProbe용 — DB 및 Redis 연결 상태 확인
+    // CSAP D-07: k8s readinessProbe용
     const checks: Record<string, string> = {};
     let allReady = true;
 
@@ -85,7 +89,7 @@ async function main(): Promise<void> {
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`${signal} 수신, graceful shutdown 시작`);
     await app.close();
-    await shutdownTelemetry(); // Plan SC: FR-AUTH.6 — OTel 종료
+    await shutdownTelemetry(); // Plan SC: FR-OTEL.3 -- OTel graceful shutdown
     process.exit(0);
   };
   process.on('SIGTERM', () => void shutdown('SIGTERM'));

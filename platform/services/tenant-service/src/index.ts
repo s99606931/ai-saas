@@ -1,9 +1,14 @@
 // 테넌트 관리 서비스 진입점
-// Design Ref: DESIGN-MTU-P03
-// Plan SC: FR-P03.1~FR-P03.8
+// Design Ref: DESIGN-MTU-P03, SVC-OTEL-R3 DESIGN
+// Plan SC: FR-P03.1~FR-P03.8, FR-OTEL.3
 // CSAP: N2SF N-03 격리 아키텍처
 
+import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
+
+initTelemetry({ serviceName: 'tenant-service', serviceVersion: '0.1.0' });
+
 import Fastify from 'fastify';
+import { responseTimePlugin } from '@public-saas/observability';
 import { registerTenantRoutes } from './routes.js';
 
 const PORT = parseInt(process.env['TENANT_SERVICE_PORT'] ?? '3003', 10);
@@ -13,6 +18,8 @@ async function main(): Promise<void> {
   const app = Fastify({
     logger: { level: process.env['LOG_LEVEL'] ?? 'info' },
   });
+
+  await app.register(responseTimePlugin);
 
   app.get('/health', async () => ({ status: 'ok', service: 'tenant-service' }));
 
@@ -44,6 +51,7 @@ async function main(): Promise<void> {
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`${signal} 수신, graceful shutdown 시작`);
     await app.close();
+    await shutdownTelemetry();
     process.exit(0);
   };
   process.on('SIGTERM', () => void shutdown('SIGTERM'));

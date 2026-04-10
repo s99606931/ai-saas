@@ -15,6 +15,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@public-saas/observability": "workspace:*",
     "@public-saas/types": "workspace:*",
     "@public-saas/auth-sdk": "workspace:*",
     "@public-saas/audit-sdk": "workspace:*",

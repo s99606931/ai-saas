@@ -1,9 +1,14 @@
 // 알림 서비스 진입점
-// Design Ref: DESIGN-MTU-P11, DESIGN-MTU-Q2
-// Plan SC: MTU-P11, MTU-Q2
+// Design Ref: DESIGN-MTU-P11, DESIGN-MTU-Q2, SVC-OTEL-R3 DESIGN
+// Plan SC: MTU-P11, MTU-Q2, FR-OTEL.3
 // CSAP: D-06 감사 로그
 
+import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
+
+initTelemetry({ serviceName: 'notification-service', serviceVersion: '0.1.0' });
+
 import Fastify from 'fastify';
+import { responseTimePlugin } from '@public-saas/observability';
 import { notificationEventBus } from './lib/event-bus.js';
 
 const PORT = parseInt(process.env['NOTIFICATION_SERVICE_PORT'] ?? '3010', 10);
@@ -13,6 +18,8 @@ async function main(): Promise<void> {
   const app = Fastify({
     logger: { level: process.env['LOG_LEVEL'] ?? 'info' },
   });
+
+  await app.register(responseTimePlugin);
 
   app.get('/health', async () => ({
     status: 'ok',
@@ -42,7 +49,6 @@ async function main(): Promise<void> {
   // 이벤트 버스 기본 핸들러 등록 (FR-P11.4)
   notificationEventBus.on('user.created', async (payload) => {
     app.log.info({ event: 'user.created', ...payload }, '신규 사용자 알림 트리거');
-    // 프로덕션에서는 sendFromTemplate 내부 호출
   });
 
   notificationEventBus.on('security.account_locked', async (payload) => {
@@ -61,10 +67,10 @@ async function main(): Promise<void> {
   app.log.info(`알림 서비스 기동: http://${HOST}:${PORT}`);
   app.log.info(`이벤트 핸들러 등록: ${notificationEventBus.getHandlerCount()}개`);
 
-  // Graceful Shutdown (CSAP D-07: k8s terminationGracePeriod 연동)
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`${signal} 수신, graceful shutdown 시작`);
     await app.close();
+    await shutdownTelemetry();
     process.exit(0);
   };
   process.on('SIGTERM', () => void shutdown('SIGTERM'));

@@ -1,11 +1,13 @@
-// 보안 서비스 진입점 (DB 기반 보안 모니터링 — Prisma 연동)
-// Design Ref: DESIGN-MTU-P15
-// Plan SC: MTU-P15
-//
-// 역할: DB 기반 정밀 보안 분석 (감사 로그 groupBy, 알림 이력 조회)
-// 배포: DB 접근 가능한 내부 네트워크 환경에서 운영
+// 보안 서비스 진입점 (DB 기반 보안 모니터링 -- Prisma 연동)
+// Design Ref: DESIGN-MTU-P15, SVC-OTEL-R3 DESIGN
+// Plan SC: MTU-P15, FR-OTEL.3
+
+import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
+
+initTelemetry({ serviceName: 'security-service', serviceVersion: '0.1.0' });
 
 import Fastify from 'fastify';
+import { responseTimePlugin } from '@public-saas/observability';
 
 const PORT = parseInt(process.env['SECURITY_SERVICE_PORT'] ?? '3014', 10);
 const HOST = '0.0.0.0';
@@ -14,6 +16,8 @@ async function main(): Promise<void> {
   const app = Fastify({
     logger: { level: process.env['LOG_LEVEL'] ?? 'info' },
   });
+
+  await app.register(responseTimePlugin);
 
   app.get('/health', async () => ({ status: 'ok', service: 'security-service' }));
 
@@ -42,10 +46,10 @@ async function main(): Promise<void> {
   await app.listen({ port: PORT, host: HOST });
   app.log.info(`보안 서비스 기동: http://${HOST}:${PORT}`);
 
-  // Graceful Shutdown (CSAP D-07: k8s terminationGracePeriod 연동)
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`${signal} 수신, graceful shutdown 시작`);
     await app.close();
+    await shutdownTelemetry();
     process.exit(0);
   };
   process.on('SIGTERM', () => void shutdown('SIGTERM'));

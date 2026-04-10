@@ -1,8 +1,15 @@
 // 사용자 관리 서비스 진입점
-// Design Ref: DESIGN-MTU-P02
-// Plan SC: FR-P02.1~FR-P02.10
+// Design Ref: DESIGN-MTU-P02, SVC-OTEL-R3 DESIGN
+// Plan SC: FR-P02.1~FR-P02.10, FR-OTEL.3
+
+import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
+
+// OpenTelemetry 초기화 (모든 import 전에 실행 -- 자동 계측 hook 등록)
+// Plan SC: FR-OTEL.3
+initTelemetry({ serviceName: 'user-service', serviceVersion: '0.1.0' });
 
 import Fastify from 'fastify';
+import { responseTimePlugin } from '@public-saas/observability';
 import { registerUserRoutes } from './routes.js';
 
 const PORT = parseInt(process.env['USER_SERVICE_PORT'] ?? '3002', 10);
@@ -14,6 +21,9 @@ async function main(): Promise<void> {
       level: process.env['LOG_LEVEL'] ?? 'info',
     },
   });
+
+  // X-Response-Time 미들웨어 (Plan SC: FR-OTEL.2, CSAP D-10)
+  await app.register(responseTimePlugin);
 
   app.get('/health', async () => ({ status: 'ok', service: 'user-service' }));
 
@@ -45,6 +55,7 @@ async function main(): Promise<void> {
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`${signal} 수신, graceful shutdown 시작`);
     await app.close();
+    await shutdownTelemetry(); // Plan SC: FR-OTEL.3 -- OTel graceful shutdown
     process.exit(0);
   };
   process.on('SIGTERM', () => void shutdown('SIGTERM'));

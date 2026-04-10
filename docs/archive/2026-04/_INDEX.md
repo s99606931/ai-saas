@@ -159,6 +159,14 @@
 | **MTU-N94** 릴리스 노트 + 마이그레이션 가이드 자동화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N94-release-automation/` |
 | **MTU-N95** 감리 Q-Gate 100% 자동 검증 파이프라인 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N95-qgate-100/` |
 | **MTU-N96** 7라운드 통합 검증 (7/7 ALL PASS) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N96-round7-integration/` |
+| **MTU-N97** 스토리지 계층화 (Hot/Warm/Cold) + MinIO ILM | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N97-storage-tiering/` |
+| **MTU-N98** Cilium 대역폭 관리 + EDT/BBR 최적화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N98-cilium-bandwidth/` |
+| **MTU-N99** Crossplane IaC + 멀티클라우드 추상화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N99-crossplane-iac/` |
+| **MTU-N100** Backstage IDP 서비스 카탈로그 + 템플릿 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N100-backstage-idp/` |
+| **MTU-N101** Argo Rollouts B/G + A/B 배포 전략 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N101-argo-rollouts/` |
+| **MTU-N102** Thanos 장기 메트릭 저장소 + Grafana 연합 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N102-thanos-metrics/` |
+| **MTU-N103** GitOps 시크릿 회전 자동화 (Vault + ESO) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N103-secret-rotation/` |
+| **MTU-N104** 8라운드 통합 검증 (8/8 ALL PASS) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N104-round8-integration/` |
 
 ## av-skill 요약
 
