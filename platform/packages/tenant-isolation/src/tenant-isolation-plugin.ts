@@ -5,7 +5,7 @@
 
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import fp from 'fastify-plugin';
-import { TenantContext, TenantContextError } from './tenant-context.js';
+import { TenantContext } from './tenant-context.js';
 import { RowLevelSecurity } from './row-level-security.js';
 import { TenantEncryption } from './tenant-encryption.js';
 import { IsolationValidator } from './isolation-validator.js';

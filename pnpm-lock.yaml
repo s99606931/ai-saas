@@ -189,6 +189,44 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
 
+  platform/packages/config-vault:
+    dependencies:
+      fastify:
+        specifier: ^5.0.0
+        version: 5.8.4
+      fastify-plugin:
+        specifier: ^5.0.0
+        version: 5.1.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
+
+  platform/packages/event-bus:
+    dependencies:
+      fastify:
+        specifier: ^5.0.0
+        version: 5.8.4
+      fastify-plugin:
+        specifier: ^5.0.0
+        version: 5.1.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
+
   platform/packages/health:
     dependencies:
       fastify:
@@ -259,6 +297,25 @@ importers:
         version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
 
   platform/packages/rbac:
+    dependencies:
+      fastify:
+        specifier: ^5.0.0
+        version: 5.8.4
+      fastify-plugin:
+        specifier: ^5.0.0
+        version: 5.1.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
+
+  platform/packages/tenant-isolation:
     dependencies:
       fastify:
         specifier: ^5.0.0
@@ -354,9 +411,15 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -415,9 +478,15 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -467,9 +536,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
+      '@public-saas/event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -513,9 +591,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
+      '@public-saas/event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -577,9 +664,15 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -589,6 +682,9 @@ importers:
       '@public-saas/rbac':
         specifier: workspace:*
         version: link:../../packages/rbac
+      '@public-saas/tenant-isolation':
+        specifier: workspace:*
+        version: link:../../packages/tenant-isolation
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -626,9 +722,15 @@ importers:
       '@public-saas/cache':
         specifier: workspace:*
         version: link:../../packages/cache
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -675,9 +777,15 @@ importers:
       '@public-saas/cache':
         specifier: workspace:*
         version: link:../../packages/cache
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -721,9 +829,15 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -733,6 +847,9 @@ importers:
       '@public-saas/rbac':
         specifier: workspace:*
         version: link:../../packages/rbac
+      '@public-saas/tenant-isolation':
+        specifier: workspace:*
+        version: link:../../packages/tenant-isolation
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -767,9 +884,15 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -816,9 +939,15 @@ importers:
       '@public-saas/cache':
         specifier: workspace:*
         version: link:../../packages/cache
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -862,9 +991,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
+      '@public-saas/event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -899,9 +1037,15 @@ importers:
 
   platform/services/saas-catalog-service:
     dependencies:
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -945,9 +1089,15 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -991,9 +1141,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
+      '@public-saas/event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -1037,9 +1196,15 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -1086,9 +1251,15 @@ importers:
       '@public-saas/cache':
         specifier: workspace:*
         version: link:../../packages/cache
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -1098,6 +1269,9 @@ importers:
       '@public-saas/rbac':
         specifier: workspace:*
         version: link:../../packages/rbac
+      '@public-saas/tenant-isolation':
+        specifier: workspace:*
+        version: link:../../packages/tenant-isolation
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -1135,9 +1309,18 @@ importers:
       '@public-saas/cache':
         specifier: workspace:*
         version: link:../../packages/cache
+      '@public-saas/config-vault':
+        specifier: workspace:*
+        version: link:../../packages/config-vault
+      '@public-saas/event-bus':
+        specifier: workspace:*
+        version: link:../../packages/event-bus
       '@public-saas/health':
         specifier: workspace:*
         version: link:../../packages/health
+      '@public-saas/mesh-ready':
+        specifier: workspace:*
+        version: link:../../packages/mesh-ready
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -1147,6 +1330,9 @@ importers:
       '@public-saas/rbac':
         specifier: workspace:*
         version: link:../../packages/rbac
+      '@public-saas/tenant-isolation':
+        specifier: workspace:*
+        version: link:../../packages/tenant-isolation
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
