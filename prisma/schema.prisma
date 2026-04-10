@@ -371,6 +371,39 @@ model AiUsage {
   @@index([modelId])
 }
 
+// SVC-AI-2026 FR-AI26.1: RAG 지식베이스
+model AiKnowledgeDocument {
+  id        String   @id @default(cuid())
+  tenantId  String
+  title     String
+  sourceUrl String?
+  isActive  Boolean  @default(true)
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chunks AiKnowledgeChunk[]
+
+  @@index([tenantId, isActive])
+  @@index([tenantId, title])
+}
+
+model AiKnowledgeChunk {
+  id            String   @id @default(cuid())
+  tenantId      String
+  documentId    String
+  chunkIndex    Int
+  content       String
+  embeddingJson String   // JSON 직렬화 임베딩 벡터 (pgvector 없이 순수 TypeScript 유사도)
+  tokenCount    Int
+  createdAt     DateTime @default(now())
+
+  document AiKnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([documentId])
+}
+
 // ============================================================
 // 알림
 // ============================================================
