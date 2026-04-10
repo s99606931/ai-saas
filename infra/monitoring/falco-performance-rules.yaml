@@ -1,0 +1,211 @@
+# Falco 런타임 보안 이벤트 성능 모니터링 Recording Rules
+# Design Ref: MTU-N238 §3.1, §3.2, §3.3, §3.4
+# Plan SC: FR-N238.1 ~ FR-N238.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: falco-performance-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    monitoring.bkit.io/component: falco
+    monitoring.bkit.io/category: runtime-security
+spec:
+  groups:
+    # ── Falco 이벤트 발생 메트릭 ──
+    - name: falco.events.performance
+      interval: 30s
+      rules:
+        # 심각도별 이벤트 발생률 (5분)
+        - record: falco:events:rate5m
+          expr: |
+            sum(rate(falco_events[5m])) by (priority, rule)
+          labels:
+            component: falco
+
+        # 규칙별 트리거 빈도 (5분)
+        - record: falco:events:by_rule:rate5m
+          expr: |
+            sum(rate(falco_events[5m])) by (rule)
+          labels:
+            component: falco
+
+        # Critical 이상 이벤트 누적 (1시간)
+        - record: falco:events:critical_count1h
+          expr: |
+            sum(increase(falco_events{priority=~"0|1|2|3"}[1h])) by (rule, priority)
+          labels:
+            component: falco
+
+        # 전체 이벤트 발생률 (분당)
+        - record: falco:events:total_per_minute
+          expr: |
+            sum(rate(falco_events[5m])) * 60
+          labels:
+            component: falco
+
+        # 심각도 분포 비율
+        - record: falco:events:priority_ratio
+          expr: |
+            (
+              sum(rate(falco_events[5m])) by (priority)
+            /
+              clamp_min(sum(rate(falco_events[5m])), 0.001)
+            )
+          labels:
+            component: falco
+
+        # 상위 트리거 규칙 (초당 비율)
+        - record: falco:events:top_rules:rate5m
+          expr: |
+            topk(10, sum(rate(falco_events[5m])) by (rule))
+          labels:
+            component: falco
+
+    # ── Falcosidekick 전달 성능 ──
+    - name: falcosidekick.delivery.performance
+      interval: 30s
+      rules:
+        # 출력 채널별 전달 성공 건수
+        - record: falcosidekick:output:success_rate5m
+          expr: |
+            sum(rate(falcosidekick_outputs_total{status="ok"}[5m])) by (destination)
+          labels:
+            component: falcosidekick
+
+        # 출력 채널별 전달 오류 건수
+        - record: falcosidekick:output:error_rate5m
+          expr: |
+            sum(rate(falcosidekick_outputs_total{status!="ok"}[5m])) by (destination, status)
+          labels:
+            component: falcosidekick
+
+        # 전달 오류율
+        - record: falcosidekick:output:error_ratio
+          expr: |
+            (
+              sum(rate(falcosidekick_outputs_total{status!="ok"}[5m]))
+            /
+              clamp_min(sum(rate(falcosidekick_outputs_total[5m])), 0.001)
+            )
+          labels:
+            component: falcosidekick
+
+        # 전달 지연 p95
+        - record: falcosidekick:output:duration:p95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(falcosidekick_outputs_duration_seconds_bucket[5m])) by (le, destination)
+            )
+          labels:
+            quantile: "0.95"
+            component: falcosidekick
+
+        # 전달 지연 p99
+        - record: falcosidekick:output:duration:p99
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(falcosidekick_outputs_duration_seconds_bucket[5m])) by (le, destination)
+            )
+          labels:
+            quantile: "0.99"
+            component: falcosidekick
+
+    # ── Falco 이벤트 드롭 ──
+    - name: falco.drop.performance
+      interval: 30s
+      rules:
+        # 이벤트 드롭 비율
+        - record: falco:drop:ratio
+          expr: |
+            (
+              sum(rate(falco_kernel_drops_total[5m]))
+            /
+              clamp_min(
+                sum(rate(falco_kernel_drops_total[5m]))
+                + sum(rate(falco_events[5m])),
+                0.001
+              )
+            )
+          labels:
+            component: falco
+
+        # 누적 드롭 이벤트 (5분 증가)
+        - record: falco:drop:count5m
+          expr: |
+            sum(increase(falco_kernel_drops_total[5m]))
+          labels:
+            component: falco
+
+        # 드롭 변화율
+        - record: falco:drop:change_rate
+          expr: |
+            sum(deriv(falco_kernel_drops_total[10m]))
+          labels:
+            component: falco
+
+    # ── Falco 리소스 사용량 ──
+    - name: falco.resource.usage
+      interval: 30s
+      rules:
+        # Falco DaemonSet CPU 사용량
+        - record: falco:cpu:usage_cores
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{
+              namespace="falco-system",
+              container="falco",
+              container!="POD"
+            }[5m])) by (pod, node)
+          labels:
+            component: falco
+
+        # Falco DaemonSet 메모리 사용량
+        - record: falco:memory:usage_bytes
+          expr: |
+            sum(container_memory_working_set_bytes{
+              namespace="falco-system",
+              container="falco",
+              container!="POD"
+            }) by (pod, node)
+          labels:
+            component: falco
+
+        # Falcosidekick CPU
+        - record: falcosidekick:cpu:usage_cores
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{
+              namespace="falco-system",
+              container=~"falcosidekick.*",
+              container!="POD"
+            }[5m])) by (pod)
+          labels:
+            component: falcosidekick
+
+        # Falcosidekick 메모리
+        - record: falcosidekick:memory:usage_bytes
+          expr: |
+            sum(container_memory_working_set_bytes{
+              namespace="falco-system",
+              container=~"falcosidekick.*",
+              container!="POD"
+            }) by (pod)
+          labels:
+            component: falcosidekick
+
+        # Falco DaemonSet 파드 수
+        - record: falco:pods:running
+          expr: |
+            count(kube_pod_status_phase{namespace="falco-system", pod=~"falco-.*", phase="Running"})
+          labels:
+            component: falco
+
+        # 기대 노드 수 대비 Falco 파드 수
+        - record: falco:pods:coverage_ratio
+          expr: |
+            (
+              count(kube_pod_status_phase{namespace="falco-system", pod=~"falco-.*", phase="Running"})
+            /
+              clamp_min(count(kube_node_info), 1)
+            )
+          labels:
+            component: falco

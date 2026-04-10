@@ -1,0 +1,140 @@
+# Falco 런타임 보안 이벤트 알림 규칙
+# Design Ref: MTU-N238 §3.5
+# Plan SC: FR-N238.6
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: falco-performance-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    monitoring.bkit.io/component: falco
+    monitoring.bkit.io/category: alerting
+spec:
+  groups:
+    - name: falco.security.alerts
+      rules:
+        # ── 알림 1: Critical 이상 보안 이벤트 탐지 ──
+        - alert: FalcoCriticalEventDetected
+          expr: |
+            sum(increase(falco_events{priority=~"0|1|2|3"}[5m])) > 0
+          for: 1m
+          labels:
+            severity: critical
+            team: security
+            component: falco
+            category: runtime-security
+            csap_control: "D-06"
+          annotations:
+            summary: "Falco Critical 이상 보안 이벤트 탐지"
+            description: |
+              Falco가 Critical 이상 심각도의 런타임 보안 이벤트를 탐지했습니다.
+              최근 5분 내 {{ $value | printf "%.0f" }}건의 위험 이벤트가 발생했습니다.
+              즉시 보안 대응 절차를 시작하십시오.
+            runbook: "https://docs.bkit.io/runbooks/falco-critical-event"
+            impact: "런타임 보안 위협 탐지, 잠재적 침해 시도"
+            action: |
+              1. Falco 이벤트 로그 상세 확인 (kubectl logs -n falco-system)
+              2. 해당 이벤트 관련 Pod/Container 식별
+              3. 침해 여부 확인 및 격리 조치
+              4. 보안 인시던트 보고서 작성
+
+        # ── 알림 2: 비정상 이벤트 발생률 ──
+        - alert: FalcoHighEventRate
+          expr: |
+            falco:events:total_per_minute > 100
+          for: 5m
+          labels:
+            severity: warning
+            team: security
+            component: falco
+            category: runtime-security
+            csap_control: "D-06"
+          annotations:
+            summary: "Falco 이벤트 발생률 분당 100건 초과"
+            description: |
+              Falco 이벤트 발생률이 분당 {{ $value | printf "%.0f" }}건으로
+              임계값 100건을 5분간 초과하고 있습니다.
+              대규모 공격 시도 또는 규칙 노이즈 가능성을 확인하십시오.
+            runbook: "https://docs.bkit.io/runbooks/falco-high-event-rate"
+            impact: "대규모 보안 위협 또는 알림 노이즈"
+            action: |
+              1. 이벤트 발생 규칙 분포 확인
+              2. 특정 Pod/Node에 집중되는지 확인
+              3. 정상 활동 패턴인지 공격인지 판별
+              4. 노이즈 규칙 튜닝 또는 보안 대응
+
+        # ── 알림 3: 이벤트 드롭 비율 위험 ──
+        - alert: FalcoEventDropHigh
+          expr: |
+            falco:drop:ratio > 0.01
+          for: 5m
+          labels:
+            severity: critical
+            team: sre
+            component: falco
+            category: runtime-security
+            csap_control: "D-12"
+          annotations:
+            summary: "Falco 이벤트 드롭 비율 1% 초과"
+            description: |
+              Falco 커널 이벤트 드롭 비율이 {{ $value | printf "%.4f" }}로
+              1% 임계값을 초과했습니다.
+              syscall 수집 실패로 보안 이벤트가 누락될 수 있습니다.
+            runbook: "https://docs.bkit.io/runbooks/falco-event-drop"
+            impact: "보안 이벤트 누락 위험, 탐지 사각지대 발생"
+            action: |
+              1. Falco 파드 리소스 사용량 확인 (CPU 병목)
+              2. 커널 버퍼 크기 조정 검토
+              3. 불필요한 규칙 비활성화로 부하 경감
+              4. Falco 파드 리소스 요청 증가
+
+        # ── 알림 4: Falcosidekick 전달 실패 ──
+        - alert: FalcosidekickDeliveryFailed
+          expr: |
+            falcosidekick:output:error_ratio > 0.05
+          for: 5m
+          labels:
+            severity: critical
+            team: sre
+            component: falcosidekick
+            category: runtime-security
+            csap_control: "D-06"
+          annotations:
+            summary: "Falcosidekick 이벤트 전달 실패율 5% 초과"
+            description: |
+              Falcosidekick 이벤트 전달 오류율이 {{ $value | printf "%.2f" }}로
+              5% 임계값을 초과했습니다.
+              보안 이벤트가 알림 채널에 도달하지 못할 수 있습니다.
+            runbook: "https://docs.bkit.io/runbooks/falcosidekick-delivery-failed"
+            impact: "보안 이벤트 알림 누락, 대응 지연"
+            action: |
+              1. Falcosidekick 출력 채널 연결 상태 확인
+              2. 대상 시스템(Slack, AlertManager 등) 가용성 확인
+              3. Falcosidekick 파드 로그 확인
+              4. 네트워크 연결성 점검
+
+        # ── 알림 5: Falco 서비스 다운 ──
+        - alert: FalcoServiceDown
+          expr: |
+            falco:pods:coverage_ratio < 1
+          for: 5m
+          labels:
+            severity: critical
+            team: sre
+            component: falco
+            category: runtime-security
+            csap_control: "D-12"
+          annotations:
+            summary: "Falco DaemonSet 파드 부재 (노드 미커버)"
+            description: |
+              Falco DaemonSet 커버리지가 {{ $value | printf "%.2f" }}로
+              전체 노드를 커버하지 못하고 있습니다.
+              일부 노드에서 런타임 보안 모니터링이 비활성화된 상태입니다.
+            runbook: "https://docs.bkit.io/runbooks/falco-service-down"
+            impact: "미커버 노드에서 런타임 위협 미탐지"
+            action: |
+              1. Falco DaemonSet 파드 상태 확인
+              2. 스케줄링 실패 노드 확인
+              3. Falco 파드 로그 (CrashLoopBackOff 등)
+              4. 노드 Taints/Tolerations 확인

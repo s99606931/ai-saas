@@ -1,0 +1,114 @@
+# Design Ref: MTU-N241
+# Plan SC: FR-EGOV.1
+# 전자정부 표준프레임워크 호환성 체크리스트
+
+version: "1.0"
+framework_version: "4.2"
+last_updated: "2026-04-10"
+
+categories:
+  execution_environment:
+    name: "실행환경 호환"
+    items:
+      - id: EXE-001
+        name: "인증/인가 호환"
+        description: "OAuth2/OIDC 기반 인증으로 표준프레임워크 Spring Security 대체"
+        requirement: "Keycloak SSO + RBAC"
+        status: compatible
+        notes: "토큰 기반 인증으로 완전 호환"
+
+      - id: EXE-002
+        name: "세션 관리 호환"
+        description: "JWT 기반 무상태 세션으로 표준프레임워크 세션 관리 대체"
+        requirement: "JWT + Redis 세션 스토어"
+        status: compatible
+        notes: "기관별 세션 만료 정책 설정 가능"
+
+      - id: EXE-003
+        name: "파일 처리 호환"
+        description: "S3 호환 API로 표준프레임워크 파일 업로드/다운로드 대체"
+        requirement: "MinIO + S3 API"
+        status: compatible
+
+      - id: EXE-004
+        name: "REST API 호환"
+        description: "OpenAPI 3.0 기반 REST API로 Spring MVC Controller 대체"
+        requirement: "Express/Fastify + Zod 검증"
+        status: compatible
+
+      - id: EXE-005
+        name: "데이터 접근 호환"
+        description: "PostgreSQL + ORM으로 표준프레임워크 MyBatis 대체"
+        requirement: "Prisma/Drizzle ORM + PostgreSQL"
+        status: compatible
+
+  data_exchange:
+    name: "데이터 교환 표준"
+    items:
+      - id: DX-001
+        name: "JSON 응답 형식"
+        description: "공공데이터포털 표준 응답 형식 지원"
+        requirement: "resultCode/resultMsg/data 구조"
+        status: compatible
+
+      - id: DX-002
+        name: "XML 지원"
+        description: "레거시 시스템 연계용 XML 응답 지원"
+        requirement: "Content-Type 기반 자동 변환"
+        status: compatible
+
+      - id: DX-003
+        name: "행정 데이터 연계"
+        description: "행정정보 공동이용 표준 메시지 지원"
+        requirement: "표준 연계 메시지 포맷"
+        status: partial
+        notes: "기관별 커스터마이징 필요"
+
+  security:
+    name: "보안 호환"
+    items:
+      - id: SEC-001
+        name: "CSRF 방지"
+        description: "토큰 기반 CSRF 방지 (SameSite Cookie + CSRF Token)"
+        status: compatible
+
+      - id: SEC-002
+        name: "XSS 방지"
+        description: "DOMPurify 기반 입력 새니타이제이션"
+        status: compatible
+
+      - id: SEC-003
+        name: "SQL 인젝션 방지"
+        description: "매개변수화 쿼리 (ORM 자동 적용)"
+        status: compatible
+
+      - id: SEC-004
+        name: "암호화"
+        description: "AES-256 (저장) + TLS 1.3 (전송)"
+        status: compatible
+
+  deployment:
+    name: "배포 환경"
+    items:
+      - id: DEP-001
+        name: "컨테이너 배포"
+        description: "Docker + k3s 기반 컨테이너 배포 (WAS 대체)"
+        status: compatible
+        notes: "표준프레임워크 WAS 배포 대비 운영 효율 향상"
+
+      - id: DEP-002
+        name: "CI/CD"
+        description: "Gitea Actions 기반 자동화 (Jenkins 대체)"
+        status: compatible
+
+      - id: DEP-003
+        name: "모니터링"
+        description: "Prometheus + Grafana (표준 모니터링 대체)"
+        status: compatible
+
+compliance_summary:
+  total_items: 15
+  compatible: 14
+  partial: 1
+  incompatible: 0
+  compatibility_rate: "93%"
