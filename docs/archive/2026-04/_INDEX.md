@@ -411,3 +411,16 @@
 | **MTU-N98** 모니터링 스택 E2E 통합 테스트 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N98-monitoring-e2e-test/` |
 | **MTU-N99** CSAP D-06 감사 로그 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N99-csap-audit-monitoring/` |
 | **MTU-N100** Round 7 통합 검증 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N100-round7-integration/` |
+| **MTU-N100** Backstage IDP | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N100-backstage-idp/` |
+| **MTU-N101** Argo Rollouts B/G+A/B | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N101-argo-rollouts/` |
+| **MTU-N102** Thanos 장기 메트릭 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N102-thanos-metrics/` |
+| **MTU-N103** Vault+ESO 시크릿 회전 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N103-secret-rotation/` |
+| **MTU-N104** Round 8 통합 검증 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N104-round8-integration/` |
+| **MTU-N105** SonarQube 경량 코드 품질 게이트 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N105-sonarqube-quality-gate/` |
+| **MTU-N106** API 문서 자동 생성 (OpenAPI+Docusaurus) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N106-api-doc-autogen/` |
+| **MTU-N107** AIOps 다변량 이상 탐지 고도화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N107-aiops-multivariate/` |
+| **MTU-N108** 멀티테넌트 CI/CD 파이프라인 격리 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N108-multitenant-cicd/` |
+| **MTU-N109** ML 기반 예측 스케일링 고도화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N109-predictive-scaling-v2/` |
+| **MTU-N110** FinOps 비용 예측 및 예산 자동 알림 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N110-finops-budget-alert/` |
+| **MTU-N111** 아키텍처 다이어그램 자동 업데이트 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N111-arch-diagram-auto/` |
+| **MTU-N112** Round 9 통합 검증 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N112-round9-integration/` |
