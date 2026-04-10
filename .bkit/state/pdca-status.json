@@ -1,6 +1,6 @@
 {
   "version": "3.0",
-  "lastUpdated": "2026-04-10T11:58:46.922Z",
+  "lastUpdated": "2026-04-10T11:59:26Z",
   "activeFeatures": [
     "public-saas-framework",
     "scripts",
@@ -11317,6 +11317,38 @@
       "archivedAt": "2026-04-10T11:50:49Z",
       "description": "Round 13 통합 검증",
       "round": 13
+    },
+    "MTU-N165-api-versioning-strategy": {
+      "phase": "archived",
+      "matchRate": 100,
+      "startedAt": "2026-04-10T11:59:26Z",
+      "archivedAt": "2026-04-10T11:59:26Z",
+      "description": "API 버전 관리 전략",
+      "round": 14
+    },
+    "MTU-N166-tenant-quota-autotune": {
+      "phase": "archived",
+      "matchRate": 100,
+      "startedAt": "2026-04-10T11:59:26Z",
+      "archivedAt": "2026-04-10T11:59:26Z",
+      "description": "테넌트 자원 할당량 자동 조정",
+      "round": 14
+    },
+    "MTU-N167-sla-contract-management": {
+      "phase": "archived",
+      "matchRate": 100,
+      "startedAt": "2026-04-10T11:59:26Z",
+      "archivedAt": "2026-04-10T11:59:26Z",
+      "description": "서비스 SLA 계약 관리",
+      "round": 14
+    },
+    "MTU-N168-round14-integration": {
+      "phase": "archived",
+      "matchRate": 100,
+      "startedAt": "2026-04-10T11:59:26Z",
+      "archivedAt": "2026-04-10T11:59:26Z",
+      "description": "Round 14 통합",
+      "round": 14
     }
   }
 }
