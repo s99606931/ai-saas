@@ -1,0 +1,79 @@
+# Thanos Object Store 설정 (MinIO)
+# Design Ref: MTU-N102 Design §MinIO 연동
+# Plan SC: FR-N102.2
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: thanos-objstore-secret
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: thanos
+    app.kubernetes.io/component: objstore
+type: Opaque
+stringData:
+  objstore.yml: |
+    type: S3
+    config:
+      bucket: thanos-metrics
+      endpoint: minio.minio-system.svc:9000
+      access_key: ${MINIO_ACCESS_KEY}
+      secret_key: ${MINIO_SECRET_KEY}
+      insecure: true
+      trace:
+        enable: false
+
+---
+# MinIO 버킷 생성 Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: thanos-bucket-create
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: thanos
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mc
+          image: minio/mc:RELEASE.2026-03-01T00-00-00Z
+          command:
+            - /bin/sh
+            - -c
+            - |
+              mc alias set myminio http://minio.minio-system.svc:9000 \
+                "${MINIO_ACCESS_KEY}" "${MINIO_SECRET_KEY}"
+              mc mb --ignore-existing myminio/thanos-metrics
+              mc policy set none myminio/thanos-metrics
+              echo "Thanos 메트릭 버킷 생성 완료"
+          env:
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: access-key
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: secret-key
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

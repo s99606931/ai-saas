@@ -1,0 +1,95 @@
+# Vault 감사 이벤트 -> Kubernetes Event 웹훅
+# Design Ref: MTU-N103 Design §감사 로그 연동
+# Plan SC: FR-N103.5
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-audit-config
+  namespace: vault-system
+  labels:
+    app.kubernetes.io/part-of: secret-rotation
+    app.kubernetes.io/component: audit
+data:
+  rotation-audit-policy.hcl: |
+    # 시크릿 읽기/쓰기 전수 로깅
+    path "secret/*" {
+      capabilities = ["create", "read", "update", "delete", "list"]
+    }
+
+    # 인증 이벤트 로깅
+    path "auth/*" {
+      capabilities = ["create", "read", "update", "delete", "list"]
+    }
+
+  # 시크릿 회전 이벤트 모니터링 스크립트
+  rotation-monitor.sh: |
+    #!/bin/bash
+    # 시크릿 회전 이벤트 감시 + 감사 로그 기록
+    # CSAP D-06: 모든 시크릿 변경 감사 추적
+    set -euo pipefail
+
+    AUDIT_LOG="/vault/audit/audit.log"
+    ROTATION_LOG="/vault/audit/rotation-events.log"
+
+    echo "[$(date -Iseconds)] 시크릿 회전 모니터 시작" >> "$ROTATION_LOG"
+
+    # 최근 회전 이벤트 추출
+    if [ -f "$AUDIT_LOG" ]; then
+      # secret/ 경로의 write 이벤트 필터링
+      grep -E '"path":"secret/data/' "$AUDIT_LOG" | \
+        grep '"operation":"update"' | \
+        tail -20 >> "$ROTATION_LOG" 2>/dev/null || true
+      echo "[$(date -Iseconds)] 회전 이벤트 $(wc -l < "$ROTATION_LOG") 건" >> "$ROTATION_LOG"
+    fi
+
+---
+# 시크릿 회전 알림 PrometheusRule
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: secret-rotation-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: secret-rotation
+spec:
+  groups:
+    - name: secret-rotation
+      interval: 30s
+      rules:
+        # 시크릿 만료 임박 경고 (7일 전)
+        - alert: SecretExpirationWarning
+          expr: |
+            (time() - kube_secret_created{namespace=~"production|auth-service|minio-system|harbor"})
+            > (30 * 24 * 3600)
+          for: 1h
+          labels:
+            severity: warning
+            csap_ref: "D-09"
+          annotations:
+            summary: "시크릿 교체 주기 초과 임박"
+            description: "{{ $labels.namespace }}/{{ $labels.secret }} 시크릿이 30일 이상 미교체"
+
+        # 시크릿 미교체 위험 (만료)
+        - alert: SecretRotationOverdue
+          expr: |
+            (time() - kube_secret_created{namespace=~"production|auth-service|minio-system|harbor"})
+            > (90 * 24 * 3600)
+          for: 1h
+          labels:
+            severity: critical
+            csap_ref: "D-09"
+          annotations:
+            summary: "시크릿 교체 만기 초과"
+            description: "{{ $labels.namespace }}/{{ $labels.secret }} 시크릿이 90일 이상 미교체"
+
+        # ExternalSecret 동기화 실패
+        - alert: ExternalSecretSyncFailure
+          expr: |
+            externalsecret_status_condition{condition="Ready",status="False"} == 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "ExternalSecret 동기화 실패"
+            description: "{{ $labels.namespace }}/{{ $labels.name }} ExternalSecret 동기화 실패"

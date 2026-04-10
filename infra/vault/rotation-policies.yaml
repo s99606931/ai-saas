@@ -1,0 +1,144 @@
+# 시크릿 회전 정책 정의
+# Design Ref: MTU-N103 Design §시크릿 교체 정책
+# Plan SC: FR-N103.3
+
+---
+# 1. DB 비밀번호 (30일 교체)
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: db-credentials
+  namespace: production
+  labels:
+    rotation-policy: "30d"
+    secret-type: database
+spec:
+  refreshInterval: 1h  # 매 시간 Vault 동기화
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: db-credentials
+    creationPolicy: Owner
+    template:
+      metadata:
+        annotations:
+          rotation.policy: "30d"
+          last-rotated: "{{ .lastRotated }}"
+  data:
+    - secretKey: username
+      remoteRef:
+        key: secret/data/database/production
+        property: username
+    - secretKey: password
+      remoteRef:
+        key: secret/data/database/production
+        property: password
+
+---
+# 2. API 키 (90일 교체)
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: api-keys
+  namespace: production
+  labels:
+    rotation-policy: "90d"
+    secret-type: api-key
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: api-keys
+    creationPolicy: Owner
+  data:
+    - secretKey: ai-gateway-key
+      remoteRef:
+        key: secret/data/api-keys/ai-gateway
+        property: key
+    - secretKey: webhook-secret
+      remoteRef:
+        key: secret/data/api-keys/webhook
+        property: secret
+
+---
+# 3. JWT 서명 키 (90일 교체 -- Dual Key)
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: jwt-signing-keys
+  namespace: auth-service
+  labels:
+    rotation-policy: "90d"
+    secret-type: jwt-key
+spec:
+  refreshInterval: 30m  # JWT 키는 더 빈번히 동기화
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: jwt-signing-keys
+    creationPolicy: Owner
+  data:
+    - secretKey: current-key
+      remoteRef:
+        key: secret/data/jwt/current
+        property: private-key
+    - secretKey: previous-key
+      remoteRef:
+        key: secret/data/jwt/previous
+        property: private-key
+
+---
+# 4. MinIO 자격증명 (60일 교체)
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: minio-credentials
+  namespace: minio-system
+  labels:
+    rotation-policy: "60d"
+    secret-type: storage
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: minio-credentials
+    creationPolicy: Owner
+  data:
+    - secretKey: access-key
+      remoteRef:
+        key: secret/data/minio/credentials
+        property: access-key
+    - secretKey: secret-key
+      remoteRef:
+        key: secret/data/minio/credentials
+        property: secret-key
+
+---
+# 5. Harbor 레지스트리 인증 (60일 교체)
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: harbor-credentials
+  namespace: harbor
+  labels:
+    rotation-policy: "60d"
+    secret-type: registry
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: harbor-credentials
+    creationPolicy: Owner
+  data:
+    - secretKey: admin-password
+      remoteRef:
+        key: secret/data/harbor/admin
+        property: password

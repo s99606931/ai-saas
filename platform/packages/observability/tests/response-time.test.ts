@@ -8,19 +8,26 @@ import Fastify from 'fastify';
 import { responseTimePlugin } from '../src/response-time.js';
 
 describe('responseTimePlugin', () => {
+  // 모든 라우트를 미리 등록한 후 inject 사용
   const app = Fastify();
+
+  // 플러그인 등록 + 라우트 미리 등록
+  app.register(responseTimePlugin);
+  app.get('/test-rt', async () => ({ ok: true }));
+  app.get('/test-rt-positive', async () => ({ ok: true }));
+  app.post('/test-rt-post', async () => ({ created: true }));
+  app.get('/test-rt-fast', async () => ({ fast: true }));
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('플러그인 등록이 성공한다', async () => {
-    await expect(app.register(responseTimePlugin)).resolves.not.toThrow();
+  it('플러그인 등록 후 서버가 정상 기동한다', async () => {
+    await app.ready();
+    expect(app).toBeDefined();
   });
 
-  it('응답에 X-Response-Time 헤더가 포함된다', async () => {
-    app.get('/test-rt', async () => ({ ok: true }));
-
+  it('GET 응답에 X-Response-Time 헤더가 포함된다', async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/test-rt',
@@ -34,8 +41,6 @@ describe('responseTimePlugin', () => {
   });
 
   it('X-Response-Time 값이 양수이다', async () => {
-    app.get('/test-rt-positive', async () => ({ ok: true }));
-
     const response = await app.inject({
       method: 'GET',
       url: '/test-rt-positive',
@@ -47,8 +52,6 @@ describe('responseTimePlugin', () => {
   });
 
   it('POST 요청에도 X-Response-Time이 포함된다', async () => {
-    app.post('/test-rt-post', async () => ({ created: true }));
-
     const response = await app.inject({
       method: 'POST',
       url: '/test-rt-post',
@@ -70,8 +73,6 @@ describe('responseTimePlugin', () => {
   });
 
   it('처리 시간이 합리적인 범위 내이다 (< 1000ms)', async () => {
-    app.get('/test-rt-fast', async () => ({ fast: true }));
-
     const response = await app.inject({
       method: 'GET',
       url: '/test-rt-fast',

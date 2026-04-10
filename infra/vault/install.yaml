@@ -1,0 +1,66 @@
+# HashiCorp Vault (Dev Mode) 설치 Helm Values
+# Design Ref: MTU-N103 Design §아키텍처
+# Plan SC: FR-N103.1
+#
+# 설치: helm install vault hashicorp/vault \
+#        -n vault-system --create-namespace -f install.yaml
+#
+# 주의: Dev 모드는 개발/테스트 전용. 프로덕션은 HA + auto-unseal 사용
+
+server:
+  dev:
+    enabled: true
+    devRootToken: "root"  # Dev 전용 -- 프로덕션에서는 절대 사용 금지
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  dataStorage:
+    enabled: true
+    size: 10Gi
+    storageClass: sc-warm-standard
+
+  auditStorage:
+    enabled: true
+    size: 5Gi
+
+  extraEnvironmentVars:
+    VAULT_LOG_LEVEL: info
+
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 100
+    runAsGroup: 1000
+    fsGroup: 1000
+
+  # 감사 로그 활성화 (CSAP D-06)
+  postStart:
+    - /bin/sh
+    - -c
+    - |
+      sleep 5
+      vault audit enable file file_path=/vault/audit/audit.log || true
+      vault secrets enable -path=secret kv-v2 || true
+      vault auth enable kubernetes || true
+
+injector:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+ui:
+  enabled: true
+  serviceType: ClusterIP
+
+csi:
+  enabled: false

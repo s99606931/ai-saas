@@ -1,0 +1,109 @@
+# Thanos 설치 Helm Values
+# Design Ref: MTU-N102 Design §아키텍처
+# Plan SC: FR-N102.1
+#
+# 설치: helm install thanos bitnami/thanos \
+#        -n monitoring -f install.yaml
+
+objstoreConfig: |-
+  type: S3
+  config:
+    bucket: thanos-metrics
+    endpoint: minio.minio-system.svc:9000
+    access_key: $(MINIO_ACCESS_KEY)
+    secret_key: $(MINIO_SECRET_KEY)
+    insecure: true
+
+# Sidecar: Prometheus 연동
+existingPrometheus:
+  enabled: true
+  endpoint: http://prometheus.monitoring.svc:9090
+
+query:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  dnsDiscovery:
+    sidecarsService: prometheus-thanos-sidecar
+    sidecarsNamespace: monitoring
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+
+queryFrontend:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  config: |-
+    type: IN-MEMORY
+    config:
+      max_size: 256MB
+      max_size_items: 2048
+      validity: 6h
+
+storegateway:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: sc-warm-standard
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+
+compactor:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  retentionResolutionRaw: 7d
+  retentionResolution5m: 30d
+  retentionResolution1h: 365d
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: sc-warm-standard
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+
+# Prometheus Sidecar 설정 (kube-prometheus-stack values 추가)
+# prometheus.prometheusSpec.thanos:
+#   objectStorageConfig:
+#     existingSecret:
+#       name: thanos-objstore-secret
+#       key: objstore.yml
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
