@@ -1,0 +1,126 @@
+# etcd 클러스터 상세 운영 알림 규칙
+# Design Ref: MTU-N222 S2.3
+# Plan SC: FR-N222.3
+# CSAP: D-06 감사, D-12 시스템 운영
+---
+groups:
+  - name: etcd_operations_alerts
+    rules:
+      # 컴팩션 느림
+      - alert: EtcdCompactionSlow
+        expr: etcd:compaction:duration_p99 > 500
+        for: 10m
+        labels:
+          severity: warning
+          component: etcd
+          category: performance
+        annotations:
+          summary: "etcd 컴팩션 지연"
+          description: "컴팩션 P99 {{ $value | printf \"%.0f\" }}ms (임계값 500ms)"
+          runbook: "1. etcd DB 크기 확인 2. 키 수 분석 3. 컴팩션 주기 조정 검토"
+
+      # 스냅샷 실패
+      - alert: EtcdSnapshotFailed
+        expr: increase(etcd_snap_save_total{result="fail"}[1h]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          component: etcd
+          category: reliability
+          csap: D-06
+        annotations:
+          summary: "etcd 스냅샷 저장 실패"
+          description: "최근 1시간 스냅샷 실패 발생. 데이터 백업 위험."
+          runbook: "1. 디스크 공간 확인 2. etcd 로그 분석 3. 수동 스냅샷 시도"
+
+      # 리더 빈번한 변경
+      - alert: EtcdLeaderChangedFrequently
+        expr: etcd:leader:changes_1h > 3
+        for: 5m
+        labels:
+          severity: warning
+          component: etcd
+          category: stability
+        annotations:
+          summary: "etcd 리더 빈번한 변경"
+          description: "1시간 내 리더 변경 {{ $value }}회 (임계값 3회)"
+          runbook: "1. 네트워크 연결 상태 확인 2. 디스크 I/O 성능 점검 3. etcd 멤버 상태 확인"
+
+      # DB 크기 경고
+      - alert: EtcdDBSizeLarge
+        expr: etcd:disk:db_size_bytes > 4294967296
+        for: 10m
+        labels:
+          severity: warning
+          component: etcd
+          category: capacity
+        annotations:
+          summary: "etcd DB 크기 4GB 초과"
+          description: "etcd DB 크기 {{ $value | humanize1024 }}. 컴팩션/정리 필요."
+          runbook: "1. 불필요한 키 정리 2. 수동 컴팩션 + 조각 모음 3. 쿼터 설정 확인"
+
+      # DB 크기 위험
+      - alert: EtcdDBSizeCritical
+        expr: etcd:disk:db_size_bytes > 7516192768
+        for: 5m
+        labels:
+          severity: critical
+          component: etcd
+          category: capacity
+          csap: D-12
+        annotations:
+          summary: "etcd DB 크기 위험 수준 (7GB+)"
+          description: "etcd DB 크기 {{ $value | humanize1024 }}. 기본 쿼터(8GB) 근접."
+          runbook: "1. 즉시 불필요 키 삭제 2. 긴급 컴팩션 + 조각 모음 3. 쿼터 상향 검토"
+
+      # WAL fsync 느림
+      - alert: EtcdWALFsyncSlow
+        expr: etcd:disk:wal_fsync_p99 > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          component: etcd
+          category: disk
+        annotations:
+          summary: "etcd WAL fsync 지연"
+          description: "WAL fsync P99 {{ $value | printf \"%.3f\" }}초 (임계값 100ms)"
+          runbook: "1. 디스크 I/O 성능 확인 2. 전용 SSD 사용 확인 3. 다른 I/O 부하 분석"
+
+      # Backend commit 느림
+      - alert: EtcdBackendCommitSlow
+        expr: etcd:disk:backend_commit_p99 > 0.25
+        for: 10m
+        labels:
+          severity: warning
+          component: etcd
+          category: disk
+        annotations:
+          summary: "etcd backend commit 지연"
+          description: "Backend commit P99 {{ $value | printf \"%.3f\" }}초 (임계값 250ms)"
+          runbook: "1. DB 크기/조각화 확인 2. 디스크 성능 점검 3. 컴팩션 실행"
+
+      # 조각화 높음
+      - alert: EtcdFragmentationHigh
+        expr: etcd:disk:fragmentation_ratio > 50
+        for: 30m
+        labels:
+          severity: warning
+          component: etcd
+          category: maintenance
+        annotations:
+          summary: "etcd DB 조각화율 높음"
+          description: "조각화율 {{ $value | printf \"%.1f\" }}% (임계값 50%)"
+          runbook: "1. etcdctl defrag 실행 2. 컴팩션 주기 확인 3. DB 정리 스케줄 조정"
+
+      # 하트비트 전송 실패
+      - alert: EtcdHeartbeatSendFailures
+        expr: etcd:leader:heartbeat_send_failures > 0
+        for: 5m
+        labels:
+          severity: warning
+          component: etcd
+          category: cluster
+        annotations:
+          summary: "etcd 하트비트 전송 실패"
+          description: "리더 하트비트 전송 실패 발생. 클러스터 안정성 저하 위험."
+          runbook: "1. 네트워크 연결 확인 2. etcd 멤버 상태 점검 3. 리소스 사용량 확인"

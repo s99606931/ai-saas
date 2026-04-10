@@ -1,0 +1,127 @@
+# Harbor 레지스트리 성능 알림 규칙
+# Design Ref: MTU-N221 S2.3
+# Plan SC: FR-N221.3
+# CSAP: D-12 시스템 개발 보안
+---
+groups:
+  - name: harbor_performance_alerts
+    rules:
+      # API 지연 높음
+      - alert: HarborAPILatencyHigh
+        expr: harbor:api:latency_p99 > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: harbor
+          category: registry
+          csap: D-12
+        annotations:
+          summary: "Harbor API 지연 높음"
+          description: "Harbor API P99 지연 {{ $value | printf \"%.2f\" }}초 (임계값 5초)"
+          runbook: "1. Harbor Core 로그 확인 2. DB 연결 상태 점검 3. 스토리지 I/O 확인"
+
+      # API 다운
+      - alert: HarborAPIDown
+        expr: harbor:api:availability < 99
+        for: 5m
+        labels:
+          severity: critical
+          component: harbor
+          category: registry
+          csap: D-12
+        annotations:
+          summary: "Harbor API 가용성 저하"
+          description: "Harbor API 가용성 {{ $value | printf \"%.1f\" }}% (임계값 99%)"
+          runbook: "1. Harbor Core Pod 상태 확인 2. 데이터베이스 연결 점검 3. 로드밸런서 상태 확인"
+
+      # 스토리지 경고
+      - alert: HarborStorageNearFull
+        expr: harbor:storage:usage_ratio > 80
+        for: 10m
+        labels:
+          severity: warning
+          component: harbor
+          category: storage
+        annotations:
+          summary: "Harbor 스토리지 사용률 높음"
+          description: "스토리지 사용률 {{ $value | printf \"%.1f\" }}% (임계값 80%)"
+          runbook: "1. 미사용 이미지 태그 정리 2. GC 실행 검토 3. 스토리지 확장 계획"
+
+      # 스토리지 위험
+      - alert: HarborStorageCritical
+        expr: harbor:storage:usage_ratio > 95
+        for: 5m
+        labels:
+          severity: critical
+          component: harbor
+          category: storage
+          csap: D-12
+        annotations:
+          summary: "Harbor 스토리지 위험 수준"
+          description: "스토리지 사용률 {{ $value | printf \"%.1f\" }}% (임계값 95%). 즉시 조치 필요."
+          runbook: "1. 긴급 GC 실행 2. 오래된 이미지 삭제 3. 스토리지 즉시 확장"
+
+      # 복제 실패
+      - alert: HarborReplicationFailed
+        expr: harbor:replication:success_rate < 90
+        for: 10m
+        labels:
+          severity: warning
+          component: harbor
+          category: replication
+        annotations:
+          summary: "Harbor 복제 성공률 저하"
+          description: "복제 성공률 {{ $value | printf \"%.1f\" }}% (임계값 90%)"
+          runbook: "1. 복제 정책 상태 확인 2. 대상 레지스트리 연결 점검 3. 네트워크 상태 확인"
+
+      # GC 지연
+      - alert: HarborGCDurationHigh
+        expr: harbor:gc:last_duration_seconds > 1800
+        for: 5m
+        labels:
+          severity: warning
+          component: harbor
+          category: maintenance
+        annotations:
+          summary: "Harbor GC 실행 시간 과다"
+          description: "GC 실행 시간 {{ $value | printf \"%.0f\" }}초 (임계값 1800초)"
+          runbook: "1. 삭제 대상 Blob 수 확인 2. 스토리지 I/O 성능 점검 3. GC 스케줄 조정"
+
+      # Push 지연 높음
+      - alert: HarborPushLatencyHigh
+        expr: harbor:push:latency_p99 > 30
+        for: 5m
+        labels:
+          severity: warning
+          component: harbor
+          category: registry
+        annotations:
+          summary: "Harbor 이미지 Push 지연 높음"
+          description: "이미지 Push P99 지연 {{ $value | printf \"%.1f\" }}초 (임계값 30초)"
+          runbook: "1. 이미지 크기 확인 2. 네트워크 대역폭 점검 3. 스토리지 I/O 확인"
+
+      # Pull 지연 높음
+      - alert: HarborPullLatencyHigh
+        expr: harbor:pull:latency_p99 > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: harbor
+          category: registry
+        annotations:
+          summary: "Harbor 이미지 Pull 지연 높음"
+          description: "이미지 Pull P99 지연 {{ $value | printf \"%.1f\" }}초 (임계값 10초)"
+          runbook: "1. Harbor 캐시 상태 확인 2. CDN/프록시 설정 점검 3. 네트워크 대역폭 확인"
+
+      # 종합 건강도 저하
+      - alert: HarborHealthDegraded
+        expr: harbor:overall:health_score < 70
+        for: 10m
+        labels:
+          severity: warning
+          component: harbor
+          category: registry
+        annotations:
+          summary: "Harbor 종합 건강도 저하"
+          description: "Harbor 건강도 {{ $value | printf \"%.1f\" }}% (임계값 70%)"
+          runbook: "1. 각 컴포넌트 상태 점검 2. 리소스 사용량 확인 3. 로그 분석"

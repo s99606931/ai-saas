@@ -1,0 +1,263 @@
+{
+  "annotations": { "list": [] },
+  "description": "API 서버 인증/인가 모니터링 대시보드 (Design Ref: MTU-N219 S2.2, CSAP D-08)",
+  "editable": false,
+  "graphTooltip": 2,
+  "id": null,
+  "uid": "apiserver-auth-n219",
+  "title": "API 서버 인증/인가 모니터링",
+  "tags": ["apiserver", "auth", "security", "n219", "csap-d08"],
+  "timezone": "Asia/Seoul",
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "text": "Prometheus", "value": "Prometheus" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 100,
+      "title": "인증 (Authentication)",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "id": 1,
+      "title": "인증 성공률",
+      "description": "5분 윈도우 인증 성공률 (Plan SC: FR-N219.2)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "apiserver:auth:success_rate",
+          "legendFormat": "성공률",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 95 },
+              { "color": "green", "value": 99 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "인증 성공/실패 추이",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 10, "x": 6, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(rate(apiserver_authentication_attempts{result=\"success\"}[5m]))",
+          "legendFormat": "성공",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(apiserver_authentication_attempts{result=\"failure\"}[5m]))",
+          "legendFormat": "실패",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 3,
+      "title": "인증 실패 원인",
+      "type": "piechart",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "apiserver:auth:failure_by_reason",
+          "legendFormat": "{{reason}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 200,
+      "title": "인가 (Authorization)",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "collapsed": false
+    },
+    {
+      "id": 4,
+      "title": "인가 허용률",
+      "description": "5분 윈도우 인가 허용률 (Plan SC: FR-N219.2)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "apiserver:authz:allow_rate",
+          "legendFormat": "허용률",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 90 },
+              { "color": "green", "value": 98 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "인가 허용/거부 추이",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 10, "x": 6, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(rate(apiserver_authorization_decisions{decision=\"allowed\"}[5m]))",
+          "legendFormat": "허용",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(apiserver_authorization_decisions{decision=\"denied\"}[5m]))",
+          "legendFormat": "거부",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 6,
+      "title": "인가 거부 리소스 Top 10",
+      "type": "bargauge",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "topk(10, apiserver:authz:denied_by_resource)",
+          "legendFormat": "{{resource}} ({{verb}})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 300,
+      "title": "토큰/세션 상태",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "collapsed": false
+    },
+    {
+      "id": 7,
+      "title": "인증자별 요청 분포",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "apiserver:auth:requests_by_authenticator",
+          "legendFormat": "{{authenticator}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 8,
+      "title": "인증/인가 처리 지연",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "apiserver:auth:latency_p99 * 1000",
+          "legendFormat": "인증 P99",
+          "refId": "A"
+        },
+        {
+          "expr": "apiserver:authz:latency_p99 * 1000",
+          "legendFormat": "인가 P99",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 400,
+      "title": "보안 이벤트",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
+      "collapsed": false
+    },
+    {
+      "id": 9,
+      "title": "무차별 대입 탐지 (소스별 실패)",
+      "description": "1분 윈도우 소스 IP별 인증 실패 횟수 (Design Ref: MTU-N219 S2.3)",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 22 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "topk(20, apiserver:auth:failure_by_source > 0)",
+          "legendFormat": "{{source_ip}}",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "시간대별 인증 실패 히트맵",
+      "type": "heatmap",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 22 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(increase(apiserver_authentication_attempts{result=\"failure\"}[5m]))",
+          "legendFormat": "실패 수",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "scheme": "YlOrRd" }
+        }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "weekStart": "monday"
+}

@@ -1,0 +1,125 @@
+# PostgreSQL 데이터베이스 상세 알림 규칙
+# Design Ref: MTU-N224 S2.2
+# Plan SC: FR-N224.3
+# CSAP: D-06 감사, D-12 시스템 보안
+---
+groups:
+  - name: postgres_detailed_alerts
+    rules:
+      # 연결 부족 경고
+      - alert: PostgresConnectionsNearMax
+        expr: postgres:connections:usage_ratio > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: postgres
+          category: capacity
+        annotations:
+          summary: "PostgreSQL 연결 사용률 80% 초과"
+          description: "연결 사용률 {{ $value | printf \"%.1f\" }}% ({{ $labels.instance }})"
+          runbook: "1. idle 연결 정리 2. 연결 풀 설정 확인 3. max_connections 조정 검토"
+
+      # 연결 위험
+      - alert: PostgresConnectionsCritical
+        expr: postgres:connections:usage_ratio > 95
+        for: 2m
+        labels:
+          severity: critical
+          component: postgres
+          category: capacity
+          csap: D-12
+        annotations:
+          summary: "PostgreSQL 연결 사용률 위험 (95%+)"
+          description: "연결 사용률 {{ $value | printf \"%.1f\" }}%. 신규 연결 실패 위험."
+          runbook: "1. 즉시 idle in transaction 연결 강제 종료 2. 애플리케이션 연결 풀 점검 3. 긴급 max_connections 상향"
+
+      # 데드락 탐지
+      - alert: PostgresDeadlockDetected
+        expr: postgres:locks:deadlocks > 0
+        for: 1m
+        labels:
+          severity: warning
+          component: postgres
+          category: locking
+        annotations:
+          summary: "PostgreSQL 데드락 탐지"
+          description: "데드락 발생률 {{ $value | printf \"%.3f\" }}/s"
+          runbook: "1. pg_stat_activity에서 대기 쿼리 확인 2. 트랜잭션 순서 검토 3. 애플리케이션 코드 수정"
+
+      # 장기 실행 쿼리
+      - alert: PostgresLongRunningQuery
+        expr: postgres:queries:long_running > 0
+        for: 5m
+        labels:
+          severity: warning
+          component: postgres
+          category: performance
+        annotations:
+          summary: "PostgreSQL 장기 실행 쿼리 탐지"
+          description: "5분 이상 실행 중인 쿼리 {{ $value }}개"
+          runbook: "1. pg_stat_activity에서 쿼리 확인 2. EXPLAIN ANALYZE 실행 3. 인덱스 추가 검토"
+
+      # 복제 지연
+      - alert: PostgresReplicationLagHigh
+        expr: postgres:replication:lag_bytes > 104857600
+        for: 5m
+        labels:
+          severity: warning
+          component: postgres
+          category: replication
+        annotations:
+          summary: "PostgreSQL 복제 지연 100MB 초과"
+          description: "복제 지연 {{ $value | humanize1024 }}"
+          runbook: "1. 네트워크 상태 확인 2. 슬레이브 I/O 성능 점검 3. WAL 전송 설정 확인"
+
+      # 캐시 히트율 저하
+      - alert: PostgresCacheHitRateLow
+        expr: postgres:cache:hit_rate < 95
+        for: 15m
+        labels:
+          severity: warning
+          component: postgres
+          category: performance
+        annotations:
+          summary: "PostgreSQL 캐시 히트율 저하"
+          description: "캐시 히트율 {{ $value | printf \"%.1f\" }}% (임계값 95%)"
+          runbook: "1. shared_buffers 설정 확인 2. 대량 순차 스캔 쿼리 식별 3. 메모리 리소스 확인"
+
+      # idle in transaction 과다
+      - alert: PostgresIdleInTransactionHigh
+        expr: postgres:connections:idle_in_transaction > 10
+        for: 10m
+        labels:
+          severity: warning
+          component: postgres
+          category: connections
+        annotations:
+          summary: "PostgreSQL idle in transaction 과다"
+          description: "idle in transaction 연결 {{ $value }}개 (임계값 10)"
+          runbook: "1. 애플리케이션 트랜잭션 관리 검토 2. idle_in_transaction_session_timeout 설정 3. 연결 풀 반환 로직 확인"
+
+      # 락 대기 과다
+      - alert: PostgresLockWaitHigh
+        expr: postgres:locks:waiting > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: postgres
+          category: locking
+        annotations:
+          summary: "PostgreSQL 락 대기 과다"
+          description: "대기 중인 락 {{ $value }}개 (임계값 5)"
+          runbook: "1. pg_locks 조회로 차단 쿼리 식별 2. 장기 트랜잭션 종료 검토 3. 락 획득 순서 최적화"
+
+      # 인덱스 사용률 저하
+      - alert: PostgresIndexScanRatioLow
+        expr: postgres:index:scan_ratio < 80
+        for: 30m
+        labels:
+          severity: warning
+          component: postgres
+          category: performance
+        annotations:
+          summary: "PostgreSQL 인덱스 스캔 비율 저하"
+          description: "인덱스 스캔 비율 {{ $value | printf \"%.1f\" }}% (임계값 80%)"
+          runbook: "1. 순차 스캔 빈번 테이블 식별 2. 인덱스 추가 검토 3. ANALYZE 실행 확인"

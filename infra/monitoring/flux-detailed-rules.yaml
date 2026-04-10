@@ -1,0 +1,137 @@
+# Flux/GitOps 동기화 상세 Recording Rules
+# Design Ref: MTU-N220 S2.1
+# Plan SC: FR-N220.1
+# CSAP: D-12 시스템 개발 보안
+---
+groups:
+  - name: flux_detailed_recording
+    interval: 30s
+    rules:
+      # GitRepository 소스 가용성
+      - record: flux:source:git:availability
+        expr: |
+          count(gotk_reconcile_condition{kind="GitRepository",type="Ready",status="True"})
+          / clamp_min(count(gotk_reconcile_condition{kind="GitRepository",type="Ready"}), 1)
+          * 100
+        labels:
+          component: flux
+          source_type: git
+
+      # OCIRepository 소스 가용성
+      - record: flux:source:oci:availability
+        expr: |
+          count(gotk_reconcile_condition{kind="OCIRepository",type="Ready",status="True"})
+          / clamp_min(count(gotk_reconcile_condition{kind="OCIRepository",type="Ready"}), 1)
+          * 100
+          or vector(100)
+        labels:
+          component: flux
+          source_type: oci
+
+      # HelmRepository 소스 가용성
+      - record: flux:source:helm:availability
+        expr: |
+          count(gotk_reconcile_condition{kind="HelmRepository",type="Ready",status="True"})
+          / clamp_min(count(gotk_reconcile_condition{kind="HelmRepository",type="Ready"}), 1)
+          * 100
+          or vector(100)
+        labels:
+          component: flux
+          source_type: helm
+
+      # 전체 소스 가용성
+      - record: flux:source:overall_availability
+        expr: |
+          (
+            (flux:source:git:availability or vector(100)) * 0.5
+            + (flux:source:helm:availability or vector(100)) * 0.3
+            + (flux:source:oci:availability or vector(100)) * 0.2
+          )
+        labels:
+          component: flux
+
+      # 리콘실 지속 시간 P50
+      - record: flux:reconcile:duration_p50
+        expr: |
+          histogram_quantile(0.50,
+            sum by (le, kind) (
+              rate(gotk_reconcile_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: flux
+
+      # 리콘실 지속 시간 P90
+      - record: flux:reconcile:duration_p90
+        expr: |
+          histogram_quantile(0.90,
+            sum by (le, kind) (
+              rate(gotk_reconcile_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: flux
+
+      # 리콘실 지속 시간 P99
+      - record: flux:reconcile:duration_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le, kind) (
+              rate(gotk_reconcile_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: flux
+
+      # 소스 페치 실패율
+      - record: flux:source:fetch_failure_rate
+        expr: |
+          sum(rate(gotk_reconcile_condition{type="Ready",status="False"}[5m]))
+          / clamp_min(sum(rate(gotk_reconcile_condition{type="Ready"}[5m])), 0.001)
+          * 100
+        labels:
+          component: flux
+
+      # Kustomization 네임스페이스별 상태
+      - record: flux:kustomization:status_by_namespace
+        expr: |
+          count by (namespace, status) (
+            gotk_reconcile_condition{kind="Kustomization",type="Ready"}
+          )
+        labels:
+          component: flux
+
+      # HelmRelease 네임스페이스별 상태
+      - record: flux:helmrelease:status_by_namespace
+        expr: |
+          count by (namespace, status) (
+            gotk_reconcile_condition{kind="HelmRelease",type="Ready"}
+          )
+        labels:
+          component: flux
+
+      # 리콘실 재시도 횟수
+      - record: flux:reconcile:retry_count
+        expr: |
+          sum by (kind, name, namespace) (
+            gotk_reconcile_condition{type="Ready",status="False"}
+          )
+        labels:
+          component: flux
+
+      # 전체 Flux 건강도 점수
+      - record: flux:overall:health_score
+        expr: |
+          (
+            (flux:source:overall_availability or vector(100)) * 0.4
+            + clamp_max(
+                (1 - clamp_max(flux:reconcile:duration_p99, 120) / 120) * 100,
+                100
+              ) * 0.3
+            + clamp_max(
+                (100 - (flux:source:fetch_failure_rate or vector(0))),
+                100
+              ) * 0.3
+          )
+        labels:
+          component: flux

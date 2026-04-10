@@ -1,0 +1,98 @@
+# Flux/GitOps 동기화 상세 알림 규칙
+# Design Ref: MTU-N220 S2.3
+# Plan SC: FR-N220.3
+# CSAP: D-12 시스템 개발 보안
+---
+groups:
+  - name: flux_detailed_alerts
+    rules:
+      # 소스 페치 실패 지속
+      - alert: FluxSourceFetchFailed
+        expr: |
+          gotk_reconcile_condition{type="Ready",status="False",kind=~"GitRepository|OCIRepository|HelmRepository"} == 1
+        for: 10m
+        labels:
+          severity: critical
+          component: flux
+          category: gitops
+          csap: D-12
+        annotations:
+          summary: "Flux 소스 페치 실패 지속"
+          description: "{{ $labels.kind }}/{{ $labels.name }} ({{ $labels.namespace }}) 10분 이상 페치 실패"
+          runbook: "1. flux get sources all -A 확인 2. 소스 리포지토리 접근성 점검 3. 인증 정보 유효성 확인"
+
+      # 리콘실 지연 P99 높음
+      - alert: FluxReconcileSlowP99
+        expr: flux:reconcile:duration_p99 > 120
+        for: 10m
+        labels:
+          severity: warning
+          component: flux
+          category: gitops
+        annotations:
+          summary: "Flux 리콘실 P99 지연"
+          description: "{{ $labels.kind }} 리콘실 P99 {{ $value | printf \"%.1f\" }}초 (임계값 120초)"
+          runbook: "1. 대상 리소스 규모 확인 2. 네트워크 지연 점검 3. flux logs 분석"
+
+      # 버전 드리프트 (소스 리비전 불일치)
+      - alert: FluxVersionDrift
+        expr: |
+          (
+            time() - gotk_reconcile_condition{type="Ready",status="True"} > 1800
+          ) and on(name, namespace)
+          (
+            changes(gotk_reconcile_condition{type="Ready"}[30m]) == 0
+          )
+        for: 30m
+        labels:
+          severity: warning
+          component: flux
+          category: gitops
+          csap: D-12
+        annotations:
+          summary: "Flux 버전 드리프트 감지"
+          description: "{{ $labels.kind }}/{{ $labels.name }} 30분 이상 동기화 없음. 드리프트 의심."
+          runbook: "1. flux get all -A 확인 2. 소스 리비전 비교 3. 수동 재동기화 검토"
+
+      # 의존성 체인 깨짐
+      - alert: FluxDependencyChainBroken
+        expr: |
+          gotk_reconcile_condition{kind="Kustomization",type="Ready",status="False"} == 1
+          and on() group_left()
+          count(gotk_reconcile_condition{kind="Kustomization",type="Ready",status="False"}) > 2
+        for: 5m
+        labels:
+          severity: critical
+          component: flux
+          category: gitops
+          csap: D-12
+        annotations:
+          summary: "Flux 의존성 체인 깨짐"
+          description: "다수 Kustomization 동시 실패. 의존성 체인 문제 의심."
+          runbook: "1. flux get kustomizations -A 확인 2. 의존성 순서 점검 3. 루트 실패 원인 식별"
+
+      # 재시도 횟수 초과
+      - alert: FluxRetryExhausted
+        expr: flux:reconcile:retry_count > 5
+        for: 15m
+        labels:
+          severity: critical
+          component: flux
+          category: gitops
+        annotations:
+          summary: "Flux 재시도 횟수 초과"
+          description: "{{ $labels.kind }}/{{ $labels.name }} ({{ $labels.namespace }}) 15분간 5회 이상 재시도"
+          runbook: "1. flux events --for 확인 2. 리소스 매니페스트 검증 3. 수동 개입 검토"
+
+      # 소스 가용성 저하
+      - alert: FluxSourceAvailabilityLow
+        expr: flux:source:overall_availability < 90
+        for: 5m
+        labels:
+          severity: warning
+          component: flux
+          category: gitops
+        annotations:
+          summary: "Flux 소스 가용성 저하"
+          description: "전체 소스 가용성 {{ $value | printf \"%.1f\" }}% (임계값 90%)"
+          runbook: "1. flux get sources all -A 확인 2. 네트워크 연결 점검 3. 인증 정보 갱신"

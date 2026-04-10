@@ -1,0 +1,164 @@
+# Round 22 통합 크로스 레퍼런스 Recording Rules
+# Design Ref: MTU-N218 S2.2
+# Plan SC: FR-N218.2
+# CSAP: D-06 감사 모니터링 통합
+---
+groups:
+  - name: round22_cross_reference
+    interval: 60s
+    rules:
+      # 컨트롤플레인 건강도 (API서버 + etcd + CoreDNS)
+      - record: round22:controlplane:health_score
+        expr: |
+          (
+            clamp_max(
+              (1 - (
+                sum(rate(apiserver_request_total{code=~"5.."}[5m]))
+                / clamp_min(sum(rate(apiserver_request_total[5m])), 1)
+              )) * 100, 100
+            ) * 0.4
+            +
+            clamp_max(
+              (1 - clamp_max(
+                histogram_quantile(0.99, sum(rate(etcd_request_duration_seconds_bucket[5m])) by (le)),
+                10
+              ) / 10) * 100, 100
+            ) * 0.3
+            +
+            clamp_max(
+              (1 - (
+                sum(rate(coredns_dns_responses_total{rcode="SERVFAIL"}[5m]))
+                / clamp_min(sum(rate(coredns_dns_responses_total[5m])), 1)
+              )) * 100, 100
+            ) * 0.3
+          )
+        labels:
+          category: controlplane
+          round: "22"
+
+      # 노드 컴포넌트 건강도 (Kubelet + Scheduler + Controller Manager)
+      - record: round22:node:health_score
+        expr: |
+          (
+            clamp_max(
+              (1 - (
+                sum(rate(kubelet_runtime_operations_errors_total[5m]))
+                / clamp_min(sum(rate(kubelet_runtime_operations_total[5m])), 1)
+              )) * 100, 100
+            ) * 0.4
+            +
+            clamp_max(
+              (1 - clamp_max(
+                histogram_quantile(0.99, sum(rate(scheduler_scheduling_attempt_duration_seconds_bucket[5m])) by (le)),
+                10
+              ) / 10) * 100, 100
+            ) * 0.3
+            +
+            clamp_max(
+              (1 - clamp_max(
+                avg(rate(workqueue_depth{job="kube-controller-manager"}[5m])),
+                100
+              ) / 100) * 100, 100
+            ) * 0.3
+          )
+        labels:
+          category: node
+          round: "22"
+
+      # 리소스 효율성 점수 (리소스 최적화 + GC + 디스크 I/O)
+      - record: round22:resource:efficiency_score
+        expr: |
+          (
+            clamp_max(
+              (
+                sum(rate(container_cpu_usage_seconds_total[5m]))
+                / clamp_min(sum(kube_pod_container_resource_requests{resource="cpu"}), 0.001)
+              ) * 100, 100
+            ) * 0.4
+            +
+            clamp_max(
+              (1 - clamp_max(
+                sum(rate(go_gc_duration_seconds_sum[5m])) / clamp_min(sum(rate(go_gc_duration_seconds_count[5m])), 0.001),
+                1
+              )) * 100, 100
+            ) * 0.3
+            +
+            clamp_max(
+              (1 - clamp_max(
+                avg(rate(node_disk_io_time_seconds_total[5m])),
+                1
+              )) * 100, 100
+            ) * 0.3
+          )
+        labels:
+          category: resource
+          round: "22"
+
+      # 안정성 위험 점수 (OOM + Init 컨테이너 + 네트워크)
+      - record: round22:stability:risk_score
+        expr: |
+          (
+            clamp_max(
+              sum(increase(kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[1h])) * 10,
+              100
+            ) * 0.4
+            +
+            clamp_max(
+              sum(kube_pod_init_container_status_waiting_reason{reason!=""}) * 20,
+              100
+            ) * 0.3
+            +
+            clamp_max(
+              (
+                sum(rate(node_network_receive_errs_total[5m]))
+                + sum(rate(node_network_transmit_errs_total[5m]))
+              ) * 1000, 100
+            ) * 0.3
+          )
+        labels:
+          category: stability
+          round: "22"
+
+      # 보안 건강도 (이미지풀 + SA토큰 + Webhook + CRD + 스케줄링 + 네임스페이스)
+      - record: round22:security:health_score
+        expr: |
+          (
+            clamp_max(
+              (1 - clamp_max(
+                sum(rate(kubelet_docker_operations_errors_total{operation_type="pull_image"}[5m])),
+                1
+              )) * 100, 100
+            ) * 0.2
+            +
+            clamp_max(
+              (1 - clamp_max(
+                histogram_quantile(0.99, sum(rate(apiserver_admission_webhook_admission_duration_seconds_bucket[5m])) by (le)),
+                5
+              ) / 5) * 100, 100
+            ) * 0.2
+            +
+            clamp_max(
+              (1 - clamp_max(
+                histogram_quantile(0.99, sum(rate(scheduler_e2e_scheduling_duration_seconds_bucket[5m])) by (le)),
+                10
+              ) / 10) * 100, 100
+            ) * 0.2
+            +
+            100 * 0.4
+          )
+        labels:
+          category: security
+          round: "22"
+
+      # 전체 종합 건강도
+      - record: round22:overall:health_score
+        expr: |
+          (
+            round22:controlplane:health_score * 0.3
+            + round22:node:health_score * 0.25
+            + round22:resource:efficiency_score * 0.2
+            + (100 - round22:stability:risk_score) * 0.15
+            + round22:security:health_score * 0.1
+          )
+        labels:
+          round: "22"

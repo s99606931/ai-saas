@@ -1,0 +1,146 @@
+# PostgreSQL 데이터베이스 상세 Recording Rules
+# Design Ref: MTU-N224 S2.1
+# Plan SC: FR-N224.1
+# CSAP: D-06 감사, D-09 암호화, D-12 시스템 보안
+---
+groups:
+  - name: postgres_detailed_recording
+    interval: 30s
+    rules:
+      # TPS (Transactions Per Second)
+      - record: postgres:tps:total
+        expr: |
+          sum(rate(pg_stat_database_xact_commit[5m]))
+          + sum(rate(pg_stat_database_xact_rollback[5m]))
+        labels:
+          component: postgres
+
+      # 커밋/롤백 비율
+      - record: postgres:tps:commit_rate
+        expr: |
+          sum(rate(pg_stat_database_xact_commit[5m]))
+          / clamp_min(
+            sum(rate(pg_stat_database_xact_commit[5m])) + sum(rate(pg_stat_database_xact_rollback[5m])),
+            0.001
+          ) * 100
+        labels:
+          component: postgres
+
+      # 캐시 히트율
+      - record: postgres:cache:hit_rate
+        expr: |
+          sum(pg_stat_database_blks_hit)
+          / clamp_min(
+            sum(pg_stat_database_blks_hit) + sum(pg_stat_database_blks_read),
+            1
+          ) * 100
+        labels:
+          component: postgres
+
+      # 활성 연결 수
+      - record: postgres:connections:active
+        expr: |
+          sum(pg_stat_activity_count{state="active"})
+        labels:
+          component: postgres
+
+      # 전체 연결 수
+      - record: postgres:connections:total
+        expr: |
+          sum(pg_stat_activity_count)
+        labels:
+          component: postgres
+
+      # 최대 연결 대비 사용률
+      - record: postgres:connections:usage_ratio
+        expr: |
+          sum(pg_stat_activity_count)
+          / pg_settings_max_connections
+          * 100
+        labels:
+          component: postgres
+
+      # idle in transaction 연결
+      - record: postgres:connections:idle_in_transaction
+        expr: |
+          sum(pg_stat_activity_count{state="idle in transaction"})
+          or vector(0)
+        labels:
+          component: postgres
+
+      # 락 대기 수
+      - record: postgres:locks:waiting
+        expr: |
+          sum(pg_locks_count{granted="false"})
+          or vector(0)
+        labels:
+          component: postgres
+
+      # 데드락 발생 수
+      - record: postgres:locks:deadlocks
+        expr: |
+          sum(rate(pg_stat_database_deadlocks[5m]))
+        labels:
+          component: postgres
+
+      # 장기 실행 쿼리 수 (> 5분)
+      - record: postgres:queries:long_running
+        expr: |
+          count(pg_stat_activity_max_tx_duration{state="active"} > 300)
+          or vector(0)
+        labels:
+          component: postgres
+
+      # 복제 지연 (바이트)
+      - record: postgres:replication:lag_bytes
+        expr: |
+          pg_replication_lag_bytes
+          or vector(0)
+        labels:
+          component: postgres
+
+      # WAL 크기
+      - record: postgres:wal:size_bytes
+        expr: |
+          pg_wal_lsn_diff
+          or vector(0)
+        labels:
+          component: postgres
+
+      # 테이블 크기 Top 10
+      - record: postgres:table:size_bytes
+        expr: |
+          topk(10, pg_stat_user_tables_size)
+        labels:
+          component: postgres
+
+      # 인덱스 스캔 비율
+      - record: postgres:index:scan_ratio
+        expr: |
+          sum(pg_stat_user_tables_idx_scan)
+          / clamp_min(
+            sum(pg_stat_user_tables_idx_scan) + sum(pg_stat_user_tables_seq_scan),
+            1
+          ) * 100
+        labels:
+          component: postgres
+
+      # DB 전체 크기
+      - record: postgres:database:total_size_bytes
+        expr: |
+          sum(pg_database_size_bytes)
+        labels:
+          component: postgres
+
+      # 종합 건강도
+      - record: postgres:overall:health_score
+        expr: |
+          (
+            clamp_max(postgres:cache:hit_rate or vector(100), 100) * 0.25
+            + clamp_max(100 - (postgres:connections:usage_ratio or vector(0)), 100) * 0.25
+            + clamp_max(postgres:tps:commit_rate or vector(100), 100) * 0.2
+            + clamp_max((1 - clamp_max(postgres:locks:waiting or vector(0), 10) / 10) * 100, 100) * 0.15
+            + clamp_max(postgres:index:scan_ratio or vector(100), 100) * 0.15
+          )
+        labels:
+          component: postgres

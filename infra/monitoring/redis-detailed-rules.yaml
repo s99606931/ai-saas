@@ -1,0 +1,88 @@
+# Redis 캐시 성능 상세 Recording Rules
+# Design Ref: MTU-N225 S2.1
+# Plan SC: FR-N225.1
+# CSAP: D-12 시스템 보안
+---
+groups:
+  - name: redis_detailed_recording
+    interval: 30s
+    rules:
+      - record: redis:ops:total_rate
+        expr: sum(rate(redis_commands_total[5m]))
+        labels: { component: redis }
+
+      - record: redis:cache:hit_rate
+        expr: |
+          sum(rate(redis_keyspace_hits_total[5m]))
+          / clamp_min(
+            sum(rate(redis_keyspace_hits_total[5m])) + sum(rate(redis_keyspace_misses_total[5m])),
+            0.001
+          ) * 100
+        labels: { component: redis }
+
+      - record: redis:memory:used_bytes
+        expr: redis_memory_used_bytes
+        labels: { component: redis }
+
+      - record: redis:memory:usage_ratio
+        expr: |
+          redis_memory_used_bytes
+          / clamp_min(redis_memory_max_bytes, 1)
+          * 100
+        labels: { component: redis }
+
+      - record: redis:memory:fragmentation_ratio
+        expr: redis_mem_fragmentation_ratio
+        labels: { component: redis }
+
+      - record: redis:connections:current
+        expr: redis_connected_clients
+        labels: { component: redis }
+
+      - record: redis:connections:blocked
+        expr: redis_blocked_clients
+        labels: { component: redis }
+
+      - record: redis:keys:total
+        expr: sum(redis_db_keys)
+        labels: { component: redis }
+
+      - record: redis:keys:expiring
+        expr: sum(redis_db_keys_expiring)
+        labels: { component: redis }
+
+      - record: redis:evicted:rate
+        expr: rate(redis_evicted_keys_total[5m])
+        labels: { component: redis }
+
+      - record: redis:latency:command_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le, cmd) (
+              rate(redis_commands_duration_seconds_bucket[5m])
+            )
+          )
+        labels: { component: redis }
+
+      - record: redis:slowlog:count
+        expr: redis_slowlog_length
+        labels: { component: redis }
+
+      - record: redis:replication:lag_seconds
+        expr: redis_replication_delay
+        labels: { component: redis }
+
+      - record: redis:rdb:last_save_duration
+        expr: redis_rdb_last_bgsave_duration_sec
+        labels: { component: redis }
+
+      - record: redis:overall:health_score
+        expr: |
+          (
+            clamp_max(redis:cache:hit_rate or vector(100), 100) * 0.3
+            + clamp_max(100 - (redis:memory:usage_ratio or vector(0)), 100) * 0.25
+            + clamp_max((1 - clamp_max(redis:evicted:rate or vector(0), 1)) * 100, 100) * 0.2
+            + clamp_max((1 - clamp_max(redis:connections:blocked or vector(0), 10) / 10) * 100, 100) * 0.15
+            + clamp_max((1 - clamp_max(redis:memory:fragmentation_ratio or vector(1), 5) / 5) * 100, 100) * 0.1
+          )
+        labels: { component: redis }

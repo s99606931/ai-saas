@@ -1,0 +1,126 @@
+{
+  "annotations": { "list": [] },
+  "description": "Ingress/트래픽 라우팅 상세 모니터링 (Design Ref: MTU-N223 S2.2, CSAP D-08/D-09)",
+  "editable": false,
+  "graphTooltip": 2,
+  "id": null,
+  "uid": "ingress-detail-n223",
+  "title": "Ingress 트래픽 라우팅 상세",
+  "tags": ["ingress", "traefik", "traffic", "n223", "csap-d09"],
+  "timezone": "Asia/Seoul",
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [{
+      "name": "DS_PROMETHEUS",
+      "type": "datasource",
+      "query": "prometheus",
+      "current": { "text": "Prometheus", "value": "Prometheus" }
+    }]
+  },
+  "panels": [
+    { "id": 100, "title": "트래픽 개요", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "collapsed": false },
+    {
+      "id": 1, "title": "전체 가용성",
+      "description": "Plan SC: FR-N223.2",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "ingress:overall:availability", "legendFormat": "가용성", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99 }, { "color": "green", "value": 99.9 }] } } }
+    },
+    {
+      "id": 2, "title": "요청률 + 에러율",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 10, "x": 6, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "ingress:request:rate", "legendFormat": "요청/s", "refId": "A" },
+        { "expr": "ingress:error:5xx_rate", "legendFormat": "5xx %", "refId": "B" },
+        { "expr": "ingress:error:4xx_rate", "legendFormat": "4xx %", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 3, "title": "지연 (P50/P99)",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "ingress:request:latency_p50 * 1000", "legendFormat": "P50", "refId": "A" },
+        { "expr": "ingress:request:latency_p99 * 1000", "legendFormat": "P99", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    { "id": 200, "title": "경로별 분석", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 }, "collapsed": false },
+    {
+      "id": 4, "title": "서비스별 요청률",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "topk(10, ingress:host:request_rate)", "legendFormat": "{{service}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 5, "title": "서비스별 P99 지연",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "topk(10, ingress:host:latency_p99) * 1000", "legendFormat": "{{service}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    { "id": 300, "title": "TLS/보안", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 }, "collapsed": false },
+    {
+      "id": 6, "title": "TLS 인증서 만료까지 일 수",
+      "description": "CSAP D-09 암호화 준수",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "ingress:tls:cert_expiry_days", "legendFormat": "{{cn}}", "refId": "A", "format": "table", "instant": true }],
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 30 }, { "color": "green", "value": 60 }] } } }
+    },
+    {
+      "id": 7, "title": "활성 연결 수",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "ingress:connections:active", "legendFormat": "활성 연결", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    { "id": 400, "title": "에러 분석", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 }, "collapsed": false },
+    {
+      "id": 8, "title": "상태코드 분포",
+      "type": "piechart",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 21 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "sum by (code) (rate(traefik_entrypoint_requests_total[5m]))", "legendFormat": "{{code}}", "refId": "A" }]
+    },
+    {
+      "id": 9, "title": "서비스별 에러율",
+      "type": "bargauge",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 21 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "topk(10, ingress:host:error_rate > 0)", "legendFormat": "{{service}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 20 }] } } }
+    },
+    { "id": 500, "title": "업스트림", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 }, "collapsed": false },
+    {
+      "id": 10, "title": "업스트림 응답 시간 P99",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 12, "x": 0, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "topk(10, ingress:upstream:latency_p99) * 1000", "legendFormat": "{{service}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 11, "title": "서비스별 요청 분포",
+      "type": "piechart",
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "topk(10, ingress:host:request_rate)", "legendFormat": "{{service}}", "refId": "A" }]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "weekStart": "monday"
+}

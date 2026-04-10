@@ -1,0 +1,123 @@
+# Ingress/트래픽 라우팅 상세 Recording Rules
+# Design Ref: MTU-N223 S2.1
+# Plan SC: FR-N223.1
+# CSAP: D-09 암호화, D-08 접근통제
+---
+groups:
+  - name: ingress_detail_recording
+    interval: 30s
+    rules:
+      # 총 요청률
+      - record: ingress:request:rate
+        expr: |
+          sum(rate(traefik_entrypoint_requests_total[5m]))
+        labels:
+          component: ingress
+
+      # P99 요청 지연
+      - record: ingress:request:latency_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (
+              rate(traefik_entrypoint_request_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: ingress
+
+      # P50 요청 지연
+      - record: ingress:request:latency_p50
+        expr: |
+          histogram_quantile(0.50,
+            sum by (le) (
+              rate(traefik_entrypoint_request_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: ingress
+
+      # 5xx 에러율
+      - record: ingress:error:5xx_rate
+        expr: |
+          sum(rate(traefik_entrypoint_requests_total{code=~"5.."}[5m]))
+          / clamp_min(sum(rate(traefik_entrypoint_requests_total[5m])), 0.001)
+          * 100
+        labels:
+          component: ingress
+
+      # 4xx 에러율
+      - record: ingress:error:4xx_rate
+        expr: |
+          sum(rate(traefik_entrypoint_requests_total{code=~"4.."}[5m]))
+          / clamp_min(sum(rate(traefik_entrypoint_requests_total[5m])), 0.001)
+          * 100
+        labels:
+          component: ingress
+
+      # 호스트별 요청률
+      - record: ingress:host:request_rate
+        expr: |
+          sum by (service) (
+            rate(traefik_service_requests_total[5m])
+          )
+        labels:
+          component: ingress
+
+      # 호스트별 P99 지연
+      - record: ingress:host:latency_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le, service) (
+              rate(traefik_service_request_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: ingress
+
+      # 호스트별 에러율
+      - record: ingress:host:error_rate
+        expr: |
+          sum by (service) (rate(traefik_service_requests_total{code=~"5.."}[5m]))
+          / clamp_min(
+            sum by (service) (rate(traefik_service_requests_total[5m])),
+            0.001
+          ) * 100
+        labels:
+          component: ingress
+
+      # TLS 인증서 만료까지 남은 일 수
+      - record: ingress:tls:cert_expiry_days
+        expr: |
+          (traefik_tls_certs_not_after - time()) / 86400
+        labels:
+          component: ingress
+          domain: tls
+
+      # 활성 연결 수
+      - record: ingress:connections:active
+        expr: |
+          sum(traefik_entrypoint_open_connections)
+        labels:
+          component: ingress
+
+      # 업스트림 백엔드 응답 시간 P99
+      - record: ingress:upstream:latency_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le, service) (
+              rate(traefik_service_request_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: ingress
+          domain: upstream
+
+      # 전체 가용성
+      - record: ingress:overall:availability
+        expr: |
+          (1 - (
+            sum(rate(traefik_entrypoint_requests_total{code=~"5.."}[5m]))
+            / clamp_min(sum(rate(traefik_entrypoint_requests_total[5m])), 0.001)
+          )) * 100
+        labels:
+          component: ingress

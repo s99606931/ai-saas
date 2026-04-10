@@ -1,0 +1,116 @@
+# Ingress/트래픽 라우팅 상세 알림 규칙
+# Design Ref: MTU-N223 S2.3
+# Plan SC: FR-N223.3
+# CSAP: D-09 암호화, D-08 접근통제
+---
+groups:
+  - name: ingress_detail_alerts
+    rules:
+      # P99 지연 높음
+      - alert: IngressLatencyHigh
+        expr: ingress:request:latency_p99 > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: ingress
+          category: performance
+        annotations:
+          summary: "Ingress P99 지연 높음"
+          description: "Ingress P99 지연 {{ $value | printf \"%.3f\" }}초 (임계값 500ms)"
+          runbook: "1. 백엔드 서비스 응답 시간 확인 2. Ingress 컨트롤러 리소스 점검 3. 트래픽 패턴 분석"
+
+      # P99 지연 위험
+      - alert: IngressLatencyCritical
+        expr: ingress:request:latency_p99 > 2
+        for: 3m
+        labels:
+          severity: critical
+          component: ingress
+          category: performance
+        annotations:
+          summary: "Ingress P99 지연 위험 수준"
+          description: "Ingress P99 지연 {{ $value | printf \"%.3f\" }}초 (임계값 2초)"
+          runbook: "1. 즉시 트래픽 경로 확인 2. 백엔드 장애 여부 점검 3. 임시 트래픽 제한 검토"
+
+      # 5xx 에러율 높음
+      - alert: IngressErrorRateHigh
+        expr: ingress:error:5xx_rate > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: ingress
+          category: reliability
+        annotations:
+          summary: "Ingress 5xx 에러율 높음"
+          description: "5xx 에러율 {{ $value | printf \"%.1f\" }}% (임계값 5%)"
+          runbook: "1. 에러 발생 서비스 식별 2. 백엔드 로그 분석 3. 서비스 재시작 검토"
+
+      # 5xx 에러율 위험
+      - alert: IngressErrorRateCritical
+        expr: ingress:error:5xx_rate > 20
+        for: 2m
+        labels:
+          severity: critical
+          component: ingress
+          category: reliability
+        annotations:
+          summary: "Ingress 5xx 에러율 위험 수준"
+          description: "5xx 에러율 {{ $value | printf \"%.1f\" }}% (임계값 20%)"
+          runbook: "1. 즉시 장애 서비스 격리 2. 롤백 검토 3. 인시던트 선언"
+
+      # TLS 인증서 만료 경고
+      - alert: IngressTLSCertExpiring
+        expr: ingress:tls:cert_expiry_days < 30
+        for: 1h
+        labels:
+          severity: warning
+          component: ingress
+          category: security
+          csap: D-09
+        annotations:
+          summary: "TLS 인증서 만료 임박"
+          description: "TLS 인증서 {{ $labels.cn }} 만료까지 {{ $value | printf \"%.0f\" }}일"
+          runbook: "1. cert-manager 갱신 상태 확인 2. 수동 갱신 준비 3. ACME 계정 유효성 확인"
+
+      # TLS 인증서 긴급
+      - alert: IngressTLSCertExpiringSoon
+        expr: ingress:tls:cert_expiry_days < 7
+        for: 30m
+        labels:
+          severity: critical
+          component: ingress
+          category: security
+          csap: D-09
+        annotations:
+          summary: "TLS 인증서 만료 긴급"
+          description: "TLS 인증서 {{ $labels.cn }} 만료까지 {{ $value | printf \"%.0f\" }}일. 즉시 갱신 필요."
+          runbook: "1. 즉시 인증서 수동 갱신 2. cert-manager 로그 확인 3. DNS 검증 상태 점검"
+
+      # 트래픽 급증
+      - alert: IngressTrafficSpike
+        expr: |
+          ingress:request:rate > 5 *
+          avg_over_time(ingress:request:rate[1h] offset 1h)
+        for: 5m
+        labels:
+          severity: warning
+          component: ingress
+          category: traffic
+        annotations:
+          summary: "Ingress 트래픽 급증"
+          description: "현재 트래픽이 평상시 대비 5배 이상 증가"
+          runbook: "1. 트래픽 소스 분석 2. DDoS 여부 확인 3. 자동 확장 상태 점검"
+
+      # 업스트림 서비스 장애
+      - alert: IngressUpstreamDown
+        expr: |
+          ingress:host:error_rate > 50
+        for: 3m
+        labels:
+          severity: critical
+          component: ingress
+          category: upstream
+        annotations:
+          summary: "업스트림 서비스 장애 의심"
+          description: "서비스 {{ $labels.service }} 에러율 {{ $value | printf \"%.1f\" }}%"
+          runbook: "1. 백엔드 Pod 상태 확인 2. 서비스 Endpoints 점검 3. 트래픽 우회 검토"

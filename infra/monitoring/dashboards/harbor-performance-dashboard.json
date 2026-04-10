@@ -1,0 +1,230 @@
+{
+  "annotations": { "list": [] },
+  "description": "Harbor 레지스트리 성능 모니터링 (Design Ref: MTU-N221 S2.2, CSAP D-12)",
+  "editable": false,
+  "graphTooltip": 2,
+  "id": null,
+  "uid": "harbor-perf-n221",
+  "title": "Harbor 레지스트리 성능",
+  "tags": ["harbor", "registry", "n221", "csap-d12"],
+  "timezone": "Asia/Seoul",
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "text": "Prometheus", "value": "Prometheus" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 100,
+      "title": "API 상태",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "id": 1,
+      "title": "API 가용성",
+      "description": "Harbor Core API 가용성 (Plan SC: FR-N221.2)",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "harbor:api:availability", "legendFormat": "가용성", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "max": 100,
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99 }, { "color": "green", "value": 99.9 }] }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "API 요청률 + 에러율",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 10, "x": 6, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "harbor:api:request_rate", "legendFormat": "요청/s", "refId": "A" },
+        { "expr": "harbor:api:error_rate", "legendFormat": "에러율 %", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 3,
+      "title": "API 지연 (P50/P99)",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "harbor:api:latency_p50 * 1000", "legendFormat": "P50", "refId": "A" },
+        { "expr": "harbor:api:latency_p99 * 1000", "legendFormat": "P99", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 200,
+      "title": "이미지 작업",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "collapsed": false
+    },
+    {
+      "id": 4,
+      "title": "Push/Pull P99 지연",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "harbor:push:latency_p99 * 1000", "legendFormat": "Push P99", "refId": "A" },
+        { "expr": "harbor:pull:latency_p99 * 1000", "legendFormat": "Pull P99", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 5,
+      "title": "요청 분포 (메서드별)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "sum by (method) (rate(harbor_core_http_request_total[5m]))",
+        "legendFormat": "{{method}}",
+        "refId": "A"
+      }],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "id": 300,
+      "title": "스토리지",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "collapsed": false
+    },
+    {
+      "id": 6,
+      "title": "전체 스토리지 사용량",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "harbor:storage:total_used_bytes", "legendFormat": "사용량", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 7,
+      "title": "프로젝트별 스토리지 사용률",
+      "type": "bargauge",
+      "gridPos": { "h": 5, "w": 9, "x": 6, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "harbor:storage:usage_ratio", "legendFormat": "{{project}}", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 80 }, { "color": "red", "value": 95 }] }
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "프로젝트별 리포지토리 수",
+      "type": "bargauge",
+      "gridPos": { "h": 5, "w": 9, "x": 15, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "harbor:project:repo_count", "legendFormat": "{{name}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 400,
+      "title": "복제",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 },
+      "collapsed": false
+    },
+    {
+      "id": 9,
+      "title": "복제 성공률",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "harbor:replication:success_rate", "legendFormat": "성공률", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 90 }, { "color": "green", "value": 99 }] }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "복제 실패 수",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 9, "x": 6, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "harbor:replication:failed_count", "legendFormat": "실패 수", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 11,
+      "title": "복제 작업 상태 분포",
+      "type": "piechart",
+      "gridPos": { "h": 5, "w": 9, "x": 15, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "sum by (status) (harbor_task_status)",
+        "legendFormat": "{{status}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 500,
+      "title": "GC/유지보수",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+      "collapsed": false
+    },
+    {
+      "id": 12,
+      "title": "GC 실행 시간",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 26 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "harbor:gc:last_duration_seconds", "legendFormat": "GC 시간", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 13,
+      "title": "취약점 스캔 미완료",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 26 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "harbor:scan:pending_count", "legendFormat": "미완료", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 50 }] }
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "종합 건강도",
+      "type": "gauge",
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 26 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "harbor:overall:health_score", "legendFormat": "건강도", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "max": 100,
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 70 }, { "color": "green", "value": 90 }] }
+        }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "weekStart": "monday"
+}

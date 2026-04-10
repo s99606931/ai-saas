@@ -1,0 +1,489 @@
+{
+  "annotations": { "list": [] },
+  "description": "Round 22 통합 점검 대시보드 -- MTU-N200~N217 18개 영역 종합 (Design Ref: MTU-N218 S2.1)",
+  "editable": false,
+  "graphTooltip": 2,
+  "id": null,
+  "uid": "round22-integration-n218",
+  "title": "Round 22 통합 점검",
+  "tags": ["round22", "integration", "n218", "csap-d06"],
+  "timezone": "Asia/Seoul",
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "text": "Prometheus", "value": "Prometheus" }
+      },
+      {
+        "name": "namespace",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": "label_values(kube_namespace_labels, namespace)",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Round 22 종합 건강도",
+      "description": "컨트롤플레인 + 노드 + 리소스 + 안정성 종합 점수 (Design Ref: MTU-N218 S2.1)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "round22:overall:health_score",
+          "legendFormat": "종합 건강도",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "green", "value": 90 }
+            ]
+          },
+          "mappings": [
+            { "type": "range", "options": { "from": 90, "to": 100, "result": { "text": "정상" } } },
+            { "type": "range", "options": { "from": 70, "to": 89.99, "result": { "text": "주의" } } },
+            { "type": "range", "options": { "from": 0, "to": 69.99, "result": { "text": "위험" } } }
+          ]
+        }
+      }
+    },
+    {
+      "id": 100,
+      "title": "API/컨트롤플레인 (N200-N202)",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 4 },
+      "collapsed": false
+    },
+    {
+      "id": 101,
+      "title": "API 서버 상태",
+      "description": "API 서버 요청 지연 및 에러율 (Plan SC: FR-N218.1)",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "round22:controlplane:health_score",
+          "legendFormat": "컨트롤플레인 건강도",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "green", "value": 90 }
+            ]
+          }
+        }
+      },
+      "links": [
+        { "title": "API 서버 상세", "url": "/d/apiserver-lat-n200", "targetBlank": false },
+        { "title": "etcd 상세", "url": "/d/etcd-perf-n201", "targetBlank": false },
+        { "title": "CoreDNS 상세", "url": "/d/coredns-perf-n202", "targetBlank": false }
+      ]
+    },
+    {
+      "id": 102,
+      "title": "API 서버 P99 지연 (ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{verb!~\"WATCH|CONNECT\"}[5m])) by (le)) * 1000",
+          "legendFormat": "API P99",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 1000 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 103,
+      "title": "etcd + CoreDNS 지연",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(etcd_request_duration_seconds_bucket[5m])) by (le)) * 1000",
+          "legendFormat": "etcd P99",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(coredns_dns_request_duration_seconds_bucket[5m])) by (le)) * 1000",
+          "legendFormat": "CoreDNS P99",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 200,
+      "title": "노드 컴포넌트 (N203-N205)",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
+      "collapsed": false
+    },
+    {
+      "id": 201,
+      "title": "노드 컴포넌트 건강도",
+      "description": "Kubelet + Scheduler + Controller Manager 종합 (Plan SC: FR-N218.1)",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "round22:node:health_score",
+          "legendFormat": "노드 건강도",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "green", "value": 90 }
+            ]
+          }
+        }
+      },
+      "links": [
+        { "title": "Kubelet 상세", "url": "/d/kubelet-performance-n203", "targetBlank": false },
+        { "title": "Scheduler 상세", "url": "/d/scheduler-performance-n204", "targetBlank": false },
+        { "title": "Controller Manager 상세", "url": "/d/controller-manager-perf-n205", "targetBlank": false }
+      ]
+    },
+    {
+      "id": 202,
+      "title": "Kubelet 작업 지연",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(kubelet_runtime_operations_duration_seconds_bucket[5m])) by (le, operation_type))",
+          "legendFormat": "{{operation_type}} P99",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 203,
+      "title": "Scheduler + CM 큐 지연",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(scheduler_scheduling_attempt_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "Scheduler P99",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(workqueue_depth{job=\"kube-controller-manager\"}[5m])",
+          "legendFormat": "CM 큐 깊이",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 300,
+      "title": "리소스 관리 (N206-N208)",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "collapsed": false
+    },
+    {
+      "id": 301,
+      "title": "리소스 효율성 점수",
+      "description": "리소스 최적화 + GC + 디스크 I/O 종합 (Plan SC: FR-N218.1)",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 17 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "round22:resource:efficiency_score",
+          "legendFormat": "리소스 효율성",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "green", "value": 80 }
+            ]
+          }
+        }
+      },
+      "links": [
+        { "title": "리소스 최적화 상세", "url": "/d/resource-optimization-n206", "targetBlank": false },
+        { "title": "GC 모니터링 상세", "url": "/d/gc-monitoring-n207", "targetBlank": false },
+        { "title": "디스크 I/O 상세", "url": "/d/disk-io-saturation-n208", "targetBlank": false }
+      ]
+    },
+    {
+      "id": 302,
+      "title": "CPU/메모리 요청 대비 사용률",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 17 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total[5m])) / sum(kube_pod_container_resource_requests{resource=\"cpu\"}) * 100",
+          "legendFormat": "CPU 사용률/요청",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(container_memory_working_set_bytes) / sum(kube_pod_container_resource_requests{resource=\"memory\"}) * 100",
+          "legendFormat": "메모리 사용률/요청",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 303,
+      "title": "GC 빈도 + 디스크 I/O 활용",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 17 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(rate(go_gc_duration_seconds_count[5m])) by (job)",
+          "legendFormat": "{{job}} GC/s",
+          "refId": "A"
+        },
+        {
+          "expr": "avg(rate(node_disk_io_time_seconds_total[5m]))",
+          "legendFormat": "디스크 I/O 활용",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 400,
+      "title": "네트워크/안정성 (N209-N211)",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "collapsed": false
+    },
+    {
+      "id": 401,
+      "title": "안정성 위험 점수",
+      "description": "네트워크 + OOM + Init컨테이너 위험도 종합 (Plan SC: FR-N218.1)",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 23 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "round22:stability:risk_score",
+          "legendFormat": "안정성 위험 점수",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "red", "value": 60 }
+            ]
+          }
+        }
+      },
+      "links": [
+        { "title": "네트워크 대역폭 상세", "url": "/d/network-bandwidth-n209", "targetBlank": false },
+        { "title": "OOM Kill 추적 상세", "url": "/d/oom-kill-tracking-n210", "targetBlank": false },
+        { "title": "Init 컨테이너 상세", "url": "/d/init-container-perf-n211", "targetBlank": false }
+      ]
+    },
+    {
+      "id": 402,
+      "title": "네트워크 트래픽 + OOM 이벤트",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 23 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(rate(node_network_receive_bytes_total[5m])) / 1024 / 1024",
+          "legendFormat": "수신 MB/s",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(node_network_transmit_bytes_total[5m])) / 1024 / 1024",
+          "legendFormat": "송신 MB/s",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "MBs" } }
+    },
+    {
+      "id": 403,
+      "title": "OOM Kill + Init 컨테이너 실패",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 23 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(increase(kube_pod_container_status_last_terminated_reason{reason=\"OOMKilled\"}[1h]))",
+          "legendFormat": "OOM Kill (1h)",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(kube_pod_init_container_status_waiting_reason{reason!=\"\"}) by (reason)",
+          "legendFormat": "Init 대기: {{reason}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 500,
+      "title": "보안/고급 (N212-N217)",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 28 },
+      "collapsed": false
+    },
+    {
+      "id": 501,
+      "title": "보안 상태 종합",
+      "description": "이미지풀 + SA토큰 + Webhook + CRD + 스케줄링 + 네임스페이스 (Plan SC: FR-N218.1)",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 29 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "round22:security:health_score",
+          "legendFormat": "보안 건강도",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "green", "value": 90 }
+            ]
+          }
+        }
+      },
+      "links": [
+        { "title": "이미지 풀 상세", "url": "/d/image-pull-n212", "targetBlank": false },
+        { "title": "SA 토큰 만료 상세", "url": "/d/sa-token-n213", "targetBlank": false },
+        { "title": "Admission Webhook 상세", "url": "/d/adm-webhook-n214", "targetBlank": false },
+        { "title": "CRD 컨트롤러 상세", "url": "/d/crd-ctrl-n215", "targetBlank": false },
+        { "title": "스케줄링 대기 상세", "url": "/d/sched-wait-n216", "targetBlank": false },
+        { "title": "네임스페이스 트렌드 상세", "url": "/d/ns-trend-n217", "targetBlank": false }
+      ]
+    },
+    {
+      "id": 502,
+      "title": "이미지 풀 + SA 토큰 상태",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 29 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(rate(kubelet_docker_operations_errors_total{operation_type=\"pull_image\"}[5m]))",
+          "legendFormat": "이미지 풀 실패/s",
+          "refId": "A"
+        },
+        {
+          "expr": "count(kube_serviceaccount_info) - count(kube_serviceaccount_info{automount_token=\"false\"})",
+          "legendFormat": "자동마운트 SA 수",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 503,
+      "title": "Webhook + CRD 지연",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 29 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(apiserver_admission_webhook_admission_duration_seconds_bucket[5m])) by (le, name))",
+          "legendFormat": "{{name}} P99",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(apiserver_request_total{resource=~\".*\\..*\\..*\"}[5m])) by (resource)",
+          "legendFormat": "CRD {{resource}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 504,
+      "title": "스케줄링 + 네임스페이스 트렌드",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 29 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(scheduler_e2e_scheduling_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "스케줄링 E2E P99",
+          "refId": "A"
+        },
+        {
+          "expr": "count(kube_namespace_labels)",
+          "legendFormat": "네임스페이스 수",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "weekStart": "monday"
+}

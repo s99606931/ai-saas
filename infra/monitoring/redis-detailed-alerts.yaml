@@ -1,0 +1,78 @@
+# Redis 캐시 성능 상세 알림 규칙
+# Design Ref: MTU-N225 S2.2
+# Plan SC: FR-N225.3
+---
+groups:
+  - name: redis_detailed_alerts
+    rules:
+      - alert: RedisCacheHitRateLow
+        expr: redis:cache:hit_rate < 90
+        for: 10m
+        labels: { severity: warning, component: redis, category: performance }
+        annotations:
+          summary: "Redis 캐시 히트율 저하"
+          description: "히트율 {{ $value | printf \"%.1f\" }}% (임계값 90%)"
+          runbook: "1. 키 만료 정책 확인 2. 캐시 워밍업 검토 3. 캐시 키 패턴 분석"
+
+      - alert: RedisMemoryNearMax
+        expr: redis:memory:usage_ratio > 80
+        for: 5m
+        labels: { severity: warning, component: redis, category: capacity }
+        annotations:
+          summary: "Redis 메모리 사용률 80% 초과"
+          description: "메모리 사용률 {{ $value | printf \"%.1f\" }}%"
+          runbook: "1. 만료 키 정리 2. maxmemory-policy 확인 3. 메모리 확장 검토"
+
+      - alert: RedisMemoryCritical
+        expr: redis:memory:usage_ratio > 95
+        for: 2m
+        labels: { severity: critical, component: redis, category: capacity }
+        annotations:
+          summary: "Redis 메모리 위험 (95%+)"
+          description: "메모리 사용률 {{ $value | printf \"%.1f\" }}%. Eviction 발생 위험."
+          runbook: "1. 즉시 불필요 키 삭제 2. maxmemory 상향 3. 키 분산 검토"
+
+      - alert: RedisEvictionHigh
+        expr: redis:evicted:rate > 0.1
+        for: 5m
+        labels: { severity: warning, component: redis, category: capacity }
+        annotations:
+          summary: "Redis 키 제거(Eviction) 발생"
+          description: "Eviction 속도 {{ $value | printf \"%.3f\" }}/s"
+          runbook: "1. maxmemory 확인 2. 메모리 프로파일링 3. TTL 정책 최적화"
+
+      - alert: RedisFragmentationHigh
+        expr: redis:memory:fragmentation_ratio > 1.5
+        for: 30m
+        labels: { severity: warning, component: redis, category: memory }
+        annotations:
+          summary: "Redis 메모리 조각화율 높음"
+          description: "조각화 비율 {{ $value | printf \"%.2f\" }} (임계값 1.5)"
+          runbook: "1. MEMORY DOCTOR 실행 2. 재시작 검토 3. activedefrag 설정"
+
+      - alert: RedisBlockedClientsHigh
+        expr: redis:connections:blocked > 5
+        for: 5m
+        labels: { severity: warning, component: redis, category: connections }
+        annotations:
+          summary: "Redis 차단 클라이언트 과다"
+          description: "차단 클라이언트 {{ $value }}개"
+          runbook: "1. BLPOP/BRPOP 사용 패턴 확인 2. 타임아웃 설정 점검"
+
+      - alert: RedisSlowlogGrowing
+        expr: redis:slowlog:count > 100
+        for: 10m
+        labels: { severity: warning, component: redis, category: performance }
+        annotations:
+          summary: "Redis Slow Log 누적"
+          description: "Slow Log {{ $value }}건. 느린 커맨드 분석 필요."
+          runbook: "1. SLOWLOG GET 분석 2. O(N) 커맨드 식별 3. 파이프라이닝 적용"
+
+      - alert: RedisReplicationLagHigh
+        expr: redis:replication:lag_seconds > 10
+        for: 5m
+        labels: { severity: warning, component: redis, category: replication }
+        annotations:
+          summary: "Redis 복제 지연"
+          description: "복제 지연 {{ $value | printf \"%.1f\" }}초"
+          runbook: "1. 네트워크 대역폭 확인 2. 마스터 부하 점검 3. repl-backlog-size 조정"

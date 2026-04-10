@@ -1,0 +1,149 @@
+{
+  "annotations": { "list": [] },
+  "description": "PostgreSQL 데이터베이스 상세 모니터링 (Design Ref: MTU-N224 S2.1, CSAP D-06/D-12)",
+  "editable": false,
+  "graphTooltip": 2,
+  "id": null,
+  "uid": "postgres-detail-n224",
+  "title": "PostgreSQL 상세 모니터링",
+  "tags": ["postgres", "database", "n224", "csap-d06"],
+  "timezone": "Asia/Seoul",
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [{
+      "name": "DS_PROMETHEUS",
+      "type": "datasource",
+      "query": "prometheus",
+      "current": { "text": "Prometheus", "value": "Prometheus" }
+    }]
+  },
+  "panels": [
+    { "id": 100, "title": "DB 개요", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "collapsed": false },
+    {
+      "id": 1, "title": "종합 건강도",
+      "type": "gauge",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "postgres:overall:health_score", "legendFormat": "건강도", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 70 }, { "color": "green", "value": 90 }] } } }
+    },
+    {
+      "id": 2, "title": "TPS + 캐시 히트율",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "postgres:tps:total", "legendFormat": "TPS", "refId": "A" },
+        { "expr": "postgres:cache:hit_rate", "legendFormat": "캐시 히트", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 3, "title": "연결 사용률",
+      "type": "gauge",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "postgres:connections:usage_ratio", "legendFormat": "사용률", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 80 }, { "color": "red", "value": 95 }] } } }
+    },
+    {
+      "id": 4, "title": "DB 크기",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "postgres:database:total_size_bytes", "legendFormat": "크기", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    { "id": 200, "title": "쿼리 성능", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 }, "collapsed": false },
+    {
+      "id": 5, "title": "TPS 추이 (커밋/롤백)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "sum(rate(pg_stat_database_xact_commit[5m]))", "legendFormat": "커밋/s", "refId": "A" },
+        { "expr": "sum(rate(pg_stat_database_xact_rollback[5m]))", "legendFormat": "롤백/s", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops" } }
+    },
+    {
+      "id": 6, "title": "장기 실행 쿼리 수",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "postgres:queries:long_running", "legendFormat": "장기 쿼리", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] } } }
+    },
+    { "id": 300, "title": "연결 관리", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 }, "collapsed": false },
+    {
+      "id": 7, "title": "연결 상태별 분포",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "postgres:connections:active", "legendFormat": "활성", "refId": "A" },
+        { "expr": "postgres:connections:idle_in_transaction", "legendFormat": "idle in tx", "refId": "B" },
+        { "expr": "postgres:connections:total", "legendFormat": "전체", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 8, "title": "캐시 히트율 추이",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "postgres:cache:hit_rate", "legendFormat": "히트율", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    { "id": 400, "title": "락/대기", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 }, "collapsed": false },
+    {
+      "id": 9, "title": "락 대기 + 데드락",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 12, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "postgres:locks:waiting", "legendFormat": "대기 중", "refId": "A" },
+        { "expr": "postgres:locks:deadlocks", "legendFormat": "데드락/s", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 10, "title": "인덱스 스캔 비율",
+      "type": "gauge",
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "postgres:index:scan_ratio", "legendFormat": "인덱스 스캔", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 80 }, { "color": "green", "value": 95 }] } } }
+    },
+    { "id": 500, "title": "복제", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 }, "collapsed": false },
+    {
+      "id": 11, "title": "복제 지연",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 12, "x": 0, "y": 26 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "postgres:replication:lag_bytes", "legendFormat": "지연 (bytes)", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 12, "title": "WAL 크기",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 26 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "postgres:wal:size_bytes", "legendFormat": "WAL 크기", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    { "id": 600, "title": "테이블/인덱스", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 }, "collapsed": false },
+    {
+      "id": 13, "title": "테이블 크기 Top 10",
+      "type": "bargauge",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 32 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "postgres:table:size_bytes", "legendFormat": "{{schemaname}}.{{relname}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "weekStart": "monday"
+}

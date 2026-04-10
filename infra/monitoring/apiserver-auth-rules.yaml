@@ -1,0 +1,107 @@
+# API 서버 인증/인가 Recording Rules
+# Design Ref: MTU-N219 S2.1
+# Plan SC: FR-N219.1
+# CSAP: D-08 접근통제 모니터링
+---
+groups:
+  - name: apiserver_auth_recording
+    interval: 30s
+    rules:
+      # 인증 성공률 (5분 윈도우)
+      - record: apiserver:auth:success_rate
+        expr: |
+          sum(rate(apiserver_authentication_attempts{result="success"}[5m]))
+          / clamp_min(sum(rate(apiserver_authentication_attempts[5m])), 0.001)
+          * 100
+        labels:
+          component: apiserver
+          domain: authentication
+
+      # 인증 실패율
+      - record: apiserver:auth:failure_rate
+        expr: |
+          sum(rate(apiserver_authentication_attempts{result="failure"}[5m]))
+          / clamp_min(sum(rate(apiserver_authentication_attempts[5m])), 0.001)
+          * 100
+        labels:
+          component: apiserver
+          domain: authentication
+
+      # 인증 실패 원인별 분류
+      - record: apiserver:auth:failure_by_reason
+        expr: |
+          sum by (reason) (
+            rate(apiserver_authentication_attempts{result="failure"}[5m])
+          )
+        labels:
+          component: apiserver
+
+      # 인가 허용률
+      - record: apiserver:authz:allow_rate
+        expr: |
+          sum(rate(apiserver_authorization_decisions{decision="allowed"}[5m]))
+          / clamp_min(sum(rate(apiserver_authorization_decisions[5m])), 0.001)
+          * 100
+        labels:
+          component: apiserver
+          domain: authorization
+
+      # 인가 거부율
+      - record: apiserver:authz:deny_rate
+        expr: |
+          sum(rate(apiserver_authorization_decisions{decision="denied"}[5m]))
+          / clamp_min(sum(rate(apiserver_authorization_decisions[5m])), 0.001)
+          * 100
+        labels:
+          component: apiserver
+          domain: authorization
+
+      # 인가 거부 리소스별 분류
+      - record: apiserver:authz:denied_by_resource
+        expr: |
+          sum by (resource, verb) (
+            rate(apiserver_authorization_decisions{decision="denied"}[5m])
+          )
+        labels:
+          component: apiserver
+
+      # 인증자별 요청 수
+      - record: apiserver:auth:requests_by_authenticator
+        expr: |
+          sum by (authenticator) (
+            rate(apiserver_authentication_attempts[5m])
+          )
+        labels:
+          component: apiserver
+
+      # 인증 지연 P99
+      - record: apiserver:auth:latency_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (
+              rate(apiserver_authentication_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: apiserver
+
+      # 인가 지연 P99
+      - record: apiserver:authz:latency_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (
+              rate(apiserver_authorization_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: apiserver
+
+      # 무차별 대입 탐지 (소스 IP별 실패 횟수)
+      - record: apiserver:auth:failure_by_source
+        expr: |
+          sum by (source_ip) (
+            increase(apiserver_authentication_attempts{result="failure"}[1m])
+          )
+        labels:
+          component: apiserver
+          security: brute_force_detection

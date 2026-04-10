@@ -1,0 +1,150 @@
+# Harbor 레지스트리 성능 Recording Rules
+# Design Ref: MTU-N221 S2.1
+# Plan SC: FR-N221.1
+# CSAP: D-12 시스템 개발 보안
+---
+groups:
+  - name: harbor_performance_recording
+    interval: 30s
+    rules:
+      # API 요청 속도
+      - record: harbor:api:request_rate
+        expr: |
+          sum(rate(harbor_core_http_request_total[5m]))
+        labels:
+          component: harbor
+
+      # API P99 지연
+      - record: harbor:api:latency_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (
+              rate(harbor_core_http_request_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: harbor
+
+      # API P50 지연
+      - record: harbor:api:latency_p50
+        expr: |
+          histogram_quantile(0.50,
+            sum by (le) (
+              rate(harbor_core_http_request_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: harbor
+
+      # API 에러율
+      - record: harbor:api:error_rate
+        expr: |
+          sum(rate(harbor_core_http_request_total{code=~"5.."}[5m]))
+          / clamp_min(sum(rate(harbor_core_http_request_total[5m])), 0.001)
+          * 100
+        labels:
+          component: harbor
+
+      # API 가용성 (비에러 비율)
+      - record: harbor:api:availability
+        expr: |
+          (1 - (
+            sum(rate(harbor_core_http_request_total{code=~"5.."}[5m]))
+            / clamp_min(sum(rate(harbor_core_http_request_total[5m])), 0.001)
+          )) * 100
+        labels:
+          component: harbor
+
+      # 스토리지 사용률
+      - record: harbor:storage:usage_ratio
+        expr: |
+          harbor_project_quota_usage_byte
+          / clamp_min(harbor_project_quota_byte, 1)
+          * 100
+        labels:
+          component: harbor
+
+      # 전체 스토리지 사용량
+      - record: harbor:storage:total_used_bytes
+        expr: |
+          sum(harbor_project_quota_usage_byte)
+        labels:
+          component: harbor
+
+      # 프로젝트별 이미지 수
+      - record: harbor:project:repo_count
+        expr: |
+          harbor_project_repo_total
+        labels:
+          component: harbor
+
+      # Push 작업 지연 P99
+      - record: harbor:push:latency_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (
+              rate(harbor_core_http_request_duration_seconds_bucket{method="POST",operation=~".*manifest.*|.*blob.*"}[5m])
+            )
+          )
+        labels:
+          component: harbor
+
+      # Pull 작업 지연 P99
+      - record: harbor:pull:latency_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (
+              rate(harbor_core_http_request_duration_seconds_bucket{method="GET",operation=~".*manifest.*|.*blob.*"}[5m])
+            )
+          )
+        labels:
+          component: harbor
+
+      # 복제 성공률
+      - record: harbor:replication:success_rate
+        expr: |
+          sum(harbor_task_status{status="Succeed"})
+          / clamp_min(sum(harbor_task_status), 1)
+          * 100
+        labels:
+          component: harbor
+
+      # 복제 실패 수
+      - record: harbor:replication:failed_count
+        expr: |
+          sum(harbor_task_status{status="Failed"})
+          or vector(0)
+        labels:
+          component: harbor
+
+      # GC 실행 시간 (최근)
+      - record: harbor:gc:last_duration_seconds
+        expr: |
+          harbor_gc_duration_seconds
+          or vector(0)
+        labels:
+          component: harbor
+
+      # 취약점 스캔 상태
+      - record: harbor:scan:pending_count
+        expr: |
+          count(harbor_artifact_info{scan_status!="Success"})
+          or vector(0)
+        labels:
+          component: harbor
+
+      # 종합 건강도
+      - record: harbor:overall:health_score
+        expr: |
+          (
+            clamp_max(harbor:api:availability or vector(100), 100) * 0.3
+            + clamp_max(100 - (harbor:api:error_rate or vector(0)), 100) * 0.2
+            + clamp_max(
+                (1 - clamp_max(harbor:api:latency_p99 or vector(0), 10) / 10) * 100,
+                100
+              ) * 0.2
+            + clamp_max(harbor:replication:success_rate or vector(100), 100) * 0.15
+            + clamp_max(100 - clamp_max(harbor:storage:usage_ratio or vector(0), 100), 100) * 0.15
+          )
+        labels:
+          component: harbor

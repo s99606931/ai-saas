@@ -1,0 +1,164 @@
+{
+  "annotations": { "list": [] },
+  "description": "etcd 클러스터 상세 운영 모니터링 (Design Ref: MTU-N222 S2.2, CSAP D-06/D-12)",
+  "editable": false,
+  "graphTooltip": 2,
+  "id": null,
+  "uid": "etcd-ops-n222",
+  "title": "etcd 클러스터 운영 상세",
+  "tags": ["etcd", "operations", "n222", "csap-d06"],
+  "timezone": "Asia/Seoul",
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [{
+      "name": "DS_PROMETHEUS",
+      "type": "datasource",
+      "query": "prometheus",
+      "current": { "text": "Prometheus", "value": "Prometheus" }
+    }]
+  },
+  "panels": [
+    { "id": 100, "title": "컴팩션", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "collapsed": false },
+    {
+      "id": 1, "title": "컴팩션 지속 시간 P99",
+      "description": "Design Ref: MTU-N222 S2.1",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "etcd:compaction:duration_p99", "legendFormat": "P99 (ms)", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 2, "title": "컴팩션 빈도",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "etcd:compaction:rate", "legendFormat": "컴팩션/s", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "ops" } }
+    },
+    {
+      "id": 3, "title": "키 삭제 속도",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "etcd:compaction:keys_deleted_rate", "legendFormat": "키삭제/s", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "ops" } }
+    },
+    { "id": 200, "title": "스냅샷", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 }, "collapsed": false },
+    {
+      "id": 4, "title": "스냅샷 저장 시간 P99",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "etcd:snapshot:save_duration_p99 * 1000", "legendFormat": "P99 (ms)", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 5, "title": "스냅샷 저장 횟수 (1h)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "etcd:snapshot:success_total", "legendFormat": "저장 수", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 6, "title": "DB 스냅샷 저장 시간 P99",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "etcd:snapshot:db_save_duration_p99 * 1000", "legendFormat": "DB save P99 (ms)", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    { "id": 300, "title": "리더", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 }, "collapsed": false },
+    {
+      "id": 7, "title": "리더 상태",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "etcd:leader:is_leader", "legendFormat": "{{instance}}", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{ "type": "value", "options": { "1": { "text": "리더", "color": "green" }, "0": { "text": "팔로워", "color": "blue" } } }]
+        }
+      }
+    },
+    {
+      "id": 8, "title": "리더 변경 횟수 (1h)",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "etcd:leader:changes_1h", "legendFormat": "변경 수", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 2 }, { "color": "red", "value": 5 }] }
+        }
+      }
+    },
+    {
+      "id": 9, "title": "하트비트 전송 실패",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "etcd:leader:heartbeat_send_failures", "legendFormat": "실패/s", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    { "id": 400, "title": "디스크", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 }, "collapsed": false },
+    {
+      "id": 10, "title": "WAL fsync + Backend commit P99",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 21 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "etcd:disk:wal_fsync_p99 * 1000", "legendFormat": "WAL fsync P99", "refId": "A" },
+        { "expr": "etcd:disk:backend_commit_p99 * 1000", "legendFormat": "Backend commit P99", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 11, "title": "DB 크기 (전체/사용)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 21 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "etcd:disk:db_size_bytes", "legendFormat": "전체 {{instance}}", "refId": "A" },
+        { "expr": "etcd:disk:db_used_bytes", "legendFormat": "사용 {{instance}}", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "id": 12, "title": "조각화율",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 21 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "etcd:disk:fragmentation_ratio", "legendFormat": "{{instance}}", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "max": 100,
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 30 }, { "color": "red", "value": 50 }] }
+        }
+      }
+    },
+    { "id": 500, "title": "클라이언트", "type": "row", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 }, "collapsed": false },
+    {
+      "id": 13, "title": "gRPC 요청 수",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 12, "x": 0, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "etcd:client:grpc_connections", "legendFormat": "요청 수", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 14, "title": "MVCC 키 총 수",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "etcd:mvcc:keys_total", "legendFormat": "키 수 {{instance}}", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "weekStart": "monday"
+}

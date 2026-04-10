@@ -1,0 +1,152 @@
+# etcd 클러스터 상세 운영 Recording Rules
+# Design Ref: MTU-N222 S2.1
+# Plan SC: FR-N222.1
+# CSAP: D-06 감사, D-12 시스템 운영
+---
+groups:
+  - name: etcd_operations_recording
+    interval: 30s
+    rules:
+      # 컴팩션 지속 시간 P99
+      - record: etcd:compaction:duration_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (
+              rate(etcd_debugging_mvcc_db_compaction_pause_duration_milliseconds_bucket[5m])
+            )
+          )
+        labels:
+          component: etcd
+          domain: compaction
+
+      # 컴팩션 실행 빈도
+      - record: etcd:compaction:rate
+        expr: |
+          sum(rate(etcd_debugging_mvcc_db_compaction_total_duration_milliseconds_count[5m]))
+        labels:
+          component: etcd
+
+      # 컴팩션 키 삭제 속도
+      - record: etcd:compaction:keys_deleted_rate
+        expr: |
+          sum(rate(etcd_debugging_mvcc_db_compaction_keys_total[5m]))
+        labels:
+          component: etcd
+
+      # 스냅샷 저장 시간 P99
+      - record: etcd:snapshot:save_duration_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (
+              rate(etcd_snap_save_marshalling_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: etcd
+
+      # 스냅샷 성공 수
+      - record: etcd:snapshot:success_total
+        expr: |
+          sum(increase(etcd_snap_save_total[1h]))
+        labels:
+          component: etcd
+
+      # 스냅샷 DB 저장 시간
+      - record: etcd:snapshot:db_save_duration_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (
+              rate(etcd_snap_db_save_total_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: etcd
+
+      # 리더 변경 횟수 (1시간)
+      - record: etcd:leader:changes_1h
+        expr: |
+          sum(increase(etcd_server_leader_changes_seen_total[1h]))
+        labels:
+          component: etcd
+
+      # 리더 여부
+      - record: etcd:leader:is_leader
+        expr: |
+          etcd_server_is_leader
+        labels:
+          component: etcd
+
+      # 리더 하트비트 전송 실패
+      - record: etcd:leader:heartbeat_send_failures
+        expr: |
+          sum(rate(etcd_server_heartbeat_send_failures_total[5m]))
+        labels:
+          component: etcd
+
+      # WAL fsync P99
+      - record: etcd:disk:wal_fsync_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (
+              rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: etcd
+          domain: disk
+
+      # DB 크기 (바이트)
+      - record: etcd:disk:db_size_bytes
+        expr: |
+          etcd_mvcc_db_total_size_in_bytes
+        labels:
+          component: etcd
+
+      # DB 사용 크기 (바이트)
+      - record: etcd:disk:db_used_bytes
+        expr: |
+          etcd_mvcc_db_total_size_in_use_in_bytes
+        labels:
+          component: etcd
+
+      # DB 조각화율
+      - record: etcd:disk:fragmentation_ratio
+        expr: |
+          (etcd_mvcc_db_total_size_in_bytes - etcd_mvcc_db_total_size_in_use_in_bytes)
+          / clamp_min(etcd_mvcc_db_total_size_in_bytes, 1)
+          * 100
+        labels:
+          component: etcd
+
+      # Backend commit P99
+      - record: etcd:disk:backend_commit_p99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (
+              rate(etcd_disk_backend_commit_duration_seconds_bucket[5m])
+            )
+          )
+        labels:
+          component: etcd
+
+      # gRPC 클라이언트 활성 연결 수
+      - record: etcd:client:grpc_connections
+        expr: |
+          sum(etcd_server_client_requests_total)
+        labels:
+          component: etcd
+
+      # Watch 활성 스트림 수
+      - record: etcd:client:watch_streams
+        expr: |
+          sum(grpc_server_started_total{grpc_method="Watch",grpc_type="bidi_stream"})
+          - sum(grpc_server_handled_total{grpc_method="Watch",grpc_type="bidi_stream"})
+        labels:
+          component: etcd
+
+      # MVCC 키 총 수
+      - record: etcd:mvcc:keys_total
+        expr: |
+          etcd_debugging_mvcc_keys_total
+        labels:
+          component: etcd

@@ -1,0 +1,232 @@
+{
+  "annotations": { "list": [] },
+  "description": "Flux/GitOps 동기화 상세 모니터링 (Design Ref: MTU-N220 S2.2, CSAP D-12)",
+  "editable": false,
+  "graphTooltip": 2,
+  "id": null,
+  "uid": "flux-detailed-n220",
+  "title": "Flux/GitOps 동기화 상세",
+  "tags": ["flux", "gitops", "n220", "csap-d12"],
+  "timezone": "Asia/Seoul",
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "text": "Prometheus", "value": "Prometheus" }
+      },
+      {
+        "name": "namespace",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": "label_values(gotk_reconcile_condition, namespace)",
+        "multi": true,
+        "includeAll": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 100,
+      "title": "소스 개요",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "id": 1,
+      "title": "전체 소스 가용성",
+      "description": "GitRepository + HelmRepository + OCIRepository 종합 (Plan SC: FR-N220.2)",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "flux:source:overall_availability", "legendFormat": "가용성", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "max": 100,
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 90 }, { "color": "green", "value": 99 }] }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "소스 유형별 가용성",
+      "type": "bargauge",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "flux:source:git:availability", "legendFormat": "Git", "refId": "A" },
+        { "expr": "flux:source:helm:availability", "legendFormat": "Helm", "refId": "B" },
+        { "expr": "flux:source:oci:availability", "legendFormat": "OCI", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100 } }
+    },
+    {
+      "id": 3,
+      "title": "소스 페치 실패율",
+      "type": "timeseries",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "flux:source:fetch_failure_rate", "legendFormat": "실패율", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "id": 4,
+      "title": "Flux 전체 건강도",
+      "type": "gauge",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "flux:overall:health_score", "legendFormat": "건강도", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "max": 100,
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 70 }, { "color": "green", "value": 90 }] }
+        }
+      }
+    },
+    {
+      "id": 200,
+      "title": "GitRepository 상세",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "collapsed": false
+    },
+    {
+      "id": 5,
+      "title": "GitRepository 상태",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "gotk_reconcile_condition{kind=\"GitRepository\",type=\"Ready\"}",
+        "legendFormat": "{{name}} ({{namespace}})",
+        "refId": "A",
+        "format": "table",
+        "instant": true
+      }]
+    },
+    {
+      "id": 6,
+      "title": "GitRepository 리콘실 시간",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "gotk_reconcile_duration_seconds{kind=\"GitRepository\"}",
+        "legendFormat": "{{name}}",
+        "refId": "A"
+      }],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 300,
+      "title": "HelmRelease 상세",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "collapsed": false
+    },
+    {
+      "id": 7,
+      "title": "HelmRelease 상태",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "gotk_reconcile_condition{kind=\"HelmRelease\",type=\"Ready\"}",
+        "legendFormat": "{{name}} ({{namespace}})",
+        "refId": "A",
+        "format": "table",
+        "instant": true
+      }]
+    },
+    {
+      "id": 8,
+      "title": "HelmRelease 네임스페이스별 분포",
+      "type": "piechart",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "flux:helmrelease:status_by_namespace",
+        "legendFormat": "{{namespace}} ({{status}})",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 400,
+      "title": "리콘실 성능",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "collapsed": false
+    },
+    {
+      "id": 9,
+      "title": "리콘실 지속 시간 백분위수",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 21 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "flux:reconcile:duration_p50", "legendFormat": "P50 {{kind}}", "refId": "A" },
+        { "expr": "flux:reconcile:duration_p90", "legendFormat": "P90 {{kind}}", "refId": "B" },
+        { "expr": "flux:reconcile:duration_p99", "legendFormat": "P99 {{kind}}", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 10,
+      "title": "Kustomization 네임스페이스별 상태",
+      "type": "piechart",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 21 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "flux:kustomization:status_by_namespace",
+        "legendFormat": "{{namespace}} ({{status}})",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 500,
+      "title": "의존성/드리프트",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "collapsed": false
+    },
+    {
+      "id": 11,
+      "title": "재시도 현황 (실패 지속)",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "flux:reconcile:retry_count > 0",
+        "legendFormat": "{{kind}}/{{name}}",
+        "refId": "A",
+        "format": "table",
+        "instant": true
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 3 }, { "color": "red", "value": 5 }] }
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "소스 가용성 추이",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "flux:source:git:availability", "legendFormat": "Git", "refId": "A" },
+        { "expr": "flux:source:helm:availability", "legendFormat": "Helm", "refId": "B" },
+        { "expr": "flux:source:oci:availability", "legendFormat": "OCI", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "weekStart": "monday"
+}

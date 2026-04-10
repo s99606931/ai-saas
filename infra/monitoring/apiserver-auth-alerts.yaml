@@ -1,0 +1,106 @@
+# API 서버 인증/인가 알림 규칙
+# Design Ref: MTU-N219 S2.3
+# Plan SC: FR-N219.3
+# CSAP: D-08 접근통제, D-06 감사 로깅
+---
+groups:
+  - name: apiserver_auth_alerts
+    rules:
+      # 인증 실패율 경고
+      - alert: APIServerAuthFailureRateHigh
+        expr: apiserver:auth:failure_rate > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: apiserver
+          category: security
+          csap: D-08
+        annotations:
+          summary: "API 서버 인증 실패율 높음"
+          description: "인증 실패율 {{ $value | printf \"%.1f\" }}% (임계값 5%)"
+          runbook: "1. kubectl logs -n kube-system kube-apiserver 확인 2. 실패 원인별 분석 3. 의심 IP 차단 검토"
+
+      # 인증 실패율 위험
+      - alert: APIServerAuthFailureRateCritical
+        expr: apiserver:auth:failure_rate > 20
+        for: 2m
+        labels:
+          severity: critical
+          component: apiserver
+          category: security
+          csap: D-08
+        annotations:
+          summary: "API 서버 인증 실패율 위험 수준"
+          description: "인증 실패율 {{ $value | printf \"%.1f\" }}% (임계값 20%). 보안 사고 의심."
+          runbook: "1. 즉시 보안팀 통보 2. 의심 소스 IP 차단 3. API 서버 감사 로그 분석"
+
+      # 인가 거부 급증
+      - alert: APIServerAuthzDenySpike
+        expr: |
+          apiserver:authz:deny_rate > 3 *
+          avg_over_time(apiserver:authz:deny_rate[1h] offset 1h)
+        for: 5m
+        labels:
+          severity: warning
+          component: apiserver
+          category: security
+          csap: D-08
+        annotations:
+          summary: "API 서버 인가 거부 급증"
+          description: "인가 거부율이 평상시 대비 3배 이상 증가. 권한 설정 변경 또는 보안 이벤트 의심."
+          runbook: "1. RBAC 정책 변경 이력 확인 2. 거부된 리소스/동사 분석 3. 서비스계정 권한 검토"
+
+      # 무차별 대입 공격 탐지
+      - alert: APIServerBruteForceDetected
+        expr: apiserver:auth:failure_by_source > 10
+        for: 1m
+        labels:
+          severity: critical
+          component: apiserver
+          category: security
+          csap: D-08
+          n2sf: security_incident
+        annotations:
+          summary: "무차별 대입 공격 탐지"
+          description: "소스 {{ $labels.source_ip }}에서 1분간 {{ $value }}회 인증 실패. 무차별 대입 공격 의심."
+          runbook: "1. 즉시 해당 IP 차단 2. 보안팀 에스컬레이션 3. 감사 로그 보존 4. 침해사고 보고서 작성"
+
+      # 인증 지연 이상
+      - alert: APIServerAuthLatencyHigh
+        expr: apiserver:auth:latency_p99 > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: apiserver
+          category: performance
+        annotations:
+          summary: "API 서버 인증 처리 지연"
+          description: "인증 P99 지연 {{ $value | printf \"%.3f\" }}초 (임계값 1초)"
+          runbook: "1. OIDC/웹훅 인증자 응답 시간 확인 2. 인증 백엔드 상태 점검"
+
+      # 인가 지연 이상
+      - alert: APIServerAuthzLatencyHigh
+        expr: apiserver:authz:latency_p99 > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: apiserver
+          category: performance
+        annotations:
+          summary: "API 서버 인가 처리 지연"
+          description: "인가 P99 지연 {{ $value | printf \"%.3f\" }}초 (임계값 0.5초)"
+          runbook: "1. RBAC 정책 복잡도 확인 2. 웹훅 인가자 응답 시간 점검"
+
+      # 인증 성공률 저하 지속
+      - alert: APIServerAuthSuccessRateLow
+        expr: apiserver:auth:success_rate < 95
+        for: 15m
+        labels:
+          severity: warning
+          component: apiserver
+          category: security
+          csap: D-08
+        annotations:
+          summary: "API 서버 인증 성공률 저하 지속"
+          description: "15분간 인증 성공률 {{ $value | printf \"%.1f\" }}% (임계값 95%)"
+          runbook: "1. 인증 실패 원인별 분석 2. 인증서/토큰 유효성 확인 3. OIDC 공급자 상태 점검"
