@@ -1,0 +1,106 @@
+# Cilium 대역폭 제한 정책 (네임스페이스별)
+# Design Ref: MTU-N98 Design §대역폭 정책
+# Plan SC: FR-N98.3
+
+---
+# AI Gateway: 제한적 대역폭 (외부 API 호출)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: bandwidth-limit-ai-gateway
+  namespace: ai-gateway
+  labels:
+    app.kubernetes.io/part-of: bandwidth-management
+    n2sf.grade: "O"
+spec:
+  endpointSelector: {}
+  egressDeny: []
+  egress:
+    - toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "11434"
+              protocol: TCP
+          rules:
+            http: []
+  annotations:
+    io.cilium.proxy/bandwidth-ingress: "100Mbps"
+    io.cilium.proxy/bandwidth-egress: "50Mbps"
+
+---
+# Monitoring 네임스페이스: 높은 대역폭 (메트릭 수집)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: bandwidth-limit-monitoring
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: bandwidth-management
+    n2sf.grade: "O"
+spec:
+  endpointSelector: {}
+  egress:
+    - toEntities:
+        - cluster
+  annotations:
+    io.cilium.proxy/bandwidth-ingress: "500Mbps"
+    io.cilium.proxy/bandwidth-egress: "200Mbps"
+
+---
+# Production 네임스페이스: 최대 대역폭
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: bandwidth-limit-production
+  namespace: production
+  labels:
+    app.kubernetes.io/part-of: bandwidth-management
+    n2sf.grade: "S"
+spec:
+  endpointSelector: {}
+  egress:
+    - toEntities:
+        - cluster
+  annotations:
+    io.cilium.proxy/bandwidth-ingress: "1Gbps"
+    io.cilium.proxy/bandwidth-egress: "500Mbps"
+
+---
+# C등급 네임스페이스: 최소 대역폭 (격리 강화)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: bandwidth-limit-c-grade
+  namespace: c-grade
+  labels:
+    app.kubernetes.io/part-of: bandwidth-management
+    n2sf.grade: "C"
+spec:
+  endpointSelector: {}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: c-grade
+  annotations:
+    io.cilium.proxy/bandwidth-ingress: "50Mbps"
+    io.cilium.proxy/bandwidth-egress: "25Mbps"
+
+---
+# Default 네임스페이스: 중간 대역폭
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: bandwidth-limit-default
+  namespace: default
+  labels:
+    app.kubernetes.io/part-of: bandwidth-management
+    n2sf.grade: "O"
+spec:
+  endpointSelector: {}
+  egress:
+    - toEntities:
+        - cluster
+  annotations:
+    io.cilium.proxy/bandwidth-ingress: "200Mbps"
+    io.cilium.proxy/bandwidth-egress: "100Mbps"
