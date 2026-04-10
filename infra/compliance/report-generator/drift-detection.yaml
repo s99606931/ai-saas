@@ -1,0 +1,103 @@
+# Design Ref: MTU-N85 §규정 준수 드리프트 탐지 방법
+# Plan SC: FR-N85.2
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compliance-drift-config
+  namespace: compliance-system
+  labels:
+    app.kubernetes.io/name: compliance-report
+    app.kubernetes.io/component: drift-detection
+    csap.compliance/control: D-06
+data:
+  drift-config.yaml: |
+    # 규정 준수 드리프트 탐지 설정
+    version: "1.0"
+
+    # 드리프트 탐지 대상
+    monitors:
+      # RBAC 변경 탐지
+      rbac:
+        resources:
+          - kind: ClusterRoleBinding
+            api_group: rbac.authorization.k8s.io
+          - kind: RoleBinding
+            api_group: rbac.authorization.k8s.io
+          - kind: ClusterRole
+            api_group: rbac.authorization.k8s.io
+        severity: critical
+        alert: true
+        snapshot_interval: "6h"
+
+      # 네트워크 정책 변경 탐지
+      network:
+        resources:
+          - kind: NetworkPolicy
+            api_group: networking.k8s.io
+        severity: high
+        alert: true
+        snapshot_interval: "6h"
+
+      # Kyverno 정책 변경 탐지
+      policies:
+        resources:
+          - kind: ClusterPolicy
+            api_group: kyverno.io
+          - kind: Policy
+            api_group: kyverno.io
+        severity: critical
+        alert: true
+        snapshot_interval: "1h"
+
+      # 인증서 상태 변경
+      certificates:
+        resources:
+          - kind: Certificate
+            api_group: cert-manager.io
+        severity: high
+        alert: true
+        check:
+          - expiry_warning_days: 30
+          - renewal_failure: true
+
+      # PSS 네임스페이스 라벨 변경
+      pss_labels:
+        resources:
+          - kind: Namespace
+        labels_to_watch:
+          - "pod-security.kubernetes.io/enforce"
+          - "pod-security.kubernetes.io/audit"
+        severity: critical
+        alert: true
+
+      # 보안 도구 상태
+      security_tools:
+        deployments:
+          - name: falco
+            namespace: falco
+          - name: kyverno
+            namespace: kyverno
+          - name: trivy-operator
+            namespace: trivy-system
+        check:
+          - running: true
+          - replica_count: ">= 1"
+        severity: critical
+        alert: true
+
+    # 드리프트 알림 정책
+    alerting:
+      immediate:
+        - rbac_change
+        - policy_change
+        - pss_label_change
+        - security_tool_down
+      delayed:
+        - certificate_expiry
+        - network_policy_change
+
+    # 스냅샷 보존
+    snapshots:
+      retention_days: 90
+      storage_path: "/reports/snapshots"
+      comparison_method: "diff"

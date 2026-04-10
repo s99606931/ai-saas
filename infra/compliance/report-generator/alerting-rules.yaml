@@ -1,0 +1,70 @@
+# Design Ref: MTU-N85 §아키텍처
+# Plan SC: FR-N85.6
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: compliance-report-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: compliance-report
+    app.kubernetes.io/component: alerting
+    csap.compliance/control: D-06
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: compliance-monitoring
+      interval: 5m
+      rules:
+        # CSAP 규정 준수율 저하
+        - alert: CSAPComplianceRateDropped
+          expr: |
+            csap_compliance_rate < 90
+          for: 15m
+          labels:
+            severity: warning
+            csap_control: D-06
+          annotations:
+            summary: "CSAP 규정 준수율 90% 미만"
+            description: >-
+              CSAP 규정 준수율이 {{ $value }}%로 떨어졌습니다.
+              정책 위반 항목을 확인하고 즉시 조치하십시오.
+
+        # Kyverno 정책 위반 증가
+        - alert: KyvernoPolicyFailuresIncreasing
+          expr: |
+            csap_policy_failures > 5
+          for: 10m
+          labels:
+            severity: warning
+            csap_control: D-12
+          annotations:
+            summary: "Kyverno 정책 위반 5건 초과"
+            description: >-
+              현재 {{ $value }}건의 Kyverno 정책 위반이 감지되었습니다.
+              PolicyReport를 확인하십시오.
+
+        # 보고서 생성 실패
+        - alert: ComplianceReportGenerationFailed
+          expr: |
+            kube_job_status_failed{namespace="compliance-system",job_name=~"compliance-report.*"} > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CSAP 규정 준수 보고서 생성 실패"
+            description: "주간 규정 준수 보고서가 생성되지 못했습니다."
+
+        # 규정 준수 드리프트 감지
+        - alert: ComplianceDriftDetected
+          expr: |
+            compliance_drift_count > 0
+          for: 5m
+          labels:
+            severity: warning
+            csap_control: D-06
+          annotations:
+            summary: "규정 준수 드리프트 감지"
+            description: >-
+              {{ $value }}건의 규정 준수 드리프트가 감지되었습니다.
+              RBAC, 네트워크 정책 또는 보안 설정 변경을 확인하십시오.
