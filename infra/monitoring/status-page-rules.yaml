@@ -1,0 +1,79 @@
+# =============================================================================
+# 상태 페이지용 Recording Rules
+# Design Ref: MTU-N124 Design
+# Plan SC: FR-N124.4
+# CSAP: D-06(침해사고 관리 -- 서비스 상태 집계)
+#
+# 상태 페이지에서 사용하는 서비스별 가용성 집계 메트릭
+#
+# 적용: kubectl apply -f infra/monitoring/status-page-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: status-page-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+  annotations:
+    csap.ref/d06: "침해사고관리 -- 서비스 상태 페이지 집계"
+spec:
+  groups:
+    - name: status_page:aggregation
+      interval: 30s
+      rules:
+        # 서비스별 가용성 (5분 윈도우)
+        - record: status_page:service_availability:5m
+          expr: |
+            avg by (namespace, service) (
+              up{namespace=~"platform|database|storage|monitoring|gitea|harbor"}
+            )
+
+        # 서비스별 에러율 (5분 윈도우)
+        - record: status_page:service_error_rate:5m
+          expr: |
+            sum by (namespace, service) (
+              rate(http_requests_total{code=~"5..", namespace="platform"}[5m])
+            )
+            / clamp_min(
+              sum by (namespace, service) (
+                rate(http_requests_total{namespace="platform"}[5m])
+              ), 0.001
+            ) or vector(0)
+
+        # 서비스별 P99 지연 (5분 윈도우)
+        - record: status_page:service_latency_p99:5m
+          expr: |
+            histogram_quantile(0.99,
+              sum by (namespace, service, le) (
+                rate(http_request_duration_seconds_bucket{namespace="platform"}[5m])
+              )
+            ) or vector(0)
+
+        # 전체 플랫폼 가용성
+        - record: status_page:platform_availability:5m
+          expr: |
+            avg(up{namespace=~"platform|database|storage"}) or vector(1)
+
+        # 전체 활성 인시던트 수
+        - record: status_page:active_incidents
+          expr: |
+            count(ALERTS{alertstate="firing"}) or vector(0)
+
+    - name: status_page:alerts
+      rules:
+        # 상태 페이지 갱신 필요 알림 (서비스 상태 변경 시)
+        - alert: StatusPageUpdateRequired
+          expr: |
+            changes(status_page:platform_availability:5m[10m]) > 0
+          for: 1m
+          labels:
+            severity: info
+            category: status-page
+          annotations:
+            summary: "서비스 상태 변경 -- 상태 페이지 갱신 필요"
+            description: |
+              플랫폼 가용성 상태가 변경되었습니다.
+              상태 페이지를 갱신하십시오: scripts/generate-status-page.sh
