@@ -424,3 +424,11 @@
 | **MTU-N110** FinOps 비용 예측 및 예산 자동 알림 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N110-finops-budget-alert/` |
 | **MTU-N111** 아키텍처 다이어그램 자동 업데이트 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N111-arch-diagram-auto/` |
 | **MTU-N112** Round 9 통합 검증 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N112-round9-integration/` |
+| **MTU-N113** KEDA 이벤트 기반 오토스케일 완성 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N113-keda-event-autoscale/` |
+| **MTU-N114** Linkerd 서비스 메시 완성 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N114-linkerd-service-mesh/` |
+| **MTU-N115** OpenSSF Scorecard CI 자동화 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N115-openssf-scorecard-ci/` |
+| **MTU-N116** ChatOps 통합 (Botkube) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N116-chatops-integration/` |
+| **MTU-N117** 자동 포스트모템 생성 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N117-auto-postmortem/` |
+| **MTU-N118** E2E 릴리스 파이프라인 v2 (SLO 롤백) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N118-release-pipeline-v2/` |
+| **MTU-N119** 개발자 생산성 도구 (스캐폴딩+DevContainer) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N119-developer-productivity/` |
+| **MTU-N120** Round 10 통합 검증 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N120-round10-integration/` |
