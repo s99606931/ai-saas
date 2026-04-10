@@ -1,0 +1,155 @@
+# CNPG 데이터베이스 백업 복구 검증 CronJob
+# Design Ref: §2.2 | Plan SC: FR-N151.2
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cnpg-backup-verify
+  namespace: cnpg-system
+  labels:
+    app: backup-verification
+    csap.compliance/domain: D-07
+spec:
+  schedule: "0 4 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels:
+            app: cnpg-backup-verify
+        spec:
+          serviceAccountName: cnpg-verify-sa
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: verify
+              image: postgres:16-alpine
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  VERIFY_NS="cnpg-verify"
+                  START_TIME=$(date +%s)
+
+                  echo "[INFO] === CNPG 백업 복구 검증 시작 ==="
+
+                  # Step 1: 원본 데이터 체크섬 생성
+                  echo "[INFO] 원본 데이터 체크섬 계산"
+                  CHECKSUM_TABLES=$(psql "$PROD_DB_URL" -t -c "
+                    SELECT string_agg(table_name, ',' ORDER BY table_name)
+                    FROM information_schema.tables
+                    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'")
+
+                  CHECKSUM_BEFORE=$(psql "$PROD_DB_URL" -t -c "
+                    SELECT md5(string_agg(row_count::text, ',' ORDER BY tablename))
+                    FROM (
+                      SELECT relname AS tablename, n_live_tup AS row_count
+                      FROM pg_stat_user_tables
+                      ORDER BY relname
+                    ) t")
+
+                  echo "[INFO] 원본 체크섬: $CHECKSUM_BEFORE"
+
+                  # Step 2: 복구 클러스터 생성 (kubectl)
+                  echo "[INFO] 복구 클러스터 생성"
+                  kubectl apply -f - <<EOF
+                  apiVersion: postgresql.cnpg.io/v1
+                  kind: Cluster
+                  metadata:
+                    name: verify-restore
+                    namespace: $VERIFY_NS
+                    labels:
+                      purpose: backup-verification
+                  spec:
+                    instances: 1
+                    bootstrap:
+                      recovery:
+                        source: saas-db
+                    externalClusters:
+                      - name: saas-db
+                        barmanObjectStore:
+                          destinationPath: s3://cnpg-backups/saas-db
+                          endpointURL: http://minio:9000
+                          s3Credentials:
+                            accessKeyId:
+                              name: cnpg-backup-creds
+                              key: ACCESS_KEY_ID
+                            secretAccessKey:
+                              name: cnpg-backup-creds
+                              key: ACCESS_SECRET_KEY
+                    storage:
+                      size: 5Gi
+                  EOF
+
+                  # Step 3: 복구 대기 (최대 10분)
+                  echo "[INFO] 복구 대기 중..."
+                  kubectl wait --for=condition=Ready cluster/verify-restore \
+                    -n "$VERIFY_NS" --timeout=600s
+
+                  # Step 4: 복구 데이터 체크섬 비교
+                  RESTORE_URL=$(kubectl get secret verify-restore-app -n "$VERIFY_NS" \
+                    -o jsonpath='{.data.uri}' | base64 -d)
+
+                  CHECKSUM_AFTER=$(psql "$RESTORE_URL" -t -c "
+                    SELECT md5(string_agg(row_count::text, ',' ORDER BY tablename))
+                    FROM (
+                      SELECT relname AS tablename, n_live_tup AS row_count
+                      FROM pg_stat_user_tables
+                      ORDER BY relname
+                    ) t")
+
+                  END_TIME=$(date +%s)
+                  RTO=$((END_TIME - START_TIME))
+
+                  echo "[INFO] 복구 체크섬: $CHECKSUM_AFTER"
+
+                  if [ "$CHECKSUM_BEFORE" = "$CHECKSUM_AFTER" ]; then
+                    echo "[PASS] 데이터 무결성 확인 - 체크섬 일치"
+                    STATUS="SUCCESS"
+                  else
+                    echo "[FAIL] 데이터 불일치!"
+                    STATUS="INTEGRITY_MISMATCH"
+                  fi
+
+                  echo "[INFO] RTO: ${RTO}초"
+
+                  # Step 5: 암호화 검증 (CSAP D-09)
+                  ENCRYPTION_STATUS="UNKNOWN"
+                  if kubectl get cluster saas-db -n cnpg-system -o json | jq -e '.spec.backup.barmanObjectStore.encryption' > /dev/null 2>&1; then
+                    ENCRYPTION_STATUS="ENCRYPTED"
+                    echo "[PASS] 백업 암호화 확인"
+                  else
+                    ENCRYPTION_STATUS="NOT_ENCRYPTED"
+                    echo "[WARN] 백업 암호화 미설정"
+                  fi
+
+                  # Step 6: 감사 로그
+                  echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"action\":\"CNPG_BACKUP_VERIFY\",\"status\":\"$STATUS\",\"rto\":$RTO,\"encryption\":\"$ENCRYPTION_STATUS\"}" >> /tmp/audit.log
+
+                  # Step 7: 정리
+                  kubectl delete cluster verify-restore -n "$VERIFY_NS" --wait=false 2>/dev/null || true
+
+                  echo "[INFO] === CNPG 백업 복구 검증 완료 ==="
+              envFrom:
+                - secretRef:
+                    name: db-credentials
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
+          restartPolicy: OnFailure

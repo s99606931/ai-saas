@@ -1,0 +1,126 @@
+# L7 HTTP 경로/메서드 필터링 정책
+# Design Ref: §2.2 | Plan SC: FR-N152.2
+# CSAP D-10: 네트워크 보안 — 애플리케이션 레벨 접근 제어
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: api-gateway-l7-http
+  namespace: saas-system
+  labels:
+    zero-trust/layer: L7
+    csap.compliance/domain: D-10
+spec:
+  description: "API Gateway L7 HTTP 필터링 — 허용된 경로/메서드만 통과"
+  endpointSelector:
+    matchLabels:
+      app: api-gateway
+  ingress:
+    # Frontend → API Gateway: 읽기 전용 + 인증 API
+    - fromEndpoints:
+        - matchLabels:
+            app: frontend
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: GET
+                path: "/api/v1/.*"
+              - method: POST
+                path: "/api/v1/auth/login"
+              - method: POST
+                path: "/api/v1/auth/refresh"
+              - method: POST
+                path: "/api/v1/auth/logout"
+    # Admin Portal → API Gateway: 관리 API 포함
+    - fromEndpoints:
+        - matchLabels:
+            app: admin-portal
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: GET
+                path: "/api/v1/.*"
+              - method: POST
+                path: "/api/v1/.*"
+              - method: PUT
+                path: "/api/v1/.*"
+              - method: DELETE
+                path: "/api/v1/admin/.*"
+    # Prometheus 메트릭 수집
+    - fromEndpoints:
+        - matchLabels:
+            app: prometheus
+            io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP
+          rules:
+            http:
+              - method: GET
+                path: "/metrics"
+---
+# 사용자 서비스 L7 정책
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: user-service-l7-http
+  namespace: saas-system
+  labels:
+    zero-trust/layer: L7
+spec:
+  description: "User Service L7 — API Gateway에서만 접근 허용"
+  endpointSelector:
+    matchLabels:
+      app: user-service
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+          rules:
+            http:
+              - method: GET
+                path: "/users/.*"
+              - method: POST
+                path: "/users"
+              - method: PUT
+                path: "/users/.*"
+---
+# 감사 서비스 L7 정책 (CSAP D-06)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: audit-service-l7-http
+  namespace: saas-system
+  labels:
+    zero-trust/layer: L7
+    csap.compliance/domain: D-06
+spec:
+  description: "Audit Service — 쓰기 전용 (로그 수집), 삭제 차단"
+  endpointSelector:
+    matchLabels:
+      app: audit-service
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/part-of: saas-platform
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+          rules:
+            http:
+              - method: POST
+                path: "/audit/logs"
+              - method: GET
+                path: "/audit/logs.*"
+              # DELETE 명시적 차단 (append-only 보장)

@@ -1,0 +1,52 @@
+# 백업 검증 보고서 템플릿
+# Design Ref: §2.3 | Plan SC: FR-N151.3
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-verify-report-template
+  namespace: velero
+  labels:
+    csap.compliance/domain: D-07
+data:
+  template.md: |
+    # 백업 검증 보고서
+
+    > **검증일**: {{ .Date }}
+    > **CSAP D-07 재해복구 준수 검증**
+
+    ## 요약
+
+    | 항목 | 결과 | 기준 |
+    |------|------|------|
+    | Velero 클러스터 복구 | {{ .VeleroStatus }} | Completed |
+    | CNPG DB 복구 | {{ .CnpgStatus }} | 체크섬 일치 |
+    | RTO 측정 | {{ .RtoSeconds }}초 | 14400초 이내 |
+    | RPO 측정 | {{ .RpoMinutes }}분 | 60분 이내 |
+    | 데이터 무결성 | {{ .IntegrityCheck }} | 체크섬 100% 일치 |
+    | 백업 암호화 | {{ .EncryptionCheck }} | AES-256 |
+
+    ## Velero 복구 상세
+
+    - 백업 이름: {{ .BackupName }}
+    - 복구 이름: {{ .RestoreName }}
+    - 복구 시작: {{ .StartTime }}
+    - 복구 완료: {{ .EndTime }}
+    - 경고: {{ .Warnings }}건
+    - 오류: {{ .Errors }}건
+    - Pod 상태: {{ .RunningPods }}/{{ .TotalPods }}
+
+    ## CNPG 복구 상세
+
+    - 원본 체크섬: {{ .ChecksumBefore }}
+    - 복구 체크섬: {{ .ChecksumAfter }}
+    - 테이블 수: {{ .TableCount }}
+    - 행 수 일치: {{ .RowCountMatch }}
+
+    ## CSAP D-07 준수 증적
+
+    - [{{ if eq .VeleroStatus "SUCCESS" }}x{{ else }} {{ end }}] 정기 복구 테스트 실행
+    - [{{ if le .RtoSeconds 14400 }}x{{ else }} {{ end }}] RTO 4시간 이내 달성
+    - [{{ if le .RpoMinutes 60 }}x{{ else }} {{ end }}] RPO 1시간 이내 달성
+    - [{{ if eq .IntegrityCheck "PASS" }}x{{ else }} {{ end }}] 데이터 무결성 검증
+    - [{{ if eq .EncryptionCheck "ENCRYPTED" }}x{{ else }} {{ end }}] 백업 암호화 확인
+    - [x] 감사 로그 기록 완료

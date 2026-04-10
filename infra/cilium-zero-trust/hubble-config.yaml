@@ -1,0 +1,74 @@
+# Hubble 네트워크 관측성 설정
+# Design Ref: §2.5 | Plan SC: FR-N152.5
+# CSAP D-06: 네트워크 트래픽 감사 | N2SF N-06: 운영 보안
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hubble-config
+  namespace: kube-system
+  labels:
+    app: hubble
+    csap.compliance/domain: D-06
+data:
+  # Hubble 활성화
+  enable-hubble: "true"
+  hubble-listen-address: ":4244"
+
+  # 메트릭 서버 (Prometheus 수집)
+  hubble-metrics-server: ":9965"
+  hubble-metrics: >-
+    dns:query;ignoreAAAA,
+    drop:sourceContext=identity;destinationContext=identity,
+    tcp:sourceContext=identity;destinationContext=identity,
+    flow:sourceContext=identity;destinationContext=identity,
+    icmp:sourceContext=identity;destinationContext=identity,
+    http:sourceContext=identity;destinationContext=identity;labelsContext=source_pod,destination_pod
+
+  # 흐름 내보내기 (감사 로그용)
+  hubble-export-file-max-size-mb: "10"
+  hubble-export-file-max-backups: "5"
+  hubble-export-file-compress: "true"
+
+  # 정책 감사 모드
+  policy-audit-mode: "false"
+
+  # 차단 이벤트 로깅
+  monitor-aggregation: "medium"
+  monitor-aggregation-interval: "5s"
+---
+# Hubble UI 서비스
+apiVersion: v1
+kind: Service
+metadata:
+  name: hubble-ui
+  namespace: kube-system
+  labels:
+    app: hubble-ui
+spec:
+  selector:
+    app: hubble-ui
+  ports:
+    - port: 80
+      targetPort: 8081
+      protocol: TCP
+  type: ClusterIP
+---
+# Hubble Relay (Prometheus 메트릭 수집)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: hubble-metrics
+  namespace: monitoring
+  labels:
+    app: hubble
+spec:
+  selector:
+    matchLabels:
+      app: hubble
+  endpoints:
+    - port: hubble-metrics
+      interval: 30s
+      path: /metrics
+  namespaceSelector:
+    matchNames:
+      - kube-system

@@ -1,0 +1,116 @@
+# 데이터 품질 검증 CronJob
+# Plan SC: FR-N155.1~FR-N155.5
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: data-quality-checker
+  namespace: saas-system
+  labels:
+    app: data-quality
+    csap.compliance/domain: D-12
+spec:
+  schedule: "0 5 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: data-quality-sa
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: checker
+              image: postgres:16-alpine
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  echo "[INFO] 데이터 품질 검증 시작: $(date -u)"
+
+                  # 1. NULL 제약 조건 검증
+                  NULL_VIOLATIONS=$(psql "$DATABASE_URL" -t -c "
+                    SELECT COUNT(*) FROM users WHERE email IS NULL OR name IS NULL;")
+                  echo "[CHECK] NULL 위반: $NULL_VIOLATIONS건"
+
+                  # 2. 참조 무결성 검증
+                  FK_VIOLATIONS=$(psql "$DATABASE_URL" -t -c "
+                    SELECT COUNT(*) FROM users u
+                    LEFT JOIN tenants t ON u.tenant_id = t.id
+                    WHERE t.id IS NULL;")
+                  echo "[CHECK] FK 위반: $FK_VIOLATIONS건"
+
+                  # 3. 유니크 제약 조건 검증
+                  DUPE_EMAILS=$(psql "$DATABASE_URL" -t -c "
+                    SELECT COUNT(*) FROM (
+                      SELECT tenant_id, email, COUNT(*) as cnt
+                      FROM users GROUP BY tenant_id, email HAVING COUNT(*) > 1
+                    ) t;")
+                  echo "[CHECK] 중복 이메일: $DUPE_EMAILS건"
+
+                  # 4. 데이터 범위 검증
+                  RANGE_VIOLATIONS=$(psql "$DATABASE_URL" -t -c "
+                    SELECT COUNT(*) FROM users
+                    WHERE role NOT IN ('admin', 'user', 'viewer', 'operator');")
+                  echo "[CHECK] 범위 위반: $RANGE_VIOLATIONS건"
+
+                  # 5. 스키마 드리프트 감지
+                  CURRENT_TABLES=$(psql "$DATABASE_URL" -t -c "
+                    SELECT COUNT(*) FROM information_schema.tables
+                    WHERE table_schema = 'public' AND table_type = 'BASE TABLE';")
+                  echo "[CHECK] 테이블 수: $CURRENT_TABLES"
+
+                  # 결과 요약
+                  TOTAL_VIOLATIONS=$((NULL_VIOLATIONS + FK_VIOLATIONS + DUPE_EMAILS + RANGE_VIOLATIONS))
+                  if [ "$TOTAL_VIOLATIONS" -eq 0 ]; then
+                    echo "[PASS] 데이터 품질 검증 통과"
+                    STATUS="PASS"
+                  else
+                    echo "[FAIL] 데이터 품질 위반: $TOTAL_VIOLATIONS건"
+                    STATUS="FAIL"
+                  fi
+
+                  # 감사 로그
+                  echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"action\":\"DATA_QUALITY_CHECK\",\"status\":\"$STATUS\",\"violations\":$TOTAL_VIOLATIONS}" >> /tmp/audit.log
+              envFrom:
+                - secretRef:
+                    name: db-credentials
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
+          restartPolicy: OnFailure
+---
+# 데이터 품질 알림 (FR-N155.5)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: data-quality-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: data-quality
+      rules:
+        - alert: DataQualityViolation
+          expr: data_quality_violations_total > 0
+          labels:
+            severity: warning
+            csap_domain: D-12
+          annotations:
+            summary: "데이터 품질 위반 감지: {{ $value }}건"
+
+        - alert: SchemaDrift
+          expr: data_quality_table_count != data_quality_expected_table_count
+          labels:
+            severity: critical
+          annotations:
+            summary: "스키마 드리프트 감지"

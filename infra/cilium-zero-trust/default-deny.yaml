@@ -1,0 +1,66 @@
+# 기본 거부 정책 — Zero Trust 기반
+# Design Ref: §2.1 | Plan SC: FR-N152.1
+# CSAP D-10: 네트워크 보안 | N2SF N-01: 네트워크 격리
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: saas-system
+  labels:
+    zero-trust/layer: L3-L4
+    csap.compliance/domain: D-10
+spec:
+  description: "모든 인그레스 트래픽 기본 차단 (Zero Trust)"
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels: {}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: default-deny-egress
+  namespace: saas-system
+  labels:
+    zero-trust/layer: L3-L4
+spec:
+  description: "DNS 제외 모든 이그레스 기본 차단"
+  endpointSelector: {}
+  egress:
+    # DNS만 허용 (필수)
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+---
+# 테넌트 간 격리 (N2SF N-03)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: tenant-isolation
+  namespace: saas-system
+  labels:
+    zero-trust/layer: L3-L4
+    n2sf.security/domain: N-03
+spec:
+  description: "테넌트 간 네트워크 격리 (N2SF N-03)"
+  endpointSelector:
+    matchExpressions:
+      - key: tenant-id
+        operator: Exists
+  ingress:
+    - fromEndpoints:
+        - matchExpressions:
+            - key: tenant-id
+              operator: Exists
+  ingressDeny:
+    - fromEndpoints:
+        - matchExpressions:
+            - key: tenant-id
+              operator: DoesNotExist

@@ -1,0 +1,65 @@
+# DNS/FQDN 기반 외부 접근 제어
+# Design Ref: §2.6 | Plan SC: FR-N152.6
+# CSAP D-10: 네트워크 보안 — 외부 통신 최소화
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: fqdn-egress-control
+  namespace: saas-system
+  labels:
+    zero-trust/layer: L3-FQDN
+    csap.compliance/domain: D-10
+spec:
+  description: "FQDN 기반 이그레스 제어 — 허용된 도메인만 외부 접근"
+  endpointSelector:
+    matchLabels:
+      app: ai-service
+  egress:
+    # LM Studio (로컬 AI 서버)
+    - toFQDNs:
+        - matchName: "host.docker.internal"
+      toPorts:
+        - ports:
+            - port: "1234"
+              protocol: TCP
+    # DNS 허용
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+---
+# 패키지 매니저 이그레스 (빌드 시에만)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: build-egress-control
+  namespace: ci-system
+  labels:
+    zero-trust/layer: L3-FQDN
+spec:
+  description: "빌드 환경 FQDN 이그레스 — 패키지 레지스트리만 허용"
+  endpointSelector:
+    matchLabels:
+      purpose: ci-build
+  egress:
+    - toFQDNs:
+        - matchPattern: "*.npmjs.org"
+        - matchPattern: "*.github.com"
+        - matchPattern: "registry.npmjs.org"
+        - matchName: "pypi.org"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP

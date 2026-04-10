@@ -1,0 +1,157 @@
+# Node.js 런타임 자동 튜닝 설정
+# Plan SC: FR-N156.1, FR-N156.3
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nodejs-runtime-tuning
+  namespace: saas-system
+  labels:
+    app: runtime-tuning
+    runtime: nodejs
+    csap.compliance/domain: D-12
+data:
+  # Node.js 메모리 설정
+  NODE_OPTIONS: >-
+    --max-old-space-size=512
+    --max-semi-space-size=64
+    --gc-interval=100
+    --optimize-for-size
+
+  # UV 스레드풀 (I/O 집약적 작업용)
+  UV_THREADPOOL_SIZE: "8"
+
+  # 클러스터 모드 설정
+  CLUSTER_WORKERS: "auto"
+
+  # 프로파일링 (Pyroscope 연동)
+  PYROSCOPE_SERVER_ADDRESS: "http://pyroscope.monitoring:4040"
+  PYROSCOPE_APPLICATION_NAME: "saas-platform"
+  PYROSCOPE_AUTH_TOKEN: ""
+
+  # GC 튜닝 가이드
+  tuning-guide.md: |
+    # Node.js 런타임 튜닝 가이드
+
+    ## 메모리 설정
+    - max-old-space-size: 컨테이너 메모리의 75% (기본 512MB)
+    - max-semi-space-size: 64MB (새 객체 할당 영역)
+
+    ## GC 최적화
+    - gc-interval: 100 (100개 할당마다 GC)
+    - expose-gc: 수동 GC 트리거 허용
+
+    ## 자동 조정 규칙
+    1. P99 응답시간 > 500ms → max-old-space-size 증가
+    2. GC pause > 100ms → max-semi-space-size 증가
+    3. 메모리 사용률 < 50% → 리소스 축소 권장
+---
+# JVM 런타임 튜닝 설정 (FR-N156.2)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jvm-runtime-tuning
+  namespace: saas-system
+  labels:
+    app: runtime-tuning
+    runtime: jvm
+data:
+  JAVA_OPTS: >-
+    -XX:+UseG1GC
+    -XX:MaxGCPauseMillis=200
+    -XX:+UseStringDeduplication
+    -XX:+UseCompressedOops
+    -XX:MaxRAMPercentage=75.0
+    -XX:InitialRAMPercentage=50.0
+    -XX:+HeapDumpOnOutOfMemoryError
+    -XX:HeapDumpPath=/tmp/heapdump
+    -Djava.security.egd=file:/dev/./urandom
+
+  # Pyroscope 에이전트 (FR-N156.4)
+  PYROSCOPE_AGENT_ENABLED: "true"
+  PYROSCOPE_SERVER_ADDRESS: "http://pyroscope.monitoring:4040"
+---
+# 런타임 자동 조정 CronJob (FR-N156.3)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: runtime-auto-tuner
+  namespace: saas-system
+  labels:
+    app: runtime-tuning
+spec:
+  schedule: "0 */6 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: runtime-tuner-sa
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: tuner
+              image: bitnami/kubectl:1.30
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  echo "[INFO] 런타임 자동 튜닝 분석 시작"
+
+                  # VPA 추천 값 확인
+                  VPA_RECS=$(kubectl get vpa -n saas-system -o json 2>/dev/null | \
+                    jq -r '.items[] | "\(.metadata.name): CPU=\(.status.recommendation.containerRecommendations[0].target.cpu // "N/A"), MEM=\(.status.recommendation.containerRecommendations[0].target.memory // "N/A")"' 2>/dev/null || echo "VPA 미설치")
+
+                  echo "[INFO] VPA 추천:"
+                  echo "$VPA_RECS"
+
+                  # 감사 로그
+                  echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"action\":\"RUNTIME_AUTO_TUNE\",\"details\":{\"vpa_check\":\"completed\"}}" >> /tmp/audit.log
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
+          restartPolicy: OnFailure
+---
+# 런타임 알림 (FR-N156.3)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: runtime-tuning-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: runtime-tuning
+      rules:
+        - alert: NodeJSHighMemory
+          expr: nodejs_heap_size_used_bytes / nodejs_heap_size_total_bytes > 0.9
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node.js 힙 메모리 90% 초과: {{ $labels.pod }}"
+
+        - alert: GCPauseTooLong
+          expr: rate(nodejs_gc_duration_seconds_sum[5m]) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node.js GC 시간 과다: {{ $labels.pod }}"
+
+        - alert: JVMHeapPressure
+          expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "JVM 힙 압력 85% 초과: {{ $labels.pod }}"

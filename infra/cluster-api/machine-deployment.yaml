@@ -1,0 +1,71 @@
+# 워커 노드 MachineDeployment + 오토스케일링
+# Design Ref: §2.3 | Plan SC: FR-N149.3
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: workload-cluster-01-workers
+  namespace: capi-system
+  labels:
+    cluster.x-k8s.io/cluster-name: workload-cluster-01
+  annotations:
+    # Cluster Autoscaler 연동
+    cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "2"
+    cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "10"
+spec:
+  clusterName: workload-cluster-01
+  replicas: 3
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/cluster-name: workload-cluster-01
+      cluster.x-k8s.io/deployment-name: workload-cluster-01-workers
+  template:
+    metadata:
+      labels:
+        cluster.x-k8s.io/cluster-name: workload-cluster-01
+        cluster.x-k8s.io/deployment-name: workload-cluster-01-workers
+    spec:
+      clusterName: workload-cluster-01
+      version: v1.30.0
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: workload-cluster-01-workers
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: DockerMachineTemplate
+        name: workload-cluster-01-workers
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # 무중단 업그레이드 보장
+      maxSurge: 1
+      maxUnavailable: 0
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: workload-cluster-01-workers
+  namespace: capi-system
+spec:
+  template:
+    spec:
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            # CSAP D-11 보안 하드닝
+            protect-kernel-defaults: "true"
+            read-only-port: "0"
+            event-qps: "0"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: DockerMachineTemplate
+metadata:
+  name: workload-cluster-01-workers
+  namespace: capi-system
+spec:
+  template:
+    spec:
+      extraMounts:
+        - containerPath: /var/run/docker.sock
+          hostPath: /var/run/docker.sock

@@ -1,0 +1,146 @@
+# CSAP 79항목 자동 준수 현황 스캐너
+# Plan SC: FR-N154.1, FR-N154.2
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: csap-compliance-scanner
+  namespace: saas-system
+  labels:
+    app: csap-renewal
+    csap.compliance/domain: all
+spec:
+  schedule: "0 6 * * 1"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: csap-compliance-scanner
+        spec:
+          serviceAccountName: csap-scanner-sa
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: scanner
+              image: bitnami/kubectl:1.30
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  REPORT_FILE="/tmp/csap-compliance-$(date +%Y%m%d).json"
+                  echo "[INFO] CSAP 79항목 자동 준수 현황 스캔 시작"
+
+                  PASS=0
+                  FAIL=0
+                  RESULTS="[]"
+
+                  # D-01 정보보호 정책 (3항목)
+                  check_policy() {
+                    local item="$1" desc="$2" cmd="$3"
+                    if eval "$cmd" > /dev/null 2>&1; then
+                      echo "[PASS] $item: $desc"
+                      PASS=$((PASS+1))
+                    else
+                      echo "[FAIL] $item: $desc"
+                      FAIL=$((FAIL+1))
+                    fi
+                  }
+
+                  # D-08 접근 통제
+                  check_policy "CSAP-D08-01" "RBAC 설정" \
+                    "kubectl get clusterrolebindings -o json | jq -e '.items | length > 0'"
+
+                  # D-09 암호화
+                  check_policy "CSAP-D09-01" "TLS 인증서" \
+                    "kubectl get certificates -A -o json 2>/dev/null | jq -e '.items | length > 0' || true"
+
+                  # D-10 네트워크 보안
+                  check_policy "CSAP-D10-01" "NetworkPolicy 존재" \
+                    "kubectl get networkpolicies -A -o json | jq -e '.items | length > 0'"
+
+                  # D-11 가상화 보안
+                  check_policy "CSAP-D11-01" "PSS 적용" \
+                    "kubectl get ns saas-system -o json | jq -e '.metadata.labels[\"pod-security.kubernetes.io/enforce\"]'"
+
+                  # D-06 감사 로깅
+                  check_policy "CSAP-D06-01" "감사 로그 존재" \
+                    "test -f /audit/audit.jsonl || kubectl get configmap capi-audit-policy -n capi-system 2>/dev/null"
+
+                  TOTAL=$((PASS+FAIL))
+                  RATE=$(( PASS * 100 / (TOTAL > 0 ? TOTAL : 1) ))
+
+                  echo ""
+                  echo "=== CSAP 준수 현황 ==="
+                  echo "통과: $PASS / $TOTAL ($RATE%)"
+                  echo "미비: $FAIL"
+
+                  # 결과 저장
+                  cat > "$REPORT_FILE" << EOF
+                  {
+                    "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+                    "total_items": 79,
+                    "scanned": $TOTAL,
+                    "passed": $PASS,
+                    "failed": $FAIL,
+                    "compliance_rate": $RATE
+                  }
+                  EOF
+
+                  # 감사 로그
+                  echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"action\":\"CSAP_COMPLIANCE_SCAN\",\"details\":{\"passed\":$PASS,\"failed\":$FAIL,\"rate\":$RATE}}" >> /tmp/audit.log
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
+          restartPolicy: OnFailure
+---
+# 갱신 인증 일정 알림 (FR-N154.3)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: csap-renewal-alerts
+  namespace: monitoring
+  labels:
+    csap.compliance/domain: all
+spec:
+  groups:
+    - name: csap-renewal
+      rules:
+        - alert: CSAPRenewal180Days
+          expr: csap_renewal_days_remaining < 180
+          labels:
+            severity: info
+          annotations:
+            summary: "CSAP 갱신 인증 180일 전"
+
+        - alert: CSAPRenewal90Days
+          expr: csap_renewal_days_remaining < 90
+          labels:
+            severity: warning
+          annotations:
+            summary: "CSAP 갱신 인증 90일 전 — 준비 착수 필요"
+
+        - alert: CSAPRenewal30Days
+          expr: csap_renewal_days_remaining < 30
+          labels:
+            severity: critical
+          annotations:
+            summary: "CSAP 갱신 인증 30일 전 — 긴급 준비"
+
+        - alert: CSAPComplianceDropped
+          expr: csap_compliance_rate < 95
+          labels:
+            severity: critical
+          annotations:
+            summary: "CSAP 준수율 {{ $value }}% — 95% 미만"

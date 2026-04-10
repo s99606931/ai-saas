@@ -1,0 +1,66 @@
+# 백업 검증 Prometheus 알림 규칙
+# Design Ref: §2.4 | Plan SC: FR-N151.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: backup-verification-alerts
+  namespace: monitoring
+  labels:
+    app: backup-verification
+    csap.compliance/domain: D-07
+spec:
+  groups:
+    - name: backup-verification
+      interval: 60s
+      rules:
+        - alert: VeleroBackupVerifyFailed
+          expr: kube_job_status_failed{job_name=~"velero-backup-verify.*"} > 0
+          for: 0m
+          labels:
+            severity: critical
+            csap_domain: D-07
+            team: sre
+          annotations:
+            summary: "Velero 백업 복구 검증 실패"
+            description: "Velero 백업의 자동 복구 검증이 실패했습니다. 즉시 수동 검증 필요."
+            runbook: "https://docs.internal/runbooks/backup-verify-failed"
+
+        - alert: CnpgBackupVerifyFailed
+          expr: kube_job_status_failed{job_name=~"cnpg-backup-verify.*"} > 0
+          for: 0m
+          labels:
+            severity: critical
+            csap_domain: D-07
+            team: dba
+          annotations:
+            summary: "CNPG DB 백업 복구 검증 실패"
+            description: "CloudNativePG 백업의 데이터 무결성 검증이 실패했습니다."
+
+        - alert: BackupVerifyRTOExceeded
+          expr: backup_verify_rto_seconds > 14400
+          for: 0m
+          labels:
+            severity: warning
+            csap_domain: D-07
+          annotations:
+            summary: "백업 복구 RTO 초과: {{ $value }}초 (목표: 14400초)"
+
+        - alert: BackupVerifyMissed
+          expr: time() - backup_verify_last_success_timestamp > 604800
+          for: 1h
+          labels:
+            severity: warning
+            csap_domain: D-07
+          annotations:
+            summary: "7일 이상 백업 검증 미실행"
+            description: "주간 백업 검증 CronJob이 7일 이상 실행되지 않았습니다."
+
+        - alert: BackupEncryptionMissing
+          expr: backup_verify_encryption_status == 0
+          for: 0m
+          labels:
+            severity: critical
+            csap_domain: D-09
+          annotations:
+            summary: "백업 데이터 암호화 미적용"
+            description: "CSAP D-09 위반: 백업 데이터가 암호화되지 않았습니다."

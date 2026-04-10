@@ -1,0 +1,38 @@
+# 개인정보보호 알림 규칙
+# Plan SC: FR-N153.7
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: privacy-compliance-alerts
+  namespace: monitoring
+  labels:
+    csap.compliance/domain: D-13
+spec:
+  groups:
+    - name: privacy-compliance
+      rules:
+        - alert: PIIDataExposure
+          expr: pii_scan_findings_total{severity="CRITICAL"} > 0
+          for: 0m
+          labels:
+            severity: critical
+            csap_domain: D-13
+          annotations:
+            summary: "CRITICAL PII 데이터 노출 감지"
+
+        - alert: RetentionPolicyViolation
+          expr: privacy_retention_overdue_count > 0
+          for: 1h
+          labels:
+            severity: warning
+            compliance: personal-info-protection-act
+          annotations:
+            summary: "보존기간 만료 개인정보 {{ $value }}건 미파기"
+
+        - alert: PrivacyPurgeJobFailed
+          expr: kube_job_status_failed{job_name=~"privacy-data-purge.*"} > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "개인정보 파기 Job 실패"

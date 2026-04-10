@@ -1,0 +1,89 @@
+# 개인정보 영향평가(PIA) CI 파이프라인
+# Design Ref: §2.3 | Plan SC: FR-N153.4, FR-N153.6
+name: Privacy Impact Assessment (PIA)
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'packages/**'
+
+jobs:
+  pii-scan:
+    name: PII Pattern Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PII 패턴 스캔
+        run: |
+          echo "[INFO] 소스 코드 PII 패턴 스캔"
+          FOUND=0
+
+          # 주민등록번호 패턴
+          if grep -rn '\d{6}-[1-4]\d{6}' src/ packages/ --include="*.ts" --include="*.js" --include="*.json" 2>/dev/null; then
+            echo "[CRITICAL] 주민등록번호 패턴 감지!"
+            FOUND=1
+          fi
+
+          # 하드코딩된 전화번호
+          if grep -rn '01[016789][0-9]\{7,8\}' src/ packages/ --include="*.ts" --include="*.js" 2>/dev/null | grep -v "test" | grep -v "mock"; then
+            echo "[HIGH] 하드코딩된 전화번호 감지"
+            FOUND=1
+          fi
+
+          if [ "$FOUND" -eq 1 ]; then
+            echo "[BLOCKED] PII 데이터가 소스 코드에 포함되어 있습니다"
+            exit 1
+          fi
+          echo "[PASS] PII 패턴 미감지"
+
+  pia-checklist:
+    name: PIA 체크리스트 확인
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 개인정보 처리 관련 변경 확인
+        run: |
+          # 개인정보 관련 파일 변경 감지
+          PRIVACY_FILES=$(git diff --name-only origin/main...HEAD | grep -E "(user|auth|profile|personal|privacy)" || true)
+
+          if [ -n "$PRIVACY_FILES" ]; then
+            echo "[INFO] 개인정보 관련 파일 변경 감지:"
+            echo "$PRIVACY_FILES"
+            echo ""
+            echo "=== PIA 체크리스트 ==="
+            echo "[ ] 1. 수집하는 개인정보 항목 확인"
+            echo "[ ] 2. 처리 목적 명시 여부"
+            echo "[ ] 3. 동의 절차 구현 여부"
+            echo "[ ] 4. 보존기간 설정 여부"
+            echo "[ ] 5. 제3자 제공 여부 확인"
+            echo "[ ] 6. 파기 절차 구현 여부"
+            echo "[ ] 7. 암호화 적용 여부 (AES-256)"
+            echo "[ ] 8. 접근 권한 최소화 여부"
+            echo ""
+            echo "[WARN] PR 설명에 PIA 체크리스트 확인 결과를 포함해야 합니다"
+          fi
+
+  n2sf-data-grade:
+    name: N2SF 데이터 등급 검증
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: AI API 전송 데이터 등급 확인
+        run: |
+          # AI 서비스 관련 변경 시 데이터 등급 검증
+          AI_FILES=$(git diff --name-only origin/main...HEAD | grep -E "(ai-service|ai-gateway|llm)" || true)
+
+          if [ -n "$AI_FILES" ]; then
+            echo "[INFO] AI 관련 파일 변경 감지 - N2SF 데이터 등급 검증"
+
+            # classifyDataGrade 또는 validateForAITransmission 호출 확인
+            if grep -rn "classifyDataGrade\|validateForAITransmission\|DataGrade" $AI_FILES 2>/dev/null; then
+              echo "[PASS] 데이터 등급 검증 로직 존재"
+            else
+              echo "[WARN] AI 관련 변경에 데이터 등급 검증 로직이 포함되어야 합니다"
+            fi
+          fi

@@ -1,0 +1,150 @@
+# 보안 카오스 엔지니어링 실험
+# Plan SC: FR-N157.1~FR-N157.6
+# CSAP D-06: 침해사고 대응 훈련 | N2SF N-06: 운영 보안
+---
+# 실험 1: NetworkPolicy 삭제 후 자동 복구 (FR-N157.1)
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosExperiment
+metadata:
+  name: security-netpolicy-resilience
+  namespace: litmus
+  labels:
+    app: security-chaos
+    csap.compliance/domain: D-10
+spec:
+  definition:
+    scope: Cluster
+    permissions:
+      - apiGroups: ["networking.k8s.io"]
+        resources: ["networkpolicies"]
+        verbs: ["get", "list", "delete"]
+    image: litmuschaos/go-runner:latest
+    args:
+      - -c
+      - ./experiments -name security-netpolicy-resilience
+    env:
+      - name: TARGET_NAMESPACE
+        value: saas-system
+      - name: POLICY_NAME
+        value: default-deny-all
+      - name: EXPECTED_RECOVERY_TIME
+        value: "60"  # Kyverno 60초 이내 복구 기대
+      - name: TOTAL_CHAOS_DURATION
+        value: "120"
+---
+# 실험 2: RBAC 권한 탈취 시뮬레이션 (FR-N157.2)
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosExperiment
+metadata:
+  name: security-rbac-escalation-test
+  namespace: litmus
+  labels:
+    app: security-chaos
+    csap.compliance/domain: D-08
+spec:
+  definition:
+    scope: Namespaced
+    permissions:
+      - apiGroups: [""]
+        resources: ["pods"]
+        verbs: ["create", "get"]
+    image: litmuschaos/go-runner:latest
+    env:
+      - name: TEST_TYPE
+        value: "rbac-escalation"
+      - name: TARGET_NAMESPACE
+        value: saas-system
+      - name: EXPECTED_RESULT
+        value: "BLOCKED"
+---
+# 실험 3: PSS 위반 Pod 생성 시도 (FR-N157.4)
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosExperiment
+metadata:
+  name: security-pss-violation-test
+  namespace: litmus
+  labels:
+    app: security-chaos
+    csap.compliance/domain: D-11
+spec:
+  definition:
+    scope: Namespaced
+    permissions:
+      - apiGroups: [""]
+        resources: ["pods"]
+        verbs: ["create", "delete"]
+    image: litmuschaos/go-runner:latest
+    env:
+      - name: TEST_TYPE
+        value: "pss-violation"
+      - name: TARGET_NAMESPACE
+        value: saas-system
+      - name: PRIVILEGED_POD
+        value: "true"
+      - name: EXPECTED_RESULT
+        value: "REJECTED"
+---
+# 보안 카오스 엔진 (스케줄 실행)
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: security-chaos-weekly
+  namespace: litmus
+  labels:
+    app: security-chaos
+    schedule: weekly
+spec:
+  appinfo:
+    appns: saas-system
+    applabel: app.kubernetes.io/part-of=saas-platform
+  engineState: active
+  chaosServiceAccount: litmus-admin-sa
+  experiments:
+    - name: security-netpolicy-resilience
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "120"
+    - name: security-rbac-escalation-test
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+    - name: security-pss-violation-test
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+---
+# 보안 카오스 알림 (FR-N157.5, FR-N157.6)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: security-chaos-alerts
+  namespace: monitoring
+  labels:
+    csap.compliance/domain: D-06
+spec:
+  groups:
+    - name: security-chaos
+      rules:
+        - alert: SecurityChaosExperimentFailed
+          expr: litmuschaos_experiment_verdict{verdict="Fail",app="security-chaos"} > 0
+          for: 0m
+          labels:
+            severity: critical
+            csap_domain: D-06
+          annotations:
+            summary: "보안 카오스 실험 실패: {{ $labels.experiment }}"
+            description: "보안 통제가 카오스 실험에서 실패했습니다. 즉시 조사 필요."
+
+        - alert: SecurityRecoveryTooSlow
+          expr: security_chaos_recovery_time_seconds > 120
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "보안 통제 복구 시간 초과: {{ $value }}초 (목표: 120초)"

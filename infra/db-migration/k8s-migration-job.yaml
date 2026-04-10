@@ -1,0 +1,119 @@
+# K8s DB 마이그레이션 Job
+# Design Ref: §2.4 | Plan SC: FR-N150.4
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration-${MIGRATION_VERSION}
+  namespace: saas-system
+  labels:
+    app: db-migration
+    csap.compliance/domain: D-12
+    n2sf.security/level: managed
+  annotations:
+    migration/version: "${MIGRATION_VERSION}"
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: db-migration
+    spec:
+      serviceAccountName: db-migration-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # Phase 1: 마이그레이션 전 백업
+        - name: pre-backup
+          image: postgres:16-alpine
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -euo pipefail
+              BACKUP_FILE="/backup/pre-migration-$(date +%Y%m%d%H%M%S).sql.gz"
+              echo "[INFO] 마이그레이션 전 백업 시작: $BACKUP_FILE"
+              pg_dump "$DATABASE_URL" | gzip > "$BACKUP_FILE"
+              echo "[INFO] 백업 완료: $(du -h $BACKUP_FILE | cut -f1)"
+          envFrom:
+            - secretRef:
+                name: db-credentials
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+            - name: tmp
+              mountPath: /tmp
+        # Phase 2: Pre-check 검증
+        - name: pre-check
+          image: postgres:16-alpine
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -euo pipefail
+              echo "[INFO] Pre-migration 검증 실행"
+              psql "$DATABASE_URL" -f /verification/pre-check.sql
+              echo "[INFO] Pre-check 통과"
+          envFrom:
+            - secretRef:
+                name: db-credentials
+          volumeMounts:
+            - name: verification
+              mountPath: /verification
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      containers:
+        - name: migrate
+          image: arigaio/atlas:0.21.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -euo pipefail
+              echo "[INFO] Atlas 마이그레이션 적용 시작"
+              atlas migrate apply \
+                --dir "file:///migrations" \
+                --url "$DATABASE_URL"
+              echo "[INFO] 마이그레이션 적용 완료"
+          envFrom:
+            - secretRef:
+                name: db-credentials
+          volumeMounts:
+            - name: migrations
+              mountPath: /migrations
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: db-backup-pvc
+        - name: migrations
+          configMap:
+            name: db-migrations
+        - name: verification
+          configMap:
+            name: db-verification
+        - name: tmp
+          emptyDir: {}
+      restartPolicy: Never

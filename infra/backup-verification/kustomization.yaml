@@ -1,0 +1,15 @@
+# 백업 자동 검증 파이프라인 Kustomization
+# Design Ref: §2 | Plan SC: FR-N151.1~FR-N151.6
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - velero-verify-cronjob.yaml
+  - cnpg-verify-cronjob.yaml
+  - report-configmap.yaml
+  - alerts.yaml
+  - rbac.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: backup-verification
+  csap.compliance/domain: D-07

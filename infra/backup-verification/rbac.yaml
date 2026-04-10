@@ -1,0 +1,48 @@
+# 백업 검증 RBAC
+# Design Ref: §2 | Plan SC: FR-N151.1, FR-N151.2
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: velero-verify-sa
+  namespace: velero
+  labels:
+    csap.compliance/domain: D-08
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: backup-verify-role
+  labels:
+    csap.compliance/domain: D-08
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["create", "delete", "get", "list"]
+  - apiGroups: [""]
+    resources: ["pods", "services", "secrets", "configmaps"]
+    verbs: ["get", "list"]
+  - apiGroups: ["velero.io"]
+    resources: ["backups", "restores"]
+    verbs: ["get", "list", "create", "delete"]
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["clusters"]
+    verbs: ["get", "list", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: backup-verify-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: backup-verify-role
+subjects:
+  - kind: ServiceAccount
+    name: velero-verify-sa
+    namespace: velero
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cnpg-verify-sa
+  namespace: cnpg-system

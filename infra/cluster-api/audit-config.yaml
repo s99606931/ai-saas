@@ -1,0 +1,108 @@
+# CAPI 감사 로그 정책 설정
+# Design Ref: §2.7 | Plan SC: FR-N149.7
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: capi-audit-policy
+  namespace: capi-system
+  labels:
+    csap.compliance/domain: D-06
+data:
+  audit-policy.yaml: |
+    apiVersion: audit.k8s.io/v1
+    kind: Policy
+    rules:
+      # 클러스터 수명주기 이벤트 — 전수 기록 (RequestResponse)
+      - level: RequestResponse
+        resources:
+          - group: "cluster.x-k8s.io"
+            resources:
+              - clusters
+              - machinedeployments
+              - machines
+              - machinesets
+              - machinepools
+        verbs: ["create", "update", "patch", "delete"]
+
+      # 컨트롤 플레인 변경 — 전수 기록
+      - level: RequestResponse
+        resources:
+          - group: "controlplane.cluster.x-k8s.io"
+            resources:
+              - kubeadmcontrolplanes
+        verbs: ["create", "update", "patch", "delete"]
+
+      # 인프라 프로바이더 변경 — 전수 기록
+      - level: RequestResponse
+        resources:
+          - group: "infrastructure.cluster.x-k8s.io"
+            resources:
+              - dockerclusters
+              - dockermachines
+              - dockermachinetemplates
+        verbs: ["create", "update", "patch", "delete"]
+
+      # 보안 관련 리소스 — 메타데이터 기록
+      - level: Metadata
+        resources:
+          - group: ""
+            resources: ["secrets", "configmaps"]
+        namespaces: ["capi-system"]
+
+      # 일반 읽기 — 기록하지 않음 (로그 볼륨 관리)
+      - level: None
+        resources:
+          - group: "cluster.x-k8s.io"
+        verbs: ["get", "list", "watch"]
+
+      # RBAC 변경 — 전수 기록
+      - level: RequestResponse
+        resources:
+          - group: "rbac.authorization.k8s.io"
+            resources:
+              - clusterroles
+              - clusterrolebindings
+              - roles
+              - rolebindings
+        verbs: ["create", "update", "patch", "delete"]
+---
+# 감사 로그 수집기 (Prometheus 메트릭 노출)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: capi-lifecycle-metrics
+  namespace: capi-system
+data:
+  alerts.yaml: |
+    groups:
+      - name: capi-lifecycle
+        rules:
+          - alert: ClusterProvisioningFailed
+            expr: capi_cluster_phase{phase="Failed"} > 0
+            for: 5m
+            labels:
+              severity: critical
+              csap_domain: D-11
+            annotations:
+              summary: "클러스터 프로비저닝 실패: {{ $labels.cluster }}"
+              description: "Cluster API 클러스터 {{ $labels.cluster }}이(가) 5분 이상 Failed 상태입니다."
+
+          - alert: MachineHealthCheckRemediation
+            expr: increase(capi_machine_healthcheck_remediation_total[1h]) > 3
+            for: 0m
+            labels:
+              severity: warning
+              csap_domain: D-11
+            annotations:
+              summary: "머신 헬스체크 교체 빈발: {{ $labels.cluster }}"
+              description: "1시간 내 3회 이상 노드 교체가 발생했습니다."
+
+          - alert: ClusterUpgradeStalled
+            expr: capi_cluster_upgrading == 1 and time() - capi_cluster_upgrade_start_time > 1800
+            for: 0m
+            labels:
+              severity: critical
+              csap_domain: D-11
+            annotations:
+              summary: "클러스터 업그레이드 정체: {{ $labels.cluster }}"
+              description: "클러스터 업그레이드가 30분 이상 진행 중입니다."

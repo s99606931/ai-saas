@@ -1,0 +1,108 @@
+# 워크로드 클러스터 선언적 프로비저닝 템플릿
+# Design Ref: §2.2 | Plan SC: FR-N149.2
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: workload-cluster-01
+  namespace: capi-system
+  labels:
+    environment: production
+    csap.compliance/grade: standard
+    n2sf.security/level: "O"
+  annotations:
+    lifecycle/created-by: "capi-automation"
+    lifecycle/expires: "2027-04-10T00:00:00Z"
+    csap.compliance/audit-required: "true"
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: ["10.244.0.0/16"]
+    services:
+      cidrBlocks: ["10.96.0.0/12"]
+    serviceDomain: cluster.local
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: workload-cluster-01-control-plane
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: DockerCluster
+    name: workload-cluster-01
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: DockerCluster
+metadata:
+  name: workload-cluster-01
+  namespace: capi-system
+spec:
+  loadBalancer:
+    imageRepository: kindest/haproxy
+    imageTag: v20230510-486ae40c
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlane
+metadata:
+  name: workload-cluster-01-control-plane
+  namespace: capi-system
+spec:
+  replicas: 1
+  version: v1.30.0
+  machineTemplate:
+    infrastructureRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      kind: DockerMachineTemplate
+      name: workload-cluster-01-cp
+  kubeadmConfigSpec:
+    clusterConfiguration:
+      apiServer:
+        extraArgs:
+          # CSAP D-06 감사 로깅
+          audit-log-path: /var/log/kubernetes/audit.log
+          audit-policy-file: /etc/kubernetes/audit-policy.yaml
+          audit-log-maxage: "365"
+          audit-log-maxbackup: "10"
+          audit-log-maxsize: "100"
+          # CSAP D-08 접근 통제
+          authorization-mode: Node,RBAC
+          enable-admission-plugins: NodeRestriction,PodSecurity
+        extraVolumes:
+          - name: audit-policy
+            hostPath: /etc/kubernetes/audit-policy.yaml
+            mountPath: /etc/kubernetes/audit-policy.yaml
+            readOnly: true
+          - name: audit-logs
+            hostPath: /var/log/kubernetes
+            mountPath: /var/log/kubernetes
+      controllerManager:
+        extraArgs:
+          bind-address: "0.0.0.0"
+          # CSAP D-11 보안 설정
+          terminated-pod-gc-threshold: "100"
+      scheduler:
+        extraArgs:
+          bind-address: "0.0.0.0"
+    initConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          # CSAP D-11 보안 하드닝
+          protect-kernel-defaults: "true"
+          read-only-port: "0"
+          event-qps: "0"
+          streaming-connection-idle-timeout: "5m"
+    joinConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          protect-kernel-defaults: "true"
+          read-only-port: "0"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: DockerMachineTemplate
+metadata:
+  name: workload-cluster-01-cp
+  namespace: capi-system
+spec:
+  template:
+    spec:
+      extraMounts:
+        - containerPath: /var/run/docker.sock
+          hostPath: /var/run/docker.sock

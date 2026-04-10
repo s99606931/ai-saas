@@ -1,0 +1,21 @@
+# Cluster API 수명주기 자동화 Kustomization
+# Design Ref: §2.6 | Plan SC: FR-N149.6
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: capi-system
+
+resources:
+  - namespace.yaml
+  - rbac.yaml
+  - workload-cluster-template.yaml
+  - machine-deployment.yaml
+  - machine-health-check.yaml
+  - decommission-cronjob.yaml
+  - audit-config.yaml
+  - flux-kustomization.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: cluster-api
+  csap.compliance/domain: D-11
+  n2sf.security/level: managed

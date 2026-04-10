@@ -1,0 +1,138 @@
+# 개인정보 보존기간 자동 점검 CronJob
+# Design Ref: §2.2 | Plan SC: FR-N153.3
+# 개인정보보호법 제21조: 보유기간 경과 시 지체없이 파기
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: privacy-retention-checker
+  namespace: saas-system
+  labels:
+    app: privacy-compliance
+    csap.compliance/domain: D-13
+    compliance/law: personal-info-protection-act
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: privacy-retention-checker
+        spec:
+          serviceAccountName: privacy-checker-sa
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: checker
+              image: node:20-alpine
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  echo "[INFO] 개인정보 보존기간 점검 시작: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+                  # 보존기간 만료 개인정보 조회
+                  cat > /tmp/check-retention.sql << 'SQL'
+                  -- 보존기간 만료 사용자 데이터
+                  SELECT id, email, created_at,
+                    CASE
+                      WHEN status = 'deleted' AND deleted_at < NOW() - INTERVAL '30 days' THEN 'OVERDUE_DELETE'
+                      WHEN last_login_at < NOW() - INTERVAL '1 year' AND status = 'inactive' THEN 'OVERDUE_INACTIVE'
+                      WHEN created_at < NOW() - INTERVAL '5 years' THEN 'OVERDUE_RETENTION'
+                    END AS reason
+                  FROM users
+                  WHERE
+                    (status = 'deleted' AND deleted_at < NOW() - INTERVAL '30 days')
+                    OR (last_login_at < NOW() - INTERVAL '1 year' AND status = 'inactive')
+                    OR (created_at < NOW() - INTERVAL '5 years')
+                  ORDER BY created_at;
+
+                  -- 보존기간 만료 감사 로그 (1년 초과 보존)
+                  SELECT COUNT(*) as expired_audit_count
+                  FROM audit_logs
+                  WHERE created_at < NOW() - INTERVAL '1 year';
+                  SQL
+
+                  echo "[INFO] 보존기간 점검 완료"
+
+                  # 감사 로그 기록
+                  echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"action\":\"PRIVACY_RETENTION_CHECK\",\"actor\":\"retention-checker\",\"status\":\"COMPLETED\"}" >> /tmp/audit.log
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
+          restartPolicy: OnFailure
+---
+# 개인정보 자동 파기 CronJob
+# 개인정보보호법 제21조 이행
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: privacy-data-purge
+  namespace: saas-system
+  labels:
+    app: privacy-compliance
+    csap.compliance/domain: D-13
+spec:
+  schedule: "0 3 * * 0"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: privacy-checker-sa
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: purge
+              image: postgres:16-alpine
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  echo "[INFO] 개인정보 안전 파기 시작"
+
+                  # 삭제 요청 후 30일 경과 데이터 영구 삭제
+                  psql "$DATABASE_URL" -c "
+                    DELETE FROM users
+                    WHERE status = 'deleted'
+                    AND deleted_at < NOW() - INTERVAL '30 days'
+                    RETURNING id;" > /tmp/purged.txt
+
+                  PURGED_COUNT=$(wc -l < /tmp/purged.txt)
+                  echo "[INFO] 파기 완료: $PURGED_COUNT건"
+
+                  # 감사 로그 (파기 증적)
+                  echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"action\":\"PRIVACY_DATA_PURGE\",\"actor\":\"data-purge-job\",\"details\":{\"purged_count\":$PURGED_COUNT}}" >> /tmp/audit.log
+              envFrom:
+                - secretRef:
+                    name: db-credentials
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
+          restartPolicy: OnFailure

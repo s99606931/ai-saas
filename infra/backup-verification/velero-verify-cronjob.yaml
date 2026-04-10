@@ -1,0 +1,143 @@
+# Velero 백업 자동 복구 검증 CronJob
+# Design Ref: §2.1 | Plan SC: FR-N151.1
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: velero-backup-verify
+  namespace: velero
+  labels:
+    app: backup-verification
+    csap.compliance/domain: D-07
+    n2sf.security/level: managed
+spec:
+  schedule: "0 3 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 7200
+      template:
+        metadata:
+          labels:
+            app: velero-backup-verify
+        spec:
+          serviceAccountName: velero-verify-sa
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            fsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: verify
+              image: bitnami/kubectl:1.30
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  VERIFY_NS="backup-verify-$(date +%Y%m%d-%H%M)"
+                  START_TIME=$(date +%s)
+                  REPORT_FILE="/tmp/report-velero-$(date +%Y%m%d).json"
+
+                  echo "[INFO] === Velero 백업 복구 검증 시작 ==="
+                  echo "[INFO] 검증 네임스페이스: $VERIFY_NS"
+
+                  # Step 1: 최신 성공 백업 확인
+                  LATEST_BACKUP=$(velero backup get -o json | \
+                    jq -r '[.items[] | select(.status.phase == "Completed")] | sort_by(.status.completionTimestamp) | last | .metadata.name')
+
+                  if [ -z "$LATEST_BACKUP" ] || [ "$LATEST_BACKUP" = "null" ]; then
+                    echo "[FAIL] 성공한 백업이 없습니다"
+                    echo '{"status":"FAILED","reason":"no_backup"}' > "$REPORT_FILE"
+                    exit 1
+                  fi
+                  echo "[INFO] 최신 백업: $LATEST_BACKUP"
+
+                  # Step 2: 격리 네임스페이스 생성
+                  kubectl create namespace "$VERIFY_NS" --dry-run=client -o yaml | kubectl apply -f -
+                  kubectl label namespace "$VERIFY_NS" purpose=backup-verification --overwrite
+
+                  # Step 3: 복구 실행
+                  RESTORE_NAME="verify-$(date +%Y%m%d%H%M)"
+                  velero restore create "$RESTORE_NAME" \
+                    --from-backup "$LATEST_BACKUP" \
+                    --namespace-mappings "saas-system:${VERIFY_NS}" \
+                    --wait
+
+                  # Step 4: 복구 상태 확인
+                  RESTORE_PHASE=$(velero restore get "$RESTORE_NAME" -o json | jq -r '.status.phase')
+                  WARNINGS=$(velero restore get "$RESTORE_NAME" -o json | jq -r '.status.warnings // 0')
+                  ERRORS=$(velero restore get "$RESTORE_NAME" -o json | jq -r '.status.errors // 0')
+
+                  END_TIME=$(date +%s)
+                  RTO=$((END_TIME - START_TIME))
+
+                  # Step 5: Pod 실행 상태 확인
+                  sleep 30
+                  RUNNING_PODS=$(kubectl get pods -n "$VERIFY_NS" --no-headers 2>/dev/null | grep -c "Running" || true)
+                  TOTAL_PODS=$(kubectl get pods -n "$VERIFY_NS" --no-headers 2>/dev/null | wc -l || true)
+
+                  # Step 6: 결과 보고서 생성
+                  STATUS="FAILED"
+                  if [ "$RESTORE_PHASE" = "Completed" ] || [ "$RESTORE_PHASE" = "PartiallyFailed" ]; then
+                    if [ "$ERRORS" -eq 0 ]; then
+                      STATUS="SUCCESS"
+                    else
+                      STATUS="PARTIAL"
+                    fi
+                  fi
+
+                  cat > "$REPORT_FILE" << REPORT_EOF
+                  {
+                    "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+                    "type": "velero",
+                    "backup": "$LATEST_BACKUP",
+                    "restore": "$RESTORE_NAME",
+                    "status": "$STATUS",
+                    "phase": "$RESTORE_PHASE",
+                    "rto_seconds": $RTO,
+                    "rto_target": 14400,
+                    "warnings": $WARNINGS,
+                    "errors": $ERRORS,
+                    "pods_running": $RUNNING_PODS,
+                    "pods_total": $TOTAL_PODS
+                  }
+                  REPORT_EOF
+
+                  echo "[INFO] 복구 상태: $STATUS (Phase: $RESTORE_PHASE)"
+                  echo "[INFO] RTO: ${RTO}초 (목표: 14400초)"
+                  echo "[INFO] Pod 상태: $RUNNING_PODS/$TOTAL_PODS Running"
+
+                  # Step 7: 감사 로그 (CSAP D-06)
+                  echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"action\":\"BACKUP_RESTORE_VERIFY\",\"actor\":\"velero-verify-cronjob\",\"target\":\"$LATEST_BACKUP\",\"status\":\"$STATUS\",\"details\":{\"rto\":$RTO,\"restore\":\"$RESTORE_NAME\"}}" >> /tmp/audit.log
+
+                  # Step 8: 정리
+                  echo "[INFO] 검증 리소스 정리"
+                  kubectl delete namespace "$VERIFY_NS" --ignore-not-found --wait=false
+                  velero restore delete "$RESTORE_NAME" --confirm 2>/dev/null || true
+
+                  echo "[INFO] === Velero 백업 복구 검증 완료 ==="
+
+                  [ "$STATUS" = "FAILED" ] && exit 1 || exit 0
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+          volumes:
+            - name: tmp
+              emptyDir: {}
+          restartPolicy: OnFailure

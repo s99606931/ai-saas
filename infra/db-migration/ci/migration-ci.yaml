@@ -1,0 +1,133 @@
+# DB 마이그레이션 CI 파이프라인
+# Design Ref: §2.3 | Plan SC: FR-N150.3
+name: DB Migration CI
+
+on:
+  pull_request:
+    paths:
+      - 'infra/db-migration/**'
+  push:
+    branches: [main, stg]
+    paths:
+      - 'infra/db-migration/**'
+
+env:
+  ATLAS_VERSION: "0.21.0"
+
+jobs:
+  lint:
+    name: Schema Lint & Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Atlas
+        uses: ariga/setup-atlas@v0
+        with:
+          version: ${{ env.ATLAS_VERSION }}
+
+      - name: Lint 마이그레이션 파일
+        run: |
+          echo "[INFO] Atlas 마이그레이션 lint 실행"
+          atlas migrate lint \
+            --dir "file://infra/db-migration/migrations" \
+            --dev-url "docker://postgres/16/dev" \
+            --latest 1
+          echo "[INFO] Lint 통과"
+
+      - name: SQL 구문 검증
+        run: |
+          for f in infra/db-migration/migrations/*.sql; do
+            echo "[CHECK] $f"
+            # 기본 SQL 구문 검증
+            if grep -qiE "DROP TABLE|DELETE FROM|TRUNCATE" "$f"; then
+              if ! grep -qi "IF EXISTS" "$f"; then
+                echo "[WARN] 파괴적 변경 감지 (안전 가드 미적용): $f"
+              fi
+            fi
+          done
+
+      - name: PII 데이터 포함 검사 (N2SF N-05)
+        run: |
+          for f in infra/db-migration/migrations/*.sql; do
+            if grep -qiE "INSERT.*주민등록|INSERT.*resident_number|INSERT.*ssn" "$f"; then
+              echo "[BLOCKED] PII 데이터 포함 감지: $f"
+              exit 1
+            fi
+          done
+          echo "[PASS] PII 데이터 미포함 확인"
+
+  dry-run:
+    name: Migration Dry Run
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: saas_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test_password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Atlas
+        uses: ariga/setup-atlas@v0
+
+      - name: 마이그레이션 Dry Run
+        run: |
+          atlas migrate apply \
+            --dir "file://infra/db-migration/migrations" \
+            --url "postgres://test:test_password@localhost:5432/saas_test?sslmode=disable" \
+            --dry-run
+          echo "[INFO] Dry Run 성공"
+
+      - name: 롤백 테스트
+        run: |
+          # 실제 적용
+          atlas migrate apply \
+            --dir "file://infra/db-migration/migrations" \
+            --url "postgres://test:test_password@localhost:5432/saas_test?sslmode=disable"
+          # 롤백 실행
+          for f in $(ls -r infra/db-migration/rollback/*.down.sql); do
+            echo "[ROLLBACK] $f"
+            psql "postgres://test:test_password@localhost:5432/saas_test" -f "$f"
+          done
+          echo "[INFO] 롤백 테스트 성공"
+
+  apply:
+    name: Migration Apply (Production)
+    needs: dry-run
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Atlas
+        uses: ariga/setup-atlas@v0
+
+      - name: Pre-migration 검증
+        run: |
+          psql "${{ secrets.DATABASE_URL }}" -f infra/db-migration/verification/pre-check.sql
+
+      - name: 마이그레이션 적용
+        run: |
+          atlas migrate apply \
+            --dir "file://infra/db-migration/migrations" \
+            --url "${{ secrets.DATABASE_URL }}"
+
+      - name: Post-migration 검증
+        run: |
+          psql "${{ secrets.DATABASE_URL }}" -f infra/db-migration/verification/post-check.sql
+
+      - name: 감사 로그 기록 (CSAP D-06)
+        if: always()
+        run: |
+          echo '{"timestamp":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","action":"DB_MIGRATION_APPLY","actor":"ci-pipeline","status":"${{ job.status }}","environment":"production"}' >> .claude/audit.jsonl

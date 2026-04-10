@@ -1,0 +1,31 @@
+# Flux GitOps 연동 — 클러스터 수명주기 관리
+# Design Ref: §2.6 | Plan SC: FR-N149.6
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cluster-api-lifecycle
+  namespace: flux-system
+  labels:
+    csap.compliance/domain: D-12
+spec:
+  interval: 5m
+  path: ./infra/cluster-api
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  healthChecks:
+    - apiVersion: cluster.x-k8s.io/v1beta1
+      kind: Cluster
+      name: workload-cluster-01
+      namespace: capi-system
+  timeout: 15m
+  retryInterval: 2m
+  wait: true
+  postBuild:
+    substituteFrom:
+      - kind: ConfigMap
+        name: cluster-config
+        optional: true
+  dependsOn:
+    - name: capi-controllers

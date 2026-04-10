@@ -1,0 +1,62 @@
+# L7 gRPC 서비스/메서드 필터링
+# Design Ref: §2.3 | Plan SC: FR-N152.3
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: grpc-user-service
+  namespace: saas-system
+  labels:
+    zero-trust/layer: L7-gRPC
+    csap.compliance/domain: D-10
+spec:
+  description: "gRPC User Service — 허용된 메서드만 통과"
+  endpointSelector:
+    matchLabels:
+      app: user-service
+      protocol: grpc
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP
+          rules:
+            http:
+              - method: POST
+                path: "/user.UserService/GetUser"
+              - method: POST
+                path: "/user.UserService/ListUsers"
+              - method: POST
+                path: "/user.UserService/UpdateUser"
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: grpc-tenant-service
+  namespace: saas-system
+  labels:
+    zero-trust/layer: L7-gRPC
+spec:
+  description: "gRPC Tenant Service"
+  endpointSelector:
+    matchLabels:
+      app: tenant-service
+      protocol: grpc
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP
+          rules:
+            http:
+              - method: POST
+                path: "/tenant.TenantService/GetTenant"
+              - method: POST
+                path: "/tenant.TenantService/ListTenants"
+              - method: POST
+                path: "/tenant.TenantService/CreateTenant"

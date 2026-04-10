@@ -1,0 +1,72 @@
+# 클러스터 해체 자동 감지 CronJob
+# Design Ref: §2.5 | Plan SC: FR-N149.5
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cluster-decommission-checker
+  namespace: capi-system
+  labels:
+    csap.compliance/domain: D-06
+spec:
+  schedule: "0 6 * * 1"
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app: decommission-checker
+        spec:
+          serviceAccountName: capi-controller-manager
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            fsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: checker
+              image: bitnami/kubectl:1.30
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] 클러스터 해체 점검 시작"
+
+                  # 만료된 클러스터 감지
+                  EXPIRED=$(kubectl get clusters -n capi-system -o json | \
+                    jq -r --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                    '.items[] |
+                    select(.metadata.annotations["lifecycle/expires"] != null) |
+                    select(.metadata.annotations["lifecycle/expires"] < $now) |
+                    .metadata.name')
+
+                  if [ -z "$EXPIRED" ]; then
+                    echo "[INFO] 만료된 클러스터 없음"
+                    exit 0
+                  fi
+
+                  echo "$EXPIRED" | while read -r cluster; do
+                    echo "[WARN] 만료 클러스터 감지: $cluster"
+                    # 감사 로그 기록 (CSAP D-06)
+                    echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"level\":\"WARNING\",\"action\":\"CLUSTER_EXPIRY_DETECTED\",\"target\":\"$cluster\",\"actor\":\"decommission-checker\",\"details\":{\"reason\":\"lifecycle/expires annotation exceeded\"}}" >> /tmp/audit.log
+                    # 알림 전송 (실제 환경에서는 webhook)
+                    echo "[ACTION] 클러스터 $cluster 해체 검토 필요"
+                  done
+
+                  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] 클러스터 해체 점검 완료"
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}
+          restartPolicy: OnFailure

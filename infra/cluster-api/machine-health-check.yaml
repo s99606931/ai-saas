@@ -1,0 +1,49 @@
+# 머신 헬스체크 — 자동 노드 교체
+# Design Ref: §2.4 | Plan SC: FR-N149.4
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineHealthCheck
+metadata:
+  name: workload-cluster-01-cp-mhc
+  namespace: capi-system
+  labels:
+    csap.compliance/domain: D-11
+spec:
+  clusterName: workload-cluster-01
+  maxUnhealthy: 100%
+  nodeStartupTimeout: 10m
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/control-plane: ""
+  unhealthyConditions:
+    - type: Ready
+      status: Unknown
+      timeout: 300s
+    - type: Ready
+      status: "False"
+      timeout: 300s
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineHealthCheck
+metadata:
+  name: workload-cluster-01-worker-mhc
+  namespace: capi-system
+  labels:
+    csap.compliance/domain: D-11
+spec:
+  clusterName: workload-cluster-01
+  maxUnhealthy: 40%
+  nodeStartupTimeout: 10m
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/deployment-name: workload-cluster-01-workers
+  unhealthyConditions:
+    - type: Ready
+      status: Unknown
+      timeout: 300s
+    - type: Ready
+      status: "False"
+      timeout: 300s
+  remediationTemplate:
+    kind: DockerMachineTemplate
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    name: workload-cluster-01-workers

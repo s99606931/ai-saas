@@ -1,0 +1,78 @@
+# Cilium Identity 기반 접근 제어
+# Design Ref: §2.4 | Plan SC: FR-N152.4
+# CSAP D-08: 접근 통제 | N2SF N-02: ID 및 접근
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: identity-based-access
+  namespace: saas-system
+  labels:
+    zero-trust/layer: identity
+    csap.compliance/domain: D-08
+    n2sf.security/domain: N-02
+spec:
+  description: "Cilium Identity 기반 서비스 간 접근 제어"
+  endpointSelector:
+    matchLabels:
+      app: compliance-service
+  ingress:
+    # 관리자 포털만 접근 허용
+    - fromEndpoints:
+        - matchLabels:
+            app: admin-portal
+            role: admin
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+    # API Gateway (인증 확인 후)
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
+            authenticated: "true"
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+---
+# AI 서비스 격리 (N2SF N-05 데이터 보호)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: ai-service-isolation
+  namespace: saas-system
+  labels:
+    zero-trust/layer: identity
+    n2sf.security/domain: N-05
+spec:
+  description: "AI 서비스 — N2SF O등급 데이터만 전송 허용"
+  endpointSelector:
+    matchLabels:
+      app: ai-service
+  egress:
+    # LM Studio (외부 AI)
+    - toCIDR:
+        - 192.168.0.0/16
+      toPorts:
+        - ports:
+            - port: "1234"
+              protocol: TCP
+    # DNS
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+  ingress:
+    # API Gateway만 접근 (데이터 등급 게이트웨이 경유)
+    - fromEndpoints:
+        - matchLabels:
+            app: api-gateway
+            data-grade-checked: "true"
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
