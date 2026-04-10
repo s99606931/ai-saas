@@ -89,10 +89,10 @@ export class ApiVersionManager {
    */
   extractVersion(url: string): { version: string; path: string } {
     const match = url.match(/^\/(v[\w.-]+)(\/.*)?$/);
-    if (match) {
+    if (match && match[1]) {
       return {
         version: match[1],
-        path: match[2] || '/',
+        path: match[2] ?? '/',
       };
     }
     return {

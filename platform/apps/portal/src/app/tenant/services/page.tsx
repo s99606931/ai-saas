@@ -13,9 +13,15 @@ export default function TenantServicesPage() {
             { name: 'AI 업무지원', status: '활성', usage: '45%' },
           ].map((s) => (
             <div key={s.name} className="border rounded-lg p-4" style={{ borderColor: 'var(--color-border)' }}>
-              <p className="font-medium" style={{ color: 'var(--color-text)' }}>{s.name}</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--color-success)' }}>{s.status}</p>
-              <p className="text-sm mt-2" style={{ color: 'var(--color-text-muted)' }}>사용량: {s.usage}</p>
+              <p className="font-medium" style={{ color: 'var(--color-text)' }}>
+                {s.name}
+              </p>
+              <p className="text-xs mt-1" style={{ color: 'var(--color-success)' }}>
+                {s.status}
+              </p>
+              <p className="text-sm mt-2" style={{ color: 'var(--color-text-muted)' }}>
+                사용량: {s.usage}
+              </p>
             </div>
           ))}
         </div>

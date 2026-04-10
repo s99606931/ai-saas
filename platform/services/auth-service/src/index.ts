@@ -1,7 +1,7 @@
 // 인증 서비스 진입점
-// Design Ref: MTU-P01 DESIGN-MTU-P01, SVC-AUTH-R1 DESIGN, SVC-OTEL-R3 DESIGN
-// Plan SC: FR-P01.1~FR-P01.12, FR-AUTH.1~FR-AUTH.7, FR-OTEL.3
-// CSAP: D-08 접근 통제
+// Design Ref: MTU-P01 DESIGN-MTU-P01, SVC-AUTH-R1 DESIGN, SVC-OTEL-R3 DESIGN, SVC-INTEGRATE-R11 Plan
+// Plan SC: FR-P01.1~FR-P01.12, FR-AUTH.1~FR-AUTH.7, FR-OTEL.3, FR-INT.1, FR-INT.3
+// CSAP: D-08 접근 통제, D-07 가용성
 
 import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
 
@@ -12,6 +12,8 @@ initTelemetry({ serviceName: 'auth-service', serviceVersion: '0.2.0' });
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { responseTimePlugin } from '@public-saas/observability';
+import { healthPlugin, CommonCheckers } from '@public-saas/health';
+import { rbacPlugin } from '@public-saas/rbac';
 import authMiddleware from './middleware/auth.middleware.js';
 import { registerAuthRoutes } from './routes.js';
 
@@ -37,43 +39,30 @@ async function main(): Promise<void> {
     allowedHeaders: ['Authorization', 'Content-Type', 'X-Tenant-Id', 'X-Request-ID'],
   });
 
+  // Plan SC: FR-INT.1 -- healthPlugin 통합 (CSAP D-07 가용성)
+  const { prisma } = await import('./lib/prisma.js');
+  const { redis } = await import('./lib/session.js');
+  await app.register(healthPlugin, {
+    serviceName: 'auth-service',
+    version: '0.2.0',
+    checkers: [
+      CommonCheckers.database(prisma),
+      CommonCheckers.custom('redis', async () => {
+        const pong = await redis.ping();
+        return pong === 'PONG';
+      }, 3000),
+    ],
+  });
+
+  // Plan SC: FR-INT.3 -- rbacPlugin 통합 (CSAP D-08 접근 통제)
+  await app.register(rbacPlugin, {
+    auditLogger: (event) => {
+      app.log.info({ rbacEvent: event }, 'RBAC 감사 로그');
+    },
+  });
+
   // JWT 인증 미들웨어 등록 (Plan SC: FR-P01.2)
   await app.register(authMiddleware);
-
-  // 헬스체크
-  app.get('/health', async () => ({ status: 'ok', service: 'auth-service' }));
-  app.get('/ready', async (_request, reply) => {
-    // CSAP D-07: k8s readinessProbe용
-    const checks: Record<string, string> = {};
-    let allReady = true;
-
-    // Redis 연결 확인
-    try {
-      const { redis } = await import('./lib/session.js');
-      const pong = await redis.ping();
-      checks['redis'] = pong === 'PONG' ? 'ok' : 'error';
-    } catch {
-      checks['redis'] = 'error';
-      allReady = false;
-    }
-
-    // DB(Prisma) 연결 확인
-    try {
-      const { prisma } = await import('./lib/prisma.js');
-      await prisma.$queryRaw`SELECT 1`;
-      checks['database'] = 'ok';
-    } catch {
-      checks['database'] = 'error';
-      allReady = false;
-    }
-
-    const status = allReady ? 'ready' : 'not_ready';
-    await reply.status(allReady ? 200 : 503).send({
-      status,
-      service: 'auth-service',
-      checks,
-    });
-  });
 
   // 인증 라우트 등록
   await registerAuthRoutes(app);

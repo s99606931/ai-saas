@@ -230,9 +230,7 @@ describe('saas-catalog-service E2E -- CRUD + 승인 워크플로 (CSAP D-08-05)'
           REJECTED: all.filter((i) => i.status === 'REJECTED').length,
           DEPRECATED: all.filter((i) => i.status === 'DEPRECATED').length,
         },
-        byCategory: Object.fromEntries(
-          CATEGORIES.map((cat) => [cat, all.filter((i) => i.category === cat).length]),
-        ),
+        byCategory: Object.fromEntries(CATEGORIES.map((cat) => [cat, all.filter((i) => i.category === cat).length])),
       },
     };
   });

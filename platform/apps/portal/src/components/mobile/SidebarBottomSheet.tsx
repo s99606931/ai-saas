@@ -12,12 +12,7 @@ interface SidebarBottomSheetProps {
   children: ReactNode;
 }
 
-export function SidebarBottomSheet({
-  open,
-  onClose,
-  title,
-  children,
-}: SidebarBottomSheetProps) {
+export function SidebarBottomSheet({ open, onClose, title, children }: SidebarBottomSheetProps) {
   if (!open) return null;
 
   return (
@@ -51,12 +46,7 @@ export function SidebarBottomSheet({
           <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
             {title}
           </h2>
-          <button
-            onClick={onClose}
-            className="p-2"
-            style={{ color: 'var(--color-text-muted)' }}
-            aria-label="닫기"
-          >
+          <button onClick={onClose} className="p-2" style={{ color: 'var(--color-text-muted)' }} aria-label="닫기">
             ✕
           </button>
         </div>

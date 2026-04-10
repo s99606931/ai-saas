@@ -74,14 +74,8 @@ export const rbacPlugin = fp(
  * @param permission - 필요 권한 (예: "tenant:read")
  * @param options - 추가 옵션
  */
-export function requirePermission(
-  permission: string,
-  options: { targetUserIdParam?: string } = {},
-) {
-  return async function permissionGuard(
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ): Promise<void> {
+export function requirePermission(permission: string, options: { targetUserIdParam?: string } = {}) {
+  return async function permissionGuard(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const rbacEngine = (request.server as FastifyInstance & { rbac: RBACEngine }).rbac;
     const user = request.userContext;
 
@@ -107,7 +101,7 @@ export function requirePermission(
 
     if (!result.allowed) {
       // CSAP D-06: 권한 거부 감사 로그
-      const auditLogger = (request.server as Record<string, unknown>)['rbacAuditLogger'] as
+      const auditLogger = (request.server as unknown as Record<string, unknown>)['rbacAuditLogger'] as
         | RBACPluginOptions['auditLogger']
         | undefined;
       if (auditLogger) {
@@ -140,10 +134,7 @@ export function requirePermission(
  * 다중 권한 검증 미들웨어 (OR 조건)
  */
 export function requireAnyPermission(...permissions: string[]) {
-  return async function anyPermissionGuard(
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ): Promise<void> {
+  return async function anyPermissionGuard(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const rbacEngine = (request.server as FastifyInstance & { rbac: RBACEngine }).rbac;
     const user = request.userContext;
 

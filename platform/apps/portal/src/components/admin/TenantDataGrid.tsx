@@ -16,9 +16,33 @@ interface TenantRow extends Record<string, unknown> {
 }
 
 const SAMPLE_TENANTS: TenantRow[] = [
-  { id: '1', name: '서울시청', slug: 'seoul', status: 'ACTIVE', plan: 'Enterprise', userCount: 150, createdAt: '2026-01-15' },
-  { id: '2', name: '부산시청', slug: 'busan', status: 'ACTIVE', plan: 'Standard', userCount: 80, createdAt: '2026-02-20' },
-  { id: '3', name: '국세청', slug: 'nts', status: 'ACTIVE', plan: 'Enterprise', userCount: 300, createdAt: '2026-01-10' },
+  {
+    id: '1',
+    name: '서울시청',
+    slug: 'seoul',
+    status: 'ACTIVE',
+    plan: 'Enterprise',
+    userCount: 150,
+    createdAt: '2026-01-15',
+  },
+  {
+    id: '2',
+    name: '부산시청',
+    slug: 'busan',
+    status: 'ACTIVE',
+    plan: 'Standard',
+    userCount: 80,
+    createdAt: '2026-02-20',
+  },
+  {
+    id: '3',
+    name: '국세청',
+    slug: 'nts',
+    status: 'ACTIVE',
+    plan: 'Enterprise',
+    userCount: 300,
+    createdAt: '2026-01-10',
+  },
   { id: '4', name: '환경부', slug: 'moe', status: 'TRIAL', plan: 'Trial', userCount: 10, createdAt: '2026-04-01' },
 ];
 

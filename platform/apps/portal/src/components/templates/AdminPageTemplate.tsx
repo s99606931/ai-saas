@@ -12,12 +12,7 @@ interface AdminPageTemplateProps {
   children: ReactNode;
 }
 
-export function AdminPageTemplate({
-  title,
-  description,
-  actions,
-  children,
-}: AdminPageTemplateProps) {
+export function AdminPageTemplate({ title, description, actions, children }: AdminPageTemplateProps) {
   return (
     <div className="p-6 space-y-6">
       {/* 페이지 헤더 */}

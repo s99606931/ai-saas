@@ -29,7 +29,9 @@
     "bcryptjs": "^2.4.3",
     "ioredis": "^5.4.0",
     "zod": "^3.23.0",
-    "pino": "^9.0.0"
+    "pino": "^9.0.0",
+    "@public-saas/health": "workspace:*",
+    "@public-saas/rbac": "workspace:*"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.0",

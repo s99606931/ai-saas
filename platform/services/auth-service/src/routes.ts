@@ -62,8 +62,14 @@ const loginSchemaOpts = {
           },
         },
       },
-      401: { type: 'object' as const, properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } } },
-      429: { type: 'object' as const, properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } } },
+      401: {
+        type: 'object' as const,
+        properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } },
+      },
+      429: {
+        type: 'object' as const,
+        properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } },
+      },
     },
   },
   preHandler: LOGIN_RATE_LIMIT,
@@ -86,7 +92,12 @@ const refreshSchemaOpts = {
       required: ['refreshToken'],
       properties: { refreshToken: { type: 'string' as const } },
     },
-    response: { 200: { type: 'object' as const, properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } } } },
+    response: {
+      200: {
+        type: 'object' as const,
+        properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } },
+      },
+    },
   },
   preHandler: REFRESH_RATE_LIMIT,
 };
@@ -99,7 +110,12 @@ const verifySchemaOpts = {
       type: 'object' as const,
       properties: { authorization: { type: 'string' as const } },
     },
-    response: { 200: { type: 'object' as const, properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } } } },
+    response: {
+      200: {
+        type: 'object' as const,
+        properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } },
+      },
+    },
   },
 };
 
@@ -129,7 +145,12 @@ const mfaSetupSchemaOpts = {
       required: ['password'],
       properties: { password: { type: 'string' as const } },
     },
-    response: { 200: { type: 'object' as const, properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } } } },
+    response: {
+      200: {
+        type: 'object' as const,
+        properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } },
+      },
+    },
   },
 };
 

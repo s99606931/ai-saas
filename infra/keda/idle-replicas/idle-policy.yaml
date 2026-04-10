@@ -1,0 +1,74 @@
+# KEDA 제로 스케일(Idle) 정책 — 비핵심 서비스
+# Design Ref: DS-N113.6
+# Plan SC: FR-N113.6
+# CSAP: D-10 부하 분산 + FinOps 비용 최적화
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: catalog-service-idle
+  namespace: saas-system
+  labels:
+    app.kubernetes.io/name: catalog-service
+    app.kubernetes.io/managed-by: keda
+    keda.sh/idle-policy: enabled
+    csap.compliance/control: D-10
+  annotations:
+    description: "비핵심 서비스 제로 스케일 — 트래픽 없을 때 0으로 축소"
+spec:
+  scaleTargetRef:
+    name: catalog-service
+  idleReplicaCount: 0
+  minReplicaCount: 1
+  maxReplicaCount: 5
+  cooldownPeriod: 600
+  pollingInterval: 30
+  advanced:
+    restoreToOriginalReplicaCount: false
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 600
+          policies:
+            - type: Pods
+              value: 1
+              periodSeconds: 120
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://prometheus-operated.monitoring:9090
+        query: sum(rate(http_requests_total{service="catalog-service"}[5m]))
+        threshold: "1"
+        activationThreshold: "0.5"
+      authenticationRef:
+        name: prometheus-trigger-auth
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: crm-service-idle
+  namespace: saas-system
+  labels:
+    app.kubernetes.io/name: crm-service
+    app.kubernetes.io/managed-by: keda
+    keda.sh/idle-policy: enabled
+    csap.compliance/control: D-10
+  annotations:
+    description: "CRM 서비스 제로 스케일 — 야간/주말 자동 축소"
+spec:
+  scaleTargetRef:
+    name: crm-service
+  idleReplicaCount: 0
+  minReplicaCount: 1
+  maxReplicaCount: 3
+  cooldownPeriod: 600
+  pollingInterval: 30
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://prometheus-operated.monitoring:9090
+        query: sum(rate(http_requests_total{service="crm-service"}[5m]))
+        threshold: "1"
+        activationThreshold: "0.5"
+      authenticationRef:
+        name: prometheus-trigger-auth

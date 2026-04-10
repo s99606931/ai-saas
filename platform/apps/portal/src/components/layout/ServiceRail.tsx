@@ -37,12 +37,7 @@ interface ServiceRailProps {
   onServiceSelect: (serviceId: string) => void;
 }
 
-export function ServiceRail({
-  expanded,
-  onToggleExpand,
-  activeService,
-  onServiceSelect,
-}: ServiceRailProps) {
+export function ServiceRail({ expanded, onToggleExpand, activeService, onServiceSelect }: ServiceRailProps) {
   // FR-UP.2: 10개 초과 시 "더 보기" 팝오버
   const [showMore, setShowMore] = useState(false);
 
@@ -86,10 +81,10 @@ export function ServiceRail({
             aria-label={service.name}
             aria-current={activeService === service.id ? 'page' : undefined}
           >
-            <span className="text-lg" aria-hidden>{service.icon}</span>
-            {expanded && (
-              <span className="text-sm truncate">{service.name}</span>
-            )}
+            <span className="text-lg" aria-hidden>
+              {service.icon}
+            </span>
+            {expanded && <span className="text-sm truncate">{service.name}</span>}
           </button>
         ))}
 
@@ -103,7 +98,9 @@ export function ServiceRail({
               aria-label="더 보기"
               aria-expanded={showMore}
             >
-              <span className="text-lg" aria-hidden>⋮</span>
+              <span className="text-lg" aria-hidden>
+                ⋮
+              </span>
               {expanded && <span className="text-sm">더 보기</span>}
             </button>
             {showMore && (
@@ -143,7 +140,9 @@ export function ServiceRail({
           style={{ color: 'var(--color-text-rail)' }}
           aria-label="설정"
         >
-          <span className="text-lg" aria-hidden>⚙️</span>
+          <span className="text-lg" aria-hidden>
+            ⚙️
+          </span>
           {expanded && <span className="text-sm">설정</span>}
         </button>
       </div>

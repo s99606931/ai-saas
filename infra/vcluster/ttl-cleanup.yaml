@@ -45,24 +45,24 @@ spec:
                   # TTL: 3일 (259200초)
                   TTL_SECONDS=259200
                   NOW=$(date +%s)
-                  
+
                   echo "=== vCluster TTL Cleanup ==="
                   echo "현재 시각: $(date -u)"
                   echo "TTL: ${TTL_SECONDS}초 (3일)"
-                  
+
                   # preview- 접두사 네임스페이스 검색
                   NAMESPACES=$(kubectl get ns -l saas.preview/pr-number -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.metadata.labels.saas\.preview/created-at}{"\n"}{end}')
-                  
+
                   if [ -z "$NAMESPACES" ]; then
                     echo "정리 대상 없음"
                     exit 0
                   fi
-                  
+
                   echo "$NAMESPACES" | while IFS=$'\t' read -r NS CREATED; do
                     if [ -n "$CREATED" ]; then
                       CREATED_TS=$(date -d "$CREATED" +%s 2>/dev/null || echo 0)
                       AGE=$((NOW - CREATED_TS))
-                      
+
                       if [ "$AGE" -gt "$TTL_SECONDS" ]; then
                         echo "삭제: ${NS} (생성: ${CREATED}, 경과: $((AGE/3600))시간)"
                         kubectl delete ns "${NS}" --timeout=60s || true
@@ -71,7 +71,7 @@ spec:
                       fi
                     fi
                   done
-                  
+
                   echo "=== 정리 완료 ==="
               resources:
                 requests:

@@ -1,0 +1,38 @@
+# KEDA TriggerAuthentication - Prometheus 접근 인증
+# Design Ref: DS-N113.4
+# Plan SC: FR-N113.4
+# CSAP: D-08 접근통제 — 시크릿 하드코딩 금지
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: prometheus-trigger-auth
+  namespace: saas-system
+  labels:
+    app.kubernetes.io/managed-by: keda
+    csap.compliance/control: D-08
+spec:
+  # ESO(External Secrets Operator)로 관리되는 시크릿 참조
+  # 하드코딩된 자격증명 절대 금지 (CSAP D-08)
+  secretTargetRef:
+    - parameter: bearerToken
+      name: prometheus-keda-token
+      key: token
+    - parameter: ca
+      name: prometheus-keda-token
+      key: ca.crt
+---
+# ServiceAccount 기반 인증 (bearerToken 불필요 환경용)
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: prometheus-trigger-auth-sa
+  namespace: saas-system
+  labels:
+    app.kubernetes.io/managed-by: keda
+    csap.compliance/control: D-08
+spec:
+  podIdentity:
+    provider: none
+  # 클러스터 내부 Prometheus는 ServiceAccount 토큰으로 접근
+  # 외부 Prometheus 사용 시 secretTargetRef로 전환

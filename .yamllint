@@ -1,0 +1,27 @@
+# yamllint 설정 — 공공기관 SaaS 프레임워크
+# Kubernetes 표준 YAML 스타일 허용
+# Helm 템플릿(templates/) 제외 필요 시: yamllint --no-warn ... (외부 스크립트)
+
+extends: default
+
+rules:
+  line-length:
+    max: 200
+    level: warning
+
+  document-start: disable
+
+  comments:
+    min-spaces-from-content: 1
+
+  indentation:
+    spaces: 2
+    indent-sequences: whatever  # k8s 다양한 스타일 허용
+
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1  # k8s 리소스 표기 허용: { cpu: 100m }
+
+  truthy:
+    allowed-values: ['true', 'false', 'on', 'off', 'yes', 'no']
+    check-keys: false

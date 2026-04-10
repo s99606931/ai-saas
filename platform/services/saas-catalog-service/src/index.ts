@@ -1,6 +1,6 @@
 // SaaS 카탈로그 서비스 진입점
-// Design Ref: SVC-SAASCAT-R3 DESIGN, SVC-OTEL-R3 DESIGN
-// Plan SC: FR-SCAT.1~FR-SCAT.7, FR-OTEL.3
+// Design Ref: SVC-SAASCAT-R3 DESIGN, SVC-OTEL-R3 DESIGN, SVC-INTEGRATE-R11 Plan
+// Plan SC: FR-SCAT.1~FR-SCAT.7, FR-OTEL.3, FR-INT.1
 
 import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
 
@@ -8,6 +8,7 @@ initTelemetry({ serviceName: 'saas-catalog-service', serviceVersion: '0.1.0' });
 
 import Fastify from 'fastify';
 import { responseTimePlugin } from '@public-saas/observability';
+import { healthPlugin, CommonCheckers } from '@public-saas/health';
 import { registerRoutes } from './routes.js';
 
 const PORT = parseInt(process.env['SAAS_CATALOG_SERVICE_PORT'] ?? '3016', 10);
@@ -21,14 +22,15 @@ async function main(): Promise<void> {
   // X-Response-Time (Plan SC: FR-OTEL.2, CSAP D-10)
   await app.register(responseTimePlugin);
 
-  app.get('/health', async () => ({ status: 'ok', service: 'saas-catalog-service' }));
-
-  // Readiness 프로브
-  app.get('/ready', async () => ({
-    status: 'ready',
-    service: 'saas-catalog-service',
-    checks: { store: 'ok' },
-  }));
+  // Plan SC: FR-INT.1 -- healthPlugin 통합 (CSAP D-07 가용성)
+  // saas-catalog-service는 인메모리 스토어 사용, 커스텀 체커로 스토어 상태 확인
+  await app.register(healthPlugin, {
+    serviceName: 'saas-catalog-service',
+    version: '0.1.0',
+    checkers: [
+      CommonCheckers.custom('store', async () => true, 1000),
+    ],
+  });
 
   await registerRoutes(app);
 

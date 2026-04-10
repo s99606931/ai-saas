@@ -1,0 +1,45 @@
+# KEDA HTTP Add-on Helm Values
+# Design Ref: DS-N113.1
+# Plan SC: FR-N113.1
+# CSAP: D-10 부하 분산 자동화
+---
+interceptor:
+  replicas: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  # 보안: 최소 권한 실행
+  securityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+scaler:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+operator:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# 네임스페이스 제한
+watchNamespace: "saas-system"

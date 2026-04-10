@@ -1,0 +1,66 @@
+# KEDA Cron ScaledObject - 업무시간 사전 확장
+# Design Ref: DS-N113.3
+# Plan SC: FR-N113.3
+# CSAP: D-10 부하 분산 (예측적 스케일링)
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: api-gateway-cron-weekday
+  namespace: saas-system
+  labels:
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/managed-by: keda
+    keda.sh/scaler-type: cron
+    csap.compliance/control: D-10
+  annotations:
+    description: "평일 업무시간(08:00-19:00) 사전 확장"
+spec:
+  scaleTargetRef:
+    name: api-gateway
+  triggers:
+    # 평일 업무시간: 5개 레플리카
+    - type: cron
+      metadata:
+        timezone: Asia/Seoul
+        start: 0 8 * * 1-5
+        end: 0 19 * * 1-5
+        desiredReplicas: "5"
+    # 평일 야간: 2개 레플리카
+    - type: cron
+      metadata:
+        timezone: Asia/Seoul
+        start: 0 19 * * 1-5
+        end: 0 8 * * 2-6
+        desiredReplicas: "2"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: auth-service-cron-weekday
+  namespace: saas-system
+  labels:
+    app.kubernetes.io/name: auth-service
+    app.kubernetes.io/managed-by: keda
+    keda.sh/scaler-type: cron
+    csap.compliance/control: D-10
+  annotations:
+    description: "평일 업무시간 인증 서비스 사전 확장"
+spec:
+  scaleTargetRef:
+    name: auth-service
+  triggers:
+    # 평일 업무시간: 3개 레플리카 (인증 부하 집중)
+    - type: cron
+      metadata:
+        timezone: Asia/Seoul
+        start: 0 8 * * 1-5
+        end: 0 19 * * 1-5
+        desiredReplicas: "3"
+    # 평일 야간/주말: 2개 레플리카 (최소 HA)
+    - type: cron
+      metadata:
+        timezone: Asia/Seoul
+        start: 0 19 * * 1-5
+        end: 0 8 * * 2-6
+        desiredReplicas: "2"

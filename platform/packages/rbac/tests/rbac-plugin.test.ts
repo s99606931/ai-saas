@@ -39,13 +39,9 @@ describe('RBAC Fastify 플러그인 -- API 보호 E2E', () => {
     },
   );
 
-  app.get(
-    '/security/alerts',
-    { preHandler: requireAnyPermission('security:read', 'security:manage') },
-    async () => {
-      return { success: true, data: [] };
-    },
-  );
+  app.get('/security/alerts', { preHandler: requireAnyPermission('security:read', 'security:manage') }, async () => {
+    return { success: true, data: [] };
+  });
 
   afterAll(async () => {
     await app.close();

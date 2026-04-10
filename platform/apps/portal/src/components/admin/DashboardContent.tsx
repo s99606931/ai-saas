@@ -3,10 +3,10 @@
 // CSAP: D-08 — 서버 컴포넌트, 클라이언트 직접 DB 접근 없음
 
 // 서버 컴포넌트 (use client 제거 — Next.js 15 기본값)
-import { Suspense } from 'react'
-import { ComplianceMatrix } from '../common/ComplianceMatrix'
-import type { DashboardStats } from '@/app/api/dashboard/stats/route'
-import type { CsapComplianceResponse } from '@/app/api/compliance/csap/route'
+import { Suspense } from 'react';
+import { ComplianceMatrix } from '../common/ComplianceMatrix';
+import type { DashboardStats } from '@/app/api/dashboard/stats/route';
+import type { CsapComplianceResponse } from '@/app/api/compliance/csap/route';
 
 // ============================================================
 // 데이터 fetch 함수 (서버 사이드)
@@ -14,27 +14,27 @@ import type { CsapComplianceResponse } from '@/app/api/compliance/csap/route'
 
 async function fetchDashboardStats(): Promise<DashboardStats | null> {
   try {
-    const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL ?? 'http://localhost:4000'
+    const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL ?? 'http://localhost:4000';
     const response = await fetch(`${apiBase}/api/dashboard/stats`, {
       next: { revalidate: 30 }, // 30초 캐시
-    })
-    if (!response.ok) return null
-    return response.json()
+    });
+    if (!response.ok) return null;
+    return response.json();
   } catch {
-    return null
+    return null;
   }
 }
 
 async function fetchCsapCompliance(): Promise<CsapComplianceResponse | null> {
   try {
-    const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL ?? 'http://localhost:4000'
+    const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL ?? 'http://localhost:4000';
     const response = await fetch(`${apiBase}/api/compliance/csap`, {
       next: { revalidate: 300 }, // 5분 캐시
-    })
-    if (!response.ok) return null
-    return response.json()
+    });
+    if (!response.ok) return null;
+    return response.json();
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -43,19 +43,19 @@ async function fetchCsapCompliance(): Promise<CsapComplianceResponse | null> {
 // ============================================================
 
 interface StatCard {
-  label: string
-  value: string
-  color: string
+  label: string;
+  value: string;
+  color: string;
 }
 
 function buildStatCards(stats: DashboardStats): StatCard[] {
-  const revenueInManWon = (stats.revenue / 10000).toFixed(1)
+  const revenueInManWon = (stats.revenue / 10000).toFixed(1);
   return [
     { label: '활성 테넌트', value: String(stats.tenants), color: 'var(--color-primary)' },
     { label: '전체 사용자', value: stats.users.toLocaleString('ko-KR'), color: 'var(--color-success)' },
     { label: '활성 구독', value: String(stats.activeSubscriptions), color: 'var(--color-warning)' },
     { label: '월간 수익', value: `₩${revenueInManWon}만`, color: 'var(--color-primary)' },
-  ]
+  ];
 }
 
 // 폴백: DB 연결 실패 시 표시할 기본값
@@ -65,7 +65,7 @@ function buildFallbackStatCards(): StatCard[] {
     { label: '전체 사용자', value: '-', color: 'var(--color-success)' },
     { label: '활성 구독', value: '-', color: 'var(--color-warning)' },
     { label: '월간 수익', value: '-', color: 'var(--color-primary)' },
-  ]
+  ];
 }
 
 // ============================================================
@@ -73,8 +73,8 @@ function buildFallbackStatCards(): StatCard[] {
 // ============================================================
 
 async function StatsCards() {
-  const stats = await fetchDashboardStats()
-  const cards = stats ? buildStatCards(stats) : buildFallbackStatCards()
+  const stats = await fetchDashboardStats();
+  const cards = stats ? buildStatCards(stats) : buildFallbackStatCards();
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -93,7 +93,7 @@ async function StatsCards() {
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 // ============================================================
@@ -101,7 +101,7 @@ async function StatsCards() {
 // ============================================================
 
 async function CsapSection() {
-  const compliance = await fetchCsapCompliance()
+  const compliance = await fetchCsapCompliance();
 
   if (!compliance) {
     return (
@@ -111,16 +111,12 @@ async function CsapSection() {
       >
         <p style={{ color: 'var(--color-text-muted)' }}>CSAP 데이터 로드 실패 — DB 연결을 확인하세요.</p>
       </div>
-    )
+    );
   }
 
   return (
-    <ComplianceMatrix
-      title="CSAP 79항목 준수 현황"
-      domains={compliance.domains}
-      overallRate={compliance.overallRate}
-    />
-  )
+    <ComplianceMatrix title="CSAP 79항목 준수 현황" domains={compliance.domains} overallRate={compliance.overallRate} />
+  );
 }
 
 // ============================================================
@@ -138,7 +134,7 @@ function StatsSkeleton() {
         />
       ))}
     </div>
-  )
+  );
 }
 
 function ComplianceSkeleton() {
@@ -147,7 +143,7 @@ function ComplianceSkeleton() {
       className="border rounded-lg p-4 h-64 animate-pulse"
       style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-bg-secondary)' }}
     />
-  )
+  );
 }
 
 // ============================================================
@@ -189,5 +185,5 @@ export function DashboardContent() {
         </div>
       </div>
     </div>
-  )
+  );
 }

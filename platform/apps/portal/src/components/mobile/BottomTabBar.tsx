@@ -43,7 +43,9 @@ export function BottomTabBar() {
           role="tab"
           aria-label={tab.label}
         >
-          <span className="text-lg" aria-hidden>{tab.icon}</span>
+          <span className="text-lg" aria-hidden>
+            {tab.icon}
+          </span>
           <span className="text-[10px]">{tab.label}</span>
         </a>
       ))}

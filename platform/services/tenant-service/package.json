@@ -22,7 +22,9 @@
     "@public-saas/rate-limit": "workspace:*",
     "@prisma/client": "^6.0.0",
     "fastify": "^5.0.0",
-    "zod": "^3.23.0"
+    "zod": "^3.23.0",
+    "@public-saas/health": "workspace:*",
+    "@public-saas/cache": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

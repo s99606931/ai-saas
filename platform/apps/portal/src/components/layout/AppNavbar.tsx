@@ -64,11 +64,7 @@ export function AppNavbar({ onAiToggle, aiPanelOpen }: AppNavbarProps) {
         >
           AI
         </button>
-        <button
-          className="p-2 rounded-lg"
-          style={{ color: 'var(--color-text-muted)' }}
-          aria-label="알림"
-        >
+        <button className="p-2 rounded-lg" style={{ color: 'var(--color-text-muted)' }} aria-label="알림">
           <span aria-hidden>🔔</span>
         </button>
         <button

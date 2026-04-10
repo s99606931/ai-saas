@@ -11,20 +11,14 @@ export const metadata: Metadata = {
   description: '공공기관 SaaS 플랫폼 관리 포털',
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // FR-L04.4: middleware.ts에서 주입한 nonce 읽기
   const headerStore = await headers();
   const nonce = headerStore.get('x-nonce') ?? '';
 
   return (
     <html lang="ko">
-      <body nonce={nonce}>
-        {children}
-      </body>
+      <body nonce={nonce}>{children}</body>
     </html>
   );
 }

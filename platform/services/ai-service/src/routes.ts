@@ -41,49 +41,137 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   const chatLimiter = createRateLimiter(10, 60, 'rl:ai:chat');
 
   // OpenAPI JSON Schema 정의 (CSAP D-12: API 문서화)
-  const modelResponse = { type: 'object' as const, properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } } };
-  const listResponse = { type: 'object' as const, properties: { success: { type: 'boolean' as const }, data: { type: 'array' as const, items: { type: 'object' as const } } } };
+  const modelResponse = {
+    type: 'object' as const,
+    properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } },
+  };
+  const listResponse = {
+    type: 'object' as const,
+    properties: {
+      success: { type: 'boolean' as const },
+      data: { type: 'array' as const, items: { type: 'object' as const } },
+    },
+  };
   const idParam = { type: 'object' as const, properties: { id: { type: 'string' as const, format: 'uuid' } } };
 
-  app.get('/ai/models', {
-    schema: { description: 'AI 모델 목록 조회', tags: ['ai'], response: { 200: listResponse } },
-    preHandler: readLimiter,
-  }, listModelsHandler as never);
+  app.get(
+    '/ai/models',
+    {
+      schema: { description: 'AI 모델 목록 조회', tags: ['ai'], response: { 200: listResponse } },
+      preHandler: readLimiter,
+    },
+    listModelsHandler as never,
+  );
 
-  app.post('/ai/models', {
-    schema: { description: 'AI 모델 등록', tags: ['ai'], body: { type: 'object' as const, required: ['name', 'provider', 'endpoint'] as const, properties: { name: { type: 'string' as const }, provider: { type: 'string' as const }, endpoint: { type: 'string' as const, format: 'uri' }, maxGrade: { type: 'string' as const, enum: ['O'] } } }, response: { 201: modelResponse } },
-    preHandler: writeLimiter,
-  }, createModelHandler as never);
+  app.post(
+    '/ai/models',
+    {
+      schema: {
+        description: 'AI 모델 등록',
+        tags: ['ai'],
+        body: {
+          type: 'object' as const,
+          required: ['name', 'provider', 'endpoint'] as const,
+          properties: {
+            name: { type: 'string' as const },
+            provider: { type: 'string' as const },
+            endpoint: { type: 'string' as const, format: 'uri' },
+            maxGrade: { type: 'string' as const, enum: ['O'] },
+          },
+        },
+        response: { 201: modelResponse },
+      },
+      preHandler: writeLimiter,
+    },
+    createModelHandler as never,
+  );
 
-  app.put('/ai/models/:id', {
-    schema: { description: 'AI 모델 수정', tags: ['ai'], params: idParam, body: { type: 'object' as const, properties: { name: { type: 'string' as const }, endpoint: { type: 'string' as const } } }, response: { 200: modelResponse } },
-    preHandler: writeLimiter,
-  }, updateModelHandler as never);
+  app.put(
+    '/ai/models/:id',
+    {
+      schema: {
+        description: 'AI 모델 수정',
+        tags: ['ai'],
+        params: idParam,
+        body: {
+          type: 'object' as const,
+          properties: { name: { type: 'string' as const }, endpoint: { type: 'string' as const } },
+        },
+        response: { 200: modelResponse },
+      },
+      preHandler: writeLimiter,
+    },
+    updateModelHandler as never,
+  );
 
-  app.post('/ai/chat', {
-    schema: { description: 'AI 채팅 (N2SF O등급 데이터만, PII 마스킹)', tags: ['ai'], body: { type: 'object' as const, required: ['message', 'dataGrade'] as const, properties: { message: { type: 'string' as const, maxLength: 4096 }, dataGrade: { type: 'string' as const, enum: ['O'] }, modelId: { type: 'string' as const } } }, response: { 200: modelResponse, 403: { type: 'object' as const, properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } } } } },
-    preHandler: chatLimiter,
-  }, chatHandler as never);
+  app.post(
+    '/ai/chat',
+    {
+      schema: {
+        description: 'AI 채팅 (N2SF O등급 데이터만, PII 마스킹)',
+        tags: ['ai'],
+        body: {
+          type: 'object' as const,
+          required: ['message', 'dataGrade'] as const,
+          properties: {
+            message: { type: 'string' as const, maxLength: 4096 },
+            dataGrade: { type: 'string' as const, enum: ['O'] },
+            modelId: { type: 'string' as const },
+          },
+        },
+        response: {
+          200: modelResponse,
+          403: {
+            type: 'object' as const,
+            properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } },
+          },
+        },
+      },
+      preHandler: chatLimiter,
+    },
+    chatHandler as never,
+  );
 
-  app.get('/ai/usage', {
-    schema: { description: 'AI 사용량 조회', tags: ['ai'], response: { 200: modelResponse } },
-    preHandler: readLimiter,
-  }, usageHandler as never);
+  app.get(
+    '/ai/usage',
+    {
+      schema: { description: 'AI 사용량 조회', tags: ['ai'], response: { 200: modelResponse } },
+      preHandler: readLimiter,
+    },
+    usageHandler as never,
+  );
 
-  app.get('/ai/cost', {
-    schema: { description: 'AI 비용 조회', tags: ['ai'], response: { 200: modelResponse } },
-    preHandler: readLimiter,
-  }, costHandler as never);
+  app.get(
+    '/ai/cost',
+    {
+      schema: { description: 'AI 비용 조회', tags: ['ai'], response: { 200: modelResponse } },
+      preHandler: readLimiter,
+    },
+    costHandler as never,
+  );
 
   // FR-AI.4: 일별 AI 사용량 추이
-  app.get('/ai/analytics/trend', {
-    schema: { description: '일별 AI 사용량 추이', tags: ['ai'], querystring: { type: 'object' as const, properties: { days: { type: 'integer' as const, default: 30 } } }, response: { 200: modelResponse } },
-    preHandler: readLimiter,
-  }, aiUsageTrendHandler as never);
+  app.get(
+    '/ai/analytics/trend',
+    {
+      schema: {
+        description: '일별 AI 사용량 추이',
+        tags: ['ai'],
+        querystring: { type: 'object' as const, properties: { days: { type: 'integer' as const, default: 30 } } },
+        response: { 200: modelResponse },
+      },
+      preHandler: readLimiter,
+    },
+    aiUsageTrendHandler as never,
+  );
 
   // FR-AI.5: 모델별 사용 분석
-  app.get('/ai/analytics/models', {
-    schema: { description: '모델별 사용 분석', tags: ['ai'], response: { 200: listResponse } },
-    preHandler: readLimiter,
-  }, modelAnalyticsHandler as never);
+  app.get(
+    '/ai/analytics/models',
+    {
+      schema: { description: '모델별 사용 분석', tags: ['ai'], response: { 200: listResponse } },
+      preHandler: readLimiter,
+    },
+    modelAnalyticsHandler as never,
+  );
 }

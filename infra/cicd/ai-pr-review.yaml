@@ -27,7 +27,7 @@ jobs:
         run: |
           # PR 변경 diff 추출 (마지막 500줄 제한)
           DIFF=$(git diff origin/${{ github.base_ref }}...HEAD -- '*.ts' '*.tsx' '*.js' '*.py' '*.go' '*.yaml' | head -${MAX_DIFF_LINES})
-          
+
           # PII 마스킹
           MASKED_DIFF=$(echo "$DIFF" | bash infra/cicd/ai-security-filter.sh -)
           echo "diff<<ENDDIFF" >> $GITHUB_OUTPUT
@@ -49,7 +49,7 @@ jobs:
               "temperature": 0.3,
               "max_tokens": 2000
             }')
-          
+
           REVIEW=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // "AI 리뷰 실패"')
           echo "review<<ENDREVIEW" >> $GITHUB_OUTPUT
           echo "$REVIEW" >> $GITHUB_OUTPUT
@@ -64,9 +64,9 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `## AI 코드 리뷰 (CSAP 기준)
-              
+
               ${{ steps.review.outputs.review }}
-              
+
               ---
               > 로컬 LM Studio 기반 자동 리뷰. N2SF O등급, PII 마스킹 적용.
               > CSAP D-12 시스템 개발 보안 점검.`

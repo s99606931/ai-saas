@@ -14,6 +14,17 @@ import {
 import { complianceTrendHandler, complianceSummaryHandler } from './handlers/compliance-trend.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
+// OpenAPI JSON Schema 정의 (CSAP D-12: API 문서화)
+const successResponse = {
+  type: 'object' as const,
+  properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } },
+} as const;
+
+const errorResponse = {
+  type: 'object' as const,
+  properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } },
+} as const;
+
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   // C-03 수정 (CSAP D-08): 서비스 간 내부 인증 — API 게이트웨이 우회 차단
   const internalKey = process.env['INTERNAL_SERVICE_KEY'];
@@ -38,26 +49,62 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   const readLimiter = createRateLimiter(100, 60, 'rl:comp:read');
 
   // FR-P14.1: CSAP 79항목 준수율
-  app.get('/compliance/csap', { preHandler: readLimiter }, csapComplianceHandler as never);
+  app.get('/compliance/csap', {
+    schema: { description: 'CSAP 79항목 준수율 조회', tags: ['compliance'], response: { 200: successResponse, 401: errorResponse }, security: [{ bearerAuth: [] }] },
+    preHandler: readLimiter,
+  }, csapComplianceHandler as never);
 
   // FR-COMP.2: CSAP 미준수 항목 상세
-  app.get('/compliance/csap/gaps', { preHandler: readLimiter }, csapGapsHandler as never);
+  app.get('/compliance/csap/gaps', {
+    schema: { description: 'CSAP 미준수 항목 상세 조회', tags: ['compliance'], response: { 200: successResponse, 401: errorResponse }, security: [{ bearerAuth: [] }] },
+    preHandler: readLimiter,
+  }, csapGapsHandler as never);
 
   // FR-P14.2: N2SF 6영역 현황
-  app.get('/compliance/n2sf', { preHandler: readLimiter }, n2sfComplianceHandler as never);
+  app.get('/compliance/n2sf', {
+    schema: { description: 'N2SF 6영역 현황 조회', tags: ['compliance'], response: { 200: successResponse, 401: errorResponse }, security: [{ bearerAuth: [] }] },
+    preHandler: readLimiter,
+  }, n2sfComplianceHandler as never);
 
   // FR-P14.3: 감리 준비도 점수
-  app.get('/compliance/readiness', { preHandler: readLimiter }, readinessHandler as never);
+  app.get('/compliance/readiness', {
+    schema: { description: '감리 준비도 점수 조회', tags: ['compliance'], response: { 200: successResponse, 401: errorResponse }, security: [{ bearerAuth: [] }] },
+    preHandler: readLimiter,
+  }, readinessHandler as never);
 
   // FR-COMP.3: 준수율 스냅샷 이력
-  app.get('/compliance/history', { preHandler: readLimiter }, complianceHistoryHandler as never);
+  app.get('/compliance/history', {
+    schema: {
+      description: '준수율 스냅샷 이력 조회',
+      tags: ['compliance'],
+      querystring: { type: 'object' as const, properties: { limit: { type: 'integer' as const, minimum: 1, maximum: 100, default: 20 } } },
+      response: { 200: successResponse, 401: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: readLimiter,
+  }, complianceHistoryHandler as never);
 
   // FR-P14.4: OpenTelemetry 메트릭
-  app.get('/compliance/metrics', { preHandler: readLimiter }, metricsHandler as never);
+  app.get('/compliance/metrics', {
+    schema: { description: 'OpenTelemetry 메트릭 조회', tags: ['compliance'], response: { 200: successResponse, 401: errorResponse }, security: [{ bearerAuth: [] }] },
+    preHandler: readLimiter,
+  }, metricsHandler as never);
 
   // FR-COMP.5: 준수율 추이
-  app.get('/compliance/trend', { preHandler: readLimiter }, complianceTrendHandler as never);
+  app.get('/compliance/trend', {
+    schema: {
+      description: '준수율 추이 조회',
+      tags: ['compliance'],
+      querystring: { type: 'object' as const, properties: { days: { type: 'integer' as const, minimum: 1, maximum: 365, default: 30 } } },
+      response: { 200: successResponse, 401: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: readLimiter,
+  }, complianceTrendHandler as never);
 
   // FR-COMP.6: 통합 요약 대시보드
-  app.get('/compliance/summary', { preHandler: readLimiter }, complianceSummaryHandler as never);
+  app.get('/compliance/summary', {
+    schema: { description: '통합 준수 요약 대시보드', tags: ['compliance'], response: { 200: successResponse, 401: errorResponse }, security: [{ bearerAuth: [] }] },
+    preHandler: readLimiter,
+  }, complianceSummaryHandler as never);
 }

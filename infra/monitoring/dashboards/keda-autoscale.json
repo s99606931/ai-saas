@@ -1,0 +1,184 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "annotations": { "list": [] },
+  "description": "KEDA 이벤트 기반 오토스케일링 모니터링 대시보드 (Design Ref: DS-N113.7, CSAP D-06/D-10)",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "KEDA ScaledObject 상태 개요",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "count(keda_scaledobject_status{status=\"Active\"})",
+          "legendFormat": "Active"
+        },
+        {
+          "expr": "count(keda_scaledobject_status{status=\"Idle\"})",
+          "legendFormat": "Idle"
+        },
+        {
+          "expr": "count(keda_scaledobject_status{status=\"Error\"})",
+          "legendFormat": "Error"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "서비스별 현재 레플리카 vs 목표 레플리카",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "keda_scaledobject_replicas{namespace=\"saas-system\"}",
+          "legendFormat": "{{scaledObject}} 현재"
+        },
+        {
+          "expr": "keda_scaledobject_desired_replicas{namespace=\"saas-system\"}",
+          "legendFormat": "{{scaledObject}} 목표"
+        }
+      ]
+    },
+    {
+      "title": "HTTP Add-on 요청 큐 깊이",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "keda_http_addon_pending_requests{namespace=\"saas-system\"}",
+          "legendFormat": "{{host}} 대기 요청"
+        },
+        {
+          "expr": "keda_http_addon_request_rate{namespace=\"saas-system\"}",
+          "legendFormat": "{{host}} 요청률"
+        }
+      ]
+    },
+    {
+      "title": "Prometheus 트리거 메트릭 현재값",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "keda_metrics_adapter_scaler_metrics_value{namespace=\"saas-system\",scaler=\"prometheus\"}",
+          "legendFormat": "{{scaledObject}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 80 }
+            ]
+          },
+          "unit": "percent"
+        }
+      }
+    },
+    {
+      "title": "스케일 이벤트 히스토리",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "expr": "changes(keda_scaledobject_replicas{namespace=\"saas-system\"}[5m])",
+          "legendFormat": "{{scaledObject}} 스케일 이벤트"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 50
+          }
+        }
+      }
+    },
+    {
+      "title": "스케일링 반응 시간 (트리거 감지 → 레플리카 변경)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 18 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(keda_scaler_scaling_latency_seconds_bucket{namespace=\"saas-system\"}[5m])) by (le, scaledObject))",
+          "legendFormat": "{{scaledObject}} P95 반응시간"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 20 },
+              { "color": "red", "value": 30 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Cron 스케일러 스케줄 상태",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "keda_scaledobject_replicas{namespace=\"saas-system\",scaler_type=\"cron\"}",
+          "legendFormat": "{{scaledObject}}",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "title": "제로 스케일 서비스 상태",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        {
+          "expr": "keda_scaledobject_replicas{namespace=\"saas-system\"} == 0",
+          "legendFormat": "{{scaledObject}} (IDLE)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["keda", "autoscaling", "csap", "d-10"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "KEDA 이벤트 기반 오토스케일링",
+  "uid": "keda-event-autoscale",
+  "version": 1
+}

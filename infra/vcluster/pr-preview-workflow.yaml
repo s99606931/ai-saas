@@ -63,14 +63,14 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `## PR Preview 환경 생성 완료
-              
+
               | 항목 | 값 |
               |------|---|
               | vCluster | \`${{ env.VCLUSTER_NAME }}\` |
               | 네임스페이스 | \`${{ env.NAMESPACE }}\` |
               | 접속 방법 | \`vcluster connect ${{ env.VCLUSTER_NAME }} -n ${{ env.NAMESPACE }}\` |
               | TTL | 3일 (미사용 시 자동 삭제) |
-              
+
               > CSAP D-08: Restricted PSS 적용, 리소스 제한 활성화`
             })
 

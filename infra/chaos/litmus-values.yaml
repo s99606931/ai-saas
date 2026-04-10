@@ -44,13 +44,10 @@ mongodb:
     accessMode: ReadWriteOnce
     size: 5Gi
 
-# --- 인증 설정 ---
-portal:
-  server:
-    authConfig:
-      adminUsername: admin
-      # 비밀번호는 Sealed Secret으로 관리
-      # adminPassword: 환경변수에서 주입
+# --- 인증 설정 (portal.server.authConfig) ---
+# portal.server는 위 설정에 병합됨
+# adminUsername: admin (Sealed Secret으로 비밀번호 관리)
+# adminPassword: 환경변수에서 주입
 
 # --- 네임스페이스 격리 ---
 # 카오스 실험은 staging 네임스페이스만 허용

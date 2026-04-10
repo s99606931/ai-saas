@@ -12,12 +12,7 @@ interface AdminPageTemplateProps {
   children: ReactNode;
 }
 
-export function AdminPageTemplate({
-  title,
-  description,
-  actions,
-  children,
-}: AdminPageTemplateProps) {
+export function AdminPageTemplate({ title, description, actions, children }: AdminPageTemplateProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">

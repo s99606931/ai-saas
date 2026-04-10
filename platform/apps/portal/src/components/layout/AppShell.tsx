@@ -34,10 +34,7 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <div className="app-shell">
       {/* FR-UP.10: AppNavbar */}
-      <AppNavbar
-        onAiToggle={() => setAiPanelOpen((v) => !v)}
-        aiPanelOpen={aiPanelOpen}
-      />
+      <AppNavbar onAiToggle={() => setAiPanelOpen((v) => !v)} aiPanelOpen={aiPanelOpen} />
 
       <div className="app-body">
         {/* FR-UP.1, FR-UP.12, FR-UP.22: ServiceRail */}
@@ -65,17 +62,11 @@ export function AppShell({ children }: AppShellProps) {
           <RecentTabsBar />
 
           {/* 페이지 콘텐츠 */}
-          <div className="main-content">
-            {children}
-          </div>
+          <div className="main-content">{children}</div>
         </div>
 
         {/* FR-UP.24: AI 사이드 패널 */}
-        {aiPanelOpen && (
-          <AiSidePanel
-            onClose={() => setAiPanelOpen(false)}
-          />
-        )}
+        {aiPanelOpen && <AiSidePanel onClose={() => setAiPanelOpen(false)} />}
       </div>
 
       {/* FR-UP.18: 모바일 하단 탭바 */}

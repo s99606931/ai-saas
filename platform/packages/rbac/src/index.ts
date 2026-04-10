@@ -14,16 +14,6 @@ export {
   type PermissionValue,
 } from './permissions.js';
 
-export {
-  RBACEngine,
-  rbac,
-  type UserContext,
-  type PermissionCheckResult,
-} from './rbac-engine.js';
+export { RBACEngine, rbac, type UserContext, type PermissionCheckResult } from './rbac-engine.js';
 
-export {
-  rbacPlugin,
-  requirePermission,
-  requireAnyPermission,
-  type RBACPluginOptions,
-} from './rbac-plugin.js';
+export { rbacPlugin, requirePermission, requireAnyPermission, type RBACPluginOptions } from './rbac-plugin.js';

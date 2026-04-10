@@ -62,9 +62,7 @@ describe('menu-service E2E -- 메뉴 트리 관리 + 역할 필터 (CSAP D-08)',
     const roots = all.filter((m) => !m.parentId).sort((a, b) => a.order - b.order);
     const tree = roots.map((root) => ({
       ...root,
-      children: all
-        .filter((m) => m.parentId === root.id)
-        .sort((a, b) => a.order - b.order),
+      children: all.filter((m) => m.parentId === root.id).sort((a, b) => a.order - b.order),
     }));
     return { success: true, data: tree };
   });

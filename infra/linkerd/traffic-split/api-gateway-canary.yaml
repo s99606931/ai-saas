@@ -1,0 +1,63 @@
+# Linkerd TrafficSplit - API Gateway 카나리 배포
+# Design Ref: DS-N114.1
+# Plan SC: FR-N114.1
+# CSAP: D-10 부하 분산 (카나리 배포)
+---
+apiVersion: split.smi-spec.io/v1alpha2
+kind: TrafficSplit
+metadata:
+  name: api-gateway-canary
+  namespace: saas-system
+  labels:
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/managed-by: linkerd
+    deployment.strategy: canary
+    csap.compliance/control: D-10
+  annotations:
+    description: "API Gateway 카나리 배포 — 90% stable, 10% canary"
+spec:
+  service: api-gateway
+  backends:
+    - service: api-gateway-stable
+      weight: 900
+    - service: api-gateway-canary
+      weight: 100
+---
+apiVersion: split.smi-spec.io/v1alpha2
+kind: TrafficSplit
+metadata:
+  name: auth-service-canary
+  namespace: saas-system
+  labels:
+    app.kubernetes.io/name: auth-service
+    app.kubernetes.io/managed-by: linkerd
+    deployment.strategy: canary
+    csap.compliance/control: D-10
+  annotations:
+    description: "Auth Service 카나리 배포 — 95% stable, 5% canary (보안 서비스 보수적)"
+spec:
+  service: auth-service
+  backends:
+    - service: auth-service-stable
+      weight: 950
+    - service: auth-service-canary
+      weight: 50
+---
+apiVersion: split.smi-spec.io/v1alpha2
+kind: TrafficSplit
+metadata:
+  name: ai-gateway-canary
+  namespace: saas-system
+  labels:
+    app.kubernetes.io/name: ai-gateway
+    app.kubernetes.io/managed-by: linkerd
+    deployment.strategy: canary
+    csap.compliance/control: D-10
+    n2sf.data-grade: O
+spec:
+  service: ai-gateway
+  backends:
+    - service: ai-gateway-stable
+      weight: 900
+    - service: ai-gateway-canary
+      weight: 100

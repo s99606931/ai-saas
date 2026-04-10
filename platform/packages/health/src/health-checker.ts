@@ -82,18 +82,12 @@ export class HealthChecker {
    * 전체 헬스체크 실행
    */
   async check(): Promise<HealthStatus> {
-    const dependencies = await Promise.all(
-      this.checkers.map((checker) => this.runChecker(checker)),
-    );
+    const dependencies = await Promise.all(this.checkers.map((checker) => this.runChecker(checker)));
 
     const hasUnhealthy = dependencies.some((d) => d.status === 'unhealthy');
     const hasDegraded = dependencies.some((d) => d.status === 'degraded');
 
-    const status: HealthStatus['status'] = hasUnhealthy
-      ? 'unhealthy'
-      : hasDegraded
-        ? 'degraded'
-        : 'healthy';
+    const status: HealthStatus['status'] = hasUnhealthy ? 'unhealthy' : hasDegraded ? 'degraded' : 'healthy';
 
     // 이력 기록
     this.history.push({ timestamp: Date.now(), status });
@@ -127,9 +121,7 @@ export class HealthChecker {
    * Kubernetes readinessProbe 용
    */
   async readiness(): Promise<{ ready: boolean; dependencies: DependencyStatus[] }> {
-    const dependencies = await Promise.all(
-      this.checkers.map((checker) => this.runChecker(checker)),
-    );
+    const dependencies = await Promise.all(this.checkers.map((checker) => this.runChecker(checker)));
     const ready = dependencies.every((d) => d.status !== 'unhealthy');
     return { ready, dependencies };
   }
@@ -174,20 +166,14 @@ export class HealthChecker {
     try {
       const result = await Promise.race([
         checker.check(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout')), timeout),
-        ),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout)),
       ]);
 
       const responseTimeMs = Date.now() - start;
 
       return {
         name: checker.name,
-        status: result.healthy
-          ? responseTimeMs > timeout * 0.8
-            ? 'degraded'
-            : 'healthy'
-          : 'unhealthy',
+        status: result.healthy ? (responseTimeMs > timeout * 0.8 ? 'degraded' : 'healthy') : 'unhealthy',
         responseTimeMs,
         message: result.message,
         lastChecked: new Date().toISOString(),
@@ -211,7 +197,8 @@ export const CommonCheckers = {
   /**
    * 데이터베이스 연결 체커 (Prisma 호환)
    */
-  database(prisma: { $queryRaw: (sql: unknown) => Promise<unknown> }): DependencyChecker {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  database(prisma: { $queryRaw: (...args: any[]) => Promise<unknown> }): DependencyChecker {
     return {
       name: 'database',
       timeout: 3000,
@@ -247,11 +234,7 @@ export const CommonCheckers = {
   /**
    * 커스텀 체커 (간편 생성)
    */
-  custom(
-    name: string,
-    fn: () => Promise<boolean>,
-    timeout?: number,
-  ): DependencyChecker {
+  custom(name: string, fn: () => Promise<boolean>, timeout?: number): DependencyChecker {
     return {
       name,
       timeout,

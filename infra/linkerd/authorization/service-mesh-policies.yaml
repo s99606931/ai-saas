@@ -1,0 +1,96 @@
+# Linkerd ServerAuthorization 확장 — 서비스 간 제로트러스트
+# Design Ref: DS-N114.3
+# Plan SC: FR-N114.3
+# CSAP: D-08 접근통제 (서비스 간 인증)
+---
+# tenant-service: api-gateway에서만 접근 허용
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerAuthorization
+metadata:
+  name: tenant-service-allow-gateway
+  namespace: saas-system
+  labels:
+    csap.compliance/control: D-08
+spec:
+  server:
+    name: tenant-service
+  client:
+    meshTLS:
+      serviceAccounts:
+        - name: api-gateway
+---
+# audit-service: 모든 서비스에서 쓰기 허용 (감사 로그 수집)
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerAuthorization
+metadata:
+  name: audit-service-allow-all-write
+  namespace: saas-system
+  labels:
+    csap.compliance/control: D-06
+  annotations:
+    description: "감사 로그 기록은 모든 서비스에서 허용 (D-06 전수 기록 요건)"
+spec:
+  server:
+    name: audit-service
+  client:
+    meshTLS:
+      serviceAccounts:
+        - name: api-gateway
+        - name: auth-service
+        - name: tenant-service
+        - name: catalog-service
+        - name: ai-gateway
+        - name: compliance-service
+---
+# ai-gateway: api-gateway에서만 접근 허용 (N2SF 격리)
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerAuthorization
+metadata:
+  name: ai-gateway-allow-gateway-only
+  namespace: saas-system
+  labels:
+    csap.compliance/control: D-08
+    n2sf.data-grade: O
+  annotations:
+    description: "AI Gateway는 API Gateway를 통해서만 접근 (N2SF 격리)"
+spec:
+  server:
+    name: ai-gateway
+  client:
+    meshTLS:
+      serviceAccounts:
+        - name: api-gateway
+---
+# catalog-service: api-gateway + subscription-service만 허용
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerAuthorization
+metadata:
+  name: catalog-service-allow-limited
+  namespace: saas-system
+  labels:
+    csap.compliance/control: D-08
+spec:
+  server:
+    name: catalog-service
+  client:
+    meshTLS:
+      serviceAccounts:
+        - name: api-gateway
+        - name: subscription-service
+---
+# compliance-service: api-gateway + audit-service만 허용
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerAuthorization
+metadata:
+  name: compliance-service-allow-limited
+  namespace: saas-system
+  labels:
+    csap.compliance/control: D-08
+spec:
+  server:
+    name: compliance-service
+  client:
+    meshTLS:
+      serviceAccounts:
+        - name: api-gateway
+        - name: audit-service

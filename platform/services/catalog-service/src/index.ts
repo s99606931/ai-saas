@@ -1,6 +1,6 @@
 // SaaS 카탈로그 서비스 진입점
-// Design Ref: DESIGN-MTU-P06, SVC-OTEL-R3 DESIGN
-// Plan SC: MTU-P06, FR-OTEL.3
+// Design Ref: DESIGN-MTU-P06, SVC-OTEL-R3 DESIGN, SVC-INTEGRATE-R11 Plan
+// Plan SC: MTU-P06, FR-OTEL.3, FR-INT.1, FR-INT.2
 
 import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
 
@@ -8,6 +8,8 @@ initTelemetry({ serviceName: 'catalog-service', serviceVersion: '0.1.0' });
 
 import Fastify from 'fastify';
 import { responseTimePlugin } from '@public-saas/observability';
+import { healthPlugin, CommonCheckers } from '@public-saas/health';
+import { cachePlugin } from '@public-saas/cache';
 import { registerRoutes } from './routes.js';
 
 const PORT = parseInt(process.env['CATALOG-SERVICE_PORT'] ?? '3005', 10);
@@ -20,25 +22,17 @@ async function main(): Promise<void> {
 
   await app.register(responseTimePlugin);
 
-  app.get('/health', async () => ({ status: 'ok', service: 'catalog-service' }));
+  // Plan SC: FR-INT.1 -- healthPlugin 통합 (CSAP D-07 가용성)
+  const { prisma } = await import('./lib/prisma.js');
+  await app.register(healthPlugin, {
+    serviceName: 'catalog-service',
+    version: '0.1.0',
+    checkers: [CommonCheckers.database(prisma)],
+  });
 
-  // Readiness 프로브 (CSAP D-07: DB 연결 상태 포함)
-  app.get('/ready', async (_request, reply) => {
-    const checks: Record<string, string> = {};
-    let allReady = true;
-    try {
-      const { prisma } = await import('./lib/prisma.js');
-      await prisma.$queryRaw`SELECT 1`;
-      checks['database'] = 'ok';
-    } catch {
-      checks['database'] = 'error';
-      allReady = false;
-    }
-    await reply.status(allReady ? 200 : 503).send({
-      status: allReady ? 'ready' : 'not_ready',
-      service: 'catalog-service',
-      checks,
-    });
+  // Plan SC: FR-INT.2 -- cachePlugin 통합 (CSAP D-07 가용성)
+  await app.register(cachePlugin, {
+    config: { defaultTtlSeconds: 600, prefix: 'saas:catalog' },
   });
 
   await registerRoutes(app);

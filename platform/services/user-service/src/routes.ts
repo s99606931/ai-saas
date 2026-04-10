@@ -49,82 +49,230 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
 
   // OpenAPI JSON Schema 정의 (CSAP D-12: API 문서화)
   const idParam = { type: 'object' as const, properties: { id: { type: 'string' as const, format: 'uuid' } } };
-  const userResponse = { type: 'object' as const, properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } } };
-  const listResponse = { type: 'object' as const, properties: { success: { type: 'boolean' as const }, data: { type: 'array' as const, items: { type: 'object' as const } } } };
+  const userResponse = {
+    type: 'object' as const,
+    properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } },
+  };
+  const listResponse = {
+    type: 'object' as const,
+    properties: {
+      success: { type: 'boolean' as const },
+      data: { type: 'array' as const, items: { type: 'object' as const } },
+    },
+  };
 
   // Plan SC: FR-P02.2, FR-USR.1 (검색/필터링 지원)
-  app.get('/users', {
-    schema: { description: '사용자 목록 조회', tags: ['users'], querystring: { type: 'object' as const, properties: { page: { type: 'integer' as const }, limit: { type: 'integer' as const }, role: { type: 'string' as const }, tenantId: { type: 'string' as const } } }, response: { 200: listResponse } },
-    preHandler: readLimiter,
-  }, listUsersHandler as never);
+  app.get(
+    '/users',
+    {
+      schema: {
+        description: '사용자 목록 조회',
+        tags: ['users'],
+        querystring: {
+          type: 'object' as const,
+          properties: {
+            page: { type: 'integer' as const },
+            limit: { type: 'integer' as const },
+            role: { type: 'string' as const },
+            tenantId: { type: 'string' as const },
+          },
+        },
+        response: { 200: listResponse },
+      },
+      preHandler: readLimiter,
+    },
+    listUsersHandler as never,
+  );
 
   // FR-USR.7: 사용자 통계 (정적 라우트 우선 등록)
-  app.get('/users/stats', {
-    schema: { description: '사용자 통계', tags: ['users'], response: { 200: userResponse } },
-    preHandler: readLimiter,
-  }, userStatsHandler as never);
+  app.get(
+    '/users/stats',
+    {
+      schema: { description: '사용자 통계', tags: ['users'], response: { 200: userResponse } },
+      preHandler: readLimiter,
+    },
+    userStatsHandler as never,
+  );
 
   // FR-USR.8: 로그인 활동 추이 (정적 라우트 우선 등록)
-  app.get('/users/login-activity', {
-    schema: { description: '로그인 활동 추이 조회', tags: ['users'], querystring: { type: 'object' as const, properties: { days: { type: 'integer' as const, default: 30 } } }, response: { 200: userResponse } },
-    preHandler: readLimiter,
-  }, loginActivityHandler as never);
+  app.get(
+    '/users/login-activity',
+    {
+      schema: {
+        description: '로그인 활동 추이 조회',
+        tags: ['users'],
+        querystring: { type: 'object' as const, properties: { days: { type: 'integer' as const, default: 30 } } },
+        response: { 200: userResponse },
+      },
+      preHandler: readLimiter,
+    },
+    loginActivityHandler as never,
+  );
 
   // Plan SC: FR-USR.2 (비활성 계정 감지)
-  app.get('/users/inactive', {
-    schema: { description: '비활성 계정 목록 (CSAP D-08)', tags: ['users'], response: { 200: listResponse } },
-    preHandler: readLimiter,
-  }, listInactiveUsersHandler as never);
+  app.get(
+    '/users/inactive',
+    {
+      schema: { description: '비활성 계정 목록 (CSAP D-08)', tags: ['users'], response: { 200: listResponse } },
+      preHandler: readLimiter,
+    },
+    listInactiveUsersHandler as never,
+  );
 
-  app.get('/users/:id', {
-    schema: { description: '사용자 상세 조회', tags: ['users'], params: idParam, response: { 200: userResponse } },
-    preHandler: readLimiter,
-  }, getUserHandler as never);
+  app.get(
+    '/users/:id',
+    {
+      schema: { description: '사용자 상세 조회', tags: ['users'], params: idParam, response: { 200: userResponse } },
+      preHandler: readLimiter,
+    },
+    getUserHandler as never,
+  );
 
   // Plan SC: FR-P02.1
-  app.post('/users', {
-    schema: { description: '사용자 생성', tags: ['users'], body: { type: 'object' as const, required: ['email', 'name', 'role', 'tenantId'] as const, properties: { email: { type: 'string' as const, format: 'email' }, name: { type: 'string' as const }, role: { type: 'string' as const }, tenantId: { type: 'string' as const, format: 'uuid' } } }, response: { 201: userResponse } },
-    preHandler: createLimiter,
-  }, createUserHandler as never);
+  app.post(
+    '/users',
+    {
+      schema: {
+        description: '사용자 생성',
+        tags: ['users'],
+        body: {
+          type: 'object' as const,
+          required: ['email', 'name', 'role', 'tenantId'] as const,
+          properties: {
+            email: { type: 'string' as const, format: 'email' },
+            name: { type: 'string' as const },
+            role: { type: 'string' as const },
+            tenantId: { type: 'string' as const, format: 'uuid' },
+          },
+        },
+        response: { 201: userResponse },
+      },
+      preHandler: createLimiter,
+    },
+    createUserHandler as never,
+  );
 
   // Plan SC: FR-P02.3
-  app.put('/users/:id', {
-    schema: { description: '사용자 수정', tags: ['users'], params: idParam, body: { type: 'object' as const, properties: { name: { type: 'string' as const }, email: { type: 'string' as const } } }, response: { 200: userResponse } },
-    preHandler: updateLimiter,
-  }, updateUserHandler as never);
+  app.put(
+    '/users/:id',
+    {
+      schema: {
+        description: '사용자 수정',
+        tags: ['users'],
+        params: idParam,
+        body: {
+          type: 'object' as const,
+          properties: { name: { type: 'string' as const }, email: { type: 'string' as const } },
+        },
+        response: { 200: userResponse },
+      },
+      preHandler: updateLimiter,
+    },
+    updateUserHandler as never,
+  );
 
   // Plan SC: FR-P02.4 (소프트 삭제 개선)
-  app.delete('/users/:id', {
-    schema: { description: '사용자 삭제 (소프트 삭제, CSAP D-08)', tags: ['users'], params: idParam, response: { 200: userResponse } },
-    preHandler: deleteLimiter,
-  }, deleteUserHandler as never);
+  app.delete(
+    '/users/:id',
+    {
+      schema: {
+        description: '사용자 삭제 (소프트 삭제, CSAP D-08)',
+        tags: ['users'],
+        params: idParam,
+        response: { 200: userResponse },
+      },
+      preHandler: deleteLimiter,
+    },
+    deleteUserHandler as never,
+  );
 
   // Plan SC: FR-P02.4 (복원)
-  app.put('/users/:id/reactivate', {
-    schema: { description: '삭제된 사용자 복원', tags: ['users'], params: idParam, response: { 200: userResponse } },
-    preHandler: updateLimiter,
-  }, reactivateUserHandler as never);
+  app.put(
+    '/users/:id/reactivate',
+    {
+      schema: { description: '삭제된 사용자 복원', tags: ['users'], params: idParam, response: { 200: userResponse } },
+      preHandler: updateLimiter,
+    },
+    reactivateUserHandler as never,
+  );
 
   // Plan SC: FR-P02.5
-  app.put('/users/:id/role', {
-    schema: { description: '사용자 역할 변경 (CSAP D-08)', tags: ['users'], params: idParam, body: { type: 'object' as const, required: ['role'] as const, properties: { role: { type: 'string' as const } } }, response: { 200: userResponse } },
-    preHandler: updateLimiter,
-  }, changeRoleHandler as never);
+  app.put(
+    '/users/:id/role',
+    {
+      schema: {
+        description: '사용자 역할 변경 (CSAP D-08)',
+        tags: ['users'],
+        params: idParam,
+        body: {
+          type: 'object' as const,
+          required: ['role'] as const,
+          properties: { role: { type: 'string' as const } },
+        },
+        response: { 200: userResponse },
+      },
+      preHandler: updateLimiter,
+    },
+    changeRoleHandler as never,
+  );
 
   // Plan SC: FR-P02.6
-  app.put('/users/:id/password', {
-    schema: { description: '비밀번호 변경 (CSAP D-08-07)', tags: ['users'], params: idParam, body: { type: 'object' as const, required: ['currentPassword', 'newPassword'] as const, properties: { currentPassword: { type: 'string' as const }, newPassword: { type: 'string' as const, minLength: 8 } } }, response: { 200: userResponse } },
-    preHandler: passwordLimiter,
-  }, changePasswordHandler as never);
+  app.put(
+    '/users/:id/password',
+    {
+      schema: {
+        description: '비밀번호 변경 (CSAP D-08-07)',
+        tags: ['users'],
+        params: idParam,
+        body: {
+          type: 'object' as const,
+          required: ['currentPassword', 'newPassword'] as const,
+          properties: {
+            currentPassword: { type: 'string' as const },
+            newPassword: { type: 'string' as const, minLength: 8 },
+          },
+        },
+        response: { 200: userResponse },
+      },
+      preHandler: passwordLimiter,
+    },
+    changePasswordHandler as never,
+  );
 
   // Plan SC: FR-P02.7 (비밀번호 재설정)
-  app.post('/users/password-reset/request', {
-    schema: { description: '비밀번호 재설정 요청', tags: ['users'], body: { type: 'object' as const, required: ['email'] as const, properties: { email: { type: 'string' as const, format: 'email' } } }, response: { 200: userResponse } },
-    preHandler: resetLimiter,
-  }, requestPasswordResetHandler as never);
+  app.post(
+    '/users/password-reset/request',
+    {
+      schema: {
+        description: '비밀번호 재설정 요청',
+        tags: ['users'],
+        body: {
+          type: 'object' as const,
+          required: ['email'] as const,
+          properties: { email: { type: 'string' as const, format: 'email' } },
+        },
+        response: { 200: userResponse },
+      },
+      preHandler: resetLimiter,
+    },
+    requestPasswordResetHandler as never,
+  );
 
-  app.post('/users/password-reset/confirm', {
-    schema: { description: '비밀번호 재설정 확인', tags: ['users'], body: { type: 'object' as const, required: ['token', 'newPassword'] as const, properties: { token: { type: 'string' as const }, newPassword: { type: 'string' as const, minLength: 8 } } }, response: { 200: userResponse } },
-    preHandler: resetLimiter,
-  }, confirmPasswordResetHandler as never);
+  app.post(
+    '/users/password-reset/confirm',
+    {
+      schema: {
+        description: '비밀번호 재설정 확인',
+        tags: ['users'],
+        body: {
+          type: 'object' as const,
+          required: ['token', 'newPassword'] as const,
+          properties: { token: { type: 'string' as const }, newPassword: { type: 'string' as const, minLength: 8 } },
+        },
+        response: { 200: userResponse },
+      },
+      preHandler: resetLimiter,
+    },
+    confirmPasswordResetHandler as never,
+  );
 }

@@ -139,9 +139,7 @@ describe('billing-service E2E -- 인보이스 생명주기 (CSAP D-06, D-08-05)'
 
   app.get('/billing/payments', async (req) => {
     const query = req.query as { invoiceId?: string };
-    const filtered = query.invoiceId
-      ? payments.filter((p) => p.invoiceId === query.invoiceId)
-      : payments;
+    const filtered = query.invoiceId ? payments.filter((p) => p.invoiceId === query.invoiceId) : payments;
     return { success: true, data: filtered };
   });
 

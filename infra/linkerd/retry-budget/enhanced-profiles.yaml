@@ -1,0 +1,116 @@
+# Linkerd 서비스별 RetryBudget 및 타임아웃 강화 정책
+# Design Ref: DS-N114.2
+# Plan SC: FR-N114.2
+# CSAP: D-10 서비스 안정성
+---
+# tenant-service 강화 프로필
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: tenant-service.saas-system.svc.cluster.local
+  namespace: saas-system
+  labels:
+    csap.compliance/control: D-10
+spec:
+  retryBudget:
+    retryRatio: 0.2
+    minRetriesPerSecond: 10
+    ttl: 120s
+  routes:
+    - name: "GET /api/v1/tenants"
+      condition:
+        method: GET
+        pathRegex: /api/v1/tenants
+      timeout: 5s
+      isRetryable: true
+    - name: "GET /api/v1/tenants/:id"
+      condition:
+        method: GET
+        pathRegex: /api/v1/tenants/[^/]+
+      timeout: 5s
+      isRetryable: true
+    - name: "POST /api/v1/tenants"
+      condition:
+        method: POST
+        pathRegex: /api/v1/tenants
+      timeout: 10s
+      isRetryable: false
+    - name: "PUT /api/v1/tenants/:id"
+      condition:
+        method: PUT
+        pathRegex: /api/v1/tenants/[^/]+
+      timeout: 10s
+      isRetryable: false
+    - name: "DELETE /api/v1/tenants/:id"
+      condition:
+        method: DELETE
+        pathRegex: /api/v1/tenants/[^/]+
+      timeout: 10s
+      isRetryable: false
+---
+# audit-service 강화 프로필 (감사 로그는 재시도 불필요)
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: audit-service.saas-system.svc.cluster.local
+  namespace: saas-system
+  labels:
+    csap.compliance/control: D-06
+spec:
+  retryBudget:
+    retryRatio: 0.05
+    minRetriesPerSecond: 5
+    ttl: 60s
+  routes:
+    - name: "POST /api/v1/audit/events"
+      condition:
+        method: POST
+        pathRegex: /api/v1/audit/events
+      timeout: 15s
+      isRetryable: false
+    - name: "GET /api/v1/audit/events"
+      condition:
+        method: GET
+        pathRegex: /api/v1/audit/events
+      timeout: 10s
+      isRetryable: true
+    - name: "GET /api/v1/audit/reports"
+      condition:
+        method: GET
+        pathRegex: /api/v1/audit/reports
+      timeout: 30s
+      isRetryable: true
+---
+# ai-gateway 강화 프로필 (N2SF O등급)
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: ai-gateway.saas-system.svc.cluster.local
+  namespace: saas-system
+  labels:
+    csap.compliance/control: D-10
+    n2sf.data-grade: O
+spec:
+  retryBudget:
+    retryRatio: 0.1
+    minRetriesPerSecond: 3
+    ttl: 60s
+  routes:
+    - name: "POST /api/v1/ai/completions"
+      condition:
+        method: POST
+        pathRegex: /api/v1/ai/completions
+      timeout: 60s
+      isRetryable: false
+    - name: "POST /api/v1/ai/embeddings"
+      condition:
+        method: POST
+        pathRegex: /api/v1/ai/embeddings
+      timeout: 30s
+      isRetryable: true
+    - name: "GET /api/v1/ai/models"
+      condition:
+        method: GET
+        pathRegex: /api/v1/ai/models
+      timeout: 5s
+      isRetryable: true

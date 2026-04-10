@@ -13,10 +13,38 @@ interface ServiceCard {
 }
 
 const SAMPLE_SERVICES: ServiceCard[] = [
-  { id: '1', name: '전자결재', description: '공공기관 전자결재 시스템', category: '업무', status: 'published', version: '1.2.0' },
-  { id: '2', name: '인사관리', description: '공무원 인사 관리 시스템', category: '인사', status: 'published', version: '2.0.0' },
-  { id: '3', name: '재정관리', description: '예산 편성 및 집행 관리', category: '재정', status: 'published', version: '1.0.0' },
-  { id: '4', name: '민원처리', description: '온라인 민원 접수/처리', category: '민원', status: 'draft', version: '0.9.0' },
+  {
+    id: '1',
+    name: '전자결재',
+    description: '공공기관 전자결재 시스템',
+    category: '업무',
+    status: 'published',
+    version: '1.2.0',
+  },
+  {
+    id: '2',
+    name: '인사관리',
+    description: '공무원 인사 관리 시스템',
+    category: '인사',
+    status: 'published',
+    version: '2.0.0',
+  },
+  {
+    id: '3',
+    name: '재정관리',
+    description: '예산 편성 및 집행 관리',
+    category: '재정',
+    status: 'published',
+    version: '1.0.0',
+  },
+  {
+    id: '4',
+    name: '민원처리',
+    description: '온라인 민원 접수/처리',
+    category: '민원',
+    status: 'draft',
+    version: '0.9.0',
+  },
 ];
 
 export function ServiceCatalogGrid() {
@@ -38,9 +66,7 @@ export function ServiceCatalogGrid() {
             <span
               className="text-xs px-2 py-0.5 rounded-full"
               style={{
-                backgroundColor: service.status === 'published'
-                  ? 'var(--color-success)'
-                  : 'var(--color-warning)',
+                backgroundColor: service.status === 'published' ? 'var(--color-success)' : 'var(--color-warning)',
                 color: '#fff',
               }}
             >

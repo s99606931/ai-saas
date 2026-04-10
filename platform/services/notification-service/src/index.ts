@@ -1,7 +1,7 @@
 // 알림 서비스 진입점
-// Design Ref: DESIGN-MTU-P11, DESIGN-MTU-Q2, SVC-OTEL-R3 DESIGN
-// Plan SC: MTU-P11, MTU-Q2, FR-OTEL.3
-// CSAP: D-06 감사 로그
+// Design Ref: DESIGN-MTU-P11, DESIGN-MTU-Q2, SVC-OTEL-R3 DESIGN, SVC-INTEGRATE-R11 Plan
+// Plan SC: MTU-P11, MTU-Q2, FR-OTEL.3, FR-INT.1
+// CSAP: D-06 감사 로그, D-07 가용성
 
 import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
 
@@ -9,6 +9,7 @@ initTelemetry({ serviceName: 'notification-service', serviceVersion: '0.1.0' });
 
 import Fastify from 'fastify';
 import { responseTimePlugin } from '@public-saas/observability';
+import { healthPlugin, CommonCheckers } from '@public-saas/health';
 import { notificationEventBus } from './lib/event-bus.js';
 
 const PORT = parseInt(process.env['NOTIFICATION_SERVICE_PORT'] ?? '3010', 10);
@@ -21,29 +22,12 @@ async function main(): Promise<void> {
 
   await app.register(responseTimePlugin);
 
-  app.get('/health', async () => ({
-    status: 'ok',
-    service: 'notification-service',
-    eventHandlers: notificationEventBus.getHandlerCount(),
-  }));
-
-  // Readiness 프로브 (CSAP D-07: DB 연결 상태 포함)
-  app.get('/ready', async (_request, reply) => {
-    const checks: Record<string, string> = {};
-    let allReady = true;
-    try {
-      const { prisma } = await import('./lib/prisma.js');
-      await prisma.$queryRaw`SELECT 1`;
-      checks['database'] = 'ok';
-    } catch {
-      checks['database'] = 'error';
-      allReady = false;
-    }
-    await reply.status(allReady ? 200 : 503).send({
-      status: allReady ? 'ready' : 'not_ready',
-      service: 'notification-service',
-      checks,
-    });
+  // Plan SC: FR-INT.1 -- healthPlugin 통합 (CSAP D-07 가용성)
+  const { prisma } = await import('./lib/prisma.js');
+  await app.register(healthPlugin, {
+    serviceName: 'notification-service',
+    version: '0.1.0',
+    checkers: [CommonCheckers.database(prisma)],
   });
 
   // 이벤트 버스 기본 핸들러 등록 (FR-P11.4)

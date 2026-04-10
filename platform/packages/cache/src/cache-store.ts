@@ -152,12 +152,7 @@ export class CacheStore {
   /**
    * "Read-through" 패턴: 캐시에 없으면 fetcher 실행 후 캐싱
    */
-  async getOrFetch<T>(
-    key: string,
-    tenantId: string,
-    fetcher: () => Promise<T>,
-    ttlSeconds?: number,
-  ): Promise<T> {
+  async getOrFetch<T>(key: string, tenantId: string, fetcher: () => Promise<T>, ttlSeconds?: number): Promise<T> {
     const cached = this.get<T>(key);
     if (cached !== undefined) {
       return cached;

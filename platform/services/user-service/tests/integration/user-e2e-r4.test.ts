@@ -68,7 +68,12 @@ describe('user-service E2E -- 관측성 및 보안 (FR-E2E.3)', () => {
     const endpoints = [
       { method: 'GET' as const, url: '/health' },
       { method: 'GET' as const, url: '/users', headers: { 'x-tenant-id': 't1' } },
-      { method: 'POST' as const, url: '/users', headers: { 'x-tenant-id': 't1', 'content-type': 'application/json' }, payload: { name: 'A', email: 'a@b.c' } },
+      {
+        method: 'POST' as const,
+        url: '/users',
+        headers: { 'x-tenant-id': 't1', 'content-type': 'application/json' },
+        payload: { name: 'A', email: 'a@b.c' },
+      },
     ];
 
     for (const ep of endpoints) {

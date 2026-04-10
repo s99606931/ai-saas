@@ -48,28 +48,17 @@ export const cachePlugin = fp(
  * @param resource - 리소스명 (키 네임스페이스)
  * @param ttlSeconds - TTL (초)
  */
-export function createCacheMiddleware(
-  service: string,
-  resource: string,
-  ttlSeconds: number = 300,
-) {
-  return async function cacheMiddleware(
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ): Promise<void> {
+export function createCacheMiddleware(service: string, resource: string, ttlSeconds: number = 300) {
+  return async function cacheMiddleware(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const cache = (request.server as FastifyInstance & { cache: CacheStore }).cache;
     if (!cache) return;
 
     // 테넌트 ID 추출 (CSAP D-08-05)
     const tenantId =
-      (request.headers['x-tenant-id'] as string) ??
-      (request.headers['x-user-tenant-id'] as string) ??
-      'global';
+      (request.headers['x-tenant-id'] as string) ?? (request.headers['x-user-tenant-id'] as string) ?? 'global';
 
     // 쿼리 파라미터를 키에 포함 (같은 URL이라도 파라미터별 캐시)
-    const queryString = request.url.includes('?')
-      ? request.url.split('?')[1]
-      : '';
+    const queryString = request.url.includes('?') ? request.url.split('?')[1] : '';
     const identifier = queryString || 'default';
 
     const key = cache.buildKey(service, tenantId, resource, identifier);
@@ -84,13 +73,10 @@ export function createCacheMiddleware(
     }
 
     // 캐시 미스 -- 원본 요청을 처리한 후 응답을 캐싱
-    // onSend 훅으로 응답 캐싱
+    // 요청 컨텍스트에 캐시 메타데이터 저장 (Fastify 5 config readonly 대응)
     void reply.header('X-Cache', 'MISS');
-    request.routeOptions.config = {
-      ...request.routeOptions.config,
-      cacheKey: key,
-      cacheTenantId: tenantId,
-      cacheTtl: ttlSeconds,
-    } as Record<string, unknown>;
+    (request as unknown as Record<string, unknown>)['_cacheKey'] = key;
+    (request as unknown as Record<string, unknown>)['_cacheTenantId'] = tenantId;
+    (request as unknown as Record<string, unknown>)['_cacheTtl'] = ttlSeconds;
   };
 }

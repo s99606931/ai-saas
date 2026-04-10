@@ -11,7 +11,4 @@ export {
   type SLAMetrics,
 } from './health-checker.js';
 
-export {
-  healthPlugin,
-  type HealthPluginOptions,
-} from './health-plugin.js';
+export { healthPlugin, type HealthPluginOptions } from './health-plugin.js';

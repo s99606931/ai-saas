@@ -1,0 +1,33 @@
+# KEDA HTTPScaledObject - API Gateway
+# Design Ref: DS-N113.1
+# Plan SC: FR-N113.1
+# CSAP: D-10 부하 분산
+---
+apiVersion: http.keda.sh/v1alpha1
+kind: HTTPScaledObject
+metadata:
+  name: api-gateway-http
+  namespace: saas-system
+  labels:
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/part-of: saas-platform
+    app.kubernetes.io/managed-by: keda-http-addon
+    csap.compliance/control: D-10
+spec:
+  hosts:
+    - "api.saas.local"
+    - "api.saas.go.kr"
+  targetPendingRequests: 100
+  scaleTargetRef:
+    name: api-gateway
+    kind: Deployment
+    apiVersion: apps/v1
+  replicas:
+    min: 2
+    max: 10
+  scalingMetric:
+    requestRate:
+      targetValue: 50
+      granularity: 1s
+      window: 1m
+  scaledownPeriod: 300

@@ -1,6 +1,6 @@
 // 메뉴 관리 서비스 진입점
-// Design Ref: DESIGN-MTU-P05, SVC-OTEL-R3 DESIGN
-// Plan SC: MTU-P05, FR-OTEL.3
+// Design Ref: DESIGN-MTU-P05, SVC-OTEL-R3 DESIGN, SVC-INTEGRATE-R11 Plan
+// Plan SC: MTU-P05, FR-OTEL.3, FR-INT.1, FR-INT.2
 
 import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
 
@@ -8,6 +8,8 @@ initTelemetry({ serviceName: 'menu-service', serviceVersion: '0.1.0' });
 
 import Fastify from 'fastify';
 import { responseTimePlugin } from '@public-saas/observability';
+import { healthPlugin, CommonCheckers } from '@public-saas/health';
+import { cachePlugin } from '@public-saas/cache';
 
 const PORT = parseInt(process.env['MENU-SERVICE_PORT'] ?? '3004', 10);
 const HOST = '0.0.0.0';
@@ -19,25 +21,17 @@ async function main(): Promise<void> {
 
   await app.register(responseTimePlugin);
 
-  app.get('/health', async () => ({ status: 'ok', service: 'menu-service' }));
+  // Plan SC: FR-INT.1 -- healthPlugin 통합 (CSAP D-07 가용성)
+  const { prisma } = await import('./lib/prisma.js');
+  await app.register(healthPlugin, {
+    serviceName: 'menu-service',
+    version: '0.1.0',
+    checkers: [CommonCheckers.database(prisma)],
+  });
 
-  // Readiness 프로브 (CSAP D-07: DB 연결 상태 포함)
-  app.get('/ready', async (_request, reply) => {
-    const checks: Record<string, string> = {};
-    let allReady = true;
-    try {
-      const { prisma } = await import('./lib/prisma.js');
-      await prisma.$queryRaw`SELECT 1`;
-      checks['database'] = 'ok';
-    } catch {
-      checks['database'] = 'error';
-      allReady = false;
-    }
-    await reply.status(allReady ? 200 : 503).send({
-      status: allReady ? 'ready' : 'not_ready',
-      service: 'menu-service',
-      checks,
-    });
+  // Plan SC: FR-INT.2 -- cachePlugin 통합 (CSAP D-07 가용성)
+  await app.register(cachePlugin, {
+    config: { defaultTtlSeconds: 600, prefix: 'saas:menu' },
   });
 
   // MTU-P05 라우트 등록

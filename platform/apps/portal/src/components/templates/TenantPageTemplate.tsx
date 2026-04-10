@@ -12,12 +12,7 @@ interface TenantPageTemplateProps {
   children: ReactNode;
 }
 
-export function TenantPageTemplate({
-  title,
-  tenantName,
-  breadcrumbs,
-  children,
-}: TenantPageTemplateProps) {
+export function TenantPageTemplate({ title, tenantName, breadcrumbs, children }: TenantPageTemplateProps) {
   return (
     <div className="p-6 space-y-4">
       {/* 브레드크럼 */}
@@ -27,7 +22,9 @@ export function TenantPageTemplate({
             <span key={crumb.label}>
               {i > 0 && <span className="mx-1">/</span>}
               {crumb.href ? (
-                <a href={crumb.href} className="hover:underline">{crumb.label}</a>
+                <a href={crumb.href} className="hover:underline">
+                  {crumb.label}
+                </a>
               ) : (
                 <span style={{ color: 'var(--color-text)' }}>{crumb.label}</span>
               )}

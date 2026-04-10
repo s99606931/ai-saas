@@ -15,20 +15,54 @@ interface MarketplaceService {
 }
 
 const SAMPLE_MARKETPLACE: MarketplaceService[] = [
-  { id: '1', name: '전자결재', description: '공공기관 전자결재 시스템', category: '업무', price: '월 500,000원', subscribed: true },
-  { id: '2', name: '인사관리', description: '공무원 인사 관리 시스템', category: '인사', price: '월 300,000원', subscribed: true },
-  { id: '3', name: '재정관리', description: '예산 편성 및 집행 관리', category: '재정', price: '월 400,000원', subscribed: false },
-  { id: '4', name: '민원처리', description: '온라인 민원 접수/처리', category: '민원', price: '월 250,000원', subscribed: false },
-  { id: '5', name: 'AI 문서분석', description: '공문서 자동 분류/요약', category: 'AI', price: '월 200,000원', subscribed: false },
+  {
+    id: '1',
+    name: '전자결재',
+    description: '공공기관 전자결재 시스템',
+    category: '업무',
+    price: '월 500,000원',
+    subscribed: true,
+  },
+  {
+    id: '2',
+    name: '인사관리',
+    description: '공무원 인사 관리 시스템',
+    category: '인사',
+    price: '월 300,000원',
+    subscribed: true,
+  },
+  {
+    id: '3',
+    name: '재정관리',
+    description: '예산 편성 및 집행 관리',
+    category: '재정',
+    price: '월 400,000원',
+    subscribed: false,
+  },
+  {
+    id: '4',
+    name: '민원처리',
+    description: '온라인 민원 접수/처리',
+    category: '민원',
+    price: '월 250,000원',
+    subscribed: false,
+  },
+  {
+    id: '5',
+    name: 'AI 문서분석',
+    description: '공문서 자동 분류/요약',
+    category: 'AI',
+    price: '월 200,000원',
+    subscribed: false,
+  },
 ];
 
 export function ServiceMarketplace() {
   const [categoryFilter, setCategoryFilter] = useState<string>('전체');
   const categories = ['전체', ...new Set(SAMPLE_MARKETPLACE.map((s) => s.category))];
 
-  const filtered = categoryFilter === '전체'
-    ? SAMPLE_MARKETPLACE
-    : SAMPLE_MARKETPLACE.filter((s) => s.category === categoryFilter);
+  const filtered =
+    categoryFilter === '전체' ? SAMPLE_MARKETPLACE : SAMPLE_MARKETPLACE.filter((s) => s.category === categoryFilter);
 
   return (
     <div>

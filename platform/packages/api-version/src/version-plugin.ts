@@ -4,7 +4,7 @@
 // CSAP: D-12 시스템 개발 보안
 
 import fp from 'fastify-plugin';
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { ApiVersionManager, type ApiVersionConfig } from './version-manager.js';
 
 declare module 'fastify' {
@@ -93,7 +93,7 @@ export const versionPlugin = fp(
  * @param routes - 라우트 등록 함수
  */
 export async function registerVersionedRoutes(
-  app: FastifyInstance,
+  _app: FastifyInstance,
   version: string,
   basePath: string,
   routes: (prefix: string) => Promise<void> | void,

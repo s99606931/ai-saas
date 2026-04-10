@@ -16,6 +16,21 @@ import {
 import { loginFailureTrendHandler, securityEventStatsHandler } from './handlers/secmon-analytics.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
+// OpenAPI JSON Schema 정의 (CSAP D-12: API 문서화)
+const successResponse = {
+  type: 'object' as const,
+  properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } },
+} as const;
+
+const errorResponse = {
+  type: 'object' as const,
+  properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } },
+} as const;
+
+const idParam = {
+  type: 'object' as const, required: ['id'] as const, properties: { id: { type: 'string' as const } },
+} as const;
+
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   // C-03 수정 (CSAP D-08): 서비스 간 내부 인증 — API 게이트웨이 우회 차단
   const internalKey = process.env['INTERNAL_SERVICE_KEY'];
@@ -24,7 +39,6 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   }
   if (internalKey) {
     app.addHook('onRequest', async (request, reply) => {
-      // 헬스체크 경로 제외 (Kubernetes readinessProbe/livenessProbe 허용)
       if (request.url === '/health' || request.url === '/ready') return;
       const provided = request.headers['x-internal-service-key'];
       if (provided !== internalKey) {
@@ -41,28 +55,88 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   const writeLimiter = createRateLimiter(20, 60, 'rl:secmon:write');
 
   // FR-P15.1: 로그인 실패 패턴 탐지
-  app.get('/security/login-failures', { preHandler: readLimiter }, loginFailuresHandler as never);
+  app.get('/security/login-failures', {
+    schema: {
+      description: '로그인 실패 패턴 탐지',
+      tags: ['security-monitor'],
+      querystring: { type: 'object' as const, properties: { hours: { type: 'integer' as const, minimum: 1, maximum: 168, default: 24 }, threshold: { type: 'integer' as const, minimum: 1, default: 5 } } },
+      response: { 200: successResponse, 401: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: readLimiter,
+  }, loginFailuresHandler as never);
 
   // FR-P15.2: 이상 접근 패턴 탐지
-  app.get('/security/anomalies', { preHandler: readLimiter }, anomaliesHandler as never);
+  app.get('/security/anomalies', {
+    schema: { description: '이상 접근 패턴 탐지', tags: ['security-monitor'], response: { 200: successResponse, 401: errorResponse }, security: [{ bearerAuth: [] }] },
+    preHandler: readLimiter,
+  }, anomaliesHandler as never);
 
   // FR-P15.3: IP 차단 목록 관리
-  app.get('/security/ip-blocklist', { preHandler: readLimiter }, getBlocklistHandler as never);
-  app.post('/security/ip-blocklist', { preHandler: writeLimiter }, addBlocklistHandler as never);
-  app.delete('/security/ip-blocklist/:ip', { preHandler: writeLimiter }, removeBlocklistHandler as never);
+  app.get('/security/ip-blocklist', {
+    schema: { description: 'IP 차단 목록 조회', tags: ['security-monitor'], response: { 200: successResponse, 401: errorResponse }, security: [{ bearerAuth: [] }] },
+    preHandler: readLimiter,
+  }, getBlocklistHandler as never);
+  app.post('/security/ip-blocklist', {
+    schema: {
+      description: 'IP 차단 등록',
+      tags: ['security-monitor'],
+      body: { type: 'object' as const, required: ['ip'], properties: { ip: { type: 'string' as const }, reason: { type: 'string' as const }, expiresAt: { type: 'string' as const, format: 'date-time' } } },
+      response: { 201: successResponse, 400: errorResponse, 401: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: writeLimiter,
+  }, addBlocklistHandler as never);
+  app.delete('/security/ip-blocklist/:ip', {
+    schema: {
+      description: 'IP 차단 해제',
+      tags: ['security-monitor'],
+      params: { type: 'object' as const, required: ['ip'], properties: { ip: { type: 'string' as const } } },
+      response: { 200: successResponse, 401: errorResponse, 404: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: writeLimiter,
+  }, removeBlocklistHandler as never);
 
   // FR-P15.4: 보안 이벤트 알림
-  app.get('/security/alerts', { preHandler: readLimiter }, alertsHandler as never);
+  app.get('/security/alerts', {
+    schema: {
+      description: '보안 이벤트 알림 목록',
+      tags: ['security-monitor'],
+      querystring: { type: 'object' as const, properties: { severity: { type: 'string' as const, enum: ['low', 'medium', 'high', 'critical'] }, page: { type: 'integer' as const, minimum: 1, default: 1 }, limit: { type: 'integer' as const, minimum: 1, maximum: 100, default: 20 } } },
+      response: { 200: successResponse, 401: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: readLimiter,
+  }, alertsHandler as never);
 
   // FR-SECMON.2: 알림 확인
-  app.put('/security/alerts/:id/acknowledge', { preHandler: writeLimiter }, acknowledgeAlertHandler as never);
+  app.put('/security/alerts/:id/acknowledge', {
+    schema: { description: '보안 알림 확인 처리', tags: ['security-monitor'], params: idParam, response: { 200: successResponse, 401: errorResponse, 404: errorResponse }, security: [{ bearerAuth: [] }] },
+    preHandler: writeLimiter,
+  }, acknowledgeAlertHandler as never);
 
   // FR-SECMON.3: 알림 심각도 대시보드
-  app.get('/security/alerts/summary', { preHandler: readLimiter }, alertsSummaryHandler as never);
+  app.get('/security/alerts/summary', {
+    schema: { description: '보안 알림 심각도별 대시보드', tags: ['security-monitor'], response: { 200: successResponse, 401: errorResponse }, security: [{ bearerAuth: [] }] },
+    preHandler: readLimiter,
+  }, alertsSummaryHandler as never);
 
   // FR-SECMON.6: 로그인 실패 추이
-  app.get('/security/login-failures/trend', { preHandler: readLimiter }, loginFailureTrendHandler as never);
+  app.get('/security/login-failures/trend', {
+    schema: {
+      description: '로그인 실패 추이',
+      tags: ['security-monitor'],
+      querystring: { type: 'object' as const, properties: { days: { type: 'integer' as const, minimum: 1, maximum: 90, default: 7 } } },
+      response: { 200: successResponse, 401: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: readLimiter,
+  }, loginFailureTrendHandler as never);
 
   // FR-SECMON.7: 보안 이벤트 통계
-  app.get('/security/events/stats', { preHandler: readLimiter }, securityEventStatsHandler as never);
+  app.get('/security/events/stats', {
+    schema: { description: '보안 이벤트 통계', tags: ['security-monitor'], response: { 200: successResponse, 401: errorResponse }, security: [{ bearerAuth: [] }] },
+    preHandler: readLimiter,
+  }, securityEventStatsHandler as never);
 }

@@ -81,13 +81,7 @@ interface FloatingSidebarProps {
   onClose: () => void;
 }
 
-export function FloatingSidebar({
-  serviceId,
-  pinned,
-  railExpanded,
-  onTogglePin,
-  onClose,
-}: FloatingSidebarProps) {
+export function FloatingSidebar({ serviceId, pinned, railExpanded, onTogglePin, onClose }: FloatingSidebarProps) {
   const menuItems = SERVICE_MENUS[serviceId] ?? [];
 
   return (
@@ -99,7 +93,7 @@ export function FloatingSidebar({
         borderColor: 'var(--color-border)',
         position: pinned ? 'relative' : 'absolute',
         top: pinned ? undefined : 0,
-        left: pinned ? undefined : (railExpanded ? 'var(--rail-expanded-w)' : 'var(--rail-w)'),
+        left: pinned ? undefined : railExpanded ? 'var(--rail-expanded-w)' : 'var(--rail-w)',
         height: pinned ? undefined : '100%',
         boxShadow: pinned ? 'none' : '4px 0 12px rgba(0,0,0,0.1)',
       }}

@@ -25,11 +25,14 @@ describe('security-monitor-service E2E -- 알림 관리 + 분석 (CSAP D-06)', (
   const alerts: SecurityAlert[] = [];
   let alertCounter = 0;
 
-  const ipBlocklist = new Map<string, {
-    ip: string;
-    reason: string;
-    blockedAt: string;
-  }>();
+  const ipBlocklist = new Map<
+    string,
+    {
+      ip: string;
+      reason: string;
+      blockedAt: string;
+    }
+  >();
 
   // 알림 생성 (테스트용)
   app.post('/security/alerts', async (req, reply) => {

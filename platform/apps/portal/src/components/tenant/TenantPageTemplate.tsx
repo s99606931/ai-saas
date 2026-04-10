@@ -11,11 +11,7 @@ interface TenantPageTemplateProps {
   children: ReactNode;
 }
 
-export function TenantPageTemplate({
-  title,
-  description,
-  children,
-}: TenantPageTemplateProps) {
+export function TenantPageTemplate({ title, description, children }: TenantPageTemplateProps) {
   return (
     <div className="space-y-6">
       <div>

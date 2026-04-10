@@ -23,7 +23,9 @@
     "@public-saas/types": "workspace:*",
     "bcryptjs": "^2.4.3",
     "fastify": "^5.0.0",
-    "zod": "^3.23.0"
+    "zod": "^3.23.0",
+    "@public-saas/health": "workspace:*",
+    "@public-saas/cache": "workspace:*"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.0",

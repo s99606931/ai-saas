@@ -17,11 +17,7 @@ interface ComplianceMatrixProps {
   overallRate: number;
 }
 
-export function ComplianceMatrix({
-  title,
-  domains,
-  overallRate,
-}: ComplianceMatrixProps) {
+export function ComplianceMatrix({ title, domains, overallRate }: ComplianceMatrixProps) {
   const getStatusColor = (rate: number) => {
     if (rate >= 90) return 'var(--color-success)';
     if (rate >= 70) return 'var(--color-warning)';
@@ -37,10 +33,7 @@ export function ComplianceMatrix({
         <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
           {title}
         </h3>
-        <div
-          className="text-2xl font-bold"
-          style={{ color: getStatusColor(overallRate) }}
-        >
+        <div className="text-2xl font-bold" style={{ color: getStatusColor(overallRate) }}>
           {overallRate}%
         </div>
       </div>
@@ -48,16 +41,10 @@ export function ComplianceMatrix({
       <div className="space-y-2">
         {domains.map((domain) => (
           <div key={domain.id} className="flex items-center gap-3">
-            <span
-              className="text-xs font-mono w-12 shrink-0"
-              style={{ color: 'var(--color-text-muted)' }}
-            >
+            <span className="text-xs font-mono w-12 shrink-0" style={{ color: 'var(--color-text-muted)' }}>
               {domain.id}
             </span>
-            <span
-              className="text-sm w-32 shrink-0 truncate"
-              style={{ color: 'var(--color-text)' }}
-            >
+            <span className="text-sm w-32 shrink-0 truncate" style={{ color: 'var(--color-text)' }}>
               {domain.name}
             </span>
             <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: 'var(--color-bg-secondary)' }}>
@@ -69,10 +56,7 @@ export function ComplianceMatrix({
                 }}
               />
             </div>
-            <span
-              className="text-xs w-16 text-right shrink-0"
-              style={{ color: getStatusColor(domain.rate) }}
-            >
+            <span className="text-xs w-16 text-right shrink-0" style={{ color: getStatusColor(domain.rate) }}>
               {domain.passCount}/{domain.totalItems}
             </span>
           </div>

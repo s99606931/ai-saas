@@ -91,16 +91,13 @@ export function AiSidePanel({ onClose }: AiSidePanelProps) {
             className="text-sm p-3 rounded-lg"
             style={{ backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text)' }}
           >
-            안녕하세요! 공공 SaaS 플랫폼 AI 어시스턴트입니다.
-            CSAP 준수 현황 확인, 감리 문서 조회, 서비스 관리 등을 도와드립니다.
+            안녕하세요! 공공 SaaS 플랫폼 AI 어시스턴트입니다. CSAP 준수 현황 확인, 감리 문서 조회, 서비스 관리 등을
+            도와드립니다.
           </div>
         </div>
 
         {/* 입력 영역 */}
-        <div
-          className="shrink-0 p-3 border-t"
-          style={{ borderColor: 'var(--color-border)' }}
-        >
+        <div className="shrink-0 p-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
           <div className="flex gap-2">
             <input
               type="text"

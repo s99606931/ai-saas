@@ -50,11 +50,7 @@ export class RBACEngine {
    * @param permission - 요청 권한 (예: "tenant:read")
    * @param targetUserId - 대상 사용자 ID ('self' 권한 검증용)
    */
-  checkPermission(
-    user: UserContext,
-    permission: string,
-    targetUserId?: string,
-  ): PermissionCheckResult {
+  checkPermission(user: UserContext, permission: string, targetUserId?: string): PermissionCheckResult {
     // 1. 역할 유효성 검증
     if (!this.isValidRole(user.role)) {
       return { allowed: false, reason: `유효하지 않은 역할: ${user.role}` };
@@ -64,9 +60,7 @@ export class RBACEngine {
     if (user.customPermissions?.[permission] !== undefined) {
       return {
         allowed: user.customPermissions[permission],
-        reason: user.customPermissions[permission]
-          ? '커스텀 권한에 의해 허용'
-          : '커스텀 권한에 의해 거부',
+        reason: user.customPermissions[permission] ? '커스텀 권한에 의해 허용' : '커스텀 권한에 의해 거부',
       };
     }
 
@@ -100,11 +94,7 @@ export class RBACEngine {
   /**
    * 다중 권한 검증 (OR 조건: 하나라도 있으면 허용)
    */
-  checkAnyPermission(
-    user: UserContext,
-    permissions: string[],
-    targetUserId?: string,
-  ): PermissionCheckResult {
+  checkAnyPermission(user: UserContext, permissions: string[], targetUserId?: string): PermissionCheckResult {
     for (const perm of permissions) {
       const result = this.checkPermission(user, perm, targetUserId);
       if (result.allowed) return result;
@@ -118,11 +108,7 @@ export class RBACEngine {
   /**
    * 다중 권한 검증 (AND 조건: 모두 있어야 허용)
    */
-  checkAllPermissions(
-    user: UserContext,
-    permissions: string[],
-    targetUserId?: string,
-  ): PermissionCheckResult {
+  checkAllPermissions(user: UserContext, permissions: string[], targetUserId?: string): PermissionCheckResult {
     for (const perm of permissions) {
       const result = this.checkPermission(user, perm, targetUserId);
       if (!result.allowed) return result;

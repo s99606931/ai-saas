@@ -96,11 +96,23 @@ describe('전역 에러 핸들러 패턴 검증 (CSAP D-07)', () => {
     const { resolve } = await import('path');
 
     const services = [
-      'ai-service', 'api-gateway', 'audit-service', 'auth-service',
-      'billing-service', 'catalog-service', 'compliance-service', 'crm-service',
-      'file-service', 'menu-service', 'notification-service', 'saas-catalog-service',
-      'security-monitor-service', 'security-service', 'subscription-service',
-      'tenant-service', 'user-service',
+      'ai-service',
+      'api-gateway',
+      'audit-service',
+      'auth-service',
+      'billing-service',
+      'catalog-service',
+      'compliance-service',
+      'crm-service',
+      'file-service',
+      'menu-service',
+      'notification-service',
+      'saas-catalog-service',
+      'security-monitor-service',
+      'security-service',
+      'subscription-service',
+      'tenant-service',
+      'user-service',
     ];
 
     for (const svc of services) {

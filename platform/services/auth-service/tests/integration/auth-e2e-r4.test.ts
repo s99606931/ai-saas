@@ -173,7 +173,8 @@ describe('auth-service E2E -- MFA 완전 플로우 (CSAP D-08-04)', () => {
 describe('auth-service E2E -- 세션 관리 강화', () => {
   it('JWT 토큰 구조 검증', () => {
     // JWT는 3파트 (header.payload.signature)
-    const mockJwt = 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyLTEiLCJ0ZW5hbnRJZCI6InQtMSIsInJvbGUiOiJBRE1JTiIsImV4cCI6MTk5OTk5OTk5OX0.signature';
+    const mockJwt =
+      'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyLTEiLCJ0ZW5hbnRJZCI6InQtMSIsInJvbGUiOiJBRE1JTiIsImV4cCI6MTk5OTk5OTk5OX0.signature';
     const parts = mockJwt.split('.');
     expect(parts.length).toBe(3);
 

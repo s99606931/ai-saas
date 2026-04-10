@@ -35,10 +35,7 @@ export function DashboardTemplate({ title, widgets }: DashboardTemplateProps) {
               gridColumn: widget.span ? `span ${widget.span}` : undefined,
             }}
           >
-            <h3
-              className="text-sm font-semibold mb-3"
-              style={{ color: 'var(--color-text-muted)' }}
-            >
+            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-text-muted)' }}>
               {widget.title}
             </h3>
             <div>{widget.children}</div>

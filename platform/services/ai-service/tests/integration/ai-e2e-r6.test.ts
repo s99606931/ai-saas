@@ -12,14 +12,17 @@ describe('ai-service E2E -- 모델 관리 + 데이터 등급 검증 (CSAP N-05)'
   app.register(responseTimePlugin);
 
   // In-memory 모델 저장소
-  const models = new Map<string, {
-    id: string;
-    name: string;
-    provider: string;
-    endpoint: string;
-    maxGrade: string;
-    isActive: boolean;
-  }>();
+  const models = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      provider: string;
+      endpoint: string;
+      maxGrade: string;
+      isActive: boolean;
+    }
+  >();
 
   // 사용량 추적
   const usageLog: Array<{
@@ -136,9 +139,7 @@ describe('ai-service E2E -- 모델 관리 + 데이터 등급 검증 (CSAP N-05)'
 
   app.get('/ai/usage', async (req) => {
     const query = req.query as { tenantId?: string };
-    const filtered = query.tenantId
-      ? usageLog.filter((u) => u.tenantId === query.tenantId)
-      : usageLog;
+    const filtered = query.tenantId ? usageLog.filter((u) => u.tenantId === query.tenantId) : usageLog;
     const totalTokens = filtered.reduce((sum, u) => sum + u.tokens, 0);
     const totalCost = filtered.reduce((sum, u) => sum + u.cost, 0);
     return { success: true, data: { items: filtered, totalTokens, totalCost } };
@@ -146,9 +147,7 @@ describe('ai-service E2E -- 모델 관리 + 데이터 등급 검증 (CSAP N-05)'
 
   app.get('/ai/cost', async (req) => {
     const query = req.query as { tenantId?: string };
-    const filtered = query.tenantId
-      ? usageLog.filter((u) => u.tenantId === query.tenantId)
-      : usageLog;
+    const filtered = query.tenantId ? usageLog.filter((u) => u.tenantId === query.tenantId) : usageLog;
     const totalCost = filtered.reduce((sum, u) => sum + u.cost, 0);
     return { success: true, data: { totalCost, tokenCostRate: TOKEN_COST } };
   });

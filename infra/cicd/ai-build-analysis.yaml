@@ -31,7 +31,7 @@ jobs:
           # Gitea API로 로그 가져오기
           LOGS=$(curl -s "${GITEA_URL}/api/v1/repos/${GITHUB_REPOSITORY}/actions/runs/${{ github.event.workflow_run.id }}/logs" \
             -H "Authorization: token ${GITEA_TOKEN}" | tail -${MAX_LOG_LINES})
-          
+
           # PII 마스킹 적용
           MASKED_LOGS=$(echo "$LOGS" | bash infra/cicd/ai-security-filter.sh -)
           echo "masked_logs<<ENDLOGS" >> $GITHUB_OUTPUT
@@ -53,7 +53,7 @@ jobs:
               "temperature": 0.3,
               "max_tokens": 1000
             }')
-          
+
           ANALYSIS=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // "AI 분석 실패"')
           echo "analysis<<ENDANALYSIS" >> $GITHUB_OUTPUT
           echo "$ANALYSIS" >> $GITHUB_OUTPUT
@@ -69,9 +69,9 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `## AI 빌드 실패 분석
-              
+
               ${{ steps.analysis.outputs.analysis }}
-              
+
               ---
               > 이 분석은 로컬 LM Studio를 통해 자동 생성되었습니다.
               > N2SF O등급 데이터만 전송, PII 마스킹 적용됨.`

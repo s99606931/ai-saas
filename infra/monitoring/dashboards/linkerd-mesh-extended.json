@@ -1,0 +1,123 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "description": "Linkerd 서비스 메시 확장 대시보드 (Design Ref: DS-N114.5, CSAP D-06/D-09)",
+  "panels": [
+    {
+      "title": "서비스별 성공률 (Success Rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(response_total{classification=\"success\",namespace=\"saas-system\"}[1m])) by (deployment) / sum(rate(response_total{namespace=\"saas-system\"}[1m])) by (deployment) * 100",
+          "legendFormat": "{{deployment}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 90,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 95 },
+              { "color": "green", "value": 99 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "P50 / P95 / P99 지연시간",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(response_latency_ms_bucket{namespace=\"saas-system\"}[1m])) by (le, deployment))",
+          "legendFormat": "{{deployment}} P50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(response_latency_ms_bucket{namespace=\"saas-system\"}[1m])) by (le, deployment))",
+          "legendFormat": "{{deployment}} P95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(response_latency_ms_bucket{namespace=\"saas-system\"}[1m])) by (le, deployment))",
+          "legendFormat": "{{deployment}} P99"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "title": "초당 요청률 (RPS)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(response_total{namespace=\"saas-system\"}[1m])) by (deployment)",
+          "legendFormat": "{{deployment}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "title": "mTLS 적용 비율",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(tcp_open_connections{tls=\"true\",namespace=\"saas-system\"}) / sum(tcp_open_connections{namespace=\"saas-system\"}) * 100",
+          "legendFormat": "mTLS %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 90 },
+              { "color": "green", "value": 99 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "TrafficSplit 가중치 현황",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 14 },
+      "targets": [
+        {
+          "expr": "trafficsplit_backend_weight{namespace=\"saas-system\"}",
+          "legendFormat": "{{trafficsplit}} → {{backend}}",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "title": "서비스 간 트래픽 흐름 (Top 10)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 14 },
+      "targets": [
+        {
+          "expr": "topk(10, sum(rate(response_total{namespace=\"saas-system\"}[5m])) by (deployment, dst_deployment))",
+          "legendFormat": "{{deployment}} → {{dst_deployment}}"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["linkerd", "service-mesh", "mtls", "csap", "d-09"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "Linkerd 서비스 메시 확장 모니터링",
+  "uid": "linkerd-mesh-extended",
+  "version": 1
+}

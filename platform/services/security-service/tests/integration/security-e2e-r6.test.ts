@@ -28,7 +28,7 @@ describe('security-service E2E -- 보안 모니터링 + IP 차단 (CSAP D-06, D-
 
   const ipBlocklist = new Map<string, BlockedIp>();
   const alerts: SecurityAlert[] = [];
-  let alertCounter = 0;
+  const alertCounter = 0;
 
   // 로그인 실패 시뮬레이션 데이터
   const loginFailures: Array<{ ip: string; userId: string; timestamp: string }> = [];

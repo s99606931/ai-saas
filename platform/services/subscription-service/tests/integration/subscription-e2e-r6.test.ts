@@ -197,10 +197,7 @@ describe('subscription-service E2E -- 구독 생명주기 관리 (CSAP D-06)', (
         active: all.filter((s) => s.status === 'ACTIVE').length,
         cancelled: all.filter((s) => s.status === 'CANCELLED').length,
         byPlan: Object.fromEntries(
-          [...new Set(all.map((s) => s.planName))].map((name) => [
-            name,
-            all.filter((s) => s.planName === name).length,
-          ]),
+          [...new Set(all.map((s) => s.planName))].map((name) => [name, all.filter((s) => s.planName === name).length]),
         ),
       },
     };

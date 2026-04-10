@@ -1,0 +1,30 @@
+# Linkerd TrafficSplit - 블루/그린 배포 템플릿
+# Design Ref: DS-N114.1
+# Plan SC: FR-N114.1
+# CSAP: D-10 부하 분산 (블루/그린 배포)
+#
+# 사용법:
+#   1. 새 버전(green) 배포 완료 확인
+#   2. weight를 blue: 0, green: 1000으로 변경
+#   3. 검증 완료 후 blue 제거
+---
+apiVersion: split.smi-spec.io/v1alpha2
+kind: TrafficSplit
+metadata:
+  name: "${SERVICE_NAME}-bluegreen"
+  namespace: saas-system
+  labels:
+    app.kubernetes.io/managed-by: linkerd
+    deployment.strategy: bluegreen
+    csap.compliance/control: D-10
+  annotations:
+    description: "블루/그린 배포 — 전환 전 blue 100%, 전환 후 green 100%"
+spec:
+  service: "${SERVICE_NAME}"
+  backends:
+    # 전환 전 상태 (blue 100%)
+    - service: "${SERVICE_NAME}-blue"
+      weight: 1000
+    - service: "${SERVICE_NAME}-green"
+      weight: 0
+    # 전환 후: blue → 0, green → 1000

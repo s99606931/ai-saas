@@ -34,9 +34,7 @@ export function DataGrid<T extends Record<string, unknown>>({
 
   // 필터
   const filtered = data.filter((row) =>
-    Object.values(row).some((val) =>
-      String(val).toLowerCase().includes(filter.toLowerCase()),
-    ),
+    Object.values(row).some((val) => String(val).toLowerCase().includes(filter.toLowerCase())),
   );
 
   // 정렬
@@ -70,7 +68,10 @@ export function DataGrid<T extends Record<string, unknown>>({
         <input
           type="text"
           value={filter}
-          onChange={(e) => { setFilter(e.target.value); setPage(0); }}
+          onChange={(e) => {
+            setFilter(e.target.value);
+            setPage(0);
+          }}
           placeholder="검색..."
           className="px-3 py-2 text-sm border rounded-lg w-full max-w-xs"
           style={{
@@ -100,9 +101,7 @@ export function DataGrid<T extends Record<string, unknown>>({
                       aria-label={`${col.label} 정렬`}
                     >
                       {col.label}
-                      <span className="text-xs">
-                        {sortKey === col.key ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}
-                      </span>
+                      <span className="text-xs">{sortKey === col.key ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}</span>
                     </button>
                   ) : (
                     col.label

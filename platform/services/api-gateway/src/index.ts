@@ -1,7 +1,7 @@
 // API 게이트웨이 진입점
-// Design Ref: DESIGN-MTU-P04, DESIGN-MTU-Q1, SVC-OTEL-R3 DESIGN
-// Plan SC: FR-P04.1~FR-P04.11, FR-OTEL.3
-// CSAP: D-08 인증, D-10 네트워크 보안, D-06 감사 로그, D-12 API 문서
+// Design Ref: DESIGN-MTU-P04, DESIGN-MTU-Q1, SVC-OTEL-R3 DESIGN, SVC-INTEGRATE-R11 Plan
+// Plan SC: FR-P04.1~FR-P04.11, FR-OTEL.3, FR-INT.1, FR-INT.3, FR-INT.4
+// CSAP: D-08 인증, D-10 네트워크 보안, D-06 감사 로그, D-12 API 문서, D-07 가용성
 
 import { initTelemetry, shutdownTelemetry } from '@public-saas/observability';
 
@@ -11,6 +11,9 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import { responseTimePlugin } from '@public-saas/observability';
+import { healthPlugin, CommonCheckers } from '@public-saas/health';
+import { rbacPlugin } from '@public-saas/rbac';
+import { versionPlugin } from '@public-saas/api-version';
 import { registerProxyRoutes } from './routes/proxy.js';
 import { SERVICE_REGISTRY } from './registry/service-registry.js';
 import { checkServicesHealth } from './plugins/health-check.js';
@@ -76,15 +79,34 @@ async function main(): Promise<void> {
     },
   });
 
-  // 헬스체크 (Plan SC: FR-P04.9)
-  app.get('/health', async () => ({
-    status: 'ok',
-    service: 'api-gateway',
-    registeredServices: Object.keys(SERVICE_REGISTRY).length,
-    timestamp: new Date().toISOString(),
-  }));
+  // Plan SC: FR-INT.1 -- healthPlugin 통합 (CSAP D-07 가용성)
+  // 하위 서비스 헬스체커 등록
+  const serviceCheckers = Object.entries(SERVICE_REGISTRY).map(([name, config]) =>
+    CommonCheckers.httpService(name, `${(config as { url: string }).url}/health`),
+  );
+  await app.register(healthPlugin, {
+    serviceName: 'api-gateway',
+    version: '0.1.0',
+    checkers: serviceCheckers,
+  });
 
-  // 능동 서비스 헬스 확인 (FR-P04.9 보완)
+  // Plan SC: FR-INT.3 -- rbacPlugin 통합 (CSAP D-08 접근 통제)
+  await app.register(rbacPlugin, {
+    auditLogger: (event: { action: string; actor: string; permission: string; allowed: boolean; reason?: string; ip: string; timestamp: string }) => {
+      app.log.info({ rbacEvent: event }, 'RBAC 감사 로그');
+    },
+  });
+
+  // Plan SC: FR-INT.4 -- versionPlugin 통합 (CSAP D-12 API 관리)
+  await app.register(versionPlugin, {
+    versions: [
+      { version: 'v1', status: 'active' },
+      { version: 'v2', status: 'active' },
+    ],
+    defaultVersion: 'v1',
+  });
+
+  // 능동 서비스 헬스 확인 (FR-P04.9 보완 -- healthPlugin 외 추가 상세)
   app.get('/health/services', async (_request, reply) => {
     const results = await checkServicesHealth(SERVICE_REGISTRY);
     const allHealthy = results.every((r) => r.status === 'healthy');
@@ -92,16 +114,6 @@ async function main(): Promise<void> {
       status: allHealthy ? 'healthy' : 'degraded',
       service: 'api-gateway',
       timestamp: new Date().toISOString(),
-      services: results,
-    });
-  });
-
-  app.get('/ready', async (_request, reply) => {
-    const results = await checkServicesHealth(SERVICE_REGISTRY);
-    const allReady = results.every((r) => r.status === 'healthy');
-    await reply.status(allReady ? 200 : 503).send({
-      status: allReady ? 'ready' : 'not_ready',
-      service: 'api-gateway',
       services: results,
     });
   });

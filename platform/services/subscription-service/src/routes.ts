@@ -16,6 +16,21 @@ import {
 import { expiringSubscriptionsHandler, subscriptionStatsHandler } from './handlers/subscription-stats.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
+// OpenAPI JSON Schema 정의 (CSAP D-12: API 문서화)
+const successResponse = {
+  type: 'object' as const,
+  properties: { success: { type: 'boolean' as const }, data: { type: 'object' as const } },
+} as const;
+
+const errorResponse = {
+  type: 'object' as const,
+  properties: { success: { type: 'boolean' as const }, error: { type: 'object' as const } },
+} as const;
+
+const idParam = {
+  type: 'object' as const, required: ['id'] as const, properties: { id: { type: 'string' as const } },
+} as const;
+
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   // C-03 수정 (CSAP D-08): 서비스 간 내부 인증
   const internalKey = process.env['INTERNAL_SERVICE_KEY'];
@@ -40,34 +55,125 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   const writeLimiter = createRateLimiter(20, 60, 'rl:sub:write');
   const cancelLimiter = createRateLimiter(5, 300, 'rl:sub:cancel');
 
-  // 정적 경로 우선 등록
   // FR-SUB.3: 구독 만료 임박 조회
-  app.get('/subscription/expiring', { preHandler: readLimiter }, expiringSubscriptionsHandler as never);
+  app.get('/subscription/expiring', {
+    schema: {
+      description: '구독 만료 임박 조회',
+      tags: ['subscription'],
+      querystring: { type: 'object' as const, properties: { days: { type: 'integer' as const, minimum: 1, maximum: 365, default: 30 } } },
+      response: { 200: successResponse, 401: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: readLimiter,
+  }, expiringSubscriptionsHandler as never);
 
   // FR-SUB.4: 구독 통계
-  app.get('/subscription/stats', { preHandler: readLimiter }, subscriptionStatsHandler as never);
+  app.get('/subscription/stats', {
+    schema: { description: '구독 통계 대시보드', tags: ['subscription'], response: { 200: successResponse, 401: errorResponse }, security: [{ bearerAuth: [] }] },
+    preHandler: readLimiter,
+  }, subscriptionStatsHandler as never);
 
   // FR-P07.1: 플랜 목록
-  app.get('/subscription/plans', { preHandler: readLimiter }, listPlansHandler as never);
+  app.get('/subscription/plans', {
+    schema: { description: '구독 플랜 목록 조회', tags: ['subscription'], response: { 200: successResponse, 401: errorResponse }, security: [{ bearerAuth: [] }] },
+    preHandler: readLimiter,
+  }, listPlansHandler as never);
 
   // FR-P07.1 + FR-SUB.2: 플랜 생성 (감사 로그 포함)
-  app.post('/subscription/plans', { preHandler: writeLimiter }, createPlanHandler as never);
+  app.post('/subscription/plans', {
+    schema: {
+      description: '구독 플랜 생성 (감사 로그)',
+      tags: ['subscription'],
+      body: {
+        type: 'object' as const,
+        required: ['name', 'price'],
+        properties: {
+          name: { type: 'string' as const, minLength: 1 },
+          price: { type: 'number' as const, minimum: 0 },
+          interval: { type: 'string' as const, enum: ['monthly', 'yearly'] },
+          features: { type: 'array' as const, items: { type: 'string' as const } },
+          maxUsers: { type: 'integer' as const, minimum: 1 },
+        },
+      },
+      response: { 201: successResponse, 400: errorResponse, 401: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: writeLimiter,
+  }, createPlanHandler as never);
 
   // FR-P07.1 + FR-SUB.2: 플랜 수정 (감사 로그 포함)
-  app.put('/subscription/plans/:id', { preHandler: writeLimiter }, updatePlanHandler as never);
+  app.put('/subscription/plans/:id', {
+    schema: {
+      description: '구독 플랜 수정 (감사 로그)',
+      tags: ['subscription'],
+      params: idParam,
+      body: { type: 'object' as const, properties: { name: { type: 'string' as const }, price: { type: 'number' as const }, features: { type: 'array' as const, items: { type: 'string' as const } } } },
+      response: { 200: successResponse, 400: errorResponse, 401: errorResponse, 404: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: writeLimiter,
+  }, updatePlanHandler as never);
 
   // FR-P07.2: 구독 생성
-  app.post('/subscription/subscribe', { preHandler: writeLimiter }, subscribeHandler as never);
+  app.post('/subscription/subscribe', {
+    schema: {
+      description: '구독 생성',
+      tags: ['subscription'],
+      body: { type: 'object' as const, required: ['tenantId', 'planId'], properties: { tenantId: { type: 'string' as const }, planId: { type: 'string' as const } } },
+      response: { 201: successResponse, 400: errorResponse, 401: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: writeLimiter,
+  }, subscribeHandler as never);
 
   // FR-P07.2: 테넌트 구독 조회
-  app.get('/subscription/tenants/:tenantId', { preHandler: readLimiter }, getTenantSubscriptionHandler as never);
+  app.get('/subscription/tenants/:tenantId', {
+    schema: {
+      description: '테넌트 구독 조회',
+      tags: ['subscription'],
+      params: { type: 'object' as const, required: ['tenantId'], properties: { tenantId: { type: 'string' as const } } },
+      response: { 200: successResponse, 401: errorResponse, 404: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: readLimiter,
+  }, getTenantSubscriptionHandler as never);
 
   // FR-P07.4: 구독 업그레이드
-  app.put('/subscription/:id/upgrade', { preHandler: writeLimiter }, upgradeHandler as never);
+  app.put('/subscription/:id/upgrade', {
+    schema: {
+      description: '구독 업그레이드',
+      tags: ['subscription'],
+      params: idParam,
+      body: { type: 'object' as const, required: ['planId'], properties: { planId: { type: 'string' as const } } },
+      response: { 200: successResponse, 400: errorResponse, 401: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: writeLimiter,
+  }, upgradeHandler as never);
 
   // FR-P07.4: 구독 다운그레이드
-  app.put('/subscription/:id/downgrade', { preHandler: writeLimiter }, downgradeHandler as never);
+  app.put('/subscription/:id/downgrade', {
+    schema: {
+      description: '구독 다운그레이드',
+      tags: ['subscription'],
+      params: idParam,
+      body: { type: 'object' as const, required: ['planId'], properties: { planId: { type: 'string' as const } } },
+      response: { 200: successResponse, 400: errorResponse, 401: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: writeLimiter,
+  }, downgradeHandler as never);
 
   // FR-P07.2: 구독 취소
-  app.post('/subscription/:id/cancel', { preHandler: cancelLimiter }, cancelHandler as never);
+  app.post('/subscription/:id/cancel', {
+    schema: {
+      description: '구독 취소',
+      tags: ['subscription'],
+      params: idParam,
+      body: { type: 'object' as const, properties: { reason: { type: 'string' as const } } },
+      response: { 200: successResponse, 400: errorResponse, 401: errorResponse },
+      security: [{ bearerAuth: [] }],
+    },
+    preHandler: cancelLimiter,
+  }, cancelHandler as never);
 }
