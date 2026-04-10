@@ -11,6 +11,7 @@ import {
   csapGapsHandler,
   complianceHistoryHandler,
 } from './handlers/compliance.handler.js';
+import { complianceTrendHandler, complianceSummaryHandler } from './handlers/compliance-trend.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
@@ -53,4 +54,10 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
 
   // FR-P14.4: OpenTelemetry 메트릭
   app.get('/compliance/metrics', { preHandler: readLimiter }, metricsHandler as never);
+
+  // FR-COMP.5: 준수율 추이
+  app.get('/compliance/trend', { preHandler: readLimiter }, complianceTrendHandler as never);
+
+  // FR-COMP.6: 통합 요약 대시보드
+  app.get('/compliance/summary', { preHandler: readLimiter }, complianceSummaryHandler as never);
 }
