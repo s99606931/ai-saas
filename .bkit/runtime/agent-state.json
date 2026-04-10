@@ -1,14 +1,35 @@
 {
   "version": "1.0",
-  "enabled": false,
+  "enabled": true,
   "teamName": "",
   "feature": "public-saas-framework",
   "pdcaPhase": "archived",
   "orchestrationPattern": "leader",
   "ctoAgent": "opus",
-  "startedAt": "2026-04-09T23:54:59.889Z",
-  "lastUpdated": "2026-04-09T23:55:05.481Z",
-  "teammates": [],
+  "startedAt": "2026-04-10T00:48:47.819Z",
+  "lastUpdated": "2026-04-10T00:49:37.725Z",
+  "teammates": [
+    {
+      "name": "a714d867e4e9044be",
+      "role": "pm-lead",
+      "model": "sonnet",
+      "status": "spawning",
+      "currentTask": null,
+      "taskId": null,
+      "startedAt": "2026-04-10T00:48:47.821Z",
+      "lastActivityAt": "2026-04-10T00:48:47.821Z"
+    },
+    {
+      "name": "a46880bd30672b55c",
+      "role": "pm-lead",
+      "model": "sonnet",
+      "status": "spawning",
+      "currentTask": null,
+      "taskId": null,
+      "startedAt": "2026-04-10T00:49:37.724Z",
+      "lastActivityAt": "2026-04-10T00:49:37.724Z"
+    }
+  ],
   "progress": {
     "totalTasks": 0,
     "completedTasks": 0,
@@ -17,5 +38,5 @@
     "pendingTasks": 0
   },
   "recentMessages": [],
-  "sessionId": "ccb2e7ee-51b9-42a6-a1e3-e9a6a080d439"
+  "sessionId": "d6022046-8226-452d-9317-41d9dc67dbe0"
 }
