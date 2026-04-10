@@ -9,6 +9,7 @@ initTelemetry({ serviceName: 'security-monitor-service', serviceVersion: '0.1.0'
 import Fastify from 'fastify';
 import { responseTimePlugin } from '@public-saas/observability';
 import { healthPlugin, CommonCheckers } from '@public-saas/health';
+import { rbacPlugin } from '@public-saas/rbac';
 
 const PORT = parseInt(process.env['SECURITY_MONITOR_PORT'] ?? '3014', 10);
 const HOST = '0.0.0.0';
@@ -29,6 +30,9 @@ async function main(): Promise<void> {
       CommonCheckers.httpService('audit-service', `${auditServiceUrl}/health`),
     ],
   });
+
+  // Plan SC: FR-INT.3 -- rbacPlugin 통합 (CSAP D-08 접근 통제, 심층 방어)
+  await app.register(rbacPlugin, {});
 
   // Plan SC: FR-P15.1~P15.4 라우트 등록
   const { registerRoutes } = await import('./routes.js');

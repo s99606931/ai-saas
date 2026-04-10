@@ -14,12 +14,13 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@public-saas/health": "workspace:*",
     "@public-saas/observability": "workspace:*",
+    "@public-saas/rbac": "workspace:*",
     "@public-saas/types": "workspace:*",
     "fastify": "^5.0.0",
     "fastify-plugin": "^5.0.0",
-    "zod": "^3.23.0",
-    "@public-saas/health": "workspace:*"
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

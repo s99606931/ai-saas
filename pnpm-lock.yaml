@@ -80,6 +80,25 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  platform/packages/api-version:
+    dependencies:
+      fastify:
+        specifier: ^5.0.0
+        version: 5.8.4
+      fastify-plugin:
+        specifier: ^5.0.0
+        version: 5.1.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
+
   platform/packages/audit-sdk:
     dependencies:
       '@public-saas/types':
@@ -132,6 +151,44 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  platform/packages/cache:
+    dependencies:
+      fastify:
+        specifier: ^5.0.0
+        version: 5.8.4
+      fastify-plugin:
+        specifier: ^5.0.0
+        version: 5.1.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
+
+  platform/packages/health:
+    dependencies:
+      fastify:
+        specifier: ^5.0.0
+        version: 5.8.4
+      fastify-plugin:
+        specifier: ^5.0.0
+        version: 5.1.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
+
   platform/packages/observability:
     dependencies:
       fastify:
@@ -161,6 +218,25 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
+
+  platform/packages/rbac:
+    dependencies:
+      fastify:
+        specifier: ^5.0.0
+        version: 5.8.4
+      fastify-plugin:
+        specifier: ^5.0.0
+        version: 5.1.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
 
   platform/packages/types:
@@ -240,12 +316,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -286,15 +368,24 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^5.0.0
         version: 5.2.5
+      '@public-saas/api-version':
+        specifier: workspace:*
+        version: link:../../packages/api-version
       '@public-saas/audit-sdk':
         specifier: workspace:*
         version: link:../../packages/audit-sdk
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -338,6 +429,9 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
@@ -381,12 +475,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -439,12 +539,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -479,12 +585,21 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/cache':
+        specifier: workspace:*
+        version: link:../../packages/cache
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -519,12 +634,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -559,12 +680,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -599,12 +726,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -639,12 +772,21 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/cache':
+        specifier: workspace:*
+        version: link:../../packages/cache
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -679,12 +821,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -710,9 +858,15 @@ importers:
 
   platform/services/saas-catalog-service:
     dependencies:
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -750,12 +904,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -790,12 +950,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -830,12 +996,18 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -870,12 +1042,21 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/cache':
+        specifier: workspace:*
+        version: link:../../packages/cache
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -910,12 +1091,21 @@ importers:
       '@public-saas/auth-sdk':
         specifier: workspace:*
         version: link:../../packages/auth-sdk
+      '@public-saas/cache':
+        specifier: workspace:*
+        version: link:../../packages/cache
+      '@public-saas/health':
+        specifier: workspace:*
+        version: link:../../packages/health
       '@public-saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
       '@public-saas/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@public-saas/rbac':
+        specifier: workspace:*
+        version: link:../../packages/rbac
       '@public-saas/types':
         specifier: workspace:*
         version: link:../../packages/types

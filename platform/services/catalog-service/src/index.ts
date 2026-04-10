@@ -9,6 +9,7 @@ initTelemetry({ serviceName: 'catalog-service', serviceVersion: '0.1.0' });
 import Fastify from 'fastify';
 import { responseTimePlugin } from '@public-saas/observability';
 import { healthPlugin, CommonCheckers } from '@public-saas/health';
+import { rbacPlugin } from '@public-saas/rbac';
 import { cachePlugin } from '@public-saas/cache';
 import { registerRoutes } from './routes.js';
 
@@ -29,6 +30,9 @@ async function main(): Promise<void> {
     version: '0.1.0',
     checkers: [CommonCheckers.database(prisma)],
   });
+
+  // Plan SC: FR-INT.3 -- rbacPlugin 통합 (CSAP D-08 접근 통제, 심층 방어)
+  await app.register(rbacPlugin, {});
 
   // Plan SC: FR-INT.2 -- cachePlugin 통합 (CSAP D-07 가용성)
   await app.register(cachePlugin, {

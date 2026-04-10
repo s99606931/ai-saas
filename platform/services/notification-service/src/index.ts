@@ -10,6 +10,7 @@ initTelemetry({ serviceName: 'notification-service', serviceVersion: '0.1.0' });
 import Fastify from 'fastify';
 import { responseTimePlugin } from '@public-saas/observability';
 import { healthPlugin, CommonCheckers } from '@public-saas/health';
+import { rbacPlugin } from '@public-saas/rbac';
 import { notificationEventBus } from './lib/event-bus.js';
 
 const PORT = parseInt(process.env['NOTIFICATION_SERVICE_PORT'] ?? '3010', 10);
@@ -29,6 +30,9 @@ async function main(): Promise<void> {
     version: '0.1.0',
     checkers: [CommonCheckers.database(prisma)],
   });
+
+  // Plan SC: FR-INT.3 -- rbacPlugin 통합 (CSAP D-08 접근 통제, 심층 방어)
+  await app.register(rbacPlugin, {});
 
   // 이벤트 버스 기본 핸들러 등록 (FR-P11.4)
   notificationEventBus.on('user.created', async (payload) => {

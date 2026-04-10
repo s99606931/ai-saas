@@ -9,6 +9,7 @@ initTelemetry({ serviceName: 'billing-service', serviceVersion: '0.1.0' });
 import Fastify from 'fastify';
 import { responseTimePlugin } from '@public-saas/observability';
 import { healthPlugin, CommonCheckers } from '@public-saas/health';
+import { rbacPlugin } from '@public-saas/rbac';
 
 const PORT = parseInt(process.env['BILLING-SERVICE_PORT'] ?? '3007', 10);
 const HOST = '0.0.0.0';
@@ -27,6 +28,9 @@ async function main(): Promise<void> {
     version: '0.1.0',
     checkers: [CommonCheckers.database(prisma)],
   });
+
+  // Plan SC: FR-INT.3 -- rbacPlugin 통합 (CSAP D-08 접근 통제, 심층 방어)
+  await app.register(rbacPlugin, {});
 
   // MTU-P08 라우트 등록
   const { registerRoutes } = await import('./routes.js');

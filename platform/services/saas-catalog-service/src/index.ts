@@ -9,6 +9,7 @@ initTelemetry({ serviceName: 'saas-catalog-service', serviceVersion: '0.1.0' });
 import Fastify from 'fastify';
 import { responseTimePlugin } from '@public-saas/observability';
 import { healthPlugin, CommonCheckers } from '@public-saas/health';
+import { rbacPlugin } from '@public-saas/rbac';
 import { registerRoutes } from './routes.js';
 
 const PORT = parseInt(process.env['SAAS_CATALOG_SERVICE_PORT'] ?? '3016', 10);
@@ -31,6 +32,9 @@ async function main(): Promise<void> {
       CommonCheckers.custom('store', async () => true, 1000),
     ],
   });
+
+  // Plan SC: FR-INT.3 -- rbacPlugin 통합 (CSAP D-08 접근 통제, 심층 방어)
+  await app.register(rbacPlugin, {});
 
   await registerRoutes(app);
 
