@@ -263,12 +263,13 @@ export class EntityTracker {
     // 날짜 패턴 (YYYY-MM-DD, YYYY.MM.DD, YYYY년 MM월 DD일)
     const datePattern = /(\d{4}[-./년]\s*\d{1,2}[-./월]\s*\d{1,2}일?)/g;
     for (const match of text.matchAll(datePattern)) {
-      const captured = match[1];
-      if (captured) {
+      const captured: string | undefined = match[1];
+      if (captured !== undefined) {
+        const trimmed = captured.trim();
         extracted.push({
-          name: captured.trim(),
+          name: trimmed,
           type: 'date',
-          value: captured.trim(),
+          value: trimmed,
           lastMentioned: Date.now(),
           confidence: 0.9,
         });
@@ -278,8 +279,8 @@ export class EntityTracker {
     // 법령 패턴 (XX법, XX규정, XX조례)
     const regulationPattern = /((?:[\uAC00-\uD7A3]+){2,}(?:법|규정|조례|시행령|시행규칙|고시|훈령))/g;
     for (const match of text.matchAll(regulationPattern)) {
-      const captured = match[1];
-      if (captured) {
+      const captured: string | undefined = match[1];
+      if (captured !== undefined) {
         extracted.push({
           name: captured,
           type: 'regulation',
@@ -293,8 +294,8 @@ export class EntityTracker {
     // 문서번호 패턴 (XX-YYYY-NNNN)
     const docNumberPattern = /([A-Z가-힣]+-\d{4}-\d{3,6})/g;
     for (const match of text.matchAll(docNumberPattern)) {
-      const captured = match[1];
-      if (captured) {
+      const captured: string | undefined = match[1];
+      if (captured !== undefined) {
         extracted.push({
           name: captured,
           type: 'document',

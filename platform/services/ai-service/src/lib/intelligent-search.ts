@@ -166,8 +166,8 @@ export function classifyIntent(query: string): SearchIntent {
   // 엔티티 추출 (법령명, 기관명)
   const entityPattern = /((?:[\uAC00-\uD7A3]+){2,}(?:법|규정|조례|청|부|처|원|위원회))/g;
   for (const match of normalizedQuery.matchAll(entityPattern)) {
-    const captured = match[1];
-    if (captured) {
+    const captured: string | undefined = match[1];
+    if (captured !== undefined) {
       entities.push(captured);
     }
   }
