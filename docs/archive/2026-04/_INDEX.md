@@ -440,3 +440,19 @@
 | **MTU-N191** Namespace 리소스 쿼터 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N191-namespace-quota/` |
 | **MTU-N192** Deployment/StatefulSet 롤아웃 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N192-rollout-monitoring/` |
 | **MTU-N193** 노드 상태 상세 모니터링 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N193-node-condition/` |
+| **SVC-HEALTHAGG-R23** 다중 서비스 헬스체크 집계기 | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-HEALTHAGG-R23/` |
+| **SVC-SECRETMGR-R24** 시크릿 관리자 (AES-256-GCM) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-SECRETMGR-R24/` |
+| **MTU-N241** Trivy Operator 취약점 스캔 성능 모니터링 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N241-trivy-vuln-monitoring/` |
+| **MTU-N242** 예측 알림 시스템 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N242-predictive-alerting/` |
+| **MTU-N243** 플랫폼 성숙도 평가 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N243-platform-maturity-assessment/` |
+| **SVC-AI-ADV-R1** Advanced RAG: 하이브리드 검색 + Reranking | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R1/` |
+| **SVC-AI-ADV-R2** Agentic AI Pipeline: Plan-Execute + 메모리 | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R2-agentic-pipeline/` |
+| **SVC-AI-ADV-R3** AI Safety & Guardrails: 이중 방어 + 환각 감지 | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R3-ai-guardrails/` |
+| **SVC-AI-ADV-R4** Structured Tool Use / Function Calling | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R4-function-calling/` |
+| **SVC-AI-ADV-R5** Knowledge Graph RAG: 지식 그래프 관계형 검색 | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R5-knowledge-graph-rag/` |
+| **SVC-CIRCUIT-R25** 서킷 브레이커 + 지수 백오프 재시도 | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-CIRCUIT-R25/` |
+| **MTU-N244** CI/CD 파이프라인 병렬화 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N244-cicd-pipeline-parallelization/` |
+| **MTU-N245** GitOps 프로모션 자동화 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N245-gitops-promotion-automation/` |
+| **MTU-N246** DevSecOps 파이프라인 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N246-devsecops-pipeline/` |
+| **MTU-N247** 관측성 강화 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N247-observability-enhancement/` |
+| **MTU-N248** 운영 자동화 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N248-ops-automation/` |

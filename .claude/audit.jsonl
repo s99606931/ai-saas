@@ -11743,3 +11743,165 @@
 {"timestamp":"2026-04-11T00:37:49Z","tool":"Bash","user":"kunkin"}
 {"timestamp":"2026-04-11T00:37:57Z","tool":"Bash","user":"kunkin"}
 {"timestamp":"2026-04-11T00:37:58Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T00:38:11Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T00:38:14Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T00:38:21Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T00:39:01Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T00:39:04Z","event":"session-end"}
+{"timestamp":"2026-04-11T00:41:35Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T00:43:21Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T00:45:02Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T10:00:00Z","actor":"PM-Lead-Opus","action":"MTU_PLAN_CREATE","target":"MTU-TECH-STACK-2026Q2","detail":"Plan 문서 작성: docs/01-plan/mtus/MTU-TECH-STACK-2026Q2.plan.md","csap":"D-12"}
+{"timestamp":"2026-04-11T10:01:00Z","actor":"PM-Lead-Opus","action":"MTU_DESIGN_CREATE","target":"MTU-TECH-STACK-2026Q2","detail":"Design 문서 작성: docs/02-design/mtus/MTU-TECH-STACK-2026Q2.design.md","csap":"D-12"}
+{"timestamp":"2026-04-11T10:02:00Z","actor":"PM-Lead-Opus","action":"GUIDELINE_CREATE","target":"coding-standards","detail":"코딩 표준 지침서 작성: docs/guidelines/coding-standards.md","csap":"D-12,D-08,D-06"}
+{"timestamp":"2026-04-11T10:03:00Z","actor":"PM-Lead-Opus","action":"GUIDELINE_CREATE","target":"design-patterns","detail":"디자인 패턴 지침서 작성: docs/guidelines/design-patterns.md","csap":"D-08,N2SF-N03,N05"}
+{"timestamp":"2026-04-11T10:04:00Z","actor":"PM-Lead-Opus","action":"GUIDELINE_CREATE","target":"documentation-standards","detail":"문서 작성 표준 지침서 작성: docs/guidelines/documentation-standards.md","csap":"감리기준"}
+{"timestamp":"2026-04-11T00:45:21Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T00:46:16Z","event":"session-end"}
+{"timestamp":"2026-04-11T10:00:00Z","event":"MTU_ARCHIVED","mtu":"SVC-AI-ADV-R3","description":"AI Safety & Guardrails 이중 방어 + 환각 감지 아카이브 완료","matchRate":"100%","frCount":5,"frPassed":5,"user":"PM-Lead-Opus"}
+{"timestamp":"2026-04-11T04:58:51Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T10:34:00Z","action":"QGATE_PASS","mtu":"MTU-N241","matchRate":100,"gates":"G1-G7 ALL PASS","actor":"pm-lead","details":"8/8 FR, 25/25 verification checks, Trivy monitoring"}
+{"timestamp":"2026-04-11T10:34:01Z","action":"ARCHIVE","mtu":"MTU-N241","matchRate":100,"path":"docs/archive/2026-04/MTU-N241-trivy-vuln-monitoring/","actor":"pm-lead"}
+{"timestamp":"2026-04-11T04:58:58Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T04:59:18Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T04:59:25Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T04:59:41Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T04:59:45Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T04:59:49Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:00:07Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T14:00:00Z","action":"QGATE_PASS","mtu":"MTU-N243","matchRate":100,"gates":"G1-G7 ALL PASS","actor":"pm-lead","details":"5/5 FR, 30/30 integration tests"}
+{"timestamp":"2026-04-11T14:00:01Z","action":"ARCHIVE","mtu":"MTU-N243","matchRate":100,"path":"docs/archive/2026-04/MTU-N243-platform-maturity-assessment/","actor":"pm-lead"}
+{"timestamp":"2026-04-11T05:00:29Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:00:46Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:01:11Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:01:18Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:01:30Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:01:42Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:01:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:01:49Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:01:56Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:05Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:16Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:18Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:22Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:24Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:24Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:37Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:37Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:39Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:41Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:43Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:47Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:52Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:56Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:57Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:57Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:58Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:59Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:02:59Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:03:01Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:03:05Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:03:09Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:03:21Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:03:40Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:03:59Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:04:04Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:04:05Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:04:06Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:04:26Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:04:41Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:04:46Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:05:01Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:05:07Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:05:14Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:05:24Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:05:25Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:05:34Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:05:45Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:05:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T10:30:00Z","event":"MTU_ARCHIVED","mtu":"SVC-AI-ADV-R4","description":"Function Calling 엔진 아카이브 완료","matchRate":"100%","frCount":5,"frPassed":5,"user":"PM-Lead-Opus"}
+{"timestamp":"2026-04-11T05:05:50Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:05:57Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:06:00Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:06:00Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:06:05Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:06:08Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:06:15Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:06:17Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:06:19Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:06:19Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:06:33Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:06:36Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:06:43Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:06:54Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:06:54Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:07:27Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:07:27Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:07:37Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:07:40Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:07:44Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:07:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:07:54Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T14:05:00Z","action":"PDCA_CHECK","mtu":"SVC-HEALTHAGG-R23","result":"PASS","matchRate":"100%","tests":"25/25","actor":"PM Lead (Opus)"}
+{"timestamp":"2026-04-11T14:05:30Z","action":"PDCA_ARCHIVE","mtu":"SVC-HEALTHAGG-R23","archivePath":"docs/archive/2026-04/SVC-HEALTHAGG-R23/","actor":"PM Lead (Opus)"}
+{"timestamp":"2026-04-11T14:06:00Z","action":"PDCA_CHECK","mtu":"SVC-SECRETMGR-R24","result":"PASS","matchRate":"100%","tests":"26/26","actor":"PM Lead (Opus)"}
+{"timestamp":"2026-04-11T14:06:30Z","action":"PDCA_ARCHIVE","mtu":"SVC-SECRETMGR-R24","archivePath":"docs/archive/2026-04/SVC-SECRETMGR-R24/","actor":"PM Lead (Opus)"}
+{"timestamp":"2026-04-11T14:07:00Z","action":"PDCA_TEST_CREATED","mtu":"SVC-AI-ADV-R1","testFiles":["hybrid-retriever.test.ts","reranker.test.ts","query-expander.test.ts"],"tests":"24 new tests","actor":"PM Lead (Opus)"}
+{"timestamp":"2026-04-11T14:08:00Z","action":"PDCA_CHECK","mtu":"SVC-AI-ADV-R1","result":"PASS","matchRate":"100%","tests":"106/106 (ai-service total)","actor":"PM Lead (Opus)"}
+{"timestamp":"2026-04-11T14:08:30Z","action":"PDCA_ARCHIVE","mtu":"SVC-AI-ADV-R1","archivePath":"docs/archive/2026-04/SVC-AI-ADV-R1/","actor":"PM Lead (Opus)"}
+{"timestamp":"2026-04-11T05:08:00Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:08:04Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:08:14Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:08:16Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:08:17Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:08:20Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:08:26Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:08:39Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:08:45Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:08:55Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:09:10Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:09:27Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:09:32Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:09:42Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:09:52Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:10:22Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:10:25Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:10:27Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:10:34Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:10:42Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:11:03Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:11:05Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:11:15Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:11:33Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:11:40Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:11:47Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:11:59Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T11:00:00Z","event":"MTU_ARCHIVED","mtu":"SVC-AI-ADV-R5","description":"Knowledge Graph RAG 아카이브 완료","matchRate":"100%","frCount":5,"frPassed":5,"user":"PM-Lead-Opus"}
+{"timestamp":"2026-04-11T05:12:06Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:12:06Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T14:06:00Z","action":"QGATE_PASS","mtu":"SVC-CIRCUIT-R25","matchRate":100,"gates":"G1-G7 ALL PASS","actor":"pm-lead","details":"6/6 FR, 20/20 tests, circuit breaker + retry with backoff"}
+{"timestamp":"2026-04-11T14:06:01Z","action":"ARCHIVE","mtu":"SVC-CIRCUIT-R25","matchRate":100,"path":"docs/archive/2026-04/SVC-CIRCUIT-R25/","actor":"pm-lead"}
+{"timestamp":"2026-04-11T05:12:12Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:12:15Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:12:23Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:12:32Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:12:37Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:12:38Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:12:45Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:12:47Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T14:12:00Z","action":"PDCA_CHECK","mtu":"SVC-CIRCUIT-R25","result":"PASS","matchRate":"100%","tests":"20/20","actor":"PM Lead (Opus)"}
+{"timestamp":"2026-04-11T14:12:30Z","action":"PDCA_ARCHIVE","mtu":"SVC-CIRCUIT-R25","archivePath":"docs/archive/2026-04/SVC-CIRCUIT-R25/","actor":"PM Lead (Opus)"}
+{"timestamp":"2026-04-11T14:13:00Z","action":"INDEX_UPDATE","description":"아카이브 인덱스 동기화 — SVC-HEALTHAGG-R23, SVC-SECRETMGR-R24, SVC-AI-ADV-R1, SVC-CIRCUIT-R25, MTU-N241~N248 추가","actor":"PM Lead (Opus)"}
+{"timestamp":"2026-04-11T14:14:00Z","action":"TEST_SUITE_VALIDATION","description":"4개 패키지 177/177 테스트 ALL PASS","packages":["health-aggregator","secret-manager","circuit-breaker","ai-service"],"actor":"PM Lead (Opus)"}
+{"timestamp":"2026-04-11T05:12:49Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:12:53Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:12:58Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:13:02Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:13:03Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:13:14Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:13:21Z","event":"session-end"}
+{"timestamp":"2026-04-11T05:13:30Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:13:31Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:13:37Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T05:13:37Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T05:13:45Z","tool":"Bash","user":"kunkin"}
