@@ -190,6 +190,9 @@
 | **SVC-AI-ADV-R10** Multimodal AI (문서 이미지 분석) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R10-multimodal/` |
 | **SVC-AI-ADV-R11** Conversational Memory (다중 세션 대화 기억) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R11-conversational-memory/` |
 | **SVC-AI-ADV-R12** AI-powered Search (지능형 검색) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R12-intelligent-search/` |
+| **SVC-AI-ADV-R13** Autonomous Document Generation (공문서 자동 생성) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R13-document-generator/` |
+| **SVC-AI-ADV-R14** AI Workflow Orchestrator (작업 흐름 오케스트레이터) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R14-workflow-orchestrator/` |
+| **SVC-AI-ADV-R15** AI Rate Limiter & Quota Manager (속도 제한 + 할당량) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R15-rate-limiter/` |
 | **SVC-REQVALID-R28** 요청 검증기 패키지 | 2026-04-11 | 100% | (완료, 아카이브 대기) |
 
 ## av-skill 요약
