@@ -5,12 +5,7 @@
  * CSAP: D-06 침해사고 관리
  */
 
-import {
-  ErrorBudgetPolicyEngine,
-  BudgetStatus,
-  AutoAction,
-  SLODefinition,
-} from '../src/error-budget-policy';
+import { ErrorBudgetPolicyEngine, BudgetStatus, AutoAction, SLODefinition } from '../src/error-budget-policy';
 
 function createSLO(overrides?: Partial<SLODefinition>): SLODefinition {
   return {
@@ -155,24 +150,18 @@ describe('ErrorBudgetPolicyEngine', () => {
       expect(engine.isDeployFrozen()).toBe(false);
 
       // 100% 이상 소진
-      engine.calculateErrorBudget(
-        createSLO({ target: 0.999, currentAvailability: 0.998 }),
-      );
+      engine.calculateErrorBudget(createSLO({ target: 0.999, currentAvailability: 0.998 }));
 
       expect(engine.isDeployFrozen()).toBe(true);
     });
 
     it('에러 버짓 회복 시 배포 동결 해제', () => {
       // 소진
-      engine.calculateErrorBudget(
-        createSLO({ target: 0.999, currentAvailability: 0.998 }),
-      );
+      engine.calculateErrorBudget(createSLO({ target: 0.999, currentAvailability: 0.998 }));
       expect(engine.isDeployFrozen()).toBe(true);
 
       // 회복 (새로운 측정 기간)
-      engine.calculateErrorBudget(
-        createSLO({ target: 0.999, currentAvailability: 0.9998 }),
-      );
+      engine.calculateErrorBudget(createSLO({ target: 0.999, currentAvailability: 0.9998 }));
       expect(engine.isDeployFrozen()).toBe(false);
     });
   });
@@ -189,8 +178,7 @@ describe('ErrorBudgetPolicyEngine', () => {
 
       // 5분 후 에스컬레이션
       if (result.nextEscalationAt) {
-        const diff = new Date(result.nextEscalationAt).getTime() -
-          new Date(result.escalatedAt).getTime();
+        const diff = new Date(result.nextEscalationAt).getTime() - new Date(result.escalatedAt).getTime();
         expect(diff).toBe(5 * 60 * 1000); // 5분
       }
     });
@@ -202,8 +190,7 @@ describe('ErrorBudgetPolicyEngine', () => {
       expect(result.notifiedTargets).toContain('oncall-primary');
 
       if (result.nextEscalationAt) {
-        const diff = new Date(result.nextEscalationAt).getTime() -
-          new Date(result.escalatedAt).getTime();
+        const diff = new Date(result.nextEscalationAt).getTime() - new Date(result.escalatedAt).getTime();
         expect(diff).toBe(30 * 60 * 1000); // 30분
       }
     });
@@ -214,8 +201,7 @@ describe('ErrorBudgetPolicyEngine', () => {
       expect(result.priority).toBe('P3');
 
       if (result.nextEscalationAt) {
-        const diff = new Date(result.nextEscalationAt).getTime() -
-          new Date(result.escalatedAt).getTime();
+        const diff = new Date(result.nextEscalationAt).getTime() - new Date(result.escalatedAt).getTime();
         expect(diff).toBe(240 * 60 * 1000); // 4시간
       }
     });

@@ -51,6 +51,70 @@
 장기 보존: Prometheus → Thanos Sidecar → MinIO (S3)
 ```
 
+**관측성 스택 전체 아키텍처**
+
+```mermaid
+graph LR
+  subgraph COLLECT["데이터 수집 계층"]
+    SVC[마이크로서비스\nPods]
+    OTEL[OTel Collector\n중계 허브]
+    PROMTAIL[Promtail\nDaemonSet]
+    SVC -->|OTLP gRPC :4317| OTEL
+    SVC -->|로그 파일| PROMTAIL
+  end
+
+  subgraph STORE["저장 계층"]
+    PROM[Prometheus\n:9090\n단기 15일]
+    LOKI[Loki\n:3100\n30일 보존]
+    TEMPO[Tempo\n:4317\n7일 보존]
+    THANOS[Thanos\n장기보존 1년+]
+    MINIO[(MinIO\nS3 오브젝트\n스토리지)]
+    OTEL -->|메트릭| PROM
+    OTEL -->|추적| TEMPO
+    PROMTAIL -->|로그| LOKI
+    PROM -->|2시간 블록| THANOS
+    THANOS -->|블록 업로드| MINIO
+    LOKI -->|청크| MINIO
+    TEMPO -->|트레이스| MINIO
+  end
+
+  subgraph VIZ["시각화 계층"]
+    GRAFANA[Grafana\n:30300\n통합 대시보드]
+    PROM --> GRAFANA
+    THANOS --> GRAFANA
+    LOKI --> GRAFANA
+    TEMPO --> GRAFANA
+  end
+
+  subgraph ALERT["알림 계층"]
+    AM[AlertManager\n:9093]
+    SLACK[Slack\n채널별 라우팅]
+    EMAIL[Email\n공공기관 메일]
+    WH[Webhook\n외부 연동]
+    PROM -->|알림 규칙 발화| AM
+    AM --> SLACK
+    AM --> EMAIL
+    AM --> WH
+  end
+```
+
+**구성요소별 상세 설명**
+
+| 계층 | 컴포넌트 | 역할 | 데이터 보존 |
+|-----|---------|------|---------|
+| 수집 | Promtail DaemonSet | 각 노드의 `/var/log/pods/` 자동 수집. 레이블 자동 추가 | — |
+| 수집 | OTel Collector | 추적(OTLP), 메트릭, 로그 통합 수신 후 각 백엔드로 라우팅 | — |
+| 저장 | Prometheus | Pull 방식 메트릭 수집. TSDB 형식 로컬 저장 | 15일 |
+| 저장 | Thanos | Prometheus Sidecar로 오브젝트 스토리지에 블록 업로드 | 1년+ |
+| 저장 | Loki | 레이블 인덱싱만 수행하여 메모리 최소화 | 30일 |
+| 저장 | Tempo | 트레이스 저장. Grafana에서 로그↔트레이스 연동 | 7일 |
+| 시각화 | Grafana | Prometheus/Thanos/Loki/Tempo 통합 데이터소스 지원 | — |
+| 알림 | AlertManager | 중복 제거(grouping), 억제(inhibition), 라우팅 | — |
+
+**실무 활용 예시**: 장애 발생 시 Grafana에서 "Explore" 메뉴를 활용하면 로그(Loki) → 트레이스(Tempo) → 메트릭(Prometheus)을 하나의 화면에서 연동하여 원인을 빠르게 파악할 수 있습니다.
+
+**자주 하는 실수**: Thanos가 설정되지 않은 상태에서 15일 이전 메트릭을 조회하면 데이터가 없습니다. CSAP D-06 감사 요건(1년 보존)을 충족하려면 반드시 Thanos + MinIO를 함께 구성해야 합니다.
+
 ### 1.3 설치 순서와 상태 확인
 
 ```bash
@@ -104,7 +168,49 @@ Prometheus
   http_request_duration_seconds{le="0.1"} 500
 ```
 
-### 2.2 ServiceMonitor 추가 방법
+### 2.2 Prometheus 메트릭 수집 흐름
+
+아래 다이어그램은 ServiceMonitor 등록부터 알림 발화까지의 전체 데이터 흐름을 보여줍니다.
+
+```mermaid
+graph TD
+  SVC[서비스 /metrics 엔드포인트\nhttp://my-service:3000/metrics]
+  SM[ServiceMonitor CRD\nrelease: kube-prometheus-stack]
+  PROM[Prometheus\n15초 주기 Pull]
+  TSDB[(TSDB\n로컬 저장소)]
+  RR[Recording Rules\nsaas:http_requests:rate5m\n사전 계산 최적화]
+  AR[Alert Rules\nPrometheusRule CRD\n조건 평가]
+  AM[AlertManager\n중복제거 + 라우팅]
+  GRAFANA[Grafana\n대시보드 시각화]
+  THANOS[Thanos Sidecar\n오브젝트 스토리지 업로드]
+
+  SM -->|탐색 대상 등록| PROM
+  PROM -->|15초마다 스크레이핑| SVC
+  SVC -->|메트릭 텍스트 응답| PROM
+  PROM -->|저장| TSDB
+  TSDB -->|평가 1분 주기| RR
+  RR -->|최적화 메트릭| TSDB
+  TSDB -->|평가 1분 주기| AR
+  AR -->|조건 충족 시| AM
+  AM -->|라우팅| SLACK[Slack / Email / Webhook]
+  TSDB -->|쿼리| GRAFANA
+  TSDB -->|2시간 블록| THANOS
+```
+
+**구성요소별 상세 설명**
+
+| 구성 요소 | 파일 위치 | 역할 상세 |
+|---------|---------|---------|
+| ServiceMonitor | `infra/monitoring/` 또는 서비스별 | `release: kube-prometheus-stack` 레이블 필수. 누락 시 Prometheus가 인식 불가 |
+| Recording Rules | `infra/monitoring/golden-signals-rules.yaml` | 자주 사용하는 복잡한 PromQL을 사전 계산. 대시보드 쿼리 속도 개선 |
+| Alert Rules | `infra/monitoring/alerting-rules.yaml` | `for: 2m` 설정으로 일시적 스파이크 무시. `runbook_url` 필수 |
+| AlertManager | `infra/monitoring/alertmanager-config.yaml` | 동일 알림 그룹화(group_by), 억제(inhibit_rules) 설정 |
+
+**실무 활용 예시**: Recording Rules로 사전 계산된 메트릭(`saas:http_request_duration_seconds:p99`)을 Grafana 대시보드에서 사용하면 실시간 쿼리보다 10배 이상 빠르게 응답합니다.
+
+**자주 하는 실수**: PrometheusRule에 `release: kube-prometheus-stack` 레이블이 없으면 Prometheus가 규칙을 로드하지 않습니다. `kubectl get prometheusrule -n monitoring` 출력에서 AGE가 최근인데도 알림이 동작하지 않으면 레이블을 먼저 확인하십시오.
+
+### 2.3 ServiceMonitor 추가 방법
 
 ServiceMonitor는 Prometheus에게 "이 서비스의 메트릭을 수집하라"고 알리는 CRD입니다. `kube-prometheus-stack`이 `release: kube-prometheus-stack` 레이블이 붙은 ServiceMonitor를 자동으로 탐색합니다.
 
@@ -183,7 +289,7 @@ app.get('/metrics', async (req, res) => {
 });
 ```
 
-### 2.3 기본 대시보드 목록
+### 2.4 기본 대시보드 목록
 
 Grafana 좌측 메뉴 "Dashboards"에서 확인 가능한 대시보드 목록입니다.
 
@@ -203,7 +309,7 @@ kubectl apply -f infra/monitoring/dashboards/ -n monitoring
 kubectl rollout restart deployment/kube-prometheus-stack-grafana -n monitoring
 ```
 
-### 2.4 SRE 황금 신호 (Golden Signals)
+### 2.5 SRE 황금 신호 (Golden Signals)
 
 `infra/monitoring/golden-signals-rules.yaml`은 4개의 핵심 SRE 지표를 사전 계산(recording rule)으로 정의합니다.
 
@@ -229,7 +335,7 @@ sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
 sum(rate(http_requests_total[5m])) by (service)
 ```
 
-### 2.5 알림 규칙 작성법
+### 2.6 알림 규칙 작성법
 
 `infra/monitoring/alerting-rules.yaml`에 PrometheusRule CRD로 알림을 정의합니다.
 
@@ -537,6 +643,51 @@ Grafana에서 로그를 보다가 해당 요청의 전체 트레이스를 바로
 | dba-team | DBA 팀 | PostgreSQL, 슬로우쿼리 관련 |
 | management-escalation | 관리자 | critical 심각도 전체 |
 
+**AlertManager 5채널 라우팅 다이어그램**
+
+```mermaid
+flowchart TD
+  AM([AlertManager\n모든 알림 수신])
+
+  AM --> R1{alertname =~\n.*SLO.*\n.*ErrorBudget.*\n.*BurnRate.*?}
+  AM --> R2{alertname =~\nFalco.*\nPolicyViolation.*?}
+  AM --> R3{alertname =~\n.*Postgres.*\n.*SlowQuery.*\n.*DB.*?}
+  AM --> R4{severity =\ncritical?}
+  AM --> R5[기본 라우트]
+
+  R1 -->|일치| SRE[sre-team\nSlack #sre-alerts\ngroup_wait: 10s]
+  R2 -->|일치| SEC[security-team\nSlack #security-alerts\ngroup_wait: 10s]
+  R3 -->|일치| DBA[dba-team\nSlack #dba-alerts\ngroup_wait: 30s]
+  R4 -->|일치, continue: true| MGT[management-escalation\nEmail: devops-lead\nrepeat: 1h]
+  R5 --> DEV[devops-default\nSlack #devops-alerts\ngroup_wait: 30s]
+
+  R4 -->|continue: true\n다른 라우트도 매칭| R1
+  R4 -->|continue: true| R2
+  R4 -->|continue: true| R3
+
+  SRE --> SLACK_SRE[(Slack\n#sre-alerts)]
+  SEC --> SLACK_SEC[(Slack\n#security-alerts)]
+  DBA --> SLACK_DBA[(Slack\n#dba-alerts)]
+  MGT --> EMAIL[(Email\n공공기관 메일서버)]
+  DEV --> SLACK_DEV[(Slack\n#devops-alerts)]
+```
+
+**구성요소별 상세 설명**
+
+| 라우팅 규칙 | 매칭 조건 | `continue` 설정 | 비고 |
+|----------|---------|--------------|------|
+| SRE 팀 | alertname에 SLO/ErrorBudget/BurnRate 포함 | false | SLO 위반은 SRE가 1차 대응 |
+| 보안 팀 | alertname에 Falco/PolicyViolation 포함 | false | CSAP D-06 요건: 즉시 보고 |
+| DBA 팀 | alertname에 Postgres/SlowQuery/DB 포함 | false | 슬로우쿼리 5초 이상 시 자동 알림 |
+| 관리자 에스컬레이션 | severity=critical | **true** | critical은 해당 팀 + 관리자 동시 알림 |
+| DevOps 기본 | 위 조건 미해당 전체 | false | Flux 동기화 실패, 인증서 만료 등 |
+
+`continue: true` 설정의 의미: critical 심각도 알림은 해당 팀(SRE/보안/DBA)과 관리자 모두에게 동시에 전달됩니다. 예를 들어 `FalcoAlertCritical`은 security-team과 management-escalation 양쪽으로 라우팅됩니다.
+
+**실무 활용 예시**: 신규 알림 규칙 작성 시 `alertname` 접두사를 팀 규약에 맞게 지정하면 자동으로 올바른 채널로 라우팅됩니다. 예: `PostgresReplicationLag` → dba-team 자동 라우팅.
+
+**자주 하는 실수**: Slack webhook URL을 AlertManager values.yaml에 직접 하드코딩하면 CSAP D-09 시크릿 관리 위반입니다. 반드시 `${SLACK_WEBHOOK_URL}` 환경 변수 참조 또는 ExternalSecret으로 주입하십시오.
+
 ```yaml
 # alertmanager-config.yaml 핵심 라우팅 구조
 route:
@@ -656,6 +807,61 @@ DORA(DevOps Research and Assessment) 4대 지표는 DevOps 팀의 소프트웨�
 | 변경 실패율 | 배포 중 장애 발생 비율 | 0~15% | AlertManager 장애 감지 |
 | MTTR | 장애 발생 → 복구 시간 | 1시간 미만 | 장애 시작/종료 이벤트 |
 
+**DORA 메트릭 계산 플로우**
+
+```mermaid
+flowchart LR
+  subgraph INPUT["입력 이벤트"]
+    COMMIT[Git 커밋\n첫 커밋 타임스탬프]
+    DEPLOY[배포 이벤트\nGitea webhook\nFlux HelmRelease]
+    INCIDENT[장애 이벤트\nAlertManager firing]
+    RESOLVED[장애 해소\nAlertManager resolved]
+  end
+
+  subgraph CALC["DORA Exporter 계산"]
+    DF[배포 빈도\nDeployment Frequency\ndora_deployment_total]
+    LT[변경 리드타임\nLead Time\n커밋→배포 시간차]
+    CFR[변경 실패율\nChange Failure Rate\n장애배포수 / 전체배포수]
+    MTTR[복구 시간\nMean Time to Recovery\nfiring→resolved 시간차]
+  end
+
+  subgraph OUTPUT["Prometheus 메트릭"]
+    LEVEL[팀 DORA 등급\ndora_team_level\n0=Low 3=Elite]
+    GRAFANA[Grafana\nDORA 대시보드]
+  end
+
+  DEPLOY --> DF
+  COMMIT --> LT
+  DEPLOY --> LT
+  INCIDENT --> CFR
+  DEPLOY --> CFR
+  INCIDENT --> MTTR
+  RESOLVED --> MTTR
+
+  DF --> LEVEL
+  LT --> LEVEL
+  CFR --> LEVEL
+  MTTR --> LEVEL
+  LEVEL --> GRAFANA
+  DF --> GRAFANA
+  LT --> GRAFANA
+  CFR --> GRAFANA
+  MTTR --> GRAFANA
+```
+
+**구성요소별 상세 설명**
+
+| DORA 지표 | 데이터 소스 | 계산 방식 | Elite 기준 미달 시 조치 |
+|---------|---------|---------|----------------|
+| 배포 빈도(DF) | Gitea Deployment webhook | 단위 시간당 배포 건수 집계 | CI/CD 파이프라인 자동화 강화 |
+| 변경 리드타임(LT) | Gitea Push + Deployment webhook | 첫 커밋 시각 - 프로덕션 배포 완료 시각 | PR 리뷰 프로세스 개선, 브랜치 수명 단축 |
+| 변경 실패율(CFR) | AlertManager webhook | 배포 후 1시간 내 장애 발생 건수 / 전체 배포 수 | 테스트 커버리지 향상, 카나리 배포 도입 |
+| MTTR | AlertManager firing/resolved 이벤트 | 장애 시작 ~ AlertManager resolved 시각 차이 | 런북(Runbook) 정비, 자동 복구 스크립트 구축 |
+
+**실무 활용 예시**: `dora_team_level{team="devops"}` 메트릭이 `2`(High) 이상을 유지하는 것을 목표로 합니다. 주간 스프린트 회고에서 DORA Grafana 대시보드를 참조하여 팀 성과를 점검하십시오.
+
+**자주 하는 실수**: Gitea webhook URL이 `dora-exporter.saas-platform.svc:8080`로 설정되어 있어야 합니다. Gitea에서 webhook 전송 실패 시 DORA 메트릭이 수집되지 않으며, `dora_deployment_total`이 증가하지 않습니다.
+
 ### 7.2 packages/dora-exporter 활용법
 
 `packages/dora-exporter`는 Gitea webhook과 AlertManager webhook을 수신하여 DORA 메트릭을 Prometheus 형식으로 노출합니다.
@@ -742,6 +948,59 @@ enum EscalationLevel {
   Violated = 'violated', // 소진율 100%: SLO 위반
 }
 ```
+
+**SLO 에스컬레이션 단계 전이 다이어그램**
+
+```mermaid
+stateDiagram-v2
+  [*] --> Normal: 서비스 시작\n에러버짓 100%
+
+  Normal --> Warning: 에러버짓 50% 이상 소진\n(소진율 > 50%)
+  Warning --> Danger: 에러버짓 75% 이상 소진\n(소진율 > 75%)
+  Danger --> Critical: 에러버짓 90% 이상 소진\n(소진율 > 90%)
+  Critical --> Violated: 에러버짓 전소\n(소진율 = 100%)
+
+  Warning --> Normal: 에러버짓 회복\n(월 초 리셋 또는 오류 감소)
+  Danger --> Warning: 에러버짓 부분 회복
+  Critical --> Danger: 긴급 조치로 오류율 감소
+
+  Violated --> [*]: SLO 위반 보고서 발행\n서비스 개선 계획 수립
+
+  state Normal {
+    [*] --> 정상개발진행
+    정상개발진행 --> [*]
+  }
+  state Warning {
+    [*] --> 리스크높은배포재검토
+    리스크높은배포재검토 --> [*]
+  }
+  state Danger {
+    [*] --> 배포동결검토
+    배포동결검토 --> [*]
+  }
+  state Critical {
+    [*] --> 신규기능배포중단
+    신규기능배포중단 --> [*]
+  }
+  state Violated {
+    [*] --> 전체배포동결
+    전체배포동결 --> [*]
+  }
+```
+
+**구성요소별 상세 설명**
+
+| 에스컬레이션 단계 | 에러버짓 소진율 | 자동 조치 | 알림 채널 |
+|--------------|------------|--------|---------|
+| Normal | 0 ~ 50% | 없음 (정상 개발 진행) | — |
+| Warning | 50 ~ 75% | SLO 대시보드 경고 표시 | sre-team Slack |
+| Danger | 75 ~ 90% | 배포 동결 권고 알림 발송 | sre-team + devops-lead |
+| Critical | 90 ~ 100% | 신규 기능 배포 자동 차단(Kyverno 정책) | 전체 팀 + 관리자 |
+| Violated | 100%+ | 전체 배포 동결, SLO 위반 보고서 자동 생성 | management-escalation |
+
+**실무 활용 예시**: `packages/slo-escalation`이 AlertManager webhook을 통해 에스컬레이션 이벤트를 수신합니다. Grafana SLO 대시보드에서 "Error Budget Burn Rate" 패널이 급격히 상승하면 Warning 단계 전이 이전에 선제적으로 원인을 파악하십시오.
+
+**자주 하는 실수**: SLO를 너무 높게(예: 99.99%) 설정하면 에러 버짓이 월 4.3분에 불과하여 경미한 이슈에도 Violated 상태가 됩니다. 공공기관 서비스는 99.9%(월 43.2분)를 기본 목표로 설정하고 운영 안정화 후 상향 조정하십시오.
 
 ```bash
 # SLO 에러 버짓 Prometheus 메트릭

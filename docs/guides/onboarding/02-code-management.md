@@ -122,6 +122,85 @@ packages:
 
 `workspace:*`는 빌드 시 실제 버전으로 교체됩니다 (pnpm이 자동 처리).
 
+### 1.4.1 모노레포 패키지 의존성 그래프
+
+아래 그래프는 주요 서비스와 공유 패키지 사이의 `workspace:*` 의존 관계를 도식화합니다.
+
+```mermaid
+graph TD
+  subgraph services["platform/services (17개)"]
+    AUTH[auth-service]
+    GW[api-gateway]
+    USER[user-service]
+    AI[ai-service]
+    COMP[compliance-service]
+    SEC[security-monitor-service]
+  end
+
+  subgraph packages["platform/packages (27개)"]
+    AUTHED[auth-sdk]
+    RBAC[rbac]
+    AUDIT[audit-sdk]
+    RATE[rate-limit]
+    HEALTH[health]
+    OBS[observability]
+    MESH[mesh-ready]
+    CONFIG[config-vault]
+    TYPES[types]
+    EVTBUS[event-bus]
+    CIRCUIT[circuit-breaker]
+  end
+
+  AUTH --> AUTHED
+  AUTH --> RBAC
+  AUTH --> AUDIT
+  AUTH --> HEALTH
+  AUTH --> OBS
+  AUTH --> MESH
+  AUTH --> CONFIG
+  AUTH --> TYPES
+  AUTH --> RATE
+  AUTH --> EVTBUS
+
+  GW --> RATE
+  GW --> RBAC
+  GW --> AUDIT
+  GW --> OBS
+  GW --> MESH
+
+  USER --> RBAC
+  USER --> AUDIT
+  USER --> TYPES
+
+  AI --> AUDIT
+  AI --> TYPES
+  AI --> OBS
+
+  COMP --> AUDIT
+  COMP --> TYPES
+
+  SEC --> AUDIT
+  SEC --> TYPES
+```
+
+**패키지 의존성 설명**
+
+| 공유 패키지 | 역할 | 주요 사용 서비스 |
+|-----------|------|--------------|
+| `auth-sdk` | JWT 토큰 발급·검증·블랙리스트 | auth-service |
+| `rbac` | 역할 기반 접근 통제 (CSAP D-08) | 모든 서비스 |
+| `audit-sdk` | 감사 로그 기록 (CSAP D-06) | 모든 서비스 |
+| `rate-limit` | API 호출 속도 제한 (CSAP D-08-07) | api-gateway, auth-service |
+| `health` | `/health`, `/ready` 헬스 체크 엔드포인트 | 모든 서비스 |
+| `observability` | OpenTelemetry 추적·메트릭 (OTEL) | 모든 서비스 |
+| `mesh-ready` | 그레이스풀 셧다운 + 서비스 메타데이터 | 모든 서비스 |
+| `config-vault` | 환경 설정 중앙 관리 | 모든 서비스 |
+| `types` | 공통 TypeScript 타입 정의 | 모든 서비스·패키지 |
+| `event-bus` | 비동기 이벤트 발행·구독 | auth-service, 일부 서비스 |
+| `circuit-breaker` | 외부 서비스 장애 격리 | api-gateway, ai-service |
+
+**규칙**: `platform/services/` 서비스는 `platform/packages/` 패키지만 참조할 수 있습니다. 서비스 간 직접 import는 금지이며, 반드시 HTTP API 또는 `event-bus`를 통해 통신합니다.
+
 ### 1.5 특정 패키지만 명령 실행
 
 ```bash
@@ -191,6 +270,39 @@ pnpm --filter "@public-saas/auth-*" typecheck
 **`persistent: true` (dev)**
 개발 서버처럼 종료되지 않는 장기 실행 태스크에 사용합니다.
 
+### 2.2.1 Turbo 빌드 태스크 의존성 DAG
+
+아래 DAG(유향 비순환 그래프)는 Turbo 태스크 간 실행 순서를 표현합니다. 화살표 방향이 "먼저 완료되어야 하는 태스크"를 가리킵니다.
+
+```mermaid
+graph LR
+  BUILD[build\n의존 패키지 build 선행 필수\noutputs: dist/** .next/**] --> TYPECHECK[typecheck\n타입 오류 없는 build 필요]
+  BUILD --> TEST[test\n빌드된 코드 기반 테스트\nenv: DATABASE_URL, REDIS_URL]
+  BUILD --> LINT[lint\n빌드 결과물 참조 가능해야 함]
+  DEV[dev\ncache: false\npersistent: true\n장기 실행 서버]
+  CLEAN[clean\ncache: false\ndist/ 삭제]
+
+  style BUILD fill:#dbeafe,stroke:#2563eb
+  style TYPECHECK fill:#dcfce7,stroke:#16a34a
+  style TEST fill:#fce7f3,stroke:#db2777
+  style LINT fill:#fef9c3,stroke:#ca8a04
+  style DEV fill:#e0e7ff,stroke:#4f46e5
+  style CLEAN fill:#fee2e2,stroke:#dc2626
+```
+
+**Turbo 태스크 의존성 상세 설명**
+
+| 태스크 | 선행 필수 | 캐시 사용 | 설명 |
+|--------|---------|---------|------|
+| `build` | 의존 패키지의 `build` 완료 (`^build`) | `dist/**`, `.next/**` | 소스 변경 없으면 캐시 재사용 |
+| `typecheck` | 의존 패키지의 `build` 완료 | 있음 | `.d.ts` 파일 참조 필요 |
+| `test` | 의존 패키지의 `build` 완료 | `DATABASE_URL`, `REDIS_URL` 변경 시 무효화 | 환경 변수 변경 시 자동 재실행 |
+| `lint` | 의존 패키지의 `build` 완료 | 있음 | 빌드 산출물의 타입 정보 활용 |
+| `dev` | 없음 | 없음 (`cache: false`) | 장기 실행, 캐시 불필요 |
+| `clean` | 없음 | 없음 (`cache: false`) | `dist/` 디렉토리 삭제 |
+
+**`^build` 패턴의 의미**: `auth-service`가 `auth-sdk`에 의존한다면, `pnpm build`를 실행할 때 Turbo가 자동으로 `auth-sdk build` → `auth-service build` 순서를 결정합니다. 개발자가 직접 순서를 관리할 필요가 없습니다.
+
 ### 2.3 빌드 실행 예시
 
 ```bash
@@ -235,6 +347,48 @@ platform/services/{service-name}/
 ├── package.json
 └── tsconfig.json
 ```
+
+### 3.1.1 서비스 표준 디렉토리 구조 도식
+
+아래 다이어그램은 모든 Fastify 서비스가 따르는 표준 디렉토리 구조를 그래프로 표현합니다.
+
+```mermaid
+graph TD
+  SVC["platform/services/{service-name}/"]
+
+  SVC --> SRC["src/"]
+  SVC --> TESTS["tests/"]
+  SVC --> DOCKER["Dockerfile"]
+  SVC --> PKG["package.json"]
+  SVC --> TSCONFIG["tsconfig.json"]
+
+  SRC --> INDEX["index.ts\nFastify 인스턴스 생성\n플러그인 등록 + 서버 기동"]
+  SRC --> ROUTES["routes.ts\nregisterRoutes() 단일 내보내기\n라우트 등록 집약"]
+  SRC --> HANDLERS["handlers/\n{resource}.handler.ts\n요청 핸들러 (1파일 1리소스)"]
+  SRC --> MIDDLEWARE["middleware/\n{feature}.middleware.ts\nFastify 플러그인 형태"]
+  SRC --> LIB["lib/\nprisma.ts — PrismaClient 싱글턴\n{domain}.ts — 비즈니스 로직"]
+  SRC --> SCHEMAS["schemas/\n{resource}.schema.ts\nZod 입력 검증 스키마"]
+
+  TESTS --> TESTFILE["{target}.test.ts\nVitest 단위·통합 테스트"]
+
+  style INDEX fill:#dbeafe,stroke:#2563eb
+  style ROUTES fill:#dcfce7,stroke:#16a34a
+  style HANDLERS fill:#fef9c3,stroke:#ca8a04
+  style LIB fill:#fce7f3,stroke:#db2777
+  style SCHEMAS fill:#ede9fe,stroke:#7c3aed
+```
+
+**서비스 디렉토리 구성요소 설명**
+
+| 파일/디렉토리 | 역할 | 핵심 규칙 |
+|------------|------|---------|
+| `src/index.ts` | 서비스 진입점 — Fastify 인스턴스 생성 및 플러그인 등록 | 플러그인 등록 순서 12단계 준수 |
+| `src/routes.ts` | 모든 라우트를 `registerRoutes()` 함수 하나로 등록 | 마지막 단계에서 호출 |
+| `src/handlers/` | HTTP 요청을 받아 3단계 패턴(검증→비즈니스→응답)으로 처리 | 1파일 1리소스 원칙 |
+| `src/middleware/` | Fastify 플러그인 형태의 미들웨어 (인증·로깅 등) | `fp()`로 래핑 필수 |
+| `src/lib/` | 순수 비즈니스 로직 함수 — 테스트 용이성을 위해 handler와 분리 | Side effect 최소화 |
+| `src/schemas/` | Zod 스키마 정의 — API 입력 검증 (CSAP D-12-01) | 모든 API 입력에 적용 필수 |
+| `tests/` | Vitest 기반 단위·통합 테스트 — Q-Gate G4 커버리지 80%+ | 핸들러와 lib 별도 테스트 |
 
 ### 3.2 서비스 진입점 표준 패턴
 
@@ -310,6 +464,52 @@ main().catch((err) => {
 11. 도메인 플러그인     — 서비스별 고유 (cache, eventBus 등)
 12. 비즈니스 라우트     — registerRoutes() (반드시 마지막)
 ```
+
+### 3.3.1 Fastify 플러그인 등록 순서 플로우차트
+
+아래 플로우차트는 12단계 플러그인 등록 순서를 시각화합니다. 순서를 어기면 참조 오류 또는 보안 우회 취약점이 발생합니다.
+
+```mermaid
+flowchart TD
+  START([서비스 기동 시작\nmain 함수]) --> FASTIFY[Fastify 인스턴스 생성\nlogger 설정]
+
+  FASTIFY --> S1["1. configPlugin\n환경 설정 로드\n다른 모든 플러그인이 참조"]
+  S1 --> S2["2. meshReadyPlugin\n서비스 메타데이터 등록\n그레이스풀 셧다운 준비"]
+  S2 --> S3["3. responseTimePlugin\nX-Response-Time 헤더\n응답 시간 측정"]
+
+  S3 --> GW_CHECK{API Gateway\n전용 플러그인?}
+  GW_CHECK -- API Gateway만 적용 --> S4["4. cors\nCORS 설정"]
+  S4 --> S5["5. securityHeaders\n보안 헤더\nCSP, HSTS 등"]
+  S5 --> S6["6. correlationId\n요청 추적 ID\n분산 추적 연결"]
+  S6 --> S7["7. auditLogger\n감사 로그\nCSAP D-06-01"]
+  S7 --> S8
+  GW_CHECK -- 일반 서비스 --> S8["8. rateLimit\nAPI 호출 속도 제한\nCSAP D-08-07"]
+
+  S8 --> S9["9. healthPlugin\n/health — 생존 확인\n/ready — 준비 상태"]
+  S9 --> S10["10. rbacPlugin\nRBAC 권한 검사\nCSAP D-08-01"]
+  S10 --> S11["11. 도메인 플러그인\n서비스별 고유\ncache, eventBus 등"]
+  S11 --> S12["12. registerRoutes()\n비즈니스 라우트 등록\n반드시 마지막"]
+
+  S12 --> LISTEN["app.listen()\n포트 바인딩 + keepAlive 설정"]
+  LISTEN --> END([서비스 기동 완료])
+
+  style S1 fill:#dbeafe,stroke:#2563eb
+  style S10 fill:#fee2e2,stroke:#dc2626
+  style S12 fill:#dcfce7,stroke:#16a34a
+  style GW_CHECK fill:#fef9c3,stroke:#ca8a04
+```
+
+**플러그인 등록 순서 규칙 설명**
+
+| 순서 | 플러그인 | 필수 이유 |
+|------|---------|---------|
+| 1번 최우선 | `configPlugin` | 환경 변수를 로드해야 이후 플러그인이 설정값에 접근 가능 |
+| 2번 | `meshReadyPlugin` | 서비스 식별 정보를 조기 등록해야 그레이스풀 셧다운이 정상 작동 |
+| 8번 | `rateLimit` | RBAC 검사 전에 과도한 요청을 차단해야 RBAC 로직 과부하 방지 |
+| 10번 | `rbacPlugin` | 모든 보안 인프라 플러그인이 준비된 후에 권한 검사 활성화 |
+| 12번 마지막 | `registerRoutes()` | 모든 미들웨어가 준비된 상태에서만 비즈니스 라우트 노출 |
+
+**API Gateway 전용 플러그인 (4~7번)**: `cors`, `securityHeaders`, `correlationId`, `auditLogger`는 외부 트래픽이 진입하는 API Gateway에서만 등록합니다. 내부 마이크로서비스에 중복 적용하면 성능 저하가 발생합니다.
 
 ### 3.4 라우트 등록 패턴
 
@@ -810,6 +1010,107 @@ const apiKey = app.config.get<string>('apiKey');
 | `chore/` | 빌드·설정 변경 | `chore/update-dependencies` |
 
 **규칙**: 기능 브랜치는 `stg` 또는 `main` 브랜치에서 분기합니다.
+
+### 7.1.1 Git 브랜치 전략 다이어그램
+
+아래 다이어그램은 `main` → `stg` → `feat/` 브랜치 전략과 배포 흐름을 보여줍니다.
+
+```mermaid
+gitGraph
+  commit id: "초기 커밋"
+  commit id: "기반 설정"
+
+  branch stg
+  checkout stg
+  commit id: "stg 초기화"
+
+  branch feat/auth-password-change
+  checkout feat/auth-password-change
+  commit id: "Plan+Design 문서 작성"
+  commit id: "feat(auth): 비밀번호 변경 API"
+  commit id: "test(auth): TC-AUTH-20~21 추가"
+
+  checkout stg
+  merge feat/auth-password-change id: "PR 머지 (Q-Gate 통과)"
+  commit id: "스테이징 검증"
+
+  checkout main
+  merge stg id: "프로덕션 배포"
+  commit id: "v1.2.0 릴리즈"
+
+  checkout stg
+  branch fix/token-expiry
+  checkout fix/token-expiry
+  commit id: "fix(auth): 토큰 만료 검증 수정"
+
+  checkout stg
+  merge fix/token-expiry id: "핫픽스 머지"
+  checkout main
+  merge stg id: "핫픽스 프로덕션 반영"
+```
+
+**브랜치 전략 규칙 설명**
+
+| 브랜치 | 보호 수준 | 배포 환경 | PR 병합 조건 |
+|--------|---------|---------|------------|
+| `main` | 최고 보호 | 프로덕션 (`prod`) | `stg` 검증 완료 + 팀 리뷰 |
+| `stg` | 보호됨 | 스테이징 (`stg`) | Q-Gate G1~G7 전체 PASS |
+| `feat/*`, `fix/*` 등 | 없음 | 없음 (로컬만) | 작업 완료 후 stg로 PR |
+
+**절대 금지**: `main`과 `stg`에 직접 push 금지. 반드시 PR을 통해 병합합니다.
+
+### 7.1.2 PR 프로세스 시퀀스 다이어그램
+
+아래는 기능 브랜치에서 PR 생성 후 최종 병합까지의 전체 흐름을 보여줍니다.
+
+```mermaid
+sequenceDiagram
+  participant DEV as 개발자
+  participant BRANCH as feat/* 브랜치
+  participant GITEA as Gitea PR
+  participant CI as Gitea CI/CD
+  participant REVIEWER as Reviewer 에이전트
+  participant AUDITOR as Auditor 에이전트
+  participant TESTER as Tester 에이전트
+  participant STG as stg 브랜치
+
+  DEV->>BRANCH: git checkout -b feat/{기능명}
+  DEV->>BRANCH: 구현 + 테스트 작성
+  DEV->>BRANCH: lint + typecheck + test 로컬 확인
+  DEV->>GITEA: git push + PR 생성
+
+  GITEA->>CI: CI 파이프라인 트리거
+  CI->>CI: pnpm build + typecheck + lint
+  CI-->>GITEA: CI 통과/실패 결과
+
+  GITEA->>REVIEWER: 코드 리뷰 자동 요청
+  REVIEWER->>REVIEWER: G3 코드 품질 + G5 OWASP 검사
+  REVIEWER-->>GITEA: 리뷰 결과 (통과/지적사항)
+
+  GITEA->>AUDITOR: 감리 준수 검증 자동 요청
+  AUDITOR->>AUDITOR: G1 FR ID + G2 설계 + G6 CSAP + G7 감사 추적
+  AUDITOR-->>GITEA: 검증 결과 (통과/결함)
+
+  GITEA->>TESTER: 테스트 커버리지 확인
+  TESTER->>TESTER: G4 커버리지 80%+ 검증
+  TESTER-->>GITEA: 커버리지 결과
+
+  alt Q-Gate G1~G7 전체 PASS
+    GITEA->>STG: PR 병합 승인
+    STG->>STG: Flux GitOps → 스테이징 자동 배포
+  else 지적사항 존재
+    GITEA-->>DEV: 수정 요청 (코멘트)
+    DEV->>BRANCH: 지적사항 수정 후 재push
+    BRANCH-->>GITEA: 자동 재검토 트리거
+  end
+```
+
+**PR 프로세스 핵심 규칙**
+
+- CI 실패 시 병합 불가: 린트 오류·타입 오류·빌드 실패가 하나라도 있으면 PR 차단
+- Q-Gate 부분 통과 불인정: G1~G7 중 하나라도 미통과 시 병합 불가
+- `--no-verify` 사용 금지: 로컬 git 훅 우회는 ECC `block-no-verify`가 자동 차단
+- Flux GitOps: `stg` 브랜치에 병합되면 Flux가 자동으로 스테이징 환경에 배포
 
 ### 7.2 Conventional Commits 형식
 

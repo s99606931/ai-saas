@@ -46,6 +46,39 @@ N2SF (국가 클라우드 보안프레임워크)
   └── 핵심: C/S/O 3등급 데이터 분류 + AI 연동 제한
 ```
 
+### 1.1.1 CSAP 13개 도메인 전체 맵
+
+```mermaid
+mindmap
+  root((CSAP 79항목\n중등급 기준))
+    관리적 보안
+      D-01 정보보호정책\n수립·이행
+      D-02 조직/인원\n보안 역할 지정
+      D-03 위험관리\n위협 분석·처리
+      D-04 공급망 보안\nSBOM·의존성 관리
+    기술적 보안
+      D-05 서버/네트워크\n망분리·방화벽
+      D-06 침해사고관리\n감사 로그 1년 보존
+      D-07 취약점 관리\nCVE 패치 주기
+      D-08 접근통제\nRBAC·세션 관리
+      D-09 암호화\nAES-256·TLS 1.3
+      D-10 로그관리\n중앙 수집·분석
+    개발 보안
+      D-11 개발환경 보안\n컨테이너 서명·정책
+      D-12 시스템개발보안\n입력 검증·SQL 주입 방지
+      D-13 변경관리\nPR·Q-Gate 승인
+```
+
+**개발자 직접 관련 도메인 우선순위**:
+
+| 우선순위 | 도메인 | 개발자 책임 범위 | 위반 시 결과 |
+|---------|--------|--------------|------------|
+| 1위 | D-12 시스템 개발 보안 | Zod 입력 검증·파라미터화 쿼리·취약점 스캔 | Semgrep SAST 차단·Q-Gate G5 실패 |
+| 2위 | D-08 접근 통제 | RBAC 검사·JWT 세션 관리·토큰 블랙리스트 | Reviewer HIGH 플래그·PR 머지 차단 |
+| 3위 | D-09 암호화 | AES-256 저장 암호화·bcrypt 비밀번호 해시 | Secret Scan 자동 탐지·즉시 차단 |
+| 4위 | D-06 침해사고 관리 | 감사 로그 전수 기록·1년 보존 | Q-Gate G7 실패·PR 머지 차단 |
+| 5위 | D-04/D-11 공급망·가상화 | SBOM·이미지 서명·Kyverno 정책 | 이미지 서명 없으면 배포 차단 |
+
 ### 1.2 CSAP 79개 통제항목 영역별 구성
 
 개발자가 일상 업무에서 직접 관련되는 핵심 영역은 다음과 같습니다.
@@ -78,6 +111,42 @@ N2SF (국가 클라우드 보안프레임워크)
 ## 2. 코드 레벨 보안 규칙
 
 이 절은 `.claude/rules/csap-compliance.md`의 내용을 실무 예제 중심으로 설명합니다.
+
+### 2.0 API 요청 보안 처리 플로우
+
+모든 API 엔드포인트는 다음 순서로 보안 레이어를 통과해야 합니다.
+
+```mermaid
+sequenceDiagram
+  participant CLIENT as 클라이언트
+  participant GW as API Gateway
+  participant AUTH_MW as JWT 검증\n(verifyToken)
+  participant RBAC_MW as RBAC 검사\n(hasPermission)
+  participant ZOD as Zod 입력 검증
+  participant BIZ as 비즈니스 로직\n(파라미터화 쿼리)
+  participant AUDIT as 감사 로그\n(auditLog)
+
+  CLIENT->>GW: HTTP 요청 + Authorization 헤더
+  GW->>AUTH_MW: JWT 토큰 전달
+  AUTH_MW-->>GW: 토큰 없음·만료·서명 오류 → 401 Unauthorized
+  AUTH_MW->>RBAC_MW: 인증된 사용자 + 요청 리소스
+  RBAC_MW-->>GW: 권한 없음 → 403 Forbidden
+  RBAC_MW->>ZOD: 요청 body + URL 파라미터
+  ZOD-->>GW: 스키마 불일치 → 400 Bad Request
+  ZOD->>BIZ: 검증된 입력값 (타입 안전)
+  BIZ->>AUDIT: 민감 작업 감사 로그 기록 (D-06)
+  BIZ-->>CLIENT: 200 OK (민감 정보 제외한 응답)
+```
+
+**보안 레이어 누락 시 결과**:
+
+| 누락 레이어 | 위반 기준 | 발견 시점 | 결과 |
+|-----------|---------|---------|------|
+| JWT 검증 없음 | CSAP D-08 | 코드 리뷰·Reviewer 에이전트 | HIGH 플래그·PR 머지 차단 |
+| RBAC 검사 없음 | CSAP D-08 | 코드 리뷰·Reviewer 에이전트 | HIGH 플래그·PR 머지 차단 |
+| Zod 검증 없음 | CSAP D-12 | Semgrep SAST | Q-Gate G5 실패 |
+| 감사 로그 없음 | CSAP D-06 | Q-Gate G7 | PR 머지 차단 |
+| 문자열 SQL 결합 | CSAP D-12 | Semgrep + G5 패턴 탐지 | 파이프라인 즉시 차단 |
 
 ### 2.1 RBAC: 모든 API에 권한 검사 (D-08)
 
@@ -519,6 +588,50 @@ const response = await aiGateway.send({ prompt, context })  // AI Gateway 경유
         [응답 처리]
 ```
 
+### 3.5 N2SF 데이터 흐름 보안 다이어그램
+
+각 등급의 데이터가 시스템 내에서 어떻게 처리되는지 전체 흐름을 보여줍니다.
+
+```mermaid
+flowchart TD
+  INPUT[데이터 수신] --> CLASSIFY{N2SF 등급 분류}
+
+  CLASSIFY -->|C등급\n주민번호·의료기록·암호화키| C_PATH[로컬 처리 전용]
+  CLASSIFY -->|S등급\n인사정보·계약내용·취약점보고서| S_PATH[로컬 처리 전용]
+  CLASSIFY -->|O등급\n공개통계·비식별데이터| O_PATH[AI 연동 가능 경로]
+
+  C_PATH --> C_STORE[AES-256 암호화 저장\nD-09 준수]
+  C_PATH --> C_BLOCK[AI Gateway 전송 차단\nBLOCKED 에러 반환]
+  S_PATH --> S_STORE[AES-256 암호화 저장\nD-09 준수]
+  S_PATH --> S_BLOCK[AI Gateway 전송 차단\nBLOCKED 에러 반환]
+
+  O_PATH --> PII_MASK[PII 마스킹\n주민번호·전화·이메일 치환]
+  PII_MASK --> GW[AI Gateway 경유\nai-gateway.saas.local]
+  GW --> EXT_AI[외부 AI API\nClaude·GPT 등]
+  EXT_AI --> RESPONSE[응답 처리\nN2SF O등급 출력만 허용]
+
+  C_STORE --> AUDIT_C[감사 로그 기록\nDATA_ACCESS C등급]
+  S_STORE --> AUDIT_S[감사 로그 기록\nDATA_ACCESS S등급]
+  RESPONSE --> AUDIT_O[감사 로그 기록\nAI_QUERY O등급]
+```
+
+**N2SF 등급별 처리 규칙 요약**:
+
+| 등급 | 저장 방식 | AI 전송 | 접근 제어 | 감사 로그 |
+|------|---------|--------|---------|---------|
+| C (기밀) | AES-256 암호화 필수 | 절대 금지 | admin 이상 | 전수 기록 |
+| S (민감) | AES-256 암호화 필수 | 절대 금지 | operator 이상 | 전수 기록 |
+| O (공개) | 일반 저장 가능 | PII 마스킹 후 AI Gateway 경유 | user 이상 | 선택적 기록 |
+
+**보안 위반 사례 vs 올바른 패턴**:
+
+| 위반 유형 | 잘못된 패턴 | 올바른 패턴 | N2SF 조항 |
+|---------|-----------|-----------|---------|
+| C등급 AI 전송 | 주민번호를 AI 프롬프트에 직접 포함 | C등급 탐지 후 `BLOCKED` 에러 반환 | N-05 |
+| PII 미마스킹 | 이메일 주소 포함된 로그를 AI에 전송 | 이메일 패턴 치환 후 전송 | N-05 |
+| 직접 AI 호출 | `openai.chat.completions.create()` 직접 사용 | `aiGateway.send()` 경유 필수 | N-03 |
+| 암호화 누락 | 주민번호를 평문으로 DB 저장 | `encrypt()` 함수로 AES-256 암호화 후 저장 | N-02 |
+
 ---
 
 ## 4. 감사 로그 작성법
@@ -622,6 +735,46 @@ async function deleteUser(
 ```
 
 **주의사항**: `.claude/audit.jsonl`은 절대 삭제하거나 기존 라인을 수정하면 안 됩니다. 새 항목은 반드시 파일 끝에 추가(append)해야 합니다.
+
+### 4.5 감사 로그 체인 무결성 다이어그램
+
+append-only JSONL 구조가 무결성을 어떻게 보장하는지 보여줍니다.
+
+```mermaid
+flowchart LR
+  subgraph CHAIN [audit.jsonl — append-only 체인]
+    direction TB
+    E1["{ timestamp: T1\n  action: USER_CREATE\n  sha256: h1 }"]
+    E2["{ timestamp: T2\n  action: PERMISSION_GRANT\n  sha256: h2\n  prev_hash: h1 }"]
+    E3["{ timestamp: T3\n  action: DEPLOY_BLOCKED\n  sha256: h3\n  prev_hash: h2 }"]
+    E1 --> E2 --> E3
+  end
+
+  NEW[새 이벤트 발생] -->|append 전용| E3
+  VERIFY[무결성 검증\nsha256sum -c] --> CHAIN
+  TAMPER[기존 항목 수정 시도] -->|감사 시스템 탐지\n체크섬 불일치| ALERT[보안 알림\nCSAP D-06 위반]
+```
+
+**audit.jsonl 필드 설명**:
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `timestamp` | ISO 8601 문자열 | 필수 | UTC 기준 이벤트 발생 시각 |
+| `actor` | UUID 문자열 | 필수 | 작업 수행자 ID (사용자 UUID 또는 시스템 ID) |
+| `action` | 대문자 스네이크 | 필수 | 작업 유형 (예: `USER_DELETE`, `DEPLOY_BLOCKED`) |
+| `target` | 문자열 | 조건부 | 대상 리소스 ID (사용자·파일·배포 등) |
+| `ip` | IP 주소 문자열 | 권고 | 요청자 IP (보안 사고 추적용) |
+| `detail` | JSON 객체 | 선택 | 추가 컨텍스트 (역할 변경 전후값 등) |
+| `csap_ref` | 문자열 | 권고 | 관련 CSAP 통제항목 (예: `D-06`, `D-08`) |
+
+**보안 위반 사례 vs 올바른 패턴**:
+
+| 상황 | 잘못된 패턴 | 올바른 패턴 |
+|------|-----------|-----------|
+| 기존 항목 수정 | 오류 수정 목적으로 기존 줄 편집 | 수정 불가. 정정 이유를 새 항목으로 append |
+| 파일 삭제 | 용량 절감을 위해 오래된 로그 삭제 | 최소 1년 보존 필수 (CSAP D-06). 별도 아카이브 |
+| 민감 정보 포함 | `detail`에 비밀번호·주민번호 기록 | `detail`에 식별자(UUID)만 기록. 원본은 암호화 저장 |
+| 감사 로그 미기록 | 사용자 삭제 후 로그 없음 | 삭제 전 `auditLog()` 호출 필수 (Q-Gate G7 자동 확인) |
 
 ### 4.5 감사 로그 조회 방법
 
@@ -945,6 +1098,37 @@ kyverno apply infra/kyverno/ --resource deploy/base/deployment.yaml
 
 ## 8. 보안 사고 대응
 
+### 8.0 보안 사고 대응 플로우차트
+
+```mermaid
+flowchart TD
+  INCIDENT[보안 사고 감지] --> TYPE{사고 유형 분류}
+
+  TYPE -->|하드코딩 시크릿 커밋| SECRET_PROC[시크릿 즉시 폐기·재발급\n5분 이내]
+  TYPE -->|Trivy·Semgrep 취약점 발견| VULN_PROC[CVE 등급 평가\nCRITICAL: 24h 패치]
+  TYPE -->|Falco 런타임 알림| FALCO_PROC[파드 즉시 격리\nkubectl cordon]
+  TYPE -->|무단 데이터 접근| ACCESS_PROC[계정 즉시 비활성화\n접근 범위 파악]
+
+  SECRET_PROC --> NOTIFY_SEC[보안팀 즉시 보고\nSlack #security-incident]
+  VULN_PROC --> NOTIFY_SEC
+  FALCO_PROC --> NOTIFY_SEC
+  ACCESS_PROC --> NOTIFY_SEC
+
+  NOTIFY_SEC --> AUDIT_ENTRY[감사 로그 기록\naudit.jsonl append]
+  AUDIT_ENTRY --> REPORT[감사 보고서 작성\nPost-Mortem 문서]
+  REPORT --> CSAP_EVIDENCE[CSAP 증거 수집\ncsap-evidence.yml 실행]
+  CSAP_EVIDENCE --> PREVENT[재발 방지 조치\nGitHub Issue 등록]
+```
+
+**사고 유형별 대응 시간 기준**:
+
+| 사고 유형 | 1차 대응 (즉시) | 2차 대응 (10분 내) | 3차 대응 (1일 내) |
+|---------|--------------|-----------------|----------------|
+| 하드코딩 시크릿 | 시크릿 폐기 | 보안팀 보고 + 감사 로그 | Post-Mortem 문서 |
+| CRITICAL 취약점 | 파이프라인 자동 차단 | 패치 또는 임시 조치 | 재스캔 확인 + 이슈 등록 |
+| Falco 알림 | 파드 격리 (`kubectl cordon`) | 포렌식 분석 요청 | 영향 범위 보고서 |
+| 무단 접근 | 계정 비활성화 | 접근 데이터 범위 파악 | 개인정보보호팀 보고 (ISMS-P) |
+
 ### 8.1 보안 사고 유형별 대응 절차
 
 **유형 1: 하드코딩 시크릿 발견**
@@ -1018,6 +1202,59 @@ MEDIUM/LOW 취약점:
 ## 9. 체크리스트: PR 제출 전 보안 점검
 
 PR을 제출하기 전에 아래 체크리스트를 확인하십시오. 모든 항목에 체크해야 PR을 올릴 수 있습니다.
+
+### 9.0 PR 보안 체크리스트 플로우차트
+
+개발자가 PR 제출 전 순서대로 점검해야 할 흐름을 시각화합니다.
+
+```mermaid
+flowchart TD
+  START[PR 제출 준비] --> RBAC_CHECK{모든 API에\nverifyToken + hasPermission\n있는가?}
+  RBAC_CHECK -->|없음| FIX_RBAC[RBAC 추가\nCSAP D-08 요건]
+  RBAC_CHECK -->|있음| INPUT_CHECK{모든 API 입력에\nZod 스키마 검증\n있는가?}
+
+  FIX_RBAC --> INPUT_CHECK
+  INPUT_CHECK -->|없음| FIX_ZOD[Zod 스키마 추가\nCSAP D-12 요건]
+  INPUT_CHECK -->|있음| SQL_CHECK{SQL 문자열\n직접 결합이\n없는가?}
+
+  FIX_ZOD --> SQL_CHECK
+  SQL_CHECK -->|있음| FIX_SQL[파라미터화 쿼리로 교체\n$1 $2 자리표시자]
+  SQL_CHECK -->|없음| SECRET_CHECK{하드코딩된\n시크릿이\n없는가?}
+
+  FIX_SQL --> SECRET_CHECK
+  SECRET_CHECK -->|있음| FIX_SECRET[환경 변수로 교체\nprocess.env.XXX]
+  SECRET_CHECK -->|없음| AUDIT_CHECK{감사 로그\n대상 작업에\nauditLog 있는가?}
+
+  FIX_SECRET --> AUDIT_CHECK
+  AUDIT_CHECK -->|없음| FIX_AUDIT[auditLog 추가\nCSAP D-06 요건]
+  AUDIT_CHECK -->|있음| N2SF_CHECK{AI 기능이 있다면\nN2SF 등급 확인\n및 PII 마스킹?}
+
+  FIX_AUDIT --> N2SF_CHECK
+  N2SF_CHECK -->|미확인| FIX_N2SF[데이터 등급 확인\nC·S등급 전송 차단]
+  N2SF_CHECK -->|확인 완료| LOCAL_TEST[로컬 검증 실행\npnpm typecheck + lint + test]
+
+  FIX_N2SF --> LOCAL_TEST
+  LOCAL_TEST -->|실패| FIX_LOCAL[오류 수정]
+  LOCAL_TEST -->|통과| AUDIT_JSONL_CHECK{.claude/audit.jsonl\n파일 존재 확인}
+
+  FIX_LOCAL --> AUDIT_JSONL_CHECK
+  AUDIT_JSONL_CHECK -->|없음| CREATE_AUDIT[audit.jsonl 생성\n또는 Q-Gate G7 확인]
+  AUDIT_JSONL_CHECK -->|있음| PR_READY[PR 제출 준비 완료\nQ-Gate 빠른 통과 예상]
+
+  CREATE_AUDIT --> PR_READY
+```
+
+**체크리스트 항목별 Q-Gate 연결**:
+
+| 점검 항목 | 위반 시 실패 게이트 | 자동 탐지 도구 |
+|---------|-----------------|-------------|
+| RBAC (verifyToken + hasPermission) | Reviewer 에이전트 HIGH 플래그 | 코드 리뷰 |
+| Zod 스키마 입력 검증 | Q-Gate G5 (OWASP) | Semgrep |
+| 파라미터화 쿼리 | Q-Gate G5 (OWASP) | Semgrep + G5 패턴 탐지 |
+| 하드코딩 시크릿 없음 | Q-Gate G5 (OWASP) + Secret Scan | CI Secret Scan + G5 |
+| 감사 로그 (auditLog) | Q-Gate G7 (감사 추적) | audit.jsonl 확인 |
+| N2SF AI 연동 등급 | 런타임 BLOCKED 에러 | sendToAI() 내장 검사 |
+| audit.jsonl 존재 | Q-Gate G7 (감사 로그) | quality-gate.yml |
 
 ### 9.1 코드 보안 체크리스트
 
@@ -1137,3 +1374,4 @@ tail -3 .claude/audit.jsonl | jq . 2>/dev/null || echo "형식 오류 확인 필
 | 버전 | 일자 | 내용 | 작성자 |
 |------|------|------|--------|
 | 1.0.0 | 2026-04-11 | 초안 작성 (csap-compliance.md + 실제 파이프라인 기반) | Implementer Agent |
+| 1.1.0 | 2026-04-11 | Mermaid 다이어그램 6종 추가: CSAP 13개 도메인 mindmap·API 보안 처리 시퀀스·N2SF 데이터 흐름·감사 로그 체인 무결성·보안 사고 대응 플로우·PR 체크리스트 플로우차트. 각 섹션 보안 위반 사례 vs 올바른 패턴 대조표 추가 | Implementer Agent |

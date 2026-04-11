@@ -182,19 +182,13 @@ export class ErrorBudgetPolicyEngine {
     const remainingMinutes = Math.max(0, totalBudgetMinutes - consumedMinutes);
 
     // 소진율 (%)
-    const burnRate = totalBudgetMinutes > 0
-      ? (consumedMinutes / totalBudgetMinutes) * 100
-      : 0;
+    const burnRate = totalBudgetMinutes > 0 ? (consumedMinutes / totalBudgetMinutes) * 100 : 0;
 
     // 상태 판정
     const status = this.determineBudgetStatus(burnRate);
 
     // 소진 예측일
-    const projectedExhaustionDate = this.projectExhaustionDate(
-      consumedMinutes,
-      totalBudgetMinutes,
-      slo.windowDays,
-    );
+    const projectedExhaustionDate = this.projectExhaustionDate(consumedMinutes, totalBudgetMinutes, slo.windowDays);
 
     // 자동 액션 결정
     const actions = this.determineActions(burnRate);
@@ -236,7 +230,7 @@ export class ErrorBudgetPolicyEngine {
     priority: 'P1' | 'P2' | 'P3' | 'P4',
     currentLevel: number = 0,
   ): OnCallEscalationResult {
-    const level = this.oncallLevels.find(l => l.priority === priority);
+    const level = this.oncallLevels.find((l) => l.priority === priority);
 
     if (!level) {
       return {
@@ -250,9 +244,7 @@ export class ErrorBudgetPolicyEngine {
     }
 
     const now = new Date();
-    const nextEscalation = new Date(
-      now.getTime() + level.escalationWaitMinutes * 60 * 1000,
-    );
+    const nextEscalation = new Date(now.getTime() + level.escalationWaitMinutes * 60 * 1000);
 
     const result: OnCallEscalationResult = {
       incidentId,
@@ -285,7 +277,7 @@ export class ErrorBudgetPolicyEngine {
   getBudgetHistory(service?: string, limit: number = 100): ErrorBudgetResult[] {
     let results = this.budgetHistory;
     if (service) {
-      results = results.filter(r => r.slo.service === service);
+      results = results.filter((r) => r.slo.service === service);
     }
     return results.slice(-limit);
   }
@@ -301,7 +293,7 @@ export class ErrorBudgetPolicyEngine {
    * 온콜 정책 조회
    */
   getOnCallPolicy(priority: 'P1' | 'P2' | 'P3' | 'P4'): OnCallLevel | undefined {
-    return this.oncallLevels.find(l => l.priority === priority);
+    return this.oncallLevels.find((l) => l.priority === priority);
   }
 
   /**
@@ -347,11 +339,7 @@ export class ErrorBudgetPolicyEngine {
   /**
    * 소진 예측일 계산
    */
-  private projectExhaustionDate(
-    consumed: number,
-    total: number,
-    windowDays: number,
-  ): string | null {
+  private projectExhaustionDate(consumed: number, total: number, windowDays: number): string | null {
     if (consumed <= 0 || total <= 0) return null;
     if (consumed >= total) return new Date().toISOString();
 
@@ -360,9 +348,7 @@ export class ErrorBudgetPolicyEngine {
     if (dailyBurnRate <= 0) return null;
 
     const daysUntilExhaustion = (total - consumed) / dailyBurnRate;
-    const projectedDate = new Date(
-      Date.now() + daysUntilExhaustion * 24 * 60 * 60 * 1000,
-    );
+    const projectedDate = new Date(Date.now() + daysUntilExhaustion * 24 * 60 * 60 * 1000);
 
     return projectedDate.toISOString();
   }

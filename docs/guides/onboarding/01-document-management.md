@@ -118,6 +118,75 @@ docs/
 └── api/                       # API 문서
 ```
 
+### 2.1 문서 디렉토리 구조 마인드맵
+
+위 디렉토리 트리를 마인드맵으로 시각화하면 전체 문서 체계의 의미적 관계가 명확해집니다.
+
+```mermaid
+mindmap
+  root((docs/))
+    00-pm
+      PRD 문서
+      제품 요구사항 최상위 정의
+    01-plan
+      mtus/
+        MTU-N*.plan.md
+        SVC-*.plan.md
+        MTU-TECH-*.plan.md
+    02-design
+      mtus/
+        {mtu-id}.design.md
+    03-analysis
+      {mtu-id}.analysis.md
+      설계-구현 적합성 분석
+    04-report
+      {mtu-id}.report.md
+      PDCA 완료 보고
+    archive
+      YYYY-MM/
+        완료 MTU 장기 보관
+    framework
+      00-getting-started
+      01-dev-standards
+      02-csap
+      03-isms-p
+      04-n2sf
+      05-audit-docs T01~T02
+      07-audit-compliance T03~T07
+      08-infra k3s·Gitea·Flux
+      09-ai-integration
+      10-cc-harness
+      11-multitenancy
+      12-documentation-portal
+      13-compliance-dashboard
+      14-framework-upgrade
+    guidelines
+      documentation-standards.md
+      coding-standards.md
+      design-patterns.md
+    guides
+      onboarding/
+        본 가이드북
+    security
+      보안 문서
+    api
+      API 문서
+```
+
+**디렉토리 구조 구성요소 설명**
+
+| 디렉토리 | 용도 | 생성 주체 |
+|---------|------|---------|
+| `00-pm/` | 최상위 PRD — 비즈니스 요구사항 정의 | PM 에이전트 |
+| `01-plan/` | PDCA Plan 단계 산출물 — FR/NFR/Context Anchor | PM + 개발자 |
+| `02-design/` | PDCA Design 단계 산출물 — 아키텍처·API·ERD | Implementer (Architect) |
+| `03-analysis/` | PDCA Check 단계 산출물 — 설계-구현 적합성 분석 | Reviewer + Auditor |
+| `04-report/` | PDCA 완료 보고서 — 교훈 포함 | PM + 개발자 |
+| `archive/` | 완료 MTU 장기 보관 — 감리 증적 | PM |
+| `framework/` | 프레임워크 전체 가이드 17개 섹션 | PM + 개발자 |
+| `guidelines/` | 코딩·문서·설계 작성 표준 | PM |
+| `guides/` | 실무 가이드 (본 온보딩 가이드 포함) | PM + 개발자 |
+
 ---
 
 ## 3. PDCA 사이클과 문서 흐름
@@ -139,6 +208,48 @@ graph LR
   Check --> Report[Report\n04-report/\nPDCA 완료 보고]
   Report --> Archive[Archive\narchive/\n완료 보관]
 ```
+
+### 3.1.1 PDCA 전체 사이클 시퀀스 다이어그램
+
+아래는 PM 에이전트부터 아카이브까지 전체 흐름을 역할 관점에서 표현한 시퀀스 다이어그램입니다.
+
+```mermaid
+sequenceDiagram
+  participant PM as PM 에이전트
+  participant PLAN as Plan 단계
+  participant DESIGN as Design 단계
+  participant DO as Do 단계
+  participant CHECK as Check 단계
+  participant REPORT as Report
+  participant ARCHIVE as Archive
+
+  PM->>PLAN: MTU 분석 + 요구사항 (PRD 기반)
+  Note over PLAN: docs/01-plan/mtus/<br/>{mtu-id}.plan.md 작성<br/>FR/NFR/Context Anchor 정의
+  PLAN->>DESIGN: Plan 문서 완비 후
+  Note over DESIGN: docs/02-design/mtus/<br/>{mtu-id}.design.md 작성<br/>아키텍처·API·시퀀스 다이어그램
+  DESIGN->>DO: Design 문서 완비 후
+  Note over DO: Implementer 에이전트 구현<br/>platform/services/ 또는<br/>platform/packages/
+  DO->>CHECK: 구현 완료
+  Note over CHECK: Reviewer → G3, G5<br/>Auditor → G1, G2, G6, G7<br/>Tester → G4<br/>Refactorer → Dead code 제거
+  CHECK->>REPORT: Q-Gate G1~G7 전체 통과
+  Note over REPORT: docs/04-report/<br/>{mtu-id}.report.md<br/>PDCA 완료 보고, 교훈 기록
+  REPORT->>ARCHIVE: 문서 확정
+  Note over ARCHIVE: docs/archive/YYYY-MM/<br/>{mtu-id}/_INDEX.md<br/>장기 보관
+```
+
+**시퀀스 다이어그램 구성요소 설명**
+
+| 참여자 | 역할 | 산출물 위치 |
+|--------|------|-----------|
+| PM 에이전트 | PRD를 기반으로 MTU를 분해하고 Plan 단계를 시작 | `docs/00-pm/` |
+| Plan 단계 | FR/NFR/Context Anchor를 정의하여 요구사항을 명확화 | `docs/01-plan/mtus/` |
+| Design 단계 | 아키텍처·API·데이터 모델·시퀀스를 설계 문서로 확정 | `docs/02-design/mtus/` |
+| Do 단계 | Implementer 에이전트가 설계 문서를 기반으로 코드 구현 | `platform/services/` |
+| Check 단계 | 5개 에이전트(Reviewer·Auditor·Tester·Refactorer)가 Q-Gate 검증 | `docs/03-analysis/` |
+| Report | PDCA 완료 보고서 작성 및 교훈 기록 | `docs/04-report/` |
+| Archive | 완료 MTU 문서 장기 보관 | `docs/archive/YYYY-MM/` |
+
+**핵심 규칙**: Plan 문서 없이 Design으로 진행 불가. Design 문서 없이 Do(구현) 착수 불가. 이 순서를 어기면 감리 결함으로 분류됩니다.
 
 ### 3.2 단계별 산출물
 
@@ -177,6 +288,49 @@ Check 단계:
 | T02 | 요구사항정의서 | `docs/framework/05-audit-docs/T02-requirements.md` |
 | T03~T07 | 설계서·테스트·추적성·감리 체크리스트 | `docs/framework/07-audit-compliance/` |
 
+### 3.4.1 감리 문서 작성 단계별 체크리스트 순서도
+
+아래 순서도는 감리 준비 시 어느 단계에서 어떤 문서를 작성해야 하는지를 보여줍니다.
+
+```mermaid
+flowchart TD
+  START([새 MTU 작업 시작]) --> CHECK_PRD{PRD 문서\n존재하는가?}
+  CHECK_PRD -- 아니오 --> WRITE_PRD[PRD 작성\ndocs/00-pm/\n{mtu-id}.prd.md]
+  CHECK_PRD -- 예 --> CHECK_PLAN{Plan 문서\n완비되었는가?}
+  WRITE_PRD --> CHECK_PLAN
+
+  CHECK_PLAN -- 아니오 --> WRITE_PLAN[Plan 문서 작성\ndocs/01-plan/mtus/\n{mtu-id}.plan.md\n포함: FR·NFR·Context Anchor\n추적성 매트릭스·변경 이력]
+  CHECK_PLAN -- 예 --> CHECK_DESIGN{Design 문서\n완비되었는가?}
+  WRITE_PLAN --> CHECK_DESIGN
+
+  CHECK_DESIGN -- 아니오 --> WRITE_DESIGN[Design 문서 작성\ndocs/02-design/mtus/\n{mtu-id}.design.md\n포함: 아키텍처·API·ERD·시퀀스]
+  CHECK_DESIGN -- 예 --> IMPL[구현 착수\nplatform/services/ 또는\nplatform/packages/]
+  WRITE_DESIGN --> IMPL
+
+  IMPL --> WRITE_ANALYSIS[Analysis 문서 작성\ndocs/03-analysis/\n{mtu-id}.analysis.md\nQ-Gate G1~G7 검증 결과]
+
+  WRITE_ANALYSIS --> CHECK_QGATE{Q-Gate\nG1~G7 전체\nPASS?}
+  CHECK_QGATE -- 아니오 --> FIX[지적사항 수정\n후 재검증]
+  FIX --> CHECK_QGATE
+  CHECK_QGATE -- 예 --> WRITE_REPORT[Report 작성\ndocs/04-report/\n{mtu-id}.report.md\nPDCA 완료 보고 + 교훈]
+
+  WRITE_REPORT --> ARCHIVE[Archive 보관\ndocs/archive/YYYY-MM/\n{mtu-id}/_INDEX.md]
+  ARCHIVE --> END([MTU 완료])
+
+  style START fill:#d1fae5,stroke:#059669
+  style END fill:#d1fae5,stroke:#059669
+  style FIX fill:#fee2e2,stroke:#dc2626
+  style CHECK_QGATE fill:#fef3c7,stroke:#d97706
+```
+
+**감리 문서 작성 체크리스트 핵심 포인트**
+
+- **PRD 없이 Plan 시작 불가**: 사업 목적이 불명확한 MTU는 감리에서 즉시 결함 판정
+- **Plan 없이 Design 착수 불가**: 요구사항 미확정 상태의 설계는 재작업 위험
+- **Design 없이 구현 착수 불가**: `CLAUDE.md` 절대 제약 — 위반 시 감리 결함
+- **Q-Gate 부분 통과 불인정**: G1~G7 중 하나라도 미통과 시 Report 작성 불가
+- **Archive 필수**: 완료 후 archive 보관 없이는 감리 추적성 확보 불가
+
 ---
 
 ## 4. MTU 개념 및 명명 규칙
@@ -198,6 +352,41 @@ Check 단계:
 | `MTU-P{번호}` | 플랫폼 기반 | `MTU-P01` | 플랫폼 기반 기능 |
 | `MTU-C{번호}` | CSAP 인증 | `MTU-C1`, `MTU-C6a` | 인증 관련 산출물 |
 | `MTU-TECH-{식별자}` | 기술 스택 | `MTU-TECH-STACK-2026Q2` | 기술 스택 정의 |
+
+### 4.2.1 MTU ID 체계 트리 다이어그램
+
+아래 다이어그램은 MTU ID 접두사 체계 전체를 계층 구조로 표현합니다.
+
+```mermaid
+graph TD
+  ROOT[MTU 체계] --> F[MTU-F: Framework\n프레임워크 기반 정의]
+  ROOT --> C[MTU-C: CSAP\nCSAP 인증 산출물]
+  ROOT --> I[MTU-I: Infra\n인프라 구성]
+  ROOT --> N[MTU-N: Technical Mission\n기술 기능 단위]
+  ROOT --> P[MTU-P: Platform\n플랫폼 기반 기능]
+  ROOT --> SVC[SVC-*: Service\n서비스별 구현 라운드]
+  ROOT --> TECH[MTU-TECH-*: Tech Stack\n기술 스택 정의]
+
+  N --> N21_50[N21~N50: 초기 인프라\nCosign, NetworkPolicy,\nGitea CI/CD]
+  N --> N100_119[N100~N119: 통합·자동화\nBackstage, Argo Rollouts,\nThanos, Secret Rotation]
+  N --> N200_240[N200~N240: 성능 모니터링\netcd, CoreDNS, Flux,\nHarbor, Postgres, Redis]
+  N --> N241_plus[N241+: 고도화 진행 중\neGov 호환, 예측 알림,\nDORA, AIOps, CSAP v2]
+
+  SVC --> SVC_AUTH[SVC-AUTH-R*\nauth-service]
+  SVC --> SVC_AI[SVC-AI-ADV-R*\nai-service]
+  SVC --> SVC_APIGW[SVC-APIGW-R*\napi-gateway]
+  SVC --> SVC_ETC[SVC-AUDIT, SVC-BILL,\nSVC-COMP 등 다수]
+```
+
+**MTU ID 체계 구성요소 설명**
+
+| 접두사 그룹 | 현재 상태 | 주요 완료 예시 |
+|-----------|---------|-------------|
+| `MTU-N` | N21~N240 완료, N241+ 진행 중 | N27(Cosign), N100(Backstage), N200(etcd 모니터링) |
+| `SVC-*` | 서비스별 R1 완료, 일부 R2~R5 진행 | SVC-AUTH-R1, SVC-AI-ADV-R5 |
+| `MTU-C` | CSAP 79개 항목 100% 커버리지 완료 | MTU-C1, MTU-C6a |
+| `MTU-P` | 플랫폼 기반 완료 | MTU-P01 (auth-service 기반) |
+| `MTU-TECH` | 기술 스택 정의 완료 | MTU-TECH-STACK-2026Q2 |
 
 ### 4.3 MTU-N 번호 의미 (주요 구간)
 
@@ -456,6 +645,37 @@ D-{분야번호}-{항목번호}
 ```
 요구사항(FR) ←→ 산출물(코드/문서) ←→ 테스트(케이스) ←→ CSAP(통제항목)
 ```
+
+### 8.1.1 4방향 추적성 매트릭스 도식
+
+아래 다이어그램은 4방향 추적성의 관계 구조를 표현합니다. 각 FR 항목은 설계 문서, 구현 코드, 테스트 케이스, CSAP 항목과 모두 연결되어야 합니다.
+
+```mermaid
+graph LR
+  FR[FR 요구사항\ndocs/01-plan/mtus/\n{mtu-id}.plan.md] --> DESIGN[Design 문서\ndocs/02-design/mtus/\n{mtu-id}.design.md]
+  DESIGN --> CODE[구현 코드\nplatform/services/\n또는 platform/packages/]
+  CODE --> TEST[테스트 케이스\ntests/{target}.test.ts\nVitest 단위·통합 테스트]
+  TEST --> CSAP[CSAP 항목\nD-06·D-08·D-09·D-12\n통제 항목 번호]
+  FR --> CSAP
+
+  style FR fill:#dbeafe,stroke:#2563eb
+  style DESIGN fill:#dcfce7,stroke:#16a34a
+  style CODE fill:#fef9c3,stroke:#ca8a04
+  style TEST fill:#fce7f3,stroke:#db2777
+  style CSAP fill:#ede9fe,stroke:#7c3aed
+```
+
+**4방향 추적성 구성요소 설명**
+
+| 추적 노드 | 의미 | 실제 예시 |
+|---------|------|---------|
+| FR 요구사항 | 구현해야 하는 기능을 식별하는 출발점 | `FR-P01.1` (로그인 엔드포인트) |
+| Design 문서 | 요구사항을 구체적 설계로 변환 | `SVC-AUTH-R1.design.md §2.1` |
+| 구현 코드 | 설계를 실제 코드로 구현한 산출물 | `auth-service/src/handlers/login.handler.ts` |
+| 테스트 케이스 | 구현이 요구사항을 충족하는지 검증 | `TC-AUTH-01` (로그인 통합 테스트) |
+| CSAP 항목 | 보안 통제 항목과의 연결 (감리 증적) | `D-08-01` (접근 통제 — 인증) |
+
+**양방향 연결 의미**: FR과 CSAP 사이의 직접 연결은 "이 요구사항이 어떤 보안 통제 항목을 충족하는가"를 감리인에게 즉시 증명할 수 있게 합니다.
 
 ### 8.2 매트릭스 작성 예시
 

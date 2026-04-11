@@ -83,6 +83,39 @@
 [프로덕션 서비스]
 ```
 
+### 1.1.1 전체 CI/CD 파이프라인 플로우 (Mermaid)
+
+```mermaid
+flowchart TD
+  PUSH[git push] --> PR[Pull Request 생성]
+  PR --> CI{CI 파이프라인}
+  CI --> LINT[lint + typecheck]
+  LINT --> TEST[test - vitest]
+  TEST --> BUILD[docker build - BuildKit]
+  BUILD --> SIGN[cosign 이미지 서명]
+  SIGN --> SBOM[SBOM 생성]
+  SBOM --> SCAN[Trivy 취약점 스캔]
+  SCAN --> QGATE{Q-Gate G1~G7}
+  QGATE -->|통과| MERGE[PR Merge]
+  QGATE -->|실패| FIX[수정 후 재시도]
+  MERGE --> GITOPS[GitOps: Flux 감지]
+  GITOPS --> DEPLOY[k3s 배포]
+  DEPLOY --> DORA[DORA 메트릭 기록]
+```
+
+**구성요소 설명**:
+
+| 단계 | 역할 | 실패 시 |
+|------|------|---------|
+| lint + typecheck | ESLint 코드 품질 + TypeScript 타입 오류 탐지 | typecheck 실패 시 파이프라인 즉시 중단 |
+| test (vitest) | 단위/통합 테스트 실행. PostgreSQL·Redis 컨테이너 자동 구동 | 커버리지 80% 미만 시 G4 경고 |
+| docker build (BuildKit) | 서비스별 이미지 병렬 빌드. GHA 캐시로 레이어 재사용 | 이미지 생성 실패 시 파이프라인 중단 |
+| cosign 이미지 서명 | Sigstore Cosign으로 이미지 서명 → Harbor에 서명 첨부 | 서명 실패 시 Kyverno가 배포 차단 |
+| SBOM 생성 | Syft로 CycloneDX 1.6 SBOM 생성 → Grype 취약점 스캔 | CRITICAL 취약점 발견 시 배포 차단 |
+| Q-Gate G1~G7 | 7단계 품질 게이트. G3(코드 품질)·G5(OWASP)·G7(감사 로그)는 필수 통과 | 필수 게이트 실패 시 PR 머지 차단 |
+| GitOps: Flux 감지 | Flux ImagePolicy가 Harbor 신규 이미지를 자동 감지하여 배포 트리거 | Flux 재조정(reconciliation)으로 자동 복구 |
+| DORA 메트릭 기록 | 배포 성공 여부를 Prometheus에 기록하여 CFR·LT 산출 | DORA 게이트에서 CFR > 30% 시 다음 배포 차단 |
+
 ### 1.2 Gitea Actions 역할 구분
 
 본 프로젝트는 온프레미스 Gitea 저장소와 Gitea Actions 자체 호스팅 러너를 사용합니다. 외부 GitHub Actions 서버를 사용하지 않습니다 (공공기관 망분리 요건).
@@ -270,6 +303,45 @@ pnpm --filter @public-saas/e2e-tests test
 
 `matrix-build.yml`은 변경된 서비스만 Docker 이미지로 빌드합니다.
 
+#### 매트릭스 빌드 병렬화 다이어그램
+
+```mermaid
+gantt
+  title 서비스 병렬 빌드 (max-parallel: 4)
+  dateFormat X
+  axisFormat %ss
+
+  section Group 1 (동시 실행)
+  api-gateway    :0, 30
+  auth-service   :0, 25
+  user-service   :0, 20
+  tenant-service :0, 22
+
+  section Group 2 (Group 1 완료 후)
+  ai-service        :30, 55
+  audit-service     :25, 48
+  compliance-service :22, 45
+  security-service  :25, 50
+```
+
+**병렬화 전략 상세**:
+
+| 설정 | 값 | 의미 |
+|------|-----|------|
+| `max-parallel: 4` | 최대 4개 동시 실행 | 러너 자원 한도 내에서 최적 병렬화 |
+| `fail-fast: false` | 개별 실패 격리 | 하나 실패해도 나머지 서비스 계속 빌드 |
+| `matrix.service` | detect-changes 출력 | 실제 변경된 서비스만 선별 빌드 (시간 단축) |
+| BuildKit GHA 캐시 | 서비스별 `scope` 독립 | 서비스 간 캐시 충돌 없이 레이어 재사용 |
+
+**보안 위반 사례 vs 올바른 패턴**:
+
+| 상황 | 잘못된 패턴 | 올바른 패턴 |
+|------|-----------|-----------|
+| 이미지 빌드 | root 사용자로 빌드 | `USER node` 비특권 계정 사용 |
+| 이미지 태그 | `latest` 고정 태그 사용 | 커밋 SHA 7자리 또는 시맨틱 버전 사용 |
+| 외부 의존성 | 빌드 시 인터넷 직접 접근 | 사전 검증된 Harbor 미러 사용 |
+| 시크릿 전달 | Dockerfile ARG에 시크릿 하드코딩 | BuildKit `--secret` 또는 ESO 주입 사용 |
+
 **지원 서비스 목록** (16개):
 ```
 api-gateway, auth-service, user-service, tenant-service,
@@ -405,6 +477,39 @@ qgate-summary 결과:
 `devsecops.yml`은 "Shift-Left Security" 원칙을 구현합니다. 보안 검사를 배포 직전이 아닌 코드 작성 단계부터 수행합니다.
 
 **실행 시점**: `main`, `stg` 브랜치 push + PR + 매일 02:00 KST (17:00 UTC) 정기 실행
+
+#### DevSecOps 보안 검사 파이프라인 다이어그램
+
+```mermaid
+flowchart LR
+  CODE[소스코드] --> SEMGREP[Semgrep 정적분석\np/owasp-top-ten\np/typescript]
+  IMAGE[Docker 이미지] --> TRIVY[Trivy 취약점 스캔\nHIGH·CRITICAL]
+  REPO[저장소] --> SCORECARD[OpenSSF Scorecard\n브랜치 보호·리뷰 정책]
+  IMAGE --> SBOM_GEN[SBOM 생성 - Syft\nCycloneDX 1.6 JSON]
+  SBOM_GEN --> GRYPE[Grype 취약점 DB\nSHA256 체크섬 검증]
+  IMAGE --> COSIGN[Cosign 서명\nSigstore keyless]
+  COSIGN --> SLSA[SLSA Provenance L3\nin-toto 빌드 증명]
+```
+
+**구성요소별 역할**:
+
+| 도구 | 입력 | 탐지 대상 | 실패 기준 |
+|------|------|----------|---------|
+| Semgrep | 소스코드 (`.ts`) | SQL 주입·XSS·시크릿 패턴 | ERROR 등급 발견 시 차단 |
+| Trivy IaC | Helm·k8s YAML | 보안 설정 오류 (privileged, root 실행 등) | HIGH/CRITICAL 발견 시 차단 |
+| OpenSSF Scorecard | 저장소 메타데이터 | 코드 리뷰 정책·브랜치 보호·토큰 권한 | 점수 기준 경고 |
+| Syft + Grype | Docker 이미지 레이어 | 의존성 CVE (pnpm audit 보완) | CRITICAL 발견 시 차단 |
+| Cosign | 빌드 완료 이미지 | 이미지 무결성 보장 (서명 첨부) | 서명 실패 시 Kyverno 배포 차단 |
+| SLSA Level 3 | 빌드 메타데이터 | 공급망 증명 (커밋 SHA·빌드 시간·환경) | 증명 누락 시 릴리스 차단 |
+
+**보안 위반 사례 vs 올바른 패턴**:
+
+| 위반 유형 | 잘못된 패턴 | 올바른 패턴 | 탐지 도구 |
+|---------|-----------|-----------|---------|
+| SAST 미적용 | `semgrep` 없이 코드 배포 | PR마다 Semgrep SARIF 리포트 확인 | Semgrep |
+| 이미지 서명 없음 | 서명 없는 이미지 Harbor push | `cosign sign` 후 Kyverno 정책 통과 | Cosign + Kyverno |
+| 공급망 공격 노출 | 빌드 시 Trivy 바이너리 무검증 다운로드 | SHA256 체크섬 검증 후 사용 | 수동 검증 |
+| SBOM 부재 | 의존성 목록 불명확 | CycloneDX SBOM + Grype 스캔 결과 보존 | Syft + Grype |
 
 **5개 검사가 병렬로 실행됩니다**:
 
@@ -613,6 +718,36 @@ Release Pipeline v2에서는 Flux ImagePolicy를 통한 GitOps 방식을 사용�
 10% → (5분 대기 + 메트릭 확인) → 50% → (10분 대기) → 100%
 ```
 
+#### 카나리 배포 전략 다이어그램
+
+```mermaid
+flowchart LR
+  RELEASE[신규 버전\nv1.3.0] --> CANARY[카나리 10%\n5분 대기]
+  CANARY --> METRIC{에러율 < 1%?\nSLO 에러버짓 잔여?}
+  METRIC -->|Yes| STEP2[50% 트래픽\n10분 대기]
+  STEP2 --> METRIC2{안정적?\nP99 레이턴시 정상?}
+  METRIC2 -->|Yes| FULL[100% 배포 완료\nDORA 성공 기록]
+  METRIC -->|No| ROLLBACK[자동 롤백\nargo rollouts abort]
+  METRIC2 -->|No| ROLLBACK
+  ROLLBACK --> AUDIT[감사 로그 기록\nROLLBACK_TRIGGERED]
+```
+
+**카나리 단계별 판정 기준**:
+
+| 단계 | 트래픽 비율 | 대기 시간 | 판정 메트릭 | 실패 조치 |
+|------|-----------|---------|-----------|---------|
+| Step 1 | 10% | 5분 | 에러율 < 1%, SLO 에러버짓 잔여 | 즉시 자동 롤백 |
+| Step 2 | 50% | 10분 | P99 레이턴시 < 500ms, 에러율 < 0.5% | 즉시 자동 롤백 |
+| Step 3 | 100% | - | 배포 완료 후 DORA 성공 이벤트 기록 | - |
+
+**보안 위반 사례 vs 올바른 패턴**:
+
+| 상황 | 잘못된 패턴 | 올바른 패턴 |
+|------|-----------|-----------|
+| 롤백 판단 | 운영자 수동 판단에만 의존 | SLO 에러버짓 기반 자동 롤백 |
+| 감사 추적 | 롤백 후 이유 미기록 | `ROLLBACK_TRIGGERED` 감사 로그 + 사후 분석 |
+| 트래픽 이동 | 한번에 100% 전환 | 10% → 50% → 100% 단계적 확대 |
+
 **SLO 기반 자동 롤백**: SLO 에러 버짓 소진 시 자동으로 이전 버전으로 롤백됩니다.
 
 ### 6.5 수동 롤백 방법
@@ -665,6 +800,44 @@ DORA (DevOps Research and Assessment) Four Keys는 소프트웨어 개발팀의 
 
 **메트릭 조회 소스**: Prometheus (`dora:change_failure_rate:ratio` 메트릭)
 
+#### DORA 메트릭 게이트 판정 흐름 다이어그램
+
+```mermaid
+flowchart TD
+  START[배포 요청] --> QUERY[Prometheus 쿼리\ndora:change_failure_rate:ratio]
+  QUERY --> CFR_CHECK{CFR 계산}
+
+  CFR_CHECK -->|CFR 0~15%\nElite 등급| PASS[PASS\n배포 허용]
+  CFR_CHECK -->|CFR 15~30%\nHigh 등급 경계| WARN[WARN\n팀 리드 수동 승인]
+  CFR_CHECK -->|CFR 30% 초과\nLow 등급| BLOCK[BLOCK\n배포 즉시 차단]
+
+  PASS --> DORA_RECORD[DORA 이벤트 기록\ndeployment_frequency +1]
+  WARN --> MANUAL{팀 리드 승인?}
+  MANUAL -->|승인| DORA_RECORD
+  MANUAL -->|거부| BLOCK
+  BLOCK --> AUDIT_LOG[감사 로그 기록\nDEPLOY_BLOCKED]
+  AUDIT_LOG --> RCA[근본 원인 분석\nRCA 문서 작성]
+```
+
+**DORA Four Keys 기준값 (산업 벤치마크)**:
+
+| 지표 | Elite | High | Medium | Low |
+|------|-------|------|--------|-----|
+| 배포 빈도 (DF) | 하루 여러 번 | 하루 1회 ~ 주 1회 | 주 1회 ~ 월 1회 | 월 1회 미만 |
+| 리드타임 (LT) | 1시간 미만 | 1일 미만 | 1주 미만 | 1개월 이상 |
+| 변경 실패율 (CFR) | **15% 미만** | **15~30%** | 30~45% | **45% 초과** |
+| 평균 복구 시간 (MTTR) | 1시간 미만 | 1일 미만 | 1주 미만 | 1개월 이상 |
+
+> 본 프로젝트 CFR 게이트: **15% WARN, 30% BLOCK** (DORA High~Elite 수준 유지 목표)
+
+**보안 위반 사례 vs 올바른 패턴**:
+
+| 상황 | 잘못된 패턴 | 올바른 패턴 |
+|------|-----------|-----------|
+| BLOCK 무시 | CFR > 30%에도 수동 배포 강행 | BLOCK 시 RCA 완료 후 재시도 |
+| 메트릭 조작 | 실패 이벤트 미기록으로 CFR 낮춤 | 배포 성공/실패 전수 기록 |
+| 감사 추적 | BLOCK 사유 미기록 | `DEPLOY_BLOCKED` + CFR 값 감사 로그 기록 필수 |
+
 ### 7.3 DORA 게이트 기준 미달 시 처리
 
 **WARN (15~30%) 발생 시**:
@@ -703,6 +876,49 @@ curl -s "http://prometheus.monitoring.svc:9090/api/v1/query?query=dora:change_fa
 ### 8.2 hotfix-pipeline.yaml 흐름
 
 `hotfix/**` 브랜치에 push하면 자동으로 실행됩니다.
+
+#### 핫픽스 긴급 프로세스 시퀀스 다이어그램
+
+```mermaid
+sequenceDiagram
+  participant LEAD as 팀 리드
+  participant GIT as Gitea
+  participant HOTFIX as hotfix-pipeline
+  participant STG as Staging
+  participant PROD as Production
+
+  LEAD->>GIT: hotfix/urgent-fix 브랜치 push
+  GIT->>HOTFIX: hotfix 파이프라인 자동 트리거
+  HOTFIX->>HOTFIX: Stage 1 - 핵심 테스트만 실행\n(typecheck + unit test)
+  HOTFIX->>HOTFIX: Stage 2 - 보안 스캔\n(Trivy CRITICAL/HIGH + Cosign)
+  HOTFIX->>STG: Stage 3 - 스테이징 배포\n(replicas=1 + 스모크 테스트)
+  STG-->>HOTFIX: 스모크 테스트 결과
+  HOTFIX->>LEAD: Stage 4 - 프로덕션 수동 승인 요청\n(보안팀 + 팀 리드)
+  LEAD->>HOTFIX: 수동 승인
+  HOTFIX->>PROD: 프로덕션 즉시 배포
+  PROD-->>HOTFIX: 배포 결과 확인
+  HOTFIX->>GIT: 감사 로그 기록\n(HOTFIX_DEPLOY)
+  LEAD->>GIT: main + stg 브랜치로 백포트
+```
+
+**핫픽스 vs 일반 배포 비교**:
+
+| 항목 | 일반 배포 | 핫픽스 배포 |
+|------|---------|-----------|
+| 브랜치 | `feat/*`, `fix/*` | `hotfix/*` 필수 |
+| E2E 테스트 | 전체 실행 | 생략 (긴급 상황) |
+| Q-Gate | G1~G7 전체 | 핵심 보안 스캔만 |
+| 프로덕션 승인 | 자동 (카나리) | 수동 승인 필수 (보안팀 + 팀 리드) |
+| 감사 로그 | 표준 DEPLOY | `HOTFIX_DEPLOY` 별도 기록 |
+
+**보안 위반 사례 vs 올바른 패턴**:
+
+| 상황 | 잘못된 패턴 | 올바른 패턴 |
+|------|-----------|-----------|
+| 긴급 배포 남용 | 일반 버그 수정에 hotfix 사용 | 프로덕션 장애·CRITICAL 취약점만 hotfix 적용 |
+| 승인 우회 | 수동 승인 없이 프로덕션 배포 | 보안팀 + 팀 리드 2인 승인 필수 |
+| 백포트 누락 | hotfix 브랜치만 배포 후 방치 | 배포 완료 후 반드시 main + stg 백포트 |
+| 사후 분석 생략 | 핫픽스 후 원인 분석 없음 | Post-Mortem 문서 + 재발 방지 이슈 등록 |
 
 ```
 Stage 1: 빌드 + 테스트
@@ -931,3 +1147,4 @@ git push origin v1.3.0
 | 버전 | 일자 | 내용 | 작성자 |
 |------|------|------|--------|
 | 1.0.0 | 2026-04-11 | 초안 작성 (실제 워크플로우 파일 기반) | Implementer Agent |
+| 1.1.0 | 2026-04-11 | Mermaid 다이어그램 6종 추가: 전체 파이프라인 플로우·매트릭스 빌드·DevSecOps·카나리 배포·DORA 게이트·핫픽스 시퀀스. 각 섹션 보안 위반 사례 vs 올바른 패턴 대조표 추가 | Implementer Agent |

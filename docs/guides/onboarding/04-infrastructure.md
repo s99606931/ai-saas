@@ -69,6 +69,70 @@
 | 시크릿 | external-secrets, sealed-secrets | 시크릿 관리 |
 | 인증서 | cert-manager | TLS 자동 갱신 |
 
+**인프라 71개 모듈 카테고리 분류 마인드맵**
+
+```mermaid
+mindmap
+  root((인프라 모듈 71개))
+    보안
+      vault
+      falco
+      trivy-operator
+      kyverno
+      gatekeeper
+    서비스메시
+      linkerd
+      cilium
+      cilium-zero-trust
+      gateway-api
+      network-policies
+    모니터링
+      monitoring
+      grafana
+      loki
+      tempo
+      thanos
+      alertmanager
+    GitOps
+      flux
+      gitops
+      renovate
+      crossplane
+    스케일링
+      keda
+      vpa
+      predictive-scaling
+    데이터
+      cloudnative-pg
+      backup-verification
+      db-migration
+    빌드레지스트리
+      harbor
+      buildkit
+      cosign
+    시크릿인증서
+      external-secrets
+      sealed-secrets
+      cert-manager
+```
+
+**구성요소별 상세 설명**
+
+| 카테고리 | 핵심 모듈 | 역할 상세 | CSAP 매핑 |
+|---------|---------|---------|---------|
+| 보안 | Vault | 런타임 시크릿 동적 발급, 만료 기반 자동 회전 | D-08, D-09 |
+| 보안 | Falco | eBPF 기반 런타임 이상 행위 실시간 탐지 | D-06 |
+| 보안 | Kyverno | 정책 기반 배포 승인·거부 (OPA 대안) | D-08 |
+| 서비스메시 | Linkerd | 서비스 간 mTLS 자동 적용, 트래픽 관측 | D-09 |
+| 서비스메시 | Cilium | eBPF 기반 L7 네트워크 정책, 제로 트러스트 | D-08 |
+| GitOps | Flux | Git 상태를 클러스터에 지속 동기화하는 컨트롤러 4종 | D-12 |
+| GitOps | Renovate | 의존성(이미지 태그, Helm 차트 버전) 자동 업데이트 PR | D-12 |
+| 스케일링 | KEDA | Prometheus 메트릭·큐 길이 등 외부 이벤트 기반 오토스케일 | — |
+
+**실무 활용 예시**: 새 모듈을 추가할 때는 해당 카테고리 디렉토리(`infra/vault/`, `infra/keda/` 등)에 `values.yaml`과 `kustomization.yaml`을 작성하고 Flux Kustomization에 경로를 등록합니다.
+
+**자주 하는 실수**: 모듈을 직접 `kubectl apply`로 설치한 경우 Flux가 다음 동기화 주기에 원복합니다. 반드시 Git 저장소에 매니페스트를 추가한 뒤 Flux를 통해 배포하십시오.
+
 ### 1.4 CSAP 보안 통제 매핑
 
 | 인프라 도구 | CSAP 항목 | 설명 |
@@ -256,6 +320,93 @@ k3s 클러스터
 └── gitops-demo          # 학습/테스트용 네임스페이스
 ```
 
+**k3s 클러스터 전체 토폴로지**
+
+```mermaid
+graph TB
+  INTERNET([외부 인터넷]) --> GW
+
+  subgraph K3S["k3s Cluster (WSL2 단일 노드)"]
+    subgraph NS_SYSTEM["kube-system 네임스페이스"]
+      GW[Traefik Gateway\nIngressController]
+      DNS[CoreDNS]
+      METRICS[metrics-server]
+    end
+
+    subgraph NS_INFRA["flux-system / cert-manager / external-secrets"]
+      FLUX[Flux Controller\n4종]
+      CERT[cert-manager\nTLS 자동 갱신]
+      ESO[External Secrets\nOperator]
+    end
+
+    subgraph NS_SVC["saas-platform 네임스페이스"]
+      APIGW[api-gateway\n:3000]
+      AUTH[auth-service\n:3001]
+      USER[user-service\n:3002]
+      TENANT[tenant-service\n:3003]
+      AI[ai-service\n:3010]
+    end
+
+    subgraph NS_DATA["saas / cnpg-system 네임스페이스"]
+      PG[(CloudNative PG\nPostgreSQL HA)]
+      REDIS[(Redis\n캐시)]
+      VAULT[HashiCorp\nVault]
+    end
+
+    subgraph NS_MON["monitoring 네임스페이스"]
+      PROM[Prometheus\n:9090]
+      GRAFANA[Grafana\n:30300]
+      LOKI[Loki\n로그집계]
+      TEMPO[Tempo\n분산추적]
+    end
+
+    subgraph NS_SEC["falco-system / kyverno"]
+      FALCO[Falco\n런타임보안]
+      KYV[Kyverno\n정책엔진]
+    end
+  end
+
+  GW --> APIGW
+  APIGW --> AUTH
+  APIGW --> USER
+  APIGW --> TENANT
+  APIGW --> AI
+  AUTH --> PG
+  AUTH --> REDIS
+  USER --> PG
+  TENANT --> PG
+  AI --> REDIS
+
+  NS_SVC -->|메트릭 수집| PROM
+  NS_SVC -->|로그 전송| LOKI
+  NS_SVC -->|추적 전송| TEMPO
+  PROM --> GRAFANA
+  LOKI --> GRAFANA
+  TEMPO --> GRAFANA
+
+  FLUX -->|동기화| NS_SVC
+  CERT -->|TLS 발급| NS_SVC
+  ESO -->|시크릿 주입| NS_SVC
+  FALCO -->|이벤트| LOKI
+  KYV -->|정책 검사| NS_SVC
+```
+
+**구성요소별 상세 설명**
+
+| 네임스페이스 | 핵심 컴포넌트 | 역할 | CSAP |
+|------------|------------|------|------|
+| kube-system | Traefik | 모든 외부 트래픽의 단일 진입점. IngressRoute CRD로 L7 라우팅 | D-08 |
+| kube-system | CoreDNS | `서비스.네임스페이스.svc.cluster.local` 형식 내부 DNS 해결 | — |
+| flux-system | Flux 4종 | Source/Kustomize/Helm/Notification 컨트롤러로 GitOps 구현 | D-12 |
+| saas-platform | api-gateway | 모든 외부 API 요청의 단일 라우팅 허브. JWT 검증 수행 | D-08 |
+| saas | CloudNative PG | Primary 1개 + Replica 2개 HA 구성. WAL 아카이빙으로 PITR 지원 | D-09 |
+| monitoring | Prometheus | 15초 주기 Pull 방식 메트릭 수집. AlertManager와 연동 | D-06 |
+| falco-system | Falco | eBPF 드라이버로 커널 수준 이상 행위 탐지 후 Loki에 이벤트 기록 | D-06 |
+
+**실무 활용 예시**: 새 서비스를 `saas-platform` 네임스페이스에 배포하면 Falco가 자동으로 런타임 행위를 감시하고, Promtail DaemonSet이 자동으로 로그를 수집합니다. 별도 설정 없이도 Grafana에서 해당 서비스 로그를 조회할 수 있습니다.
+
+**자주 하는 실수**: 서비스 간 통신 시 `localhost`가 아닌 `서비스명.네임스페이스.svc.cluster.local` 형식을 사용해야 합니다. 예: `auth-service.saas-platform.svc.cluster.local:3001`
+
 네임스페이스 간 트래픽은 NetworkPolicy로 제어합니다. `saas-platform`과 `monitoring` 간 통신은 허용되지만, `kube-system`에 대한 직접 접근은 차단됩니다.
 
 ### 3.2 핵심 컴포넌트
@@ -434,6 +585,47 @@ spec:
 6. Flux Notification Controller: Gitea 커밋에 배포 결과 상태 업데이트
 7. (실패 시) 자동 롤백: 이전 Helm revision으로 복구
 ```
+
+**GitOps Flux 배포 플로우**
+
+```mermaid
+sequenceDiagram
+  participant DEV as 개발자
+  participant GIT as Git (Gitea)
+  participant CI as CI Pipeline\n(Q-Gate)
+  participant HARBOR as Harbor Registry
+  participant FLUX as Flux Controller
+  participant K8S as k3s Cluster
+
+  DEV->>GIT: git push feat/feature
+  GIT->>CI: 워크플로우 트리거
+  CI->>CI: 빌드 / 테스트 / lint
+  CI->>CI: Q-Gate 7단계 품질 검사
+  CI->>HARBOR: Docker image push\n(Cosign 서명 포함)
+  CI->>GIT: GitOps 설정 변경\n(이미지 태그 업데이트)
+  Note over FLUX,GIT: 30초~5분 폴링 주기
+  FLUX->>GIT: 변경사항 감지
+  FLUX->>HARBOR: 이미지 pull (서명 검증)
+  FLUX->>K8S: HelmRelease 적용
+  K8S-->>FLUX: 배포 결과 (성공/실패)
+  FLUX-->>GIT: 커밋 상태 업데이트
+  GIT-->>DEV: 배포 완료 알림
+```
+
+**구성요소별 상세 설명**
+
+| 단계 | 담당 컴포넌트 | 역할 상세 |
+|-----|------------|---------|
+| git push | Gitea | 브랜치 보호 규칙 적용. main 브랜치는 PR + 승인 필수 |
+| CI Pipeline | Gitea Actions | Q-Gate 7단계 품질 검사. 실패 시 Harbor push 차단 |
+| Harbor push | Harbor + Trivy | 이미지 취약점 스캔(Trivy), Cosign으로 이미지 서명 |
+| 변경 감지 | Flux Source Controller | ImageUpdateAutomation으로 이미지 태그 변경 자동 감지 |
+| HelmRelease 적용 | Flux Helm Controller | values 변경분만 계산 후 최소 변경 적용 |
+| 실패 시 롤백 | Flux Helm Controller | `remediateLastFailure: true` 설정으로 이전 revision 자동 복구 |
+
+**실무 활용 예시**: `flux get all -A` 명령으로 모든 Kustomization과 HelmRelease의 동기화 상태를 확인합니다. `READY=False`인 항목이 있으면 `flux describe kustomization <이름> -n flux-system`으로 원인을 파악합니다.
+
+**자주 하는 실수**: 긴급 상황에서 직접 `kubectl apply`로 클러스터를 수정하면 Flux가 다음 동기화 시 Git 상태로 되돌립니다. 긴급 수정 시에는 반드시 4.6절 절차에 따라 Flux를 일시 정지한 후 작업하고, 이후 Git에도 동일한 변경을 반영하십시오.
 
 ### 4.5 즉시 강제 동기화
 
@@ -654,13 +846,48 @@ kubectl get secret my-api-key -n saas
 
 Linkerd는 서비스 간 통신에 상호 TLS(mTLS)를 자동으로 적용합니다. CSAP D-09 전송 암호화 요건을 서비스 코드 변경 없이 충족합니다.
 
-**3계층 인증서 체계**
+**Linkerd mTLS 서비스 메시 통신 흐름**
+
+```mermaid
+sequenceDiagram
+  participant A as auth-service\n(앱 컨테이너)
+  participant PROXY_A as Linkerd Proxy\n(auth-service 사이드카)
+  participant PROXY_B as Linkerd Proxy\n(user-service 사이드카)
+  participant B as user-service\n(앱 컨테이너)
+
+  Note over A,B: 파드 내부 통신은 평문 HTTP, 파드 간은 mTLS 자동 암호화
+
+  A->>PROXY_A: HTTP 요청\n(평문, localhost)
+  PROXY_A->>PROXY_A: 인증서로 서명\n(24시간 유효, 자동 회전)
+  PROXY_A->>PROXY_B: mTLS 암호화 전송\n(TLS 1.3)
+  PROXY_B->>PROXY_B: 인증서 검증\n(Trust Anchor 체인)
+  PROXY_B->>B: HTTP 요청\n(복호화, localhost)
+  B-->>PROXY_B: 응답
+  PROXY_B-->>PROXY_A: mTLS 암호화 응답
+  PROXY_A-->>A: 응답 (복호화)
+```
+
+**Linkerd 3계층 인증서 체계**
 
 ```
 Trust Anchor (Root CA) ─── 10년 유효, 오프라인 보관
   └── Identity Issuer (Intermediate CA) ─── 1년 유효, 클러스터 배포
         └── 워크로드 인증서 ─── 24시간 유효, 자동 회전
 ```
+
+**구성요소별 상세 설명**
+
+| 구성 요소 | 역할 | 비고 |
+|---------|------|------|
+| Linkerd Proxy (사이드카) | 파드마다 자동 주입. 모든 네트워크 I/O를 가로채 mTLS 처리 | 앱 코드 무변경 |
+| Trust Anchor | 루트 CA 인증서. 오프라인 보관. Linkerd 전체 신뢰 체인의 기반 | 10년 유효 |
+| Identity Issuer | Intermediate CA. cert-manager가 Trust Anchor로 서명하여 발급 | 1년, 자동 갱신 |
+| 워크로드 인증서 | 각 파드의 서비스 ID 인증서. Linkerd Identity가 발급 | 24시간, 자동 회전 |
+| Control Plane | `linkerd-destination`, `linkerd-identity`, `linkerd-proxy-injector` | linkerd 네임스페이스 |
+
+**실무 활용 예시**: `linkerd viz edges deployment -n saas-platform` 명령으로 서비스 간 mTLS 연결 현황을 확인합니다. `MESHED` 열이 `1/1`이어야 정상입니다.
+
+**자주 하는 실수**: 네임스페이스에 `linkerd.io/inject=enabled` 어노테이션을 추가한 이후 배포된 파드만 Linkerd Proxy가 주입됩니다. 기존 파드는 `kubectl rollout restart deployment -n saas-platform`으로 재시작해야 적용됩니다.
 
 ```bash
 # Linkerd 설치 상태 확인
@@ -885,7 +1112,47 @@ observability:
   tracingEnabled: true
 ```
 
-### 7.3 Helm 배포 명령어
+### 7.3 Helm 배포 프로세스 플로우
+
+아래 다이어그램은 `helm upgrade --install` 명령 실행 시 내부 처리 흐름을 보여줍니다.
+
+```mermaid
+flowchart TD
+  A([helm upgrade --install 명령 실행]) --> B[Chart.yaml 메타데이터 검증]
+  B --> C[values.yaml 병합\ndefault + 환경별 override]
+  C --> D[templates/ 렌더링\n_helpers.tpl 함수 적용]
+  D --> E{드라이런 모드?}
+  E -->|--dry-run| F[렌더링 결과 출력만\n클러스터 변경 없음]
+  E -->|실제 배포| G[현재 클러스터 상태 조회]
+  G --> H{Helm Release 존재?}
+  H -->|없음 install| I[신규 리소스 생성\nkubectl apply]
+  H -->|있음 upgrade| J[diff 계산\n변경분만 적용]
+  I --> K[Helm History에\nrevision 1 기록]
+  J --> K2[Helm History에\nrevision N 기록]
+  K --> L{healthCheck 대기}
+  K2 --> L
+  L -->|성공 90s 이내| M([배포 완료\nRevision 상태: deployed])
+  L -->|실패 타임아웃| N[remediateLastFailure 적용]
+  N --> O[이전 revision으로 자동 롤백]
+  O --> P([배포 실패 알림\nFlux Notification])
+```
+
+**구성요소별 상세 설명**
+
+| 단계 | 세부 동작 |
+|-----|---------|
+| Chart.yaml 검증 | 차트 이름, 버전, 의존성(dependencies) 체크. `helm dependency update` 선행 필요 |
+| values.yaml 병합 | 기본값 → 환경별 values → `--set` 플래그 순으로 우선순위 적용 |
+| templates/ 렌더링 | Go 템플릿 엔진이 `{{ .Values.xxx }}` 치환. `helm template`으로 미리 확인 가능 |
+| diff 계산 | `helm-diff` 플러그인으로 사전 확인: `helm diff upgrade <릴리즈> <차트>` |
+| healthCheck 대기 | `--timeout 90s` 이내 모든 Deployment가 Ready 상태여야 성공 판정 |
+| 자동 롤백 | `remediateLastFailure: true` + `retries: 3` 설정 시 3회 재시도 후 이전 revision으로 복구 |
+
+**실무 활용 예시**: 배포 전 `helm lint infra/helm/saas-platform && helm diff upgrade` 조합으로 변경 사항을 미리 검토하는 습관을 들이십시오.
+
+**자주 하는 실수**: `--set` 플래그로 지정한 값은 Helm History에 기록되지 않아 롤백 시 원래 값으로 돌아가지 않을 수 있습니다. 중요한 설정은 반드시 `values-{env}.yaml` 파일에 명시하십시오.
+
+### 7.4 Helm 배포 명령어
 
 ```bash
 # 1. 차트 검증 (문법 오류 확인)
@@ -923,7 +1190,7 @@ helm rollback my-service 1 -n saas-platform
 helm uninstall my-service -n saas-platform
 ```
 
-### 7.4 환경별 values 오버라이드
+### 7.5 환경별 values 오버라이드
 
 ```bash
 # 개발 환경

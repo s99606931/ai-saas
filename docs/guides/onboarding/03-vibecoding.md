@@ -10,12 +10,17 @@
 
 1. [Claude Code란?](#1-claude-code란)
 2. [설치 및 설정](#2-설치-및-설정)
+   - [2.4 하네스 훅 동작 이해](#24-하네스-훅-동작-이해) — 훅 동작 시퀀스 다이어그램 포함
 3. [바이브코딩 철학](#3-바이브코딩-철학)
+   - [3.2 에이전트 역할 분담](#32-에이전트-역할-분담-cascade-메서드) — Cascade 메서드 플로우차트 포함
 4. [실전 워크플로우 — PDCA 사이클](#4-실전-워크플로우--pdca-사이클)
-5. [주요 슬래시 커맨드 목록](#5-주요-슬래시-커맨드-목록)
+   - [4.1 PM 에이전트로 PDCA 시작](#41-pm-에이전트로-pdca-시작) — PDCA 7단계 시퀀스 다이어그램 포함
+   - [4.5 에이전트 간 결과물 전달 방식](#45-에이전트-간-결과물-전달-방식) — 파일 전달 다이어그램 포함
+5. [주요 슬래시 커맨드 목록](#5-주요-슬래시-커맨드-목록) — 슬래시 커맨드 마인드맵 포함
 6. [에이전트 활용 예시](#6-에이전트-활용-예시)
-7. [7단계 Q-Gate 이해](#7-7단계-q-gate-이해)
+7. [7단계 Q-Gate 이해](#7-7단계-q-gate-이해) — Q-Gate 상태 머신 다이어그램 포함
 8. [주의사항 및 제약](#8-주의사항-및-제약)
+   - [8.1 N2SF 데이터 등급과 AI API 사용 규칙](#81-n2sf-데이터-등급과-ai-api-사용-규칙) — 데이터 등급 결정 플로우차트 포함
 9. [자주 묻는 질문 (FAQ)](#9-자주-묻는-질문-faq)
 
 ---
@@ -147,6 +152,63 @@ CLAUDE.md는 이 프로젝트의 "헌법"입니다. Claude Code가 세션 시작
 - 7단계 Q-Gate 순서 준수
 ```
 
+**훅 동작 시퀀스 다이어그램:**
+
+```mermaid
+sequenceDiagram
+  participant DEV as 개발자 또는 에이전트
+  participant HOOK as 훅 엔진(.claude/settings.json)
+  participant TOOL as Claude Code 도구
+  participant AUDIT as audit.jsonl
+
+  Note over DEV,AUDIT: SessionStart 단계
+  DEV->>HOOK: 세션 시작
+  HOOK->>DEV: 하네스 리마인더 출력(제약사항 상기)
+
+  Note over DEV,AUDIT: PreToolUse 단계 — 작업 전 차단
+  DEV->>HOOK: Bash 명령 실행 요청
+  HOOK->>HOOK: pre:bash:block-no-verify 검사\n(--no-verify, --no-gpg 패턴 감지)
+  alt 금지 패턴 감지
+    HOOK-->>DEV: 즉시 차단 + 오류 메시지 반환
+  else 정상 명령
+    HOOK->>HOOK: pre:bash:destructive-guard 검사\n(rm -rf, DROP TABLE, git push --force)
+    alt 파괴적 명령 감지
+      HOOK-->>DEV: 즉시 차단 + 오류 메시지 반환
+    else 안전한 명령
+      HOOK->>TOOL: 명령 실행 허용
+    end
+  end
+
+  Note over DEV,AUDIT: PreToolUse 단계 — 파일 쓰기 보호
+  DEV->>HOOK: 파일 편집 요청
+  HOOK->>HOOK: pre:write:protect-secrets 검사\n(.env, secrets.*, credentials.* 패턴)
+  alt 보호 파일 감지
+    HOOK-->>DEV: 즉시 차단 + 오류 메시지 반환
+  else 일반 파일
+    HOOK->>TOOL: 파일 편집 허용
+  end
+
+  Note over DEV,AUDIT: PostToolUse 단계 — 작업 후 기록
+  TOOL-->>HOOK: 도구 실행 완료
+  HOOK->>AUDIT: 타임스탬프 + 도구명 + 사용자 기록(append-only)
+  AUDIT-->>HOOK: 기록 완료
+```
+
+**훅 구성요소 설명:**
+
+| 훅 종류 | 훅 ID | 감지 패턴 | 처리 방식 |
+|--------|------|---------|---------|
+| PreToolUse | pre:bash:block-no-verify | `--no-verify`, `--no-gpg`, `--no-gpg-sign` | 즉시 차단, 에러 반환 |
+| PreToolUse | pre:bash:destructive-guard | `rm -rf /`, `DROP TABLE`, `DELETE FROM`(WHERE 없음), `git push --force` | 즉시 차단, 에러 반환 |
+| PreToolUse | pre:write:protect-secrets | `.env`, `secrets.*`, `*credential*`, `*.pem` | 즉시 차단, 에러 반환 |
+| PostToolUse | audit-logger | 모든 Bash 실행, 파일 편집 | audit.jsonl에 append-only 기록 |
+| SessionStart | harness-reminder | 세션 시작 이벤트 | 하네스 제약사항 출력 |
+
+**실무 적용 팁:**
+- 훅이 차단하는 경우 `--no-verify`로 우회하지 말고 근본 원인을 해결합니다.
+- PostToolUse 훅이 모든 작업을 기록하므로 audit.jsonl이 자동으로 증가합니다. 삭제나 수정은 CSAP D-06 위반입니다.
+- SessionStart 훅 리마인더는 읽기 전용 메시지로, 개발자가 제약을 인지했음을 전제로 세션이 진행됩니다.
+
 ---
 
 ## 3. 바이브코딩 철학
@@ -221,6 +283,47 @@ Cascade 메서드는 작업을 단계별로 전문 에이전트에게 폭포처�
   산출물: REFACTOR_REPORT.md
 ```
 
+**Cascade 메서드 플로우차트:**
+
+```mermaid
+flowchart TD
+  USER[사용자 요청] --> PM{복잡도 평가}
+  PM -->|LOW| IMPL[Implementer 단독]
+  PM -->|MED| CASCADE[Cascade 팀]
+  PM -->|HIGH| CTO[CTO Lead 팀]
+
+  CASCADE --> IMPL2[Implementer]
+  CASCADE --> REV[Reviewer]
+  CASCADE --> AUD[Auditor]
+  CASCADE --> TEST[Tester]
+  CASCADE --> REFAC[Refactorer]
+
+  CTO --> IMPL2
+  IMPL[Implementer 단독] --> DONE_LOW[완료]
+  IMPL2 --> REV
+  REV -->|통과| AUD
+  REV -->|실패| IMPL2
+  AUD --> TEST
+  TEST --> REFAC
+  REFAC --> ARCHIVE[아카이브]
+```
+
+**에이전트 구성요소 설명:**
+
+| 에이전트 | 사용 모델 | 역할 요약 | 주요 출력물 |
+|---------|---------|---------|-----------|
+| PM Lead | claude-opus-4-6 | 35개 MTU 총괄, 복잡도 평가, 팀 구성 결정 | PDCA 상태 업데이트 |
+| Implementer | claude-sonnet-4-6 | Plan/Design 문서 기반 코드 작성, CSAP D-12 준수 | IMPL_COMPLETE.md |
+| Reviewer | claude-sonnet-4-6 | 102개 정적분석 + OWASP Top10 검사, 코드 수정 불가 | REVIEW_REPORT.md |
+| Auditor | claude-opus-4-6 | CSAP 79항목 + N2SF 6영역 감사, 읽기 전용 | AUDIT_REPORT.md, COMPLIANCE_MATRIX.md |
+| Tester | claude-sonnet-4-6 | E2E/단위 테스트 작성·실행, 커버리지 80%+ 확인 | TEST_RESULT.md |
+| Refactorer | claude-haiku-4-5 | Dead code 탐지·제거, 구조 개선(기능 변경 없음) | REFACTOR_REPORT.md |
+
+**실무 적용 팁:**
+- 복잡도 LOW(문서 산출물 1~2개) MTU는 Implementer 단독 처리로 빠르게 진행할 수 있습니다.
+- HIGH 복잡도 MTU는 `/pm team {MTU-ID}` 명령으로 CTO Lead 팀을 자동 구성합니다.
+- Reviewer는 코드 수정 권한이 없습니다. 실패 시 피드백 파일을 Implementer에게 전달하고 재작업을 요청합니다.
+
 **에이전트 간 결과물 전달 원칙:**
 
 에이전트들은 직접 컨텍스트를 공유하지 않습니다. 모든 결과물은 파일로 작성되고, 다음 에이전트는 그 파일을 읽어 작업을 시작합니다. 이는 각 단계의 책임을 명확히 하고, 감리 시 증빙 자료로 활용하기 위한 설계입니다.
@@ -267,6 +370,54 @@ PM 에이전트는 세션 시작 시 다음 파일들을 자동으로 읽어 현
 - `.bkit/state/memory.json` — 현재 진행 중인 피처/단계
 - `.bkit/state/pdca-status.json` — MTU별 완료 상태
 - `docs/archive/**/_INDEX.md` — 완료·아카이브된 MTU 목록
+
+**PDCA 7단계 상세 시퀀스:**
+
+```mermaid
+sequenceDiagram
+  participant USER as 사용자
+  participant PM as PM Lead 에이전트
+  participant PLAN as Plan/Design 단계
+  participant DO as Implementer
+  participant CHECK as Reviewer + Auditor
+  participant TEST as Tester
+  participant REFAC as Refactorer
+  participant ARCH as Archive
+
+  USER->>PM: /pm --mtu MTU-N252
+  PM->>PLAN: Plan 문서 작성 요청
+  PLAN-->>PM: docs/01-plan/mtus/MTU-N252.plan.md 생성
+  PM->>PLAN: Design 문서 작성 요청
+  PLAN-->>PM: docs/02-design/mtus/MTU-N252.design.md 생성
+  PM->>DO: 복잡도 평가 후 구현 착수
+  DO-->>CHECK: IMPL_COMPLETE.md 전달
+  CHECK-->>DO: BLOCKED: REVIEW_REPORT.md (실패 시 재작업)
+  DO-->>CHECK: IMPL_COMPLETE.md 재전달 (수정 후)
+  CHECK-->>PM: APPROVED + AUDIT_REPORT.md
+  PM->>TEST: 테스트 실행 요청
+  TEST-->>REFAC: TEST_RESULT.md 전달
+  REFAC-->>PM: REFACTOR_REPORT.md 전달
+  PM->>ARCH: 최종 아카이브
+  ARCH-->>USER: MTU 완료 보고 + pdca-status.json 업데이트
+```
+
+**시퀀스 구성요소 설명:**
+
+| 참여자 | 역할 | 주요 동작 |
+|-------|------|---------|
+| 사용자 | 의사결정자 | MTU 착수 지시, G6 실패 시 최종 판단 |
+| PM Lead 에이전트 | 총괄 조율자 | 복잡도 평가, 에이전트 순서 관리, 아카이브 실행 |
+| Plan/Design 단계 | 문서 생산 | FR ID 정의, 아키텍처 결정, API 명세 작성 |
+| Implementer | 코드 생산 | 보안 코딩 원칙 준수, 주석 삽입, IMPL_COMPLETE.md 생성 |
+| Reviewer + Auditor | 품질·규제 검증 | OWASP + CSAP 이중 검증, 통과/실패 판정 |
+| Tester | 테스트 실행 | 커버리지 80%+ 확인, E2E 시나리오 실행 |
+| Refactorer | 코드 정리 | Dead code 제거, 구조 개선 |
+| Archive | 증빙 보존 | docs/archive/ 저장, pdca-status.json 갱신 |
+
+**실무 적용 팁:**
+- PDCA 사이클 한 번에 완료되지 않으면 최대 5회까지 자동 반복됩니다(matchRate 90% 미만 기준).
+- G6(CSAP 100%) 실패 시 PM 에이전트가 자동 진행을 중단하고 사용자에게 보고합니다. 이 단계에서는 반드시 사람이 판단해야 합니다.
+- 세션이 길어질 경우 각 에이전트 완료 후 `/compact`를 실행하여 컨텍스트를 정리합니다.
 
 ### 4.2 Plan 단계 — 설계 문서 먼저
 
@@ -375,9 +526,85 @@ PM Lead 아카이브 → docs/archive/YYYY-MM/{mtu-id}/
                    .bkit/state/pdca-status.json 업데이트
 ```
 
+**에이전트 간 파일 전달 다이어그램:**
+
+```mermaid
+graph LR
+  IMPL[Implementer] -->|IMPL_COMPLETE.md| REV[Reviewer]
+  REV -->|BLOCKED: REVIEW_REPORT.md| IMPL
+  REV -->|APPROVED: REVIEW_REPORT.md| AUD[Auditor]
+  AUD -->|AUDIT_REPORT.md\nCOMPLIANCE_MATRIX.md| TEST[Tester]
+  TEST -->|TEST_RESULT.md| REFAC[Refactorer]
+  REFAC -->|REFACTOR_REPORT.md| ARCHIVE[docs/archive/]
+```
+
+**파일 전달 구성요소 설명:**
+
+| 전달 파일 | 생성 에이전트 | 수신 에이전트 | 주요 내용 |
+|---------|-----------|-----------|---------|
+| IMPL_COMPLETE.md | Implementer | Reviewer | 구현 범위, 변경 파일 목록, FR ID 대응표 |
+| REVIEW_REPORT.md | Reviewer | Implementer(실패) / Auditor(통과) | OWASP Top10 결과, AgentShield 102규칙 결과, BLOCKED/APPROVED 판정 |
+| AUDIT_REPORT.md | Auditor | Tester | CSAP 79항목 준수 여부, G1~G2·G6~G7 결과 |
+| COMPLIANCE_MATRIX.md | Auditor | Tester | FR↔산출물↔테스트↔CSAP 4방향 추적성 매트릭스 |
+| TEST_RESULT.md | Tester | Refactorer | 커버리지 리포트, E2E/단위 테스트 결과, 실패 케이스 목록 |
+| REFACTOR_REPORT.md | Refactorer | PM Lead | Dead code 제거 내역, 구조 개선 사항, CHANGELOG 업데이트 내용 |
+
+**실무 적용 팁:**
+- 모든 파일은 `docs/archive/YYYY-MM/{mtu-id}/` 경로에 최종 아카이브되어 감리 증빙 자료로 사용됩니다.
+- REVIEW_REPORT.md에 BLOCKED가 표시되면 해당 이슈를 먼저 해결하기 전까지 Auditor 호출이 자동 차단됩니다.
+- 에이전트를 순서 없이 건너뛰면 Q-Gate 단계가 누락되어 감리 결함으로 처리됩니다.
+
 ---
 
 ## 5. 주요 슬래시 커맨드 목록
+
+**슬래시 커맨드 분류 마인드맵:**
+
+```mermaid
+mindmap
+  root((Claude Code 커맨드))
+    PM 관리
+      /pm team
+      /pm --status
+      /pm --mtu
+    PDCA 자동화
+      /bkit:pdca
+      /bkit:pdca-batch
+    코드 품질
+      /review
+      /qa
+      /simplify
+    배포
+      /ship
+      /freeze
+    자동화 루프
+      /loop 7d audit:dead-code
+      /loop 2m npm test
+    컨텍스트 관리
+      /compact
+```
+
+**슬래시 커맨드 구성요소 설명:**
+
+| 커맨드 | 분류 | 담당 에이전트 | 주요 역할 |
+|-------|-----|------------|---------|
+| `/pm team` | PM 관리 | PM Lead (opus) | HIGH 복잡도 MTU용 CTO Lead 팀 자동 구성 |
+| `/pm --status` | PM 관리 | PM Lead (opus) | 전체 35개 MTU 진행 상태, 블로커, 다음 착수 권장 MTU 확인 |
+| `/pm --mtu {ID}` | PM 관리 | PM Lead (opus) | 특정 MTU PDCA 사이클 시작 또는 재개 |
+| `/bkit:pdca` | PDCA 자동화 | PM Lead (opus) | 현재 활성 MTU 전체 PDCA 사이클 자동 실행 |
+| `/bkit:pdca-batch` | PDCA 자동화 | PM Lead (opus) | 의존성 없는 MTU 복수 병렬 실행 |
+| `/review {경로}` | 코드 품질 | Reviewer (sonnet) | OWASP Top10 + 102개 정적분석 규칙 검사 |
+| `/qa` | 코드 품질 | Reviewer + Auditor | Q-Gate G1~G7 로컬 사전 확인 |
+| `/simplify {파일}` | 코드 품질 | Refactorer (haiku) | 함수 단순화, Dead code 제거, 구조 개선 |
+| `/ship` | 배포 | PM Lead (opus) | Q-Gate 최종 확인, CHANGELOG 업데이트, PR 생성 안내 |
+| `/freeze` | 배포 | PM Lead (opus) | 배포 동결 선언, 이후 커밋 차단 |
+| `/loop {주기} {명령}` | 자동화 루프 | - | 주기적 명령 반복 실행 |
+| `/compact` | 컨텍스트 관리 | - | 컨텍스트 50% 임계값 도달 시 수동 압축 |
+
+**실무 적용 팁:**
+- 새 기능 개발 시작은 항상 `/pm --mtu {ID}` 로 시작합니다. 직접 Implementer를 호출하면 Plan/Design 문서 확인이 누락될 수 있습니다.
+- `/qa`는 CI/CD 파이프라인과 동일한 기준을 로컬에서 실행하므로 PR 생성 전 반드시 실행합니다.
+- `/loop 7d npm run audit:dead-code`는 주간 자동 Dead code 탐지를 활성화합니다. 세션 시작 시 한 번만 실행하면 됩니다.
 
 ### 5.1 PM 관련 커맨드
 
@@ -634,6 +861,46 @@ PM 에이전트가 자동으로 수행하는 작업:
 
 Q-Gate는 코드가 메인 브랜치에 병합되기 전에 반드시 통과해야 하는 7단계 품질 검사 관문입니다. `.gitea/workflows/quality-gate.yml`에 CI/CD 파이프라인으로 자동화되어 있습니다.
 
+**Q-Gate 7단계 상태 머신:**
+
+```mermaid
+stateDiagram-v2
+  [*] --> G1: 구현 완료(IMPL_COMPLETE.md)
+  G1 --> G2: FR ID 전수 통과
+  G1 --> FAIL: FR ID 누락 또는 Plan 문서 미작성
+  G2 --> G3: 설계 완전성 확인
+  G2 --> FAIL: 필수 섹션 누락 또는 API 명세 미확정
+  G3 --> G4: 코드 품질 + AgentShield 102규칙 통과
+  G3 --> FAIL: CRITICAL/HIGH 이슈 존재 또는 린트 오류
+  G4 --> G5: 테스트 커버리지 80%+ 달성
+  G4 --> FAIL: 커버리지 미달 또는 CSAP 로직 100% 미달
+  G5 --> G6: OWASP Top10 통과
+  G5 --> FAIL: A01~A10 위반 항목 존재
+  G6 --> G7: CSAP 해당 Phase 100% 충족
+  G6 --> HOLD: CSAP 미충족 — 사람의 판단 필요(자동 진행 중단)
+  G7 --> [*]: 모든 게이트 통과 — main 브랜치 병합 허용
+  G7 --> FAIL: audit.jsonl 누락 또는 기록 불완전
+  FAIL --> G1: 재작업 후 재시작
+  HOLD --> G6: 사람의 결정 후 재검증
+```
+
+**Q-Gate 구성요소 설명:**
+
+| 게이트 | 담당 에이전트 | 검사 내용 | 실패 시 처리 |
+|-------|-----------|---------|-----------|
+| G1 | Auditor | Plan 문서 FR ID 1개 이상, 요구사항→산출물 매핑 존재 | Plan 문서 보완 후 재시작 |
+| G2 | Auditor | Design 문서 필수 11개 섹션, API 명세, DB 스키마, Context Anchor | 누락 섹션 보완 후 재시작 |
+| G3 | Reviewer | ESLint + Prettier, TypeScript 타입 검사, AgentShield 102규칙 | CRITICAL/HIGH 이슈 해결 후 재시작 |
+| G4 | Tester | 신규 함수 80%+, 변경 경로 90%+, CSAP 로직 100%, AI 게이트웨이 100% | 테스트 추가 후 재시작 |
+| G5 | Reviewer | OWASP A01~A10 전항목: RBAC, 암호화, SQL 주입, Zod 검증, 하드코딩 시크릿 등 | 위반 항목 수정 후 재시작 |
+| G6 | Auditor | Phase별 CSAP 통제항목 100% 충족 — **유일하게 자동 진행을 중단하는 관문** | 사람의 판단 후 재검증 |
+| G7 | Auditor | audit.jsonl 존재, 세션 시작·종료 기록, 민감 작업 전수 기록 | 로그 보완 후 재시작 |
+
+**실무 적용 팁:**
+- G1~G5, G7은 자동화되어 있어 개발자가 직접 확인하는 시간이 거의 들지 않습니다.
+- G6만이 자동 진행을 중단합니다. 보안 통제항목 관련 결정은 반드시 사람이 내려야 합니다.
+- 로컬에서 `/qa` 명령으로 배포 전에 Q-Gate 전체를 미리 확인할 수 있습니다.
+
 ### G1: 요구사항 FR ID 전수 (Auditor 담당)
 
 **목적**: 구현된 코드에 대응하는 FR ID가 Plan 문서에 정의되어 있는지 확인합니다.
@@ -809,6 +1076,39 @@ tail -10 .claude/audit.jsonl | jq '.'
 | C (기밀) | 공개 시 국가 안보, 국민 생활에 심각한 영향 | 절대 금지 |
 | S (민감) | 공개 시 개인 프라이버시, 업무 수행에 부정적 영향 | 절대 금지 |
 | O (공개) | 공개되어도 무방한 정보 | PII 마스킹 후 허용 |
+
+**N2SF 데이터 등급 결정 플로우차트:**
+
+```mermaid
+flowchart TD
+  DATA[데이터 입력] --> Q1{국가기밀 또는 개인정보 포함?}
+  Q1 -->|예: 주민번호·여권·군사정보 등| C_GRADE[C등급: 기밀]
+  Q1 -->|아니오| Q2{업무상 민감한 정보?}
+  Q2 -->|예: 개인 연락처·시스템 설정·운영 데이터| S_GRADE[S등급: 민감]
+  Q2 -->|아니오| Q3{공개되어도 무방?}
+  Q3 -->|예: 공개 정책·일반 가이드라인| O_GRADE[O등급: 공개]
+  Q3 -->|판단 불명확| ESCALATE[보안 담당자 확인]
+  ESCALATE --> Q1
+  C_GRADE --> BLOCK[AI API 전송 절대 금지\nauditLog 기록 후 에러 반환]
+  S_GRADE --> BLOCK
+  O_GRADE --> MASK[PII 마스킹 처리]
+  MASK --> GATEWAY[AI Gateway 경유 전송\n직접 외부 AI API 호출 금지]
+```
+
+**등급 판단 구성요소 설명:**
+
+| 등급 | 해당 데이터 예시 | AI API 처리 | 위반 결과 |
+|-----|--------------|-----------|---------|
+| C (기밀) | 주민등록번호, 여권번호, 군사·안보 정보, 국가기밀 | 절대 금지 — 즉시 에러 반환 | CSAP/N2SF 중대 위반 |
+| S (민감) | 개인 연락처, 이메일, 시스템 설정값, 운영 로그, 내부 IP | 절대 금지 — 즉시 에러 반환 | CSAP/N2SF 위반 |
+| O (공개) | 공개 정책 문서, 일반 안내문, 프레임워크 가이드라인 | PII 마스킹 후 AI Gateway 경유 허용 | - |
+| 판단 불명확 | 복합 데이터, 집계 통계 | 상위 등급(C/S)으로 보수적 분류 | 보안 담당자 확인 필수 |
+
+**실무 적용 팁:**
+- 판단이 불명확한 경우에는 항상 더 높은 등급(C 또는 S)으로 분류합니다.
+- 데이터 등급 판정은 사람이 직접 해야 하며 AI에게 위임할 수 없습니다.
+- O등급이라도 PII(이름, 연락처 등)가 포함된 경우 반드시 `maskPII()` 함수를 통해 마스킹 후 전송합니다.
+- 차단 발생 시 반드시 `auditLog({ action: 'AI_API_BLOCKED', grade, reason: 'N2SF N-05' })`를 호출합니다.
 
 **올바른 AI API 호출 패턴:**
 
