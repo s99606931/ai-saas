@@ -1,11 +1,124 @@
-// Design Ref: MTU-N79 §renovate.json5 주요 설정
-// Plan SC: FR-N79.2
-// 리포지토리 레벨 Renovate 설정 (CronJob ConfigMap과 동기화)
+// =============================================================================
+// Renovate Bot 설정 — 공공기관 SaaS 의존성 자동 관리
+// Design Ref: MTU-N248 S3.1, MTU-N79
+// Plan SC: FR-N248.1, FR-N248.2, FR-N79.2
+// CSAP: D-05 (공급망 보안 — 의존성 취약점 자동 패치)
+// =============================================================================
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
     ":dependencyDashboard",
-    ":semanticCommits"
+    ":semanticCommits",
+    "docker:enableMajor",
+    "helpers:pinGitHubActionDigests"
+  ],
+
+  // 라벨 자동 부여
+  "labels": ["dependencies"],
+
+  // PR 동시 생성 제한
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+
+  // 커밋 메시지 (Conventional Commits)
+  "commitMessagePrefix": "chore(deps):",
+  "commitMessageAction": "",
+
+  // 패키지 규칙 (그룹화 + 자동 병합)
+  "packageRules": [
+    // --- 보안 패치: 자동 병합 (매일) ---
+    {
+      "groupName": "보안 패치 (자동 병합)",
+      "matchUpdateTypes": ["patch"],
+      "matchCategories": ["security"],
+      "automerge": true,
+      "automergeType": "pr",
+      "schedule": ["every weekday"],
+      "labels": ["security", "auto-merge"],
+      "commitMessagePrefix": "fix(security):"
+    },
+
+    // --- 일반 패치: 주간 그룹 PR ---
+    {
+      "groupName": "일반 패치 업데이트",
+      "matchUpdateTypes": ["patch"],
+      "excludePackagePatterns": ["@types/"],
+      "schedule": ["on monday"],
+      "automerge": false
+    },
+
+    // --- 마이너 업데이트: 주간 ---
+    {
+      "groupName": "마이너 업데이트",
+      "matchUpdateTypes": ["minor"],
+      "schedule": ["on monday"],
+      "automerge": false
+    },
+
+    // --- 메이저 업데이트: 수동 검토 ---
+    {
+      "groupName": "메이저 업데이트 (수동 검토)",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["breaking-change", "manual-review"],
+      "schedule": ["on the first day of the month"]
+    },
+
+    // --- TypeScript 타입: 자동 병합 ---
+    {
+      "groupName": "TypeScript 타입 정의",
+      "matchPackagePatterns": ["@types/"],
+      "automerge": true,
+      "schedule": ["on monday"]
+    },
+
+    // --- ESLint/Prettier: 그룹 ---
+    {
+      "groupName": "린트 도구",
+      "matchPackagePatterns": ["eslint", "prettier", "@typescript-eslint"],
+      "schedule": ["on monday"]
+    },
+
+    // --- Docker 이미지: 별도 관리 ---
+    {
+      "groupName": "Docker 이미지",
+      "matchDatasources": ["docker"],
+      "schedule": ["on the first day of the month"],
+      "automerge": false
+    },
+
+    // --- Helm 차트: 별도 관리 ---
+    {
+      "groupName": "Helm 차트",
+      "matchManagers": ["helmv3"],
+      "schedule": ["on the first day of the month"],
+      "automerge": false
+    },
+
+    // --- GitHub Actions: 자동 병합 ---
+    {
+      "groupName": "GitHub/Gitea Actions",
+      "matchManagers": ["github-actions"],
+      "automerge": true,
+      "schedule": ["on monday"]
+    }
+  ],
+
+  // 보안 취약점 알림 (CVE 기반)
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security", "vulnerability"],
+    "automerge": true
+  },
+
+  // 플랫폼 설정 (Gitea)
+  "platform": "gitea",
+
+  // 무시 패턴 (프로젝트 관리 파일)
+  "ignorePaths": [
+    "docs/**",
+    "scripts/test-*",
+    "**/fixtures/**"
   ]
 }

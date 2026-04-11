@@ -1,0 +1,72 @@
+# =============================================================================
+# Base Service 템플릿 — 공통 SaaS 서비스 노출
+# Design Ref: MTU-N245 S3.1, MTU-N41 S3
+# Plan SC: FR-N245.1
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  labels:
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/component: gateway
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: api-gateway
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  labels:
+    app.kubernetes.io/name: auth-service
+    app.kubernetes.io/component: auth
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3001
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: auth-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tenant-service
+  labels:
+    app.kubernetes.io/name: tenant-service
+    app.kubernetes.io/component: tenant
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3002
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: tenant-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-service
+  labels:
+    app.kubernetes.io/name: audit-service
+    app.kubernetes.io/component: audit
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3003
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: audit-service

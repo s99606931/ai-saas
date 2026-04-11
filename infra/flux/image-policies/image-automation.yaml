@@ -1,0 +1,149 @@
+# =============================================================================
+# Flux Image Automation — 환경별 이미지 자동 업데이트
+# Design Ref: MTU-N245 S3.2
+# Plan SC: FR-N245.2
+# CSAP: D-12 (시스템 개발 보안 — 배포 자동화)
+#
+# 동작 흐름:
+#   ImageRepository (Harbor 스캔) → ImagePolicy (태그 필터)
+#   → ImageUpdateAutomation (Git 커밋) → Flux Kustomization (동기화)
+# =============================================================================
+
+# --- ImageRepository: Harbor 레지스트리 스캔 ---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: api-gateway
+  namespace: flux-system
+spec:
+  image: localhost:8080/public-saas/api-gateway
+  interval: 1m
+  # Harbor TLS 설정 (self-signed 허용)
+  insecure: true
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: auth-service
+  namespace: flux-system
+spec:
+  image: localhost:8080/public-saas/auth-service
+  interval: 1m
+  insecure: true
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: tenant-service
+  namespace: flux-system
+spec:
+  image: localhost:8080/public-saas/tenant-service
+  interval: 1m
+  insecure: true
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: audit-service
+  namespace: flux-system
+spec:
+  image: localhost:8080/public-saas/audit-service
+  interval: 1m
+  insecure: true
+
+---
+# --- ImagePolicy: Dev 환경 (latest 태그 자동 반영) ---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: api-gateway-dev
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: api-gateway
+  filterTags:
+    pattern: '^dev-[a-f0-9]{7}$'
+  policy:
+    alphabetical:
+      order: desc
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: auth-service-dev
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: auth-service
+  filterTags:
+    pattern: '^dev-[a-f0-9]{7}$'
+  policy:
+    alphabetical:
+      order: desc
+
+---
+# --- ImagePolicy: Staging 환경 (stg 태그, semver 정렬) ---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: api-gateway-stg
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: api-gateway
+  filterTags:
+    pattern: '^stg-[a-f0-9]{7}$'
+  policy:
+    alphabetical:
+      order: desc
+
+---
+# --- ImagePolicy: Production 환경 (릴리스 태그만 — semver) ---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: api-gateway-prod
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: api-gateway
+  filterTags:
+    pattern: '^v\d+\.\d+\.\d+$'
+  policy:
+    semver:
+      range: ">=1.0.0"
+
+---
+# --- ImageUpdateAutomation: Git 커밋으로 이미지 태그 갱신 ---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageUpdateAutomation
+metadata:
+  name: saas-image-update
+  namespace: flux-system
+spec:
+  interval: 1m
+  sourceRef:
+    kind: GitRepository
+    name: saas-platform
+  git:
+    checkout:
+      ref:
+        branch: stg
+    commit:
+      author:
+        email: flux-bot@saas-platform.local
+        name: Flux Image Automation
+      messageTemplate: |
+        chore(flux): 이미지 태그 자동 업데이트
+
+        {{range .Updated.Images}}
+        - {{.}}
+        {{end}}
+
+        Design Ref: MTU-N245 S3.2
+        CSAP: D-12 배포 자동화
+    push:
+      branch: stg
+  update:
+    path: ./deploy
+    strategy: Setters

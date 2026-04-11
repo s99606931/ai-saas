@@ -1,0 +1,46 @@
+# =============================================================================
+# Trivy 설정 파일 — 공공기관 SaaS DevSecOps
+# Design Ref: MTU-N246 S3.1/S3.2
+# Plan SC: FR-N246.1, FR-N246.2
+# CSAP: D-05 (공급망 보안), D-12 (시스템 개발 보안)
+# =============================================================================
+
+# 스캔 심각도 필터
+severity:
+  - CRITICAL
+  - HIGH
+
+# IaC 스캔 설정
+misconfiguration:
+  # Kubernetes 보안 검사 활성화
+  scanners:
+    - misconfig
+    - secret
+  # 무시할 취약점 ID (false positive 관리)
+  # ignorefile: .trivyignore
+
+# 이미지 스캔 설정
+image:
+  # 취약점 DB 자동 업데이트
+  # 에어갭 환경: DB를 수동으로 복사
+  # trivy image --download-db-only --db-repository ghcr.io/aquasecurity/trivy-db
+  removed-pkgs: false
+
+# 보고서 설정
+format: table
+output: ""
+
+# Exit code 정책
+# CRITICAL 발견 시 파이프라인 실패 (exit code 1)
+exit-code: 1
+
+# 무시 파일 (알려진 false positive)
+# .trivyignore 파일에서 관리
+# 형식: CVE-YYYY-NNNNN (한 줄에 하나)
+
+# 캐시 설정 (CI 환경)
+cache:
+  dir: /tmp/trivy-cache
+
+# 타임아웃 (대용량 이미지 스캔 시)
+timeout: 10m

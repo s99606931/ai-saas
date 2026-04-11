@@ -1,7 +1,16 @@
-# 공공기관 SaaS 플랫폼 — CI 파이프라인
-# Design Ref: DESIGN-MTU-DEP3, MTU-N38 S3.1/S3.4
-# Plan SC: FR-DEP3.1, FR-DEP3.2, FR-DEP3.6, FR-N38.1, FR-N38.5
+# =============================================================================
+# 공공기관 SaaS 플랫폼 — CI 파이프라인 (병렬 최적화)
+# Design Ref: MTU-N244 S3.1/S3.2/S3.3, MTU-N38 S3.1/S3.4
+# Plan SC: FR-N244.1~N244.5, FR-N38.1, FR-N38.5, FR-N38.6
 # CSAP: D-12 시스템 개발 보안
+#
+# 파이프라인 구조:
+#   detect-changes ──┬─ lint (병렬)
+#                    ├─ typecheck (병렬)
+#                    ├─ build (병렬)
+#                    └─ helm-lint (병렬, 의존 없음)
+#   build ─── test ─── e2e (PR만)
+# =============================================================================
 
 name: CI
 
@@ -10,23 +19,303 @@ on:
     branches: [main, stg, "feat/*", "fix/*"]
   pull_request:
     branches: [main]
+  # 다른 워크플로우에서 호출 가능 — Design Ref: MTU-N244 S3.6
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        default: ""
 
 env:
   PNPM_VERSION: "9.15.0"
   NODE_VERSION: "22"
 
-# 동시 실행 제한 -- Design Ref: MTU-N38 S3.4
+# 동시 실행 제한 — Design Ref: MTU-N38 S3.4
 # Plan SC: FR-N38.6
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  ci:
-    name: Build & Test
-    # self-hosted runner 사용 (WSL2 Act Runner)
-    # Design Ref: MTU-N12 | Plan SC: FR-N12.5
+  # ===========================================================================
+  # 변경 감지 — 모노레포 affected 빌드
+  # Design Ref: MTU-N244 S3.2
+  # Plan SC: FR-N244.2, FR-N244.5
+  # ===========================================================================
+  detect-changes:
+    name: Detect Changes
     runs-on: self-hosted
+    timeout-minutes: 2
+    outputs:
+      services_changed: ${{ steps.changes.outputs.services_changed }}
+      packages_changed: ${{ steps.changes.outputs.packages_changed }}
+      infra_changed: ${{ steps.changes.outputs.infra_changed }}
+      docs_only: ${{ steps.changes.outputs.docs_only }}
+      affected_services: ${{ steps.changes.outputs.affected_services }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect affected paths
+        id: changes
+        shell: bash
+        run: |
+          # PR인 경우 base 브랜치와 비교, push인 경우 이전 커밋과 비교
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+          fi
+
+          # 첫 커밋이거나 BASE_SHA가 비어있으면 전체 빌드
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            echo "services_changed=true" >> $GITHUB_OUTPUT
+            echo "packages_changed=true" >> $GITHUB_OUTPUT
+            echo "infra_changed=false" >> $GITHUB_OUTPUT
+            echo "docs_only=false" >> $GITHUB_OUTPUT
+            echo 'affected_services=["all"]' >> $GITHUB_OUTPUT
+            echo "[INFO] 첫 커밋 또는 새 브랜치 — 전체 빌드"
+            exit 0
+          fi
+
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" HEAD 2>/dev/null || echo "")
+
+          # 변경 영역 분류
+          SVC_CHANGED="false"
+          PKG_CHANGED="false"
+          INFRA_CHANGED="false"
+          DOCS_ONLY="true"
+
+          echo "$CHANGED_FILES" | while read -r f; do
+            case "$f" in
+              platform/services/*) ;;
+              platform/packages/*) ;;
+              platform/apps/*) ;;
+              infra/*) ;;
+              docs/*|*.md) continue ;;
+              *) ;;
+            esac
+          done
+
+          if echo "$CHANGED_FILES" | grep -q '^platform/services/'; then
+            SVC_CHANGED="true"
+            DOCS_ONLY="false"
+          fi
+          if echo "$CHANGED_FILES" | grep -q '^platform/packages/'; then
+            PKG_CHANGED="true"
+            DOCS_ONLY="false"
+          fi
+          if echo "$CHANGED_FILES" | grep -q '^infra/'; then
+            INFRA_CHANGED="true"
+            DOCS_ONLY="false"
+          fi
+          # 기타 소스 파일 변경 확인
+          if echo "$CHANGED_FILES" | grep -qvE '^(docs/|.*\.md$)'; then
+            DOCS_ONLY="false"
+          fi
+
+          # 변경된 서비스 목록
+          AFFECTED=$(echo "$CHANGED_FILES" | grep '^platform/services/' | cut -d'/' -f3 | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          if [ "$PKG_CHANGED" = "true" ] || [ -z "$AFFECTED" ] || [ "$AFFECTED" = "[]" ]; then
+            AFFECTED='["all"]'
+          fi
+
+          echo "services_changed=$SVC_CHANGED" >> $GITHUB_OUTPUT
+          echo "packages_changed=$PKG_CHANGED" >> $GITHUB_OUTPUT
+          echo "infra_changed=$INFRA_CHANGED" >> $GITHUB_OUTPUT
+          echo "docs_only=$DOCS_ONLY" >> $GITHUB_OUTPUT
+          echo "affected_services=$AFFECTED" >> $GITHUB_OUTPUT
+
+          echo "=== 변경 감지 결과 ==="
+          echo "  서비스 변경: $SVC_CHANGED"
+          echo "  패키지 변경: $PKG_CHANGED"
+          echo "  인프라 변경: $INFRA_CHANGED"
+          echo "  문서만 변경: $DOCS_ONLY"
+          echo "  영향 서비스: $AFFECTED"
+
+  # ===========================================================================
+  # 설치 + 캐시 — 공통 의존성 설치
+  # Design Ref: MTU-N244 S3.3, MTU-N38 S3.1
+  # Plan SC: FR-N244.3, FR-N38.1, FR-N38.5
+  # ===========================================================================
+  install:
+    name: Install Dependencies
+    runs-on: self-hosted
+    needs: detect-changes
+    if: needs.detect-changes.outputs.docs_only != 'true'
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # pnpm store 캐싱 — Design Ref: MTU-N38 S3.1
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+  # ===========================================================================
+  # Lint — 코드 스타일 검사 (install과 병렬 불가, install 후 즉시)
+  # Design Ref: MTU-N244 S3.1
+  # Plan SC: FR-N244.1
+  # ===========================================================================
+  lint:
+    name: Lint
+    runs-on: self-hosted
+    needs: install
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+        continue-on-error: true
+
+  # ===========================================================================
+  # Type Check — 타입 검사 (lint과 병렬 실행)
+  # Design Ref: MTU-N244 S3.1
+  # Plan SC: FR-N244.1
+  # ===========================================================================
+  typecheck:
+    name: Type Check
+    runs-on: self-hosted
+    needs: install
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run typecheck
+
+  # ===========================================================================
+  # Build — 빌드 (lint/typecheck와 병렬 실행)
+  # Design Ref: MTU-N244 S3.1
+  # Plan SC: FR-N244.1
+  # ===========================================================================
+  build:
+    name: Build
+    runs-on: self-hosted
+    needs: install
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+  # ===========================================================================
+  # Test — 단위 + 통합 테스트 (build 완료 후)
+  # Design Ref: MTU-N244 S3.1
+  # ===========================================================================
+  test:
+    name: Test
+    runs-on: self-hosted
+    needs: build
     timeout-minutes: 15
 
     services:
@@ -68,13 +357,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # pnpm store 캐싱 -- Design Ref: MTU-N38 S3.1
-      # Plan SC: FR-N38.1, FR-N38.5
       - name: Get pnpm store directory
         shell: bash
         run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
-      - name: Setup pnpm cache
+      - name: Restore pnpm cache
         uses: actions/cache@v4
         with:
           path: ${{ env.STORE_PATH }}
@@ -84,14 +371,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Type check
-        run: pnpm run typecheck
-        continue-on-error: false
-
-      - name: Lint
-        run: pnpm run lint
-        continue-on-error: true
 
       - name: Build
         run: pnpm run build
@@ -114,12 +393,16 @@ jobs:
             **/test-results/
           retention-days: 7
 
-  # E2E 통합 테스트 (Design Ref: DESIGN-MTU-N05 | Plan SC: FR-N05.1)
-  # CSAP D-12: 시스템 개발 보안 -- 통합시험 자동화
+  # ===========================================================================
+  # E2E — 통합 테스트 (PR만, build 완료 후)
+  # Design Ref: MTU-N244 S3.1, MTU-N38 S3.4
+  # CSAP D-12: 시스템 개발 보안 — 통합시험 자동화
+  # ===========================================================================
   e2e:
     name: E2E Integration Tests
     runs-on: self-hosted
-    needs: ci
+    needs: build
+    if: github.event_name == 'pull_request'
     timeout-minutes: 20
 
     services:
@@ -160,7 +443,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -184,10 +478,15 @@ jobs:
           path: platform/tests/e2e/test-results/
           retention-days: 7
 
-  # Helm Chart 유효성 검증 (Design Ref: DESIGN-MTU-N05 | Plan SC: FR-N05.3)
+  # ===========================================================================
+  # Helm Chart 유효성 검증 (독립 실행 — detect-changes와 병렬)
+  # Design Ref: MTU-N244 S3.1
+  # ===========================================================================
   helm-lint:
     name: Helm Chart Lint
     runs-on: self-hosted
+    needs: detect-changes
+    if: needs.detect-changes.outputs.infra_changed == 'true' || needs.detect-changes.outputs.docs_only != 'true'
     timeout-minutes: 5
 
     steps:
@@ -200,15 +499,53 @@ jobs:
           version: v3.16.0
 
       - name: Helm lint
-        run: helm lint helm/saas-platform/
+        run: |
+          if [ -d "helm/saas-platform" ]; then
+            helm lint helm/saas-platform/
+          fi
 
       - name: Helm template (dry-run)
         run: |
-          helm template saas-test helm/saas-platform/ > /dev/null
-          echo "Default values: OK"
-          helm template saas-dev helm/saas-platform/ -f helm/saas-platform/values-dev.yaml > /dev/null
-          echo "Dev values: OK"
-          helm template saas-stg helm/saas-platform/ -f helm/saas-platform/values-stg.yaml > /dev/null
-          echo "Stg values: OK"
-          helm template saas-prod helm/saas-platform/ -f helm/saas-platform/values-prod.yaml > /dev/null
-          echo "Prod values: OK"
+          if [ -d "helm/saas-platform" ]; then
+            helm template saas-test helm/saas-platform/ > /dev/null
+            echo "Default values: OK"
+            for env_file in values-dev.yaml values-stg.yaml values-prod.yaml; do
+              if [ -f "helm/saas-platform/$env_file" ]; then
+                helm template saas-env helm/saas-platform/ -f "helm/saas-platform/$env_file" > /dev/null
+                echo "$env_file: OK"
+              fi
+            done
+          fi
+
+  # ===========================================================================
+  # CI 결과 집계
+  # ===========================================================================
+  ci-summary:
+    name: CI Summary
+    runs-on: self-hosted
+    needs: [detect-changes, lint, typecheck, build, test, helm-lint]
+    if: always()
+    timeout-minutes: 2
+
+    steps:
+      - name: CI Summary
+        run: |
+          echo "================================================================"
+          echo "  CI Pipeline Summary"
+          echo "================================================================"
+          echo "  변경 감지:  ${{ needs.detect-changes.result }}"
+          echo "  Lint:       ${{ needs.lint.result }}"
+          echo "  TypeCheck:  ${{ needs.typecheck.result }}"
+          echo "  Build:      ${{ needs.build.result }}"
+          echo "  Test:       ${{ needs.test.result }}"
+          echo "  Helm Lint:  ${{ needs.helm-lint.result }}"
+          echo "  문서만:     ${{ needs.detect-changes.outputs.docs_only }}"
+          echo "  영향 서비스: ${{ needs.detect-changes.outputs.affected_services }}"
+          echo "================================================================"
+
+          # 핵심 job 실패 시 전체 실패
+          if [ "${{ needs.build.result }}" = "failure" ] || [ "${{ needs.test.result }}" = "failure" ]; then
+            echo "[FAIL] 핵심 CI 검사 실패"
+            exit 1
+          fi
+          echo "[OK] CI 검사 통과"

@@ -1,0 +1,85 @@
+# =============================================================================
+# Pyroscope — 지속적 프로파일링 (Grafana 프로젝트)
+# Design Ref: MTU-N247 S3.1
+# Plan SC: FR-N247.1, FR-N247.2
+# CSAP: D-06 (침해사고 관리 — 성능 분석)
+#
+# 설치: helm install pyroscope grafana/pyroscope -f values.yaml -n monitoring
+# =============================================================================
+
+# Pyroscope 서버 설정
+pyroscope:
+  # 단일 바이너리 모드 (WSL2 개발환경 적합)
+  mode: monolithic
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # 데이터 보존 기간
+  config:
+    storage:
+      backend: filesystem
+      filesystem:
+        dir: /data/pyroscope
+
+    # 수집 설정
+    scrape_configs:
+      # 자동 발견: Kubernetes Pod 어노테이션 기반
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_pyroscope_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_pyroscope_io_port]
+            action: replace
+            target_label: __address__
+            regex: (.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+
+  # 데이터 영속성
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: local-path  # k3s 기본
+
+# Grafana 데이터소스 자동 등록
+grafana:
+  datasource:
+    enabled: true
+    name: Pyroscope
+    type: grafana-pyroscope-datasource
+    url: http://pyroscope:4040
+
+# OTel 연동 설정
+# OTel Collector에서 Pyroscope로 프로파일 전송
+# Design Ref: MTU-N247 S3.1 (FR-N247.2)
+otelConnector:
+  enabled: true
+  # OTel Collector 설정에 추가할 exporter
+  # exporters:
+  #   otlphttp/pyroscope:
+  #     endpoint: http://pyroscope:4040
+  #     tls:
+  #       insecure: true
+
+# 보안 설정 — N2SF 준수
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Pod 어노테이션 (프로파일링 대상 서비스에 추가)
+# 서비스 Deployment에 다음 어노테이션 추가:
+#   pyroscope.io/scrape: "true"
+#   pyroscope.io/port: "3000"
+#   pyroscope.io/application-name: "api-gateway"

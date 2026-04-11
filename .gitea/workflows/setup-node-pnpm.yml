@@ -1,12 +1,20 @@
 # =============================================================================
 # 재사용 가능 워크플로우: Node.js + pnpm 환경 설정
-# Design Ref: MTU-N38 Design S3.3
-# Plan SC: FR-N38.3
+# Design Ref: MTU-N38 Design S3.3, MTU-N244 S3.3
+# Plan SC: FR-N38.3, FR-N244.3
 #
 # 목적: 모든 CI 워크플로우에서 공통으로 사용하는 설정을 한 곳에서 관리
 #       - Node.js 설치
-#       - pnpm 설치 + store 캐싱
+#       - pnpm 설치 + store 캐싱 (lockfile 해시 기반)
 #       - 의존성 설치 (frozen lockfile)
+#
+# 사용법:
+#   jobs:
+#     setup:
+#       uses: ./.gitea/workflows/setup-node-pnpm.yml
+#       with:
+#         node-version: "22"
+#         install-dependencies: true
 # =============================================================================
 
 name: Setup Node.js + pnpm
@@ -41,7 +49,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
-      # pnpm store 캐싱 -- Design Ref: MTU-N38 S3.1
+      # pnpm store 캐싱 — Design Ref: MTU-N38 S3.1, MTU-N244 S3.3
+      # 캐시 키 전략: OS + pnpm-lock.yaml 해시 → 부분 매칭 폴백
       - name: Get pnpm store directory
         shell: bash
         run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV

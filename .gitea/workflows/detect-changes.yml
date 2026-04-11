@@ -1,0 +1,152 @@
+# =============================================================================
+# 재사용 가능 워크플로우: 모노레포 변경 감지
+# Design Ref: MTU-N244 S3.2
+# Plan SC: FR-N244.2, FR-N244.5
+#
+# 목적: git diff 기반으로 변경된 서비스/패키지를 감지하여
+#       affected 서비스만 빌드/테스트/배포하도록 최적화
+#
+# 사용법:
+#   jobs:
+#     changes:
+#       uses: ./.gitea/workflows/detect-changes.yml
+#     build:
+#       needs: changes
+#       if: needs.changes.outputs.docs_only != 'true'
+# =============================================================================
+
+name: Detect Changes
+
+on:
+  workflow_call:
+    outputs:
+      services_changed:
+        description: "서비스 코드 변경 여부"
+        value: ${{ jobs.detect.outputs.services_changed }}
+      packages_changed:
+        description: "공통 패키지 변경 여부"
+        value: ${{ jobs.detect.outputs.packages_changed }}
+      infra_changed:
+        description: "인프라 코드 변경 여부"
+        value: ${{ jobs.detect.outputs.infra_changed }}
+      docs_only:
+        description: "문서만 변경 여부"
+        value: ${{ jobs.detect.outputs.docs_only }}
+      affected_services:
+        description: "영향받는 서비스 목록 (JSON 배열)"
+        value: ${{ jobs.detect.outputs.affected_services }}
+      should_build:
+        description: "빌드 필요 여부"
+        value: ${{ jobs.detect.outputs.should_build }}
+
+jobs:
+  detect:
+    name: Detect Affected Services
+    runs-on: self-hosted
+    timeout-minutes: 2
+    outputs:
+      services_changed: ${{ steps.changes.outputs.services_changed }}
+      packages_changed: ${{ steps.changes.outputs.packages_changed }}
+      infra_changed: ${{ steps.changes.outputs.infra_changed }}
+      docs_only: ${{ steps.changes.outputs.docs_only }}
+      affected_services: ${{ steps.changes.outputs.affected_services }}
+      should_build: ${{ steps.changes.outputs.should_build }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect affected paths
+        id: changes
+        shell: bash
+        run: |
+          # 비교 기준 SHA 결정
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+          fi
+
+          # 첫 커밋이거나 새 브랜치인 경우 전체 빌드
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            echo "services_changed=true" >> $GITHUB_OUTPUT
+            echo "packages_changed=true" >> $GITHUB_OUTPUT
+            echo "infra_changed=false" >> $GITHUB_OUTPUT
+            echo "docs_only=false" >> $GITHUB_OUTPUT
+            echo "should_build=true" >> $GITHUB_OUTPUT
+            echo 'affected_services=["all"]' >> $GITHUB_OUTPUT
+            echo "[INFO] 첫 커밋 또는 새 브랜치 — 전체 빌드"
+            exit 0
+          fi
+
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" HEAD 2>/dev/null || echo "")
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "services_changed=false" >> $GITHUB_OUTPUT
+            echo "packages_changed=false" >> $GITHUB_OUTPUT
+            echo "infra_changed=false" >> $GITHUB_OUTPUT
+            echo "docs_only=true" >> $GITHUB_OUTPUT
+            echo "should_build=false" >> $GITHUB_OUTPUT
+            echo 'affected_services=[]' >> $GITHUB_OUTPUT
+            echo "[INFO] 변경 사항 없음"
+            exit 0
+          fi
+
+          # 변경 영역 분류
+          SVC_CHANGED="false"
+          PKG_CHANGED="false"
+          INFRA_CHANGED="false"
+          HAS_CODE="false"
+
+          if echo "$CHANGED_FILES" | grep -q '^platform/services/'; then
+            SVC_CHANGED="true"
+            HAS_CODE="true"
+          fi
+          if echo "$CHANGED_FILES" | grep -q '^platform/packages/'; then
+            PKG_CHANGED="true"
+            HAS_CODE="true"
+          fi
+          if echo "$CHANGED_FILES" | grep -q '^infra/'; then
+            INFRA_CHANGED="true"
+            HAS_CODE="true"
+          fi
+          if echo "$CHANGED_FILES" | grep -qvE '^(docs/|.*\.md$)'; then
+            HAS_CODE="true"
+          fi
+
+          DOCS_ONLY="true"
+          if [ "$HAS_CODE" = "true" ]; then
+            DOCS_ONLY="false"
+          fi
+
+          # 영향받는 서비스 목록 생성
+          if [ "$PKG_CHANGED" = "true" ]; then
+            # 공통 패키지 변경 → 전체 서비스 영향
+            AFFECTED='["all"]'
+          elif [ "$SVC_CHANGED" = "true" ]; then
+            AFFECTED=$(echo "$CHANGED_FILES" | grep '^platform/services/' | cut -d'/' -f3 | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          else
+            AFFECTED='[]'
+          fi
+
+          SHOULD_BUILD="false"
+          if [ "$DOCS_ONLY" = "false" ]; then
+            SHOULD_BUILD="true"
+          fi
+
+          echo "services_changed=$SVC_CHANGED" >> $GITHUB_OUTPUT
+          echo "packages_changed=$PKG_CHANGED" >> $GITHUB_OUTPUT
+          echo "infra_changed=$INFRA_CHANGED" >> $GITHUB_OUTPUT
+          echo "docs_only=$DOCS_ONLY" >> $GITHUB_OUTPUT
+          echo "should_build=$SHOULD_BUILD" >> $GITHUB_OUTPUT
+          echo "affected_services=$AFFECTED" >> $GITHUB_OUTPUT
+
+          echo "=== 변경 감지 결과 ==="
+          echo "  서비스 변경: $SVC_CHANGED"
+          echo "  패키지 변경: $PKG_CHANGED (전체 빌드 폴백: $PKG_CHANGED)"
+          echo "  인프라 변경: $INFRA_CHANGED"
+          echo "  문서만:     $DOCS_ONLY"
+          echo "  빌드 필요:  $SHOULD_BUILD"
+          echo "  영향 서비스: $AFFECTED"
+          echo "  변경 파일 수: $(echo "$CHANGED_FILES" | wc -l)"

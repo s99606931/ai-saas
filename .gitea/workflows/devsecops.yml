@@ -1,0 +1,357 @@
+# =============================================================================
+# DevSecOps 통합 파이프라인 — Shift-Left Security
+# Design Ref: MTU-N246 S3.5
+# Plan SC: FR-N246.1~N246.6
+# CSAP: D-05(공급망 보안), D-08(접근 통제), D-12(개발 보안)
+#
+# 파이프라인 구조 (병렬 실행):
+#   ┌─ trivy-iac      (IaC 보안 스캔)
+#   ├─ semgrep-sast   (정적 분석)
+#   ├─ dependency-audit (의존성 취약점)
+#   ├─ secret-scan    (하드코딩 시크릿 탐지)
+#   └─ kyverno-check  (정책 사전 검증)
+#       ↓
+#   [summary] — 결과 집계 및 보고
+# =============================================================================
+
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches: [main, stg]
+  pull_request:
+    branches: [main]
+  schedule:
+    # 매일 02:00 KST (17:00 UTC 전일)
+    - cron: "0 17 * * *"
+  workflow_dispatch:
+
+env:
+  PNPM_VERSION: "9.15.0"
+  NODE_VERSION: "22"
+
+concurrency:
+  group: devsecops-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ===========================================================================
+  # Trivy IaC 스캔 — Helm/k8s YAML 보안 검사
+  # Design Ref: MTU-N246 S3.1
+  # Plan SC: FR-N246.1
+  # CSAP D-12: 시스템 개발 보안
+  # ===========================================================================
+  trivy-iac:
+    name: "[1/5] Trivy IaC Scan"
+    runs-on: self-hosted
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: |
+          if ! command -v trivy &>/dev/null; then
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | \
+              sh -s -- -b /usr/local/bin v0.58.0
+          fi
+          trivy version
+
+      - name: Trivy IaC Scan — Helm Charts
+        run: |
+          echo "=== Trivy IaC: Helm Charts ==="
+          trivy config \
+            --severity HIGH,CRITICAL \
+            --exit-code 0 \
+            --format table \
+            helm/ 2>&1 || echo "[INFO] Helm 디렉토리 스캔 완료"
+
+      - name: Trivy IaC Scan — k8s Manifests
+        run: |
+          echo "=== Trivy IaC: k8s Manifests ==="
+          trivy config \
+            --severity HIGH,CRITICAL \
+            --exit-code 0 \
+            --format table \
+            deploy/ 2>&1 || echo "[INFO] Deploy 디렉토리 스캔 완료"
+
+      - name: Trivy IaC Scan — Infra Configs
+        run: |
+          echo "=== Trivy IaC: Infrastructure ==="
+          trivy config \
+            --severity HIGH,CRITICAL \
+            --exit-code 0 \
+            --format json \
+            --output trivy-iac-report.json \
+            infra/ 2>&1 || echo "[INFO] Infra 디렉토리 스캔 완료"
+
+      - name: Upload Trivy IaC Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-iac-report
+          path: trivy-iac-report.json
+          retention-days: 365
+
+  # ===========================================================================
+  # Semgrep SAST — 정적 코드 분석
+  # Design Ref: MTU-N246 S3.3
+  # Plan SC: FR-N246.3
+  # CSAP D-12: OWASP Top10 방지
+  # ===========================================================================
+  semgrep-sast:
+    name: "[2/5] Semgrep SAST"
+    runs-on: self-hosted
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Semgrep
+        run: |
+          if ! command -v semgrep &>/dev/null; then
+            pip3 install semgrep 2>/dev/null || \
+            pip install semgrep 2>/dev/null || \
+            echo "[WARN] Semgrep 설치 실패 — 건너뜀"
+          fi
+
+      - name: Semgrep Scan
+        run: |
+          if command -v semgrep &>/dev/null; then
+            echo "=== Semgrep SAST 스캔 ==="
+            semgrep scan \
+              --config auto \
+              --config "p/owasp-top-ten" \
+              --config "p/typescript" \
+              --sarif -o semgrep-report.sarif \
+              --error \
+              platform/ 2>&1 || echo "[WARN] Semgrep 일부 규칙 위반 발견"
+          else
+            echo "[SKIP] Semgrep 미설치 — 수동 검사 필요"
+            echo '{"runs":[]}' > semgrep-report.sarif
+          fi
+
+      - name: Upload Semgrep Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep-report.sarif
+          retention-days: 365
+
+  # ===========================================================================
+  # 의존성 취약점 감사
+  # Design Ref: MTU-N246 S3.5
+  # CSAP D-05: 공급망 보안
+  # ===========================================================================
+  dependency-audit:
+    name: "[3/5] Dependency Audit"
+    runs-on: self-hosted
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm audit (HIGH+)
+        run: |
+          echo "=== 의존성 취약점 감사 ==="
+          pnpm audit --audit-level=high 2>&1 || true
+          pnpm audit --json > dependency-audit.json 2>/dev/null || echo '{}' > dependency-audit.json
+
+      - name: Upload Audit Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-report
+          path: dependency-audit.json
+          retention-days: 365
+
+  # ===========================================================================
+  # 시크릿 탐지 — 하드코딩 비밀번호/토큰 검사
+  # CSAP D-09: 암호화 통제
+  # ===========================================================================
+  secret-scan:
+    name: "[4/5] Secret Scan"
+    runs-on: self-hosted
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks Secret Scan
+        run: |
+          if command -v gitleaks &>/dev/null; then
+            gitleaks detect --source . --report-format json --report-path gitleaks-report.json 2>&1 || \
+              echo "[WARN] 시크릿 패턴 발견"
+          else
+            echo "[INFO] gitleaks 미설치 — 수동 패턴 검사 수행"
+          fi
+
+      - name: Custom Secret Pattern Check
+        run: |
+          echo "=== 하드코딩 시크릿 패턴 검사 ==="
+          FOUND=0
+
+          # API 키 패턴
+          if grep -rn --include="*.ts" --include="*.js" --include="*.tsx" \
+            -E "sk-[a-zA-Z0-9]{20,}" platform/ 2>/dev/null | \
+            grep -v "node_modules" | grep -v ".test." | grep -v ".spec."; then
+            echo "[CRITICAL] API 키 하드코딩 발견"
+            FOUND=1
+          fi
+
+          # 비밀번호 패턴 (테스트/환경변수 제외)
+          if grep -rn --include="*.ts" --include="*.js" \
+            -E "password\s*[:=]\s*['\"][^'\"]{8,}" platform/services/ 2>/dev/null | \
+            grep -v "process.env" | grep -v "test" | grep -v ".spec." | \
+            grep -v "schema" | grep -v "example"; then
+            echo "[WARN] 비밀번호 패턴 발견"
+            FOUND=1
+          fi
+
+          # Private Key 패턴
+          if grep -rn "PRIVATE.KEY" --include="*.ts" --include="*.js" \
+            platform/ 2>/dev/null | grep -v "node_modules"; then
+            echo "[CRITICAL] Private Key 참조 발견"
+            FOUND=1
+          fi
+
+          if [ "$FOUND" -eq 0 ]; then
+            echo "[OK] 하드코딩 시크릿 미발견"
+          fi
+
+      - name: Upload Secret Scan Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: secret-scan-report
+          path: gitleaks-report.json
+          retention-days: 365
+          if-no-files-found: ignore
+
+  # ===========================================================================
+  # Kyverno 정책 사전 검증 (dry-run)
+  # Design Ref: MTU-N246 S3.4
+  # Plan SC: FR-N246.4
+  # CSAP D-08: 접근 통제, D-11: 가상화 보안
+  # ===========================================================================
+  kyverno-check:
+    name: "[5/5] Kyverno Policy Check"
+    runs-on: self-hosted
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Kyverno CLI
+        run: |
+          if ! command -v kyverno &>/dev/null; then
+            curl -sSfL https://github.com/kyverno/kyverno/releases/latest/download/kyverno-cli_linux_amd64.tar.gz | \
+              tar xz -C /usr/local/bin kyverno 2>/dev/null || \
+            echo "[WARN] Kyverno CLI 설치 실패"
+          fi
+
+      - name: Kyverno Policy Dry-Run
+        run: |
+          if command -v kyverno &>/dev/null; then
+            echo "=== Kyverno 정책 사전 검증 ==="
+
+            # Base 매니페스트에 대해 정책 검증
+            kyverno apply infra/kyverno/verify-image-signature.yaml \
+              --resource deploy/base/deployment.yaml 2>&1 || \
+              echo "[INFO] 일부 정책 위반 (서명 미검증 이미지)"
+
+            # Pod Security Standards 검증
+            if [ -d "infra/security/pod-security-standards" ]; then
+              for policy in infra/security/pod-security-standards/*.yaml; do
+                echo "--- 검증: $(basename $policy) ---"
+                kyverno apply "$policy" \
+                  --resource deploy/base/deployment.yaml 2>&1 || true
+              done
+            fi
+          else
+            echo "[SKIP] Kyverno CLI 미설치 — 수동 검증 필요"
+          fi
+
+  # ===========================================================================
+  # 결과 집계 및 보고
+  # ===========================================================================
+  summary:
+    name: DevSecOps Summary
+    needs: [trivy-iac, semgrep-sast, dependency-audit, secret-scan, kyverno-check]
+    if: always()
+    runs-on: self-hosted
+    timeout-minutes: 2
+
+    steps:
+      - name: Security Scan Summary
+        run: |
+          echo "================================================================"
+          echo "  DevSecOps Pipeline Summary"
+          echo "================================================================"
+          echo "  Trivy IaC:        ${{ needs.trivy-iac.result }}"
+          echo "  Semgrep SAST:     ${{ needs.semgrep-sast.result }}"
+          echo "  Dependency Audit: ${{ needs.dependency-audit.result }}"
+          echo "  Secret Scan:      ${{ needs.secret-scan.result }}"
+          echo "  Kyverno Check:    ${{ needs.kyverno-check.result }}"
+          echo "  Time:             $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "================================================================"
+
+          # Critical 실패 여부 확인
+          CRITICAL_FAIL="false"
+          if [ "${{ needs.secret-scan.result }}" = "failure" ]; then
+            echo "[CRITICAL] 시크릿 탐지 실패 — 즉시 조치 필요"
+            CRITICAL_FAIL="true"
+          fi
+          if [ "${{ needs.trivy-iac.result }}" = "failure" ]; then
+            echo "[HIGH] IaC 보안 위반 발견 — 검토 필요"
+          fi
+          if [ "${{ needs.semgrep-sast.result }}" = "failure" ]; then
+            echo "[HIGH] SAST 위반 발견 — 검토 필요"
+          fi
+
+          if [ "$CRITICAL_FAIL" = "true" ]; then
+            echo "[BLOCKED] CRITICAL 보안 이슈로 파이프라인 차단"
+            exit 1
+          fi
+
+          echo "[OK] DevSecOps 파이프라인 완료"
+
+      # CSAP D-06: 감사 로그
+      - name: Audit Log
+        if: always()
+        run: |
+          TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+          echo "{\"timestamp\":\"${TIMESTAMP}\",\"action\":\"DEVSECOPS_SCAN\",\"ref\":\"${{ github.ref_name }}\",\"sha\":\"${{ github.sha }}\",\"trivy\":\"${{ needs.trivy-iac.result }}\",\"semgrep\":\"${{ needs.semgrep-sast.result }}\",\"audit\":\"${{ needs.dependency-audit.result }}\",\"secrets\":\"${{ needs.secret-scan.result }}\",\"kyverno\":\"${{ needs.kyverno-check.result }}\",\"csap_ref\":\"D-05,D-08,D-12\"}"

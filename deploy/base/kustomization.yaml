@@ -8,6 +8,8 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
+  - deployment.yaml
+  - service.yaml
 
 # 공통 레이블
 commonLabels:

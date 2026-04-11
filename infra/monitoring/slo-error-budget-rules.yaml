@@ -1,0 +1,98 @@
+# =============================================================================
+# SLO 에러 버짓 소진 알림 규칙
+# Design Ref: MTU-N247 S3.4
+# Plan SC: FR-N247.5
+# CSAP: D-06 (침해사고 관리 — SLO 모니터링)
+#
+# 에러 버짓 = SLO 위반 허용량 (30일 기준)
+# SLO 99.9% → 에러 버짓 0.1% = 43.2분/30일
+# =============================================================================
+
+groups:
+  - name: slo-error-budget
+    interval: 5m
+    rules:
+      # --- 레코딩 규칙: 에러 버짓 잔여량 계산 ---
+      - record: saas:slo:availability:30d
+        expr: |
+          1 - (
+            sum(increase(http_server_requests_seconds_count{status=~"5..", namespace=~"saas-.*"}[30d]))
+            / sum(increase(http_server_requests_seconds_count{namespace=~"saas-.*"}[30d]))
+          )
+
+      - record: saas:slo:error_budget_remaining
+        expr: |
+          clamp_min(
+            1 - (
+              (1 - saas:slo:availability:30d) / 0.001
+            ),
+            0
+          )
+
+      - record: saas:slo:error_budget_burn_rate:1h
+        expr: |
+          sum(increase(http_server_requests_seconds_count{status=~"5..", namespace=~"saas-.*"}[1h]))
+          / (sum(increase(http_server_requests_seconds_count{namespace=~"saas-.*"}[1h])) * 0.001)
+
+      # --- 알림: 에러 버짓 50% 소진 ---
+      - alert: SloErrorBudget50PercentConsumed
+        expr: saas:slo:error_budget_remaining < 0.5
+        for: 5m
+        labels:
+          severity: info
+          category: slo
+          csap_ref: D-06
+        annotations:
+          summary: "SLO 에러 버짓 50% 소진"
+          description: |
+            30일 에러 버짓의 50% 이상이 소진되었습니다.
+            잔여 버짓: {{ $value | printf "%.1f" }}%
+            현재 가용성: {{ printf "saas:slo:availability:30d" }}
+          action: "서비스 안정성 검토 권장"
+
+      # --- 알림: 에러 버짓 70% 소진 ---
+      - alert: SloErrorBudget70PercentConsumed
+        expr: saas:slo:error_budget_remaining < 0.3
+        for: 5m
+        labels:
+          severity: warning
+          category: slo
+          csap_ref: D-06
+        annotations:
+          summary: "SLO 에러 버짓 70% 소진 — 주의 필요"
+          description: |
+            30일 에러 버짓의 70% 이상이 소진되었습니다.
+            잔여 버짓: {{ $value | printf "%.1f" }}%
+            배포 속도 조절을 권장합니다.
+          action: "신규 배포 검토 및 안정성 조치"
+
+      # --- 알림: 에러 버짓 90% 소진 (배포 동결 권고) ---
+      - alert: SloErrorBudget90PercentConsumed
+        expr: saas:slo:error_budget_remaining < 0.1
+        for: 5m
+        labels:
+          severity: critical
+          category: slo
+          csap_ref: D-06
+        annotations:
+          summary: "SLO 에러 버짓 90% 소진 — 배포 동결 권고"
+          description: |
+            30일 에러 버짓의 90% 이상이 소진되었습니다.
+            잔여 버짓: {{ $value | printf "%.1f" }}%
+            즉시 배포 동결 및 안정화 작업이 필요합니다.
+          action: "배포 동결 + 장애 원인 분석 + 안정화 조치"
+
+      # --- 알림: 빠른 에러 버짓 소진 (번레이트 높음) ---
+      - alert: SloErrorBudgetFastBurn
+        expr: saas:slo:error_budget_burn_rate:1h > 10
+        for: 5m
+        labels:
+          severity: critical
+          category: slo
+          csap_ref: D-06
+        annotations:
+          summary: "에러 버짓 빠른 소진 — 번레이트 {{ $value | printf \"%.1f\" }}x"
+          description: |
+            현재 에러 버짓 소진 속도가 정상 대비 {{ $value | printf "%.1f" }}배입니다.
+            이 속도로는 {{ printf "%.1f" (30 / $value) }}일 내 버짓이 소진됩니다.
+            즉시 원인 분석이 필요합니다.
