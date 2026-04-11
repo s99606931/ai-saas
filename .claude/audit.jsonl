@@ -12795,3 +12795,54 @@
 {"timestamp":"2026-04-12T01:55:00Z","actor":"cto-team","action":"TEST_CREATION","target":"ai-gateway,embedding-pipeline","detail":"R27/R24 단위 테스트 57개 추가 — 폴백체인/비용추적/라우팅/청킹전략/모델레지스트리/증분업데이트","matchRate":100,"gate":"G4"}
 {"timestamp":"2026-04-11T16:55:39Z","tool":"Bash","user":"kunkin"}
 {"timestamp":"2026-04-11T16:55:44Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:55:45Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:55:45Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:55:52Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:55:55Z","event":"session-end"}
+{"timestamp":"2026-04-11T16:55:58Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:55:59Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:56:00Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:56:02Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:56:06Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:56:12Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:56:18Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:56:19Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:56:20Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:56:26Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:56:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:56:49Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:57:08Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:57:16Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:57:16Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:57:26Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:57:25Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:57:48Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:57:57Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:02Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:03Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:05Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:09Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:09Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:11Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:21Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T00:15:00.000Z","actor":"pm-lead","action":"MTU_COMPLETED","target":"SVC-AI-ADV-R32","details":"문서 구조 이해 AI - document-layout-parser.ts + table-extractor.ts 구현 완료","matchRate":100}
+{"timestamp":"2026-04-12T00:16:00.000Z","actor":"pm-lead","action":"QGATE_PASSED","target":"SVC-AI-ADV-R32","details":"G1-G7 전수 통과. FR-ADV32.1~32.6 전수 구현. matchRate 100%","matchRate":100}
+{"timestamp":"2026-04-11T16:58:22Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:27Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:37Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:39Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:45Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:46Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:47Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:48Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:52Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:52Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:55Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:58:57Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:59:04Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:59:06Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:59:15Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-11T16:59:15Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T01:59:00Z","actor":"cto-team","action":"TEST_CREATION","target":"anomaly-detector,log-analyzer,sql-validator","detail":"R30/R31 단위 테스트 71개 추가 + rca-engine 임포트 수정 — 이상탐지/로그분석/SQL검증","matchRate":100,"gate":"G4"}
+{"timestamp":"2026-04-11T16:59:25Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-11T16:59:27Z","tool":"Edit/Write","user":"kunkin"}
