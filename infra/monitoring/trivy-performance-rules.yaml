@@ -1,0 +1,153 @@
+# Trivy Operator 취약점 스캔 성능 모니터링 Recording Rules
+# Design Ref: MTU-N241
+# Plan SC: FR-N241.1 ~ FR-N241.5
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: trivy-performance-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    monitoring.bkit.io/component: trivy-operator
+    monitoring.bkit.io/category: vulnerability-scanning
+spec:
+  groups:
+    # ── 취약점 분포 메트릭 ──
+    - name: trivy.vulnerability.distribution
+      interval: 60s
+      rules:
+        # 심각도별 취약점 수
+        - record: trivy:vulnerabilities:by_severity
+          expr: |
+            sum(trivy_image_vulnerabilities) by (severity, namespace)
+          labels:
+            component: trivy-operator
+
+        # Critical 취약점 총 수
+        - record: trivy:vulnerabilities:critical_total
+          expr: |
+            sum(trivy_image_vulnerabilities{severity="Critical"})
+          labels:
+            component: trivy-operator
+
+        # High 취약점 총 수
+        - record: trivy:vulnerabilities:high_total
+          expr: |
+            sum(trivy_image_vulnerabilities{severity="High"})
+          labels:
+            component: trivy-operator
+
+        # 전체 취약점 총 수
+        - record: trivy:vulnerabilities:total
+          expr: |
+            sum(trivy_image_vulnerabilities)
+          labels:
+            component: trivy-operator
+
+        # 네임스페이스별 취약점 수
+        - record: trivy:vulnerabilities:by_namespace
+          expr: |
+            sum(trivy_image_vulnerabilities) by (namespace)
+          labels:
+            component: trivy-operator
+
+        # 취약점 변화율 (1시간)
+        - record: trivy:vulnerabilities:change_rate1h
+          expr: |
+            sum(deriv(trivy_image_vulnerabilities[1h])) by (severity)
+          labels:
+            component: trivy-operator
+
+    # ── 스캔 성능 메트릭 ──
+    - name: trivy.scan.performance
+      interval: 30s
+      rules:
+        # 스캔 소요시간 p50
+        - record: trivy:scan:duration:p50
+          expr: |
+            histogram_quantile(0.50,
+              sum(rate(trivy_operator_image_scan_duration_seconds_bucket[1h])) by (le)
+            )
+          labels:
+            quantile: "0.50"
+            component: trivy-operator
+
+        # 스캔 소요시간 p95
+        - record: trivy:scan:duration:p95
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(trivy_operator_image_scan_duration_seconds_bucket[1h])) by (le)
+            )
+          labels:
+            quantile: "0.95"
+            component: trivy-operator
+
+        # 스캔 소요시간 p99
+        - record: trivy:scan:duration:p99
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(trivy_operator_image_scan_duration_seconds_bucket[1h])) by (le)
+            )
+          labels:
+            quantile: "0.99"
+            component: trivy-operator
+
+        # 스캔 요청 빈도
+        - record: trivy:scan:rate5m
+          expr: |
+            sum(rate(trivy_operator_image_scan_duration_seconds_count[5m]))
+          labels:
+            component: trivy-operator
+
+        # 스캔 큐 크기
+        - record: trivy:scan:queue_size
+          expr: |
+            trivy_operator_scan_queue_length or vector(0)
+          labels:
+            component: trivy-operator
+
+    # ── 스캔 커버리지 ──
+    - name: trivy.scan.coverage
+      interval: 60s
+      rules:
+        # VulnerabilityReport가 있는 이미지 비율
+        - record: trivy:scan:coverage_ratio
+          expr: |
+            (
+              count(trivy_image_vulnerabilities) by ()
+            /
+              clamp_min(count(kube_pod_container_info) by (), 1)
+            )
+          labels:
+            component: trivy-operator
+
+        # 마지막 스캔 이후 경과시간 (네임스페이스별)
+        - record: trivy:scan:staleness_seconds
+          expr: |
+            time() - max(trivy_operator_image_scan_duration_seconds_count) by (namespace)
+          labels:
+            component: trivy-operator
+
+    # ── 리소스 사용량 ──
+    - name: trivy.resource.usage
+      interval: 30s
+      rules:
+        - record: trivy:cpu:usage_cores
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{
+              namespace="trivy-system",
+              container!="",
+              container!="POD"
+            }[5m])) by (pod, container)
+          labels:
+            component: trivy-operator
+
+        - record: trivy:memory:usage_bytes
+          expr: |
+            sum(container_memory_working_set_bytes{
+              namespace="trivy-system",
+              container!="",
+              container!="POD"
+            }) by (pod, container)
+          labels:
+            component: trivy-operator

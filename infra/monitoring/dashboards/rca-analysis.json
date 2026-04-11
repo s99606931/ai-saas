@@ -1,0 +1,249 @@
+{
+  "annotations": { "list": [] },
+  "description": "AIOps 자동 근본 원인 분석 (RCA) 대시보드 (MTU-N252)",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "RCA 종합 현황",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "현재 활성 RCA 패턴 수",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "rca:active_patterns:count", "legendFormat": "활성 RCA", "refId": "A" }],
+      "title": "활성 RCA 패턴",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "최대 이상 스코어",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 5, "w": 4, "x": 4, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "rca:max_anomaly_score", "legendFormat": "최대 이상 스코어", "refId": "A" }],
+      "title": "최대 이상 스코어",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "네임스페이스별 종합 이상 스코어",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "orange", "value": 5 },
+              { "color": "red", "value": 8 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 1 },
+      "id": 3,
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "value_and_name" },
+      "targets": [{ "expr": "rca:anomaly_score:total", "legendFormat": "{{ namespace }}", "refId": "A" }],
+      "title": "네임스페이스별 이상 스코어",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "활성 RCA 패턴 목록",
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 1 },
+      "id": 4,
+      "options": { "showHeader": true },
+      "targets": [
+        {
+          "expr": "ALERTS{alertname=~\"RCA.*\", alertstate=\"firing\"}",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "__name__": true }, "renameByName": { "alertname": "패턴", "namespace": "네임스페이스", "rca_cause": "추론 원인", "rca_action": "권고 조치", "severity": "심각도" } } }
+      ],
+      "title": "활성 RCA 패턴 목록",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "id": 101,
+      "title": "이상 스코어 히트맵",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "차원별 이상 스코어 추세 (CPU, Memory, Error, Latency, Network, DiskIO)",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto"
+          }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "CPU" }, "properties": [{ "id": "color", "value": { "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "Memory" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "Error" }, "properties": [{ "id": "color", "value": { "fixedColor": "purple" } }] },
+          { "matcher": { "id": "byName", "options": "Latency" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue" } }] },
+          { "matcher": { "id": "byName", "options": "Network" }, "properties": [{ "id": "color", "value": { "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "DiskIO" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 7 },
+      "id": 10,
+      "targets": [
+        { "expr": "max(rca:anomaly_score:cpu)", "legendFormat": "CPU", "refId": "A" },
+        { "expr": "max(rca:anomaly_score:memory)", "legendFormat": "Memory", "refId": "B" },
+        { "expr": "max(rca:anomaly_score:error_rate)", "legendFormat": "Error", "refId": "C" },
+        { "expr": "max(rca:anomaly_score:latency)", "legendFormat": "Latency", "refId": "D" },
+        { "expr": "max(rca:anomaly_score:network)", "legendFormat": "Network", "refId": "E" },
+        { "expr": "max(rca:anomaly_score:disk_io)", "legendFormat": "DiskIO", "refId": "F" }
+      ],
+      "title": "차원별 이상 스코어 추세",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "id": 102,
+      "title": "상관관계 분석",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "CPU-Latency, Memory-OOM, Error-Deploy, DiskIO-Latency, Network-Latency 상관관계",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "lineWidth": 1 },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 20,
+      "targets": [
+        { "expr": "max(rca:correlation:cpu_latency)", "legendFormat": "CPU-Latency", "refId": "A" },
+        { "expr": "max(rca:correlation:memory_oom)", "legendFormat": "Memory-OOM", "refId": "B" },
+        { "expr": "max(rca:correlation:error_deployment)", "legendFormat": "Error-Deploy", "refId": "C" },
+        { "expr": "max(rca:correlation:diskio_latency)", "legendFormat": "DiskIO-Latency", "refId": "D" },
+        { "expr": "max(rca:correlation:network_latency)", "legendFormat": "Network-Latency", "refId": "E" }
+      ],
+      "title": "상관관계 매트릭스",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "파드 재시작 빈도 추세 (네임스페이스별)",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 21,
+      "targets": [
+        { "expr": "rca:pod_restart_rate", "legendFormat": "{{ namespace }}", "refId": "A" }
+      ],
+      "title": "파드 재시작 빈도 (1시간)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+      "id": 103,
+      "title": "RCA 패턴 히스토리",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "RCA 패턴별 발생 빈도",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "bars", "fillOpacity": 60, "lineWidth": 1, "stacking": { "mode": "normal" } }
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 25 },
+      "id": 30,
+      "targets": [
+        { "expr": "count(ALERTS{alertname=\"RCACpuBottleneck\", alertstate=\"firing\"}) or vector(0)", "legendFormat": "CPU 병목", "refId": "A" },
+        { "expr": "count(ALERTS{alertname=\"RCAMemoryLeak\", alertstate=\"firing\"}) or vector(0)", "legendFormat": "메모리 누수", "refId": "B" },
+        { "expr": "count(ALERTS{alertname=\"RCAUpstreamFailure\", alertstate=\"firing\"}) or vector(0)", "legendFormat": "업스트림 장애", "refId": "C" },
+        { "expr": "count(ALERTS{alertname=\"RCADiskBottleneck\", alertstate=\"firing\"}) or vector(0)", "legendFormat": "디스크 병목", "refId": "D" },
+        { "expr": "count(ALERTS{alertname=\"RCANetworkIssue\", alertstate=\"firing\"}) or vector(0)", "legendFormat": "네트워크 문제", "refId": "E" },
+        { "expr": "count(ALERTS{alertname=\"RCAAppBug\", alertstate=\"firing\"}) or vector(0)", "legendFormat": "앱 버그", "refId": "F" },
+        { "expr": "count(ALERTS{alertname=\"RCARecentDeploymentIssue\", alertstate=\"firing\"}) or vector(0)", "legendFormat": "최근 배포", "refId": "G" },
+        { "expr": "count(ALERTS{alertname=\"RCADnsBottleneck\", alertstate=\"firing\"}) or vector(0)", "legendFormat": "DNS 병목", "refId": "H" }
+      ],
+      "title": "RCA 패턴별 발생 히스토리",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["rca", "aiops", "anomaly", "csap-d06", "mtu-n252"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": "Prometheus",
+        "definition": "label_values(rca:anomaly_score:cpu, namespace)",
+        "includeAll": true,
+        "multi": true,
+        "name": "namespace",
+        "query": "label_values(rca:anomaly_score:cpu, namespace)",
+        "refresh": 2,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "AIOps RCA 분석",
+  "uid": "rca-analysis",
+  "version": 1
+}

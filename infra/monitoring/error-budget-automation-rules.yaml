@@ -1,0 +1,144 @@
+# =============================================================================
+# SRE 에러 버짓 자동 액션 Rules
+# Design Ref: MTU-N255 Design
+# Plan SC: FR-N255.1, FR-N255.2
+# CSAP: D-06(침해사고 관리 -- 에러 버짓 기반 인시던트 예방)
+#
+# 적용: kubectl apply -f infra/monitoring/error-budget-automation-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: error-budget-automation-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+    app.kubernetes.io/component: sre-error-budget
+  annotations:
+    csap.ref/d06: "침해사고관리 -- 에러 버짓 기반 인시던트 예방"
+    design.ref: "MTU-N255 Design"
+spec:
+  groups:
+    # =================================================================
+    # 에러 버짓 계산
+    # =================================================================
+    - name: sre:error_budget
+      interval: 1m
+      rules:
+        # SLO 목표: 99.9% 가용성 (30일 기준)
+        # 에러 버짓 = 1 - SLO = 0.1% = 43.2분/30일
+
+        # 실제 에러율 (30일)
+        - record: sre:error_rate:30d
+          expr: |
+            1 - (
+              sum(rate(http_requests_total{code!~"5.."}[30d]))
+              / clamp_min(sum(rate(http_requests_total[30d])), 0.001)
+            ) or vector(0)
+
+        # 에러 버짓 잔여량 (%) — 0이면 소진, 100이면 전량 잔여
+        - record: sre:error_budget:remaining_ratio
+          expr: |
+            clamp_min(
+              (0.001 - sre:error_rate:30d) / 0.001 * 100,
+              0
+            ) or vector(100)
+
+        # 에러 버짓 소진율 (%/일)
+        - record: sre:error_budget:burn_rate_1h
+          expr: |
+            (
+              1 - (
+                sum(rate(http_requests_total{code!~"5.."}[1h]))
+                / clamp_min(sum(rate(http_requests_total[1h])), 0.001)
+              )
+            ) / 0.001 * 100 or vector(0)
+
+        # 에러 버짓 소진 예측 (남은 일수)
+        - record: sre:error_budget:days_remaining
+          expr: |
+            clamp_min(
+              sre:error_budget:remaining_ratio
+              / clamp_min(sre:error_budget:burn_rate_1h * 24, 0.001),
+              0
+            ) or vector(30)
+
+        # 서비스별 에러 버짓 잔여량
+        - record: sre:error_budget:remaining_by_service
+          expr: |
+            clamp_min(
+              (0.001 - (
+                1 - sum by (service) (rate(http_requests_total{code!~"5.."}[30d]))
+                / clamp_min(sum by (service) (rate(http_requests_total[30d])), 0.001)
+              )) / 0.001 * 100,
+              0
+            ) or vector(100)
+
+    # =================================================================
+    # 에러 버짓 자동 액션 알림
+    # =================================================================
+    - name: sre:error_budget:alerts
+      rules:
+        # 에러 버짓 소진 — 배포 동결 권고
+        - alert: SREErrorBudgetExhausted
+          expr: sre:error_budget:remaining_ratio <= 0
+          for: 5m
+          labels:
+            severity: critical
+            category: sre
+            action: deploy-freeze
+            csap_ref: D-06
+          annotations:
+            summary: "에러 버짓 소진: 배포 동결 권고"
+            description: |
+              에러 버짓이 완전 소진되었습니다.
+              자동 조치: 배포 파이프라인 동결
+              해제 조건: 에러율이 SLO 목표(99.9%) 이하로 복구
+              DORA 게이트에서 자동 차단됩니다.
+            runbook_url: "https://gitea.local/ai-saas/docs/sre/runbooks/error-budget-exhausted.md"
+
+        # 에러 버짓 25% 미만 — 경고
+        - alert: SREErrorBudgetLow
+          expr: sre:error_budget:remaining_ratio > 0 and sre:error_budget:remaining_ratio < 25
+          for: 15m
+          labels:
+            severity: warning
+            category: sre
+            action: reduce-risk
+            csap_ref: D-06
+          annotations:
+            summary: "에러 버짓 잔여 {{ $value }}% -- 배포 위험도 상향"
+            description: |
+              에러 버짓이 25% 미만입니다.
+              권고: 고위험 배포 보류, 카나리 비율 축소 (25% → 5%)
+              예상 소진일: {{ with query "sre:error_budget:days_remaining" }}{{ . | first | value }}{{ end }}일
+
+        # 에러 버짓 빠른 소진 (1시간 소진율 > 10%)
+        - alert: SREErrorBudgetBurningFast
+          expr: sre:error_budget:burn_rate_1h > 10
+          for: 5m
+          labels:
+            severity: critical
+            category: sre
+            action: immediate-response
+            csap_ref: D-06
+          annotations:
+            summary: "에러 버짓 빠른 소진: 시간당 {{ $value }}% 소진 중"
+            description: |
+              에러 버짓이 비정상적으로 빠르게 소진되고 있습니다.
+              예상 소진 시간: {{ with query "sre:error_budget:days_remaining" }}{{ . | first | value }}{{ end }}일
+              즉시 원인 분석 필요. RCA 대시보드: /d/rca-analysis
+
+        # 에러 버짓 50% 도달
+        - alert: SREErrorBudgetHalf
+          expr: sre:error_budget:remaining_ratio > 0 and sre:error_budget:remaining_ratio < 50
+          for: 1h
+          labels:
+            severity: info
+            category: sre
+          annotations:
+            summary: "에러 버짓 잔여 {{ $value }}% -- 모니터링 강화"
+            description: |
+              에러 버짓이 50% 미만입니다. 에러율 추이를 주시하십시오.

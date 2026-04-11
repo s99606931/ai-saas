@@ -1,0 +1,50 @@
+{
+  "__comment": "Design Ref: MTU-N242 / Plan SC: FR-PA.5",
+  "panels": [
+    {
+      "title": "디스크 사용량 예측 (24시간)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "node_filesystem_free_bytes{fstype!~'tmpfs|overlay'} / node_filesystem_size_bytes * 100", "legendFormat": "현재 여유 (%)" },
+        { "expr": "predict_linear(node_filesystem_free_bytes{fstype!~'tmpfs|overlay'}[6h], 24*3600) / node_filesystem_size_bytes * 100", "legendFormat": "24시간 후 예측 (%)" }
+      ]
+    },
+    {
+      "title": "메모리 사용 추세 예측",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "sum by (namespace) (container_memory_usage_bytes{container!=''}) / sum by (namespace) (kube_pod_container_resource_limits{resource='memory'}) * 100", "legendFormat": "현재 사용률 ({{namespace}})" },
+        { "expr": "predict_linear(sum by (namespace) (container_memory_usage_bytes{container!=''})[1h], 3600) / sum by (namespace) (kube_pod_container_resource_limits{resource='memory'}) * 100", "legendFormat": "1시간 후 예측 ({{namespace}})" }
+      ]
+    },
+    {
+      "title": "인증서 만료 카운트다운",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "(certmanager_certificate_expiration_timestamp_seconds - time()) / 86400", "legendFormat": "{{name}} (일)" }
+      ]
+    },
+    {
+      "title": "에러 예산 소진 예측",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "saas:error_budget:consumed_ratio * 100", "legendFormat": "현재 소진율 (%)" },
+        { "expr": "predict_linear(saas:error_budget:consumed_ratio[1h], 3600) * 100", "legendFormat": "1시간 후 예측 (%)" }
+      ]
+    },
+    {
+      "title": "활성 예측 알림 수",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 20, "y": 0 },
+      "targets": [{ "expr": "count(ALERTS{category='predictive', alertstate='firing'})" }]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["predictive", "alerting", "proactive"],
+  "title": "예측적 장애 방지 대시보드",
+  "uid": "predictive-alerting"
+}

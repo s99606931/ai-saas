@@ -1,0 +1,125 @@
+# Trivy Operator 취약점 스캔 알림 규칙
+# Design Ref: MTU-N241
+# Plan SC: FR-N241.6
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: trivy-performance-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    monitoring.bkit.io/component: trivy-operator
+    monitoring.bkit.io/category: alerting
+spec:
+  groups:
+    - name: trivy.alerts
+      rules:
+        # ── 알림 1: Critical 취약점 신규 발견 ──
+        - alert: TrivyCriticalVulnerabilityFound
+          expr: |
+            trivy:vulnerabilities:critical_total > 0
+          for: 5m
+          labels:
+            severity: critical
+            team: security
+            component: trivy-operator
+            category: vulnerability-scanning
+            csap_control: "D-12"
+          annotations:
+            summary: "Critical 심각도 취약점 발견"
+            description: |
+              {{ $value | printf "%.0f" }}개의 Critical 취약점이 클러스터에서 발견되었습니다.
+              즉시 패치 또는 완화 조치가 필요합니다.
+            runbook: "https://docs.bkit.io/runbooks/trivy-critical-vulnerability"
+            impact: "보안 침해 위험, CSAP D-12 준수 영향"
+            action: |
+              1. kubectl get vulnerabilityreports -A 로 상세 확인
+              2. Critical 취약점 대상 이미지 식별
+              3. 이미지 업데이트 또는 패치 적용
+              4. 완화 조치 불가 시 워크로드 격리 검토
+
+        # ── 알림 2: High 취약점 증가 ──
+        - alert: TrivyHighVulnerabilitiesIncreasing
+          expr: |
+            sum(trivy:vulnerabilities:change_rate1h{severity="High"}) > 5
+          for: 30m
+          labels:
+            severity: warning
+            team: security
+            component: trivy-operator
+            category: vulnerability-scanning
+            csap_control: "D-12"
+          annotations:
+            summary: "High 취약점 수 증가 추세"
+            description: |
+              High 심각도 취약점이 시간당 {{ $value | printf "%.1f" }}건 증가하고 있습니다.
+              신규 배포 또는 취약점 DB 업데이트에 의한 증가일 수 있습니다.
+            runbook: "https://docs.bkit.io/runbooks/trivy-vuln-increasing"
+            action: |
+              1. 최근 배포된 이미지 확인
+              2. 취약점 DB 업데이트 시점 확인
+              3. 신규 취약점 대상 이미지 패치 계획 수립
+
+        # ── 알림 3: 스캔 소요시간 초과 ──
+        - alert: TrivyScanDurationHigh
+          expr: |
+            trivy:scan:duration:p95 > 300
+          for: 10m
+          labels:
+            severity: warning
+            team: sre
+            component: trivy-operator
+            category: vulnerability-scanning
+          annotations:
+            summary: "Trivy 스캔 p95 소요시간 5분 초과"
+            description: |
+              Trivy 이미지 스캔 p95 소요시간이 {{ $value | printf "%.0f" }}초로
+              5분 임계값을 초과하고 있습니다.
+            runbook: "https://docs.bkit.io/runbooks/trivy-scan-slow"
+            action: |
+              1. Trivy Operator 리소스 사용량 확인
+              2. 동시 스캔 수 확인
+              3. 이미지 크기 확인
+              4. Trivy DB 업데이트 상태 확인
+
+        # ── 알림 4: 스캔 커버리지 저하 ──
+        - alert: TrivyScanCoverageLow
+          expr: |
+            trivy:scan:coverage_ratio < 0.8
+          for: 30m
+          labels:
+            severity: warning
+            team: security
+            component: trivy-operator
+            category: vulnerability-scanning
+            csap_control: "D-12"
+          annotations:
+            summary: "Trivy 스캔 커버리지 80% 미만"
+            description: |
+              이미지 스캔 커버리지가 {{ $value | printf "%.2f" }}로
+              80% 미만입니다. 일부 컨테이너가 취약점 스캔되지 않았습니다.
+            runbook: "https://docs.bkit.io/runbooks/trivy-coverage-low"
+            action: |
+              1. 미스캔 이미지 식별
+              2. Trivy Operator 스캔 정책 확인
+              3. 제외 패턴 검토
+
+        # ── 알림 5: Trivy Operator 다운 ──
+        - alert: TrivyOperatorDown
+          expr: |
+            absent(up{job=~".*trivy.*"}) == 1
+          for: 5m
+          labels:
+            severity: critical
+            team: sre
+            component: trivy-operator
+            category: vulnerability-scanning
+            csap_control: "D-12"
+          annotations:
+            summary: "Trivy Operator 서비스 다운"
+            description: "Trivy Operator가 메트릭을 보고하지 않습니다. 취약점 스캔이 중단됩니다."
+            runbook: "https://docs.bkit.io/runbooks/trivy-operator-down"
+            action: |
+              1. kubectl get pods -n trivy-system 확인
+              2. Trivy Operator Deployment 상태 확인
+              3. 파드 로그 확인 (CrashLoopBackOff 등)

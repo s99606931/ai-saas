@@ -1,0 +1,182 @@
+# =============================================================================
+# AIOps RCA 상관관계 분석 Recording Rules
+# Design Ref: MTU-N252 Design §2.1
+# Plan SC: FR-N252.1
+# CSAP: D-06(침해사고 관리 -- 자동 근본 원인 분석)
+#
+# 메트릭 간 상관관계를 사전 계산하여 RCA 추론 근거 제공
+# 적용: kubectl apply -f infra/monitoring/rca-correlation-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: rca-correlation-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+    app.kubernetes.io/component: aiops-rca
+  annotations:
+    csap.ref/d06: "침해사고관리 -- 자동 근본 원인 분석"
+    design.ref: "MTU-N252 Design §2.1"
+spec:
+  groups:
+    # =================================================================
+    # 그룹 1: 리소스 이상 스코어 (Z-Score 기반)
+    # =================================================================
+    - name: rca:resource_anomaly_score
+      interval: 1m
+      rules:
+        # CPU 이상 스코어 (네임스페이스별)
+        - record: rca:anomaly_score:cpu
+          expr: |
+            clamp_min(
+              (
+                avg by (namespace) (rate(container_cpu_usage_seconds_total{namespace=~"saas-.*"}[5m]))
+                - avg by (namespace) (avg_over_time(
+                    rate(container_cpu_usage_seconds_total{namespace=~"saas-.*"}[5m])[7d:1h]
+                  ))
+              ) / clamp_min(
+                stddev by (namespace) (avg_over_time(
+                  rate(container_cpu_usage_seconds_total{namespace=~"saas-.*"}[5m])[7d:1h]
+                )), 0.001
+              ), 0
+            )
+
+        # 메모리 이상 스코어
+        - record: rca:anomaly_score:memory
+          expr: |
+            clamp_min(
+              (
+                avg by (namespace) (container_memory_working_set_bytes{namespace=~"saas-.*"})
+                - avg by (namespace) (avg_over_time(
+                    container_memory_working_set_bytes{namespace=~"saas-.*"}[7d:1h]
+                  ))
+              ) / clamp_min(
+                stddev by (namespace) (avg_over_time(
+                  container_memory_working_set_bytes{namespace=~"saas-.*"}[7d:1h]
+                )), 1
+              ), 0
+            )
+
+        # 에러율 이상 스코어
+        - record: rca:anomaly_score:error_rate
+          expr: |
+            clamp_min(
+              (
+                sum by (namespace) (rate(http_requests_total{code=~"5.."}[5m]))
+                / clamp_min(sum by (namespace) (rate(http_requests_total[5m])), 0.001)
+                - avg by (namespace) (avg_over_time(
+                    (sum by (namespace) (rate(http_requests_total{code=~"5.."}[5m]))
+                    / clamp_min(sum by (namespace) (rate(http_requests_total[5m])), 0.001))[7d:1h]
+                  ))
+              ) / clamp_min(
+                stddev by (namespace) (avg_over_time(
+                  (sum by (namespace) (rate(http_requests_total{code=~"5.."}[5m]))
+                  / clamp_min(sum by (namespace) (rate(http_requests_total[5m])), 0.001))[7d:1h]
+                )), 0.001
+              ), 0
+            ) or vector(0)
+
+        # 지연시간 이상 스코어
+        - record: rca:anomaly_score:latency
+          expr: |
+            clamp_min(
+              (
+                avg by (namespace) (rate(http_request_duration_seconds_sum[5m])
+                / clamp_min(rate(http_request_duration_seconds_count[5m]), 0.001))
+                - avg by (namespace) (avg_over_time(
+                    (rate(http_request_duration_seconds_sum[5m])
+                    / clamp_min(rate(http_request_duration_seconds_count[5m]), 0.001))[7d:1h]
+                  ))
+              ) / clamp_min(
+                stddev by (namespace) (avg_over_time(
+                  (rate(http_request_duration_seconds_sum[5m])
+                  / clamp_min(rate(http_request_duration_seconds_count[5m]), 0.001))[7d:1h]
+                )), 0.001
+              ), 0
+            ) or vector(0)
+
+        # 네트워크 에러 이상 스코어
+        - record: rca:anomaly_score:network
+          expr: |
+            clamp_min(
+              sum by (namespace) (rate(container_network_receive_errors_total{namespace=~"saas-.*"}[5m])
+              + rate(container_network_transmit_errors_total{namespace=~"saas-.*"}[5m]))
+              - avg by (namespace) (avg_over_time(
+                  (rate(container_network_receive_errors_total{namespace=~"saas-.*"}[5m])
+                  + rate(container_network_transmit_errors_total{namespace=~"saas-.*"}[5m]))[7d:1h]
+                )), 0
+            ) or vector(0)
+
+        # 디스크 IO 이상 스코어
+        - record: rca:anomaly_score:disk_io
+          expr: |
+            clamp_min(
+              sum by (namespace) (rate(container_fs_reads_bytes_total{namespace=~"saas-.*"}[5m])
+              + rate(container_fs_writes_bytes_total{namespace=~"saas-.*"}[5m]))
+              - avg by (namespace) (avg_over_time(
+                  (rate(container_fs_reads_bytes_total{namespace=~"saas-.*"}[5m])
+                  + rate(container_fs_writes_bytes_total{namespace=~"saas-.*"}[5m]))[7d:1h]
+                )), 0
+            ) or vector(0)
+
+    # =================================================================
+    # 그룹 2: 상관관계 점수 (동시 이상 패턴)
+    # =================================================================
+    - name: rca:correlation_score
+      interval: 1m
+      rules:
+        # CPU-Latency 상관관계 (동시 이상 시 1, 아니면 0)
+        - record: rca:correlation:cpu_latency
+          expr: |
+            (rca:anomaly_score:cpu > 2) * (rca:anomaly_score:latency > 2)
+            or vector(0)
+
+        # Memory-OOM 상관관계
+        - record: rca:correlation:memory_oom
+          expr: |
+            (rca:anomaly_score:memory > 2)
+            * (
+              count by (namespace) (kube_pod_container_status_last_terminated_reason{reason="OOMKilled", namespace=~"saas-.*"}) > 0
+              or vector(0)
+            )
+            or vector(0)
+
+        # Error-Deployment 상관관계 (에러율 + 최근 배포)
+        - record: rca:correlation:error_deployment
+          expr: |
+            (rca:anomaly_score:error_rate > 2)
+            * (
+              count by (namespace) (
+                changes(kube_deployment_status_observed_generation{namespace=~"saas-.*"}[30m]) > 0
+              ) or vector(0)
+            )
+            or vector(0)
+
+        # DiskIO-Latency 상관관계
+        - record: rca:correlation:diskio_latency
+          expr: |
+            (rca:anomaly_score:disk_io > 2) * (rca:anomaly_score:latency > 2)
+            or vector(0)
+
+        # Network-Latency 상관관계
+        - record: rca:correlation:network_latency
+          expr: |
+            (rca:anomaly_score:network > 2) * (rca:anomaly_score:latency > 2)
+            or vector(0)
+
+        # 파드 재시작 빈도
+        - record: rca:pod_restart_rate
+          expr: |
+            sum by (namespace) (increase(
+              kube_pod_container_status_restarts_total{namespace=~"saas-.*"}[1h]
+            )) or vector(0)
+
+        # 종합 이상 스코어 (모든 차원 합산)
+        - record: rca:anomaly_score:total
+          expr: |
+            (rca:anomaly_score:cpu + rca:anomaly_score:memory
+            + rca:anomaly_score:error_rate + rca:anomaly_score:latency)
+            or vector(0)

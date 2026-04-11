@@ -1,0 +1,625 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "DORA Four Keys 메트릭 통합 대시보드 (MTU-N251)",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": true,
+      "title": "DORA 보고서",
+      "type": "link",
+      "url": "/d/dora-report"
+    }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "DORA Four Keys 종합",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "DORA 종합 등급 (1=Elite, 2=High, 3=Medium, 4=Low)",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "1": { "text": "Elite", "color": "green" } }, "type": "value" },
+            { "options": { "2": { "text": "High", "color": "blue" } }, "type": "value" },
+            { "options": { "3": { "text": "Medium", "color": "yellow" } }, "type": "value" },
+            { "options": { "4": { "text": "Low", "color": "red" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "green", "value": 1 },
+              { "color": "blue", "value": 2 },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 4 }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "expr": "dora:grade:overall_score",
+          "legendFormat": "종합 등급",
+          "refId": "A"
+        }
+      ],
+      "title": "DORA 종합 등급",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "일간 배포 횟수",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "green", "value": 3 }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 6, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "dora:deployment_frequency:daily",
+          "legendFormat": "배포 빈도 (일간)",
+          "refId": "A"
+        }
+      ],
+      "title": "배포 빈도 (DF)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "P50 변경 리드타임 (분)",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1440 },
+              { "color": "red", "value": 10080 }
+            ]
+          },
+          "unit": "m"
+        }
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 10, "y": 1 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "dora:lead_time:p50 / 60",
+          "legendFormat": "리드타임 P50",
+          "refId": "A"
+        }
+      ],
+      "title": "리드타임 (LT)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "변경 실패율 (%)",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 15 },
+              { "color": "red", "value": 30 }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 6, "w": 5, "x": 14, "y": 1 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "dora:change_failure_rate:ratio",
+          "legendFormat": "CFR (%)",
+          "refId": "A"
+        }
+      ],
+      "title": "변경 실패율 (CFR)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "평균 서비스 복구 시간 (분)",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "red", "value": 1440 }
+            ]
+          },
+          "unit": "m"
+        }
+      },
+      "gridPos": { "h": 6, "w": 5, "x": 19, "y": 1 },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "dora:mttr:avg_minutes",
+          "legendFormat": "MTTR (분)",
+          "refId": "A"
+        }
+      ],
+      "title": "MTTR",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "id": 101,
+      "title": "등급 게이지",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "1": { "text": "Elite" } }, "type": "value" },
+            { "options": { "2": { "text": "High" } }, "type": "value" },
+            { "options": { "3": { "text": "Medium" } }, "type": "value" },
+            { "options": { "4": { "text": "Low" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "green", "value": 1 },
+              { "color": "blue", "value": 2 },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 4 }
+            ]
+          },
+          "min": 1,
+          "max": 4
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 8 },
+      "id": 10,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        { "expr": "dora:grade:deployment_frequency", "legendFormat": "DF 등급", "refId": "A" }
+      ],
+      "title": "배포 빈도 등급",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "1": { "text": "Elite" } }, "type": "value" },
+            { "options": { "2": { "text": "High" } }, "type": "value" },
+            { "options": { "3": { "text": "Medium" } }, "type": "value" },
+            { "options": { "4": { "text": "Low" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "green", "value": 1 },
+              { "color": "blue", "value": 2 },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 4 }
+            ]
+          },
+          "min": 1,
+          "max": 4
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 8 },
+      "id": 11,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        { "expr": "dora:grade:lead_time", "legendFormat": "LT 등급", "refId": "A" }
+      ],
+      "title": "리드타임 등급",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "1": { "text": "Elite" } }, "type": "value" },
+            { "options": { "2": { "text": "High" } }, "type": "value" },
+            { "options": { "3": { "text": "Medium" } }, "type": "value" },
+            { "options": { "4": { "text": "Low" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "green", "value": 1 },
+              { "color": "blue", "value": 2 },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 4 }
+            ]
+          },
+          "min": 1,
+          "max": 4
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 8 },
+      "id": 12,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        { "expr": "dora:grade:change_failure_rate", "legendFormat": "CFR 등급", "refId": "A" }
+      ],
+      "title": "변경 실패율 등급",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "1": { "text": "Elite" } }, "type": "value" },
+            { "options": { "2": { "text": "High" } }, "type": "value" },
+            { "options": { "3": { "text": "Medium" } }, "type": "value" },
+            { "options": { "4": { "text": "Low" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "green", "value": 1 },
+              { "color": "blue", "value": 2 },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 4 }
+            ]
+          },
+          "min": 1,
+          "max": 4
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 8 },
+      "id": 13,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        { "expr": "dora:grade:mttr", "legendFormat": "MTTR 등급", "refId": "A" }
+      ],
+      "title": "MTTR 등급",
+      "type": "gauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "id": 102,
+      "title": "추세 분석",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "일별 배포 횟수 추세",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "blue", "mode": "fixed" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisLabel": "배포 횟수",
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "pointSize": 5,
+            "showPoints": "never"
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 20,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(dora_deployment_total[24h]))",
+          "legendFormat": "일간 배포",
+          "refId": "A",
+          "step": "1d"
+        }
+      ],
+      "title": "배포 빈도 추세 (일별)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "변경 리드타임 P50/P90/P99 추세",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisLabel": "시간 (분)",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto"
+          },
+          "unit": "m"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "P99" }, "properties": [{ "id": "color", "value": { "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "P90" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "P50" }, "properties": [{ "id": "color", "value": { "fixedColor": "green" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 21,
+      "targets": [
+        { "expr": "dora:lead_time:p50 / 60", "legendFormat": "P50", "refId": "A" },
+        { "expr": "dora:lead_time:p90 / 60", "legendFormat": "P90", "refId": "B" },
+        { "expr": "dora:lead_time:p99 / 60", "legendFormat": "P99", "refId": "C" }
+      ],
+      "title": "변경 리드타임 추세",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "변경 실패율 추세 + 임계값",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "CFR (%)",
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "thresholdsStyle": { "mode": "line+area" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "transparent", "value": null },
+              { "color": "rgba(255, 152, 48, 0.1)", "value": 15 },
+              { "color": "rgba(242, 73, 92, 0.1)", "value": 30 }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
+      "id": 22,
+      "targets": [
+        { "expr": "dora:change_failure_rate:ratio", "legendFormat": "CFR (%)", "refId": "A" },
+        { "expr": "dora:change_failure_rate:weekly_ratio", "legendFormat": "주간 CFR (%)", "refId": "B" }
+      ],
+      "title": "변경 실패율 추세",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "MTTR 추세 + SLO 목표선",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "복구 시간 (분)",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "red", "value": 1440 }
+            ]
+          },
+          "unit": "m"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
+      "id": 23,
+      "targets": [
+        { "expr": "dora:mttr:avg_minutes", "legendFormat": "평균 MTTR", "refId": "A" },
+        { "expr": "dora:mttr:p50_minutes", "legendFormat": "P50 MTTR", "refId": "B" },
+        { "expr": "dora:mttr:p90_minutes", "legendFormat": "P90 MTTR", "refId": "C" }
+      ],
+      "title": "MTTR 추세",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+      "id": 103,
+      "title": "팀별 비교",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "팀별 DORA 메트릭 비교표",
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "CFR (%)" }, "properties": [{ "id": "unit", "value": "percent" }] },
+          { "matcher": { "id": "byName", "options": "리드타임 (분)" }, "properties": [{ "id": "unit", "value": "m" }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 31 },
+      "id": 30,
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "배포 빈도" }]
+      },
+      "targets": [
+        { "expr": "dora:deployment_frequency:daily_by_team", "format": "table", "legendFormat": "{{team}}", "refId": "A", "instant": true },
+        { "expr": "dora:lead_time:avg_by_team", "format": "table", "legendFormat": "{{team}}", "refId": "B", "instant": true },
+        { "expr": "dora:change_failure_rate:by_team", "format": "table", "legendFormat": "{{team}}", "refId": "C", "instant": true }
+      ],
+      "title": "팀별 DORA 메트릭",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "Value #A": "배포 빈도",
+              "Value #B": "리드타임 (분)",
+              "Value #C": "CFR (%)",
+              "team": "팀"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["dora", "four-keys", "devops", "csap-d06", "mtu-n251"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": "Prometheus",
+        "definition": "label_values(dora_deployment_total, team)",
+        "includeAll": true,
+        "multi": true,
+        "name": "team",
+        "query": "label_values(dora_deployment_total, team)",
+        "refresh": 2,
+        "type": "query"
+      },
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": "Prometheus",
+        "definition": "label_values(dora_deployment_total, namespace)",
+        "includeAll": true,
+        "multi": true,
+        "name": "namespace",
+        "query": "label_values(dora_deployment_total, namespace)",
+        "refresh": 2,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-7d", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "DORA Four Keys",
+  "uid": "dora-four-keys",
+  "version": 1
+}

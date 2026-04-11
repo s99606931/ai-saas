@@ -1,0 +1,164 @@
+# =============================================================================
+# DORA Four Keys CI/CD 배포 게이트
+# Design Ref: MTU-N251 Design §3.7
+# Plan SC: FR-N251.8
+# CSAP: D-12(시스템 개발 보안 -- 배포 품질 게이트)
+#
+# 배포 전 DORA 메트릭 기반 자동 승인/차단:
+# - CFR > 30% → 배포 차단 (DORA Low)
+# - CFR > 15% → 경고 + 수동 승인 요구
+# - 정상 → 배포 허용 + DORA 이벤트 기록
+# =============================================================================
+name: DORA 배포 게이트
+
+on:
+  workflow_call:
+    inputs:
+      namespace:
+        description: '배포 대상 네임스페이스'
+        required: true
+        type: string
+      team:
+        description: '배포 팀'
+        required: false
+        type: string
+        default: 'platform'
+      deploy_duration:
+        description: '배포 소요 시간 (초)'
+        required: false
+        type: string
+        default: '0'
+      commit_sha:
+        description: '배포 커밋 SHA'
+        required: false
+        type: string
+        default: ''
+    outputs:
+      dora_grade:
+        description: 'DORA 종합 등급'
+        value: ${{ jobs.dora-gate.outputs.grade }}
+      cfr:
+        description: '현재 변경 실패율 (%)'
+        value: ${{ jobs.dora-gate.outputs.cfr }}
+      gate_result:
+        description: '게이트 결과 (pass/warn/block)'
+        value: ${{ jobs.dora-gate.outputs.result }}
+
+env:
+  PROMETHEUS_URL: ${{ vars.PROMETHEUS_URL || 'http://prometheus.monitoring.svc:9090' }}
+  PUSHGATEWAY_URL: ${{ vars.PUSHGATEWAY_URL || 'http://pushgateway.monitoring.svc:9091' }}
+  AUDIT_LOG: '.claude/audit.jsonl'
+
+jobs:
+  dora-gate:
+    name: DORA 메트릭 검증
+    runs-on: ubuntu-latest
+    outputs:
+      grade: ${{ steps.check.outputs.grade }}
+      cfr: ${{ steps.check.outputs.cfr }}
+      result: ${{ steps.check.outputs.result }}
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: DORA 메트릭 조회
+        id: query
+        run: |
+          echo "=== DORA Four Keys 메트릭 조회 ==="
+
+          # 변경 실패율 조회
+          CFR=$(curl -s "${PROMETHEUS_URL}/api/v1/query?query=dora:change_failure_rate:ratio" \
+            | jq -r '.data.result[0].value[1] // "0"' 2>/dev/null || echo "0")
+
+          # 종합 등급 조회
+          GRADE=$(curl -s "${PROMETHEUS_URL}/api/v1/query?query=dora:grade:overall_score" \
+            | jq -r '.data.result[0].value[1] // "4"' 2>/dev/null || echo "4")
+
+          # 배포 빈도 조회
+          DF=$(curl -s "${PROMETHEUS_URL}/api/v1/query?query=dora:deployment_frequency:weekly" \
+            | jq -r '.data.result[0].value[1] // "0"' 2>/dev/null || echo "0")
+
+          # MTTR 조회
+          MTTR=$(curl -s "${PROMETHEUS_URL}/api/v1/query?query=dora:mttr:avg_minutes" \
+            | jq -r '.data.result[0].value[1] // "0"' 2>/dev/null || echo "0")
+
+          echo "cfr=${CFR}" >> $GITHUB_OUTPUT
+          echo "grade=${GRADE}" >> $GITHUB_OUTPUT
+          echo "df=${DF}" >> $GITHUB_OUTPUT
+          echo "mttr=${MTTR}" >> $GITHUB_OUTPUT
+
+          echo "--- DORA 현재 상태 ---"
+          echo "배포 빈도 (주간): ${DF}"
+          echo "변경 실패율: ${CFR}%"
+          echo "MTTR: ${MTTR}분"
+          echo "종합 등급: ${GRADE}"
+
+      - name: DORA 게이트 판정
+        id: check
+        run: |
+          CFR="${{ steps.query.outputs.cfr }}"
+          GRADE="${{ steps.query.outputs.grade }}"
+          CFR_INT=$(echo "$CFR" | cut -d'.' -f1)
+
+          echo "grade=${GRADE}" >> $GITHUB_OUTPUT
+          echo "cfr=${CFR}" >> $GITHUB_OUTPUT
+
+          # CFR 기반 게이트 판정
+          # Design Ref: §3.7
+          if [ "${CFR_INT}" -gt 30 ] 2>/dev/null; then
+            echo "result=block" >> $GITHUB_OUTPUT
+            echo "::error::DORA 게이트 차단: 변경 실패율 ${CFR}% > 30% (DORA Low 등급)"
+            echo "배포를 진행하려면 실패 원인을 해결한 후 재시도하십시오."
+
+            # 감사 로그 기록
+            echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"actor\":\"dora-gate\",\"action\":\"DEPLOY_BLOCKED\",\"detail\":\"CFR=${CFR}%,namespace=${{ inputs.namespace }},team=${{ inputs.team }}\",\"csap_ref\":\"D-12\"}" >> "$AUDIT_LOG"
+
+            exit 1
+
+          elif [ "${CFR_INT}" -gt 15 ] 2>/dev/null; then
+            echo "result=warn" >> $GITHUB_OUTPUT
+            echo "::warning::DORA 게이트 경고: 변경 실패율 ${CFR}% > 15% (DORA Medium 등급)"
+            echo "배포를 진행하지만, 품질 개선 조치를 권고합니다."
+
+            echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"actor\":\"dora-gate\",\"action\":\"DEPLOY_WARNING\",\"detail\":\"CFR=${CFR}%,namespace=${{ inputs.namespace }},team=${{ inputs.team }}\",\"csap_ref\":\"D-12\"}" >> "$AUDIT_LOG"
+
+          else
+            echo "result=pass" >> $GITHUB_OUTPUT
+            echo "DORA 게이트 통과: 변경 실패율 ${CFR}% (정상)"
+
+            echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"actor\":\"dora-gate\",\"action\":\"DEPLOY_APPROVED\",\"detail\":\"CFR=${CFR}%,grade=${GRADE},namespace=${{ inputs.namespace }},team=${{ inputs.team }}\",\"csap_ref\":\"D-12\"}" >> "$AUDIT_LOG"
+          fi
+
+      - name: DORA 배포 이벤트 기록
+        if: steps.check.outputs.result != 'block'
+        run: |
+          # 배포 성공 이벤트를 Pushgateway로 전송
+          chmod +x scripts/dora-event-push.sh
+          ./scripts/dora-event-push.sh deploy \
+            --namespace "${{ inputs.namespace }}" \
+            --team "${{ inputs.team }}" \
+            --duration "${{ inputs.deploy_duration }}" \
+            --commit "${{ inputs.commit_sha || github.sha }}" || true
+
+      - name: DORA 상태 요약
+        if: always()
+        run: |
+          GRADE="${{ steps.query.outputs.grade }}"
+          GRADE_TEXT="Unknown"
+          case "$GRADE" in
+            1) GRADE_TEXT="Elite" ;;
+            2) GRADE_TEXT="High" ;;
+            3) GRADE_TEXT="Medium" ;;
+            4) GRADE_TEXT="Low" ;;
+          esac
+
+          echo "## DORA Four Keys 배포 게이트 결과" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 메트릭 | 값 |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| 종합 등급 | ${GRADE_TEXT} (${GRADE}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| 배포 빈도 (주간) | ${{ steps.query.outputs.df }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 변경 실패율 | ${{ steps.query.outputs.cfr }}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| MTTR | ${{ steps.query.outputs.mttr }}분 |" >> $GITHUB_STEP_SUMMARY
+          echo "| 게이트 결과 | ${{ steps.check.outputs.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 대상 | ${{ inputs.namespace }} / ${{ inputs.team }} |" >> $GITHUB_STEP_SUMMARY

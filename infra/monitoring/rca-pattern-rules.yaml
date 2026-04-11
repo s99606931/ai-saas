@@ -1,0 +1,252 @@
+# =============================================================================
+# AIOps RCA 패턴 매핑 알림 규칙
+# Design Ref: MTU-N252 Design §2.2, §2.5
+# Plan SC: FR-N252.2, FR-N252.5
+# CSAP: D-06(침해사고 관리 -- 자동 근본 원인 추론)
+#
+# 10개 증상→원인 자동 매핑 패턴
+# 적용: kubectl apply -f infra/monitoring/rca-pattern-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: rca-pattern-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+    app.kubernetes.io/component: aiops-rca
+  annotations:
+    csap.ref/d06: "침해사고관리 -- 자동 근본 원인 추론 (10개 패턴)"
+    design.ref: "MTU-N252 Design §2.2"
+spec:
+  groups:
+    # =================================================================
+    # RCA 패턴 알림 (증상→원인 자동 매핑)
+    # =================================================================
+    - name: rca:pattern:alerts
+      rules:
+        # 패턴 1: CPU 병목 → 수평 확장 필요
+        - alert: RCACpuBottleneck
+          expr: |
+            rca:correlation:cpu_latency > 0
+            and rca:anomaly_score:cpu > 3
+          for: 5m
+          labels:
+            severity: warning
+            category: rca
+            rca_pattern: "cpu-bottleneck"
+            rca_cause: "CPU 병목"
+            rca_action: "수평 확장 또는 리소스 제한 상향"
+            csap_ref: D-06
+          annotations:
+            summary: "[RCA] CPU 병목 감지: {{ $labels.namespace }}"
+            description: |
+              증상: CPU 사용량과 지연시간이 동시에 이상 증가
+              추론 원인: CPU 병목 (Z-Score: {{ $value }})
+              권고 조치: HPA 최소 레플리카 증가 또는 CPU 제한 상향
+              대시보드: /d/rca-analysis
+            runbook_url: "https://gitea.local/ai-saas/docs/sre/runbooks/cpu-bottleneck.md"
+
+        # 패턴 2: 메모리 누수 → 리소스 제한 조정
+        - alert: RCAMemoryLeak
+          expr: |
+            rca:correlation:memory_oom > 0
+            and rca:anomaly_score:memory > 3
+          for: 5m
+          labels:
+            severity: critical
+            category: rca
+            rca_pattern: "memory-leak"
+            rca_cause: "메모리 누수"
+            rca_action: "메모리 프로파일링 및 제한 상향"
+            csap_ref: D-06
+          annotations:
+            summary: "[RCA] 메모리 누수 감지: {{ $labels.namespace }}"
+            description: |
+              증상: 메모리 사용량 이상 증가 + OOM Kill 발생
+              추론 원인: 메모리 누수 또는 메모리 제한 부족
+              권고 조치: Pyroscope 메모리 프로파일링 → 누수 지점 확인
+            runbook_url: "https://gitea.local/ai-saas/docs/sre/runbooks/memory-leak.md"
+
+        # 패턴 3: 업스트림 의존성 장애
+        - alert: RCAUpstreamFailure
+          expr: |
+            rca:anomaly_score:error_rate > 3
+            and rca:anomaly_score:cpu < 2
+            and rca:anomaly_score:memory < 2
+          for: 3m
+          labels:
+            severity: warning
+            category: rca
+            rca_pattern: "upstream-failure"
+            rca_cause: "업스트림 의존성 장애"
+            rca_action: "업스트림 서비스 헬스체크"
+            csap_ref: D-06
+          annotations:
+            summary: "[RCA] 업스트림 장애 추론: {{ $labels.namespace }}"
+            description: |
+              증상: 에러율 급증, 리소스 정상
+              추론 원인: 업스트림 의존 서비스 장애 (DB, 외부 API 등)
+              권고 조치: 업스트림 서비스 상태 확인 → 서킷 브레이커 점검
+
+        # 패턴 4: 디스크 병목
+        - alert: RCADiskBottleneck
+          expr: |
+            rca:correlation:diskio_latency > 0
+            and rca:anomaly_score:disk_io > 3
+          for: 5m
+          labels:
+            severity: warning
+            category: rca
+            rca_pattern: "disk-bottleneck"
+            rca_cause: "디스크 IO 병목"
+            rca_action: "스토리지 최적화 또는 디스크 확장"
+            csap_ref: D-06
+          annotations:
+            summary: "[RCA] 디스크 IO 병목: {{ $labels.namespace }}"
+            description: |
+              증상: 디스크 IO와 지연시간이 동시에 이상 증가
+              추론 원인: 디스크 IO 병목 (로그 과다, DB 쿼리 비효율)
+              권고 조치: 로그 로테이션 확인, 쿼리 최적화, PVC 확장
+
+        # 패턴 5: 네트워크 문제
+        - alert: RCANetworkIssue
+          expr: |
+            rca:correlation:network_latency > 0
+            and rca:anomaly_score:network > 2
+          for: 5m
+          labels:
+            severity: warning
+            category: rca
+            rca_pattern: "network-issue"
+            rca_cause: "네트워크 문제"
+            rca_action: "DNS, MTU, NetworkPolicy 점검"
+            csap_ref: D-06
+          annotations:
+            summary: "[RCA] 네트워크 문제 추론: {{ $labels.namespace }}"
+            description: |
+              증상: 네트워크 에러와 지연시간이 동시에 이상 증가
+              추론 원인: DNS 지연, MTU 불일치, 또는 NetworkPolicy 차단
+              권고 조치: CoreDNS 로그 확인, Cilium 네트워크 정책 점검
+
+        # 패턴 6: 앱 버그 (CrashLoop)
+        - alert: RCAAppBug
+          expr: |
+            rca:pod_restart_rate > 5
+            and count by (namespace) (
+              kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", namespace=~"saas-.*"}
+            ) > 0
+          for: 3m
+          labels:
+            severity: critical
+            category: rca
+            rca_pattern: "app-bug"
+            rca_cause: "애플리케이션 버그 (CrashLoopBackOff)"
+            rca_action: "최근 배포 롤백"
+            csap_ref: D-06
+          annotations:
+            summary: "[RCA] 앱 버그 감지: {{ $labels.namespace }}"
+            description: |
+              증상: 파드 재시작 빈발 + CrashLoopBackOff 상태
+              추론 원인: 애플리케이션 버그 또는 설정 오류
+              권고 조치: 파드 로그 확인 → 최근 배포 롤백 검토
+
+        # 패턴 7: 노드 장애
+        - alert: RCANodeFailure
+          expr: |
+            count(kube_node_status_condition{condition="Ready", status="false"}) > 0
+            and count(kube_pod_status_phase{phase="Pending"}) > 3
+          for: 3m
+          labels:
+            severity: critical
+            category: rca
+            rca_pattern: "node-failure"
+            rca_cause: "노드 장애"
+            rca_action: "노드 교체 또는 복구"
+            csap_ref: D-06
+          annotations:
+            summary: "[RCA] 노드 장애 감지"
+            description: |
+              증상: 노드 NotReady + 다수 파드 Pending
+              추론 원인: 노드 하드웨어/OS 장애
+              권고 조치: kubectl get nodes → 문제 노드 drain 후 교체
+
+        # 패턴 8: 스토리지 부족
+        - alert: RCAStorageExhausted
+          expr: |
+            count(kube_persistentvolumeclaim_status_phase{phase="Pending"}) > 0
+            and count(kube_pod_status_phase{phase="Pending"}) > 0
+          for: 5m
+          labels:
+            severity: warning
+            category: rca
+            rca_pattern: "storage-exhausted"
+            rca_cause: "스토리지 부족"
+            rca_action: "PV 확장 또는 신규 스토리지 프로비저닝"
+            csap_ref: D-06
+          annotations:
+            summary: "[RCA] 스토리지 부족 감지"
+            description: |
+              증상: PVC Pending + 파드 Pending
+              추론 원인: 스토리지 용량 부족 또는 프로비저너 장애
+              권고 조치: PVC 상태 확인 → StorageClass 프로비저너 점검
+
+        # 패턴 9: 최근 배포 문제
+        - alert: RCARecentDeploymentIssue
+          expr: |
+            rca:correlation:error_deployment > 0
+            and rca:anomaly_score:error_rate > 3
+          for: 3m
+          labels:
+            severity: critical
+            category: rca
+            rca_pattern: "recent-deployment"
+            rca_cause: "최근 배포 문제"
+            rca_action: "이전 버전 롤백"
+            csap_ref: D-06
+          annotations:
+            summary: "[RCA] 최근 배포 후 에러 급증: {{ $labels.namespace }}"
+            description: |
+              증상: 에러율 이상 + 30분 내 배포 이력 존재
+              추론 원인: 최근 배포가 에러의 원인으로 추론됨
+              권고 조치: kubectl rollout undo → DORA CFR 기록
+
+        # 패턴 10: DNS 병목
+        - alert: RCADnsBottleneck
+          expr: |
+            sum(rate(coredns_dns_request_duration_seconds_sum[5m]))
+            / clamp_min(sum(rate(coredns_dns_request_duration_seconds_count[5m])), 0.001)
+            > 0.5
+            and rca:anomaly_score:latency > 2
+          for: 5m
+          labels:
+            severity: warning
+            category: rca
+            rca_pattern: "dns-bottleneck"
+            rca_cause: "CoreDNS 병목"
+            rca_action: "CoreDNS 캐시 조정 및 레플리카 확장"
+            csap_ref: D-06
+          annotations:
+            summary: "[RCA] DNS 병목 감지"
+            description: |
+              증상: DNS 응답 지연 + 서비스 지연시간 증가
+              추론 원인: CoreDNS 처리 지연 (캐시 미스 또는 부하 과다)
+              권고 조치: CoreDNS 로그 분석, ndots 설정 최적화, 레플리카 확장
+
+    # =================================================================
+    # RCA 요약 Recording Rules
+    # =================================================================
+    - name: rca:summary
+      interval: 1m
+      rules:
+        # 활성 RCA 패턴 수
+        - record: rca:active_patterns:count
+          expr: |
+            count(ALERTS{alertname=~"RCA.*", alertstate="firing"}) or vector(0)
+
+        # 가장 높은 이상 스코어
+        - record: rca:max_anomaly_score
+          expr: |
+            max(rca:anomaly_score:total) or vector(0)

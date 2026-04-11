@@ -1,0 +1,145 @@
+# =============================================================================
+# 온콜 에스컬레이션 자동화 Rules
+# Design Ref: MTU-N255 Design
+# Plan SC: FR-N255.3
+# CSAP: D-06(침해사고 관리 -- 인시던트 에스컬레이션 체계)
+#
+# 에스컬레이션 정책:
+#   P1 (Critical): 5분 미응답 → 팀장, 15분 → 부서장
+#   P2 (Warning):  30분 미응답 → 팀장
+#   P3 (Info):     4시간 미응답 → 팀장 (자동 보고)
+#
+# 적용: kubectl apply -f infra/monitoring/oncall-escalation-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: oncall-escalation-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+    app.kubernetes.io/component: oncall-escalation
+  annotations:
+    csap.ref/d06: "침해사고관리 -- 인시던트 에스컬레이션 체계"
+    design.ref: "MTU-N255 Design"
+spec:
+  groups:
+    # =================================================================
+    # P1 에스컬레이션 (Critical)
+    # =================================================================
+    - name: oncall:escalation:p1
+      rules:
+        # P1 5분 미응답 → 팀장 에스컬레이션
+        - alert: OncallP1Escalation5min
+          expr: |
+            count(ALERTS{alertstate="firing", severity="critical"}) > 0
+            and min(time() - ALERTS_FOR_STATE{alertstate="firing", severity="critical"}) > 300
+          for: 1m
+          labels:
+            severity: critical
+            category: oncall
+            escalation_level: "team-lead"
+            csap_ref: D-06
+          annotations:
+            summary: "[에스컬레이션] P1 알림 5분 미응답 → 팀장 호출"
+            description: |
+              Critical 알림이 5분 이상 미응답 상태입니다.
+              에스컬레이션 대상: 팀장
+              원본 알림 확인: Alertmanager → 활성 알림 목록
+
+        # P1 15분 미응답 → 부서장 에스컬레이션
+        - alert: OncallP1Escalation15min
+          expr: |
+            count(ALERTS{alertstate="firing", severity="critical"}) > 0
+            and min(time() - ALERTS_FOR_STATE{alertstate="firing", severity="critical"}) > 900
+          for: 1m
+          labels:
+            severity: critical
+            category: oncall
+            escalation_level: "department-lead"
+            csap_ref: D-06
+          annotations:
+            summary: "[에스컬레이션] P1 알림 15분 미응답 → 부서장 호출"
+            description: |
+              Critical 알림이 15분 이상 미응답 상태입니다.
+              에스컬레이션 대상: 부서장
+              긴급 인시던트 커맨드 센터 가동 필요
+
+    # =================================================================
+    # P2 에스컬레이션 (Warning)
+    # =================================================================
+    - name: oncall:escalation:p2
+      rules:
+        # P2 30분 미응답 → 팀장 에스컬레이션
+        - alert: OncallP2Escalation30min
+          expr: |
+            count(ALERTS{alertstate="firing", severity="warning"}) > 3
+            and min(time() - ALERTS_FOR_STATE{alertstate="firing", severity="warning"}) > 1800
+          for: 1m
+          labels:
+            severity: warning
+            category: oncall
+            escalation_level: "team-lead"
+            csap_ref: D-06
+          annotations:
+            summary: "[에스컬레이션] P2 알림 30분 미응답 (3건+) → 팀장 보고"
+            description: |
+              Warning 알림이 3건 이상 30분간 미응답 상태입니다.
+              에스컬레이션 대상: 팀장
+              다수 경고가 누적되면 서비스 영향이 확대될 수 있습니다.
+
+    # =================================================================
+    # P3 에스컬레이션 (Info) — 자동 보고
+    # =================================================================
+    - name: oncall:escalation:p3
+      rules:
+        # P3 4시간 미응답 → 자동 보고
+        - alert: OncallP3AutoReport
+          expr: |
+            count(ALERTS{alertstate="firing", severity="info"}) > 5
+            and min(time() - ALERTS_FOR_STATE{alertstate="firing", severity="info"}) > 14400
+          for: 5m
+          labels:
+            severity: info
+            category: oncall
+            escalation_level: "auto-report"
+          annotations:
+            summary: "[자동보고] Info 알림 5건+ 4시간 미처리"
+            description: |
+              Info 등급 알림이 5건 이상 4시간 미처리 상태입니다.
+              자동 보고서 생성 및 일일 브리핑에 포함됩니다.
+
+    # =================================================================
+    # 온콜 상태 Recording Rules
+    # =================================================================
+    - name: oncall:status
+      interval: 1m
+      rules:
+        # 활성 P1 인시던트 수
+        - record: oncall:active:p1_count
+          expr: |
+            count(ALERTS{alertstate="firing", severity="critical"}) or vector(0)
+
+        # 활성 P2 인시던트 수
+        - record: oncall:active:p2_count
+          expr: |
+            count(ALERTS{alertstate="firing", severity="warning"}) or vector(0)
+
+        # 활성 P3 인시던트 수
+        - record: oncall:active:p3_count
+          expr: |
+            count(ALERTS{alertstate="firing", severity="info"}) or vector(0)
+
+        # 총 활성 인시던트
+        - record: oncall:active:total
+          expr: |
+            (oncall:active:p1_count + oncall:active:p2_count + oncall:active:p3_count)
+            or vector(0)
+
+        # 에스컬레이션 발생 횟수 (24시간)
+        - record: oncall:escalation:daily_count
+          expr: |
+            count(ALERTS{alertname=~"Oncall.*Escalation.*", alertstate="firing"})
+            or vector(0)

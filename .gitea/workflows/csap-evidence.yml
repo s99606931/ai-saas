@@ -1,0 +1,118 @@
+# =============================================================================
+# CSAP 증거 주간 자동 수집 워크플로우
+# Design Ref: MTU-N253 Design
+# Plan SC: FR-N253.4
+# CSAP: D-01~D-13 전 영역
+#
+# 매주 월요일 09:00 KST 자동 실행 + 수동 트리거 지원
+# =============================================================================
+name: CSAP 증거 수집
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # 매주 월요일 00:00 UTC (09:00 KST)
+  workflow_dispatch:
+    inputs:
+      date:
+        description: '수집 기준일 (YYYY-MM-DD)'
+        required: false
+        type: string
+      controls:
+        description: '수집 대상 통제항목 (예: D-06,D-08 또는 all)'
+        required: false
+        type: string
+        default: 'all'
+
+env:
+  PROMETHEUS_URL: ${{ vars.PROMETHEUS_URL || 'http://prometheus.monitoring.svc:9090' }}
+  AUDIT_LOG: '.claude/audit.jsonl'
+
+jobs:
+  collect-evidence:
+    name: CSAP 증거 자동 수집
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: kubectl 설정
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.30.0'
+        continue-on-error: true
+
+      - name: 쿠버네티스 컨텍스트 설정
+        run: |
+          if [[ -n "${{ secrets.KUBECONFIG }}" ]]; then
+            echo "${{ secrets.KUBECONFIG }}" > /tmp/kubeconfig
+            export KUBECONFIG=/tmp/kubeconfig
+          fi
+        continue-on-error: true
+
+      - name: CSAP 증거 수집 v2 실행
+        run: |
+          chmod +x scripts/csap-evidence-collect-v2.sh
+
+          DATE="${{ inputs.date || '' }}"
+          CONTROLS="${{ inputs.controls || 'all' }}"
+
+          ARGS=""
+          if [[ -n "$DATE" ]]; then
+            ARGS="--date $DATE"
+          fi
+          if [[ "$CONTROLS" != "all" ]]; then
+            ARGS="$ARGS --controls $CONTROLS"
+          fi
+
+          ./scripts/csap-evidence-collect-v2.sh $ARGS
+
+      - name: 증거 무결성 검증
+        run: |
+          DATE="${{ inputs.date || '' }}"
+          if [[ -z "$DATE" ]]; then
+            DATE=$(date +%Y-%m-%d)
+          fi
+
+          MANIFEST="evidence/${DATE}/manifest.sha256"
+          if [[ -f "$MANIFEST" ]]; then
+            cd "evidence/${DATE}"
+            sha256sum -c manifest.sha256 2>&1 | tail -5
+            echo "무결성 검증 완료"
+            cd -
+          else
+            echo "::warning::매니페스트 파일 없음 (${MANIFEST})"
+          fi
+
+      - name: 증거 아티팩트 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: csap-evidence-${{ inputs.date || 'latest' }}
+          path: evidence/
+          retention-days: 365
+
+      - name: 수집 결과 요약
+        if: always()
+        run: |
+          DATE="${{ inputs.date || '' }}"
+          if [[ -z "$DATE" ]]; then DATE=$(date +%Y-%m-%d); fi
+
+          echo "## CSAP 증거 수집 결과" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 항목 | 값 |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| 수집일 | ${DATE} |" >> $GITHUB_STEP_SUMMARY
+
+          if [[ -d "evidence/${DATE}" ]]; then
+            FILE_COUNT=$(find "evidence/${DATE}" -type f | wc -l)
+            DIR_COUNT=$(find "evidence/${DATE}" -mindepth 1 -maxdepth 1 -type d | wc -l)
+            echo "| 수집 파일 | ${FILE_COUNT}개 |" >> $GITHUB_STEP_SUMMARY
+            echo "| 통제영역 | ${DIR_COUNT}개 |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "상세: evidence/${DATE}/evidence-index.md" >> $GITHUB_STEP_SUMMARY
+
+      - name: 감사 로그 기록
+        if: always()
+        run: |
+          echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"actor\":\"csap-evidence-ci\",\"action\":\"CSAP_EVIDENCE_CI_COMPLETE\",\"detail\":\"workflow=csap-evidence\",\"csap_ref\":\"D-06\"}" >> "$AUDIT_LOG"

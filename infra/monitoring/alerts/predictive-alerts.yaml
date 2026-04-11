@@ -1,0 +1,169 @@
+# Design Ref: MTU-N242
+# Plan SC: FR-PA.1 ~ FR-PA.4
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: predictive-alerts
+  namespace: monitoring
+  labels:
+    release: prometheus
+    category: predictive
+spec:
+  groups:
+    # --- 디스크 용량 예측 (FR-PA.1) ---
+    - name: predictive-disk
+      rules:
+        - alert: DiskWillFillIn4Hours
+          expr: |
+            predict_linear(
+              node_filesystem_free_bytes{fstype!~"tmpfs|overlay"}[1h], 4*3600
+            ) < 0
+          for: 15m
+          labels:
+            severity: critical
+            category: predictive
+            team: sre
+          annotations:
+            summary: "디스크 4시간 내 포화 예측"
+            description: "{{ $labels.instance }} {{ $labels.mountpoint }} 디스크가 현재 추세로 4시간 내 가득 찰 것으로 예측됩니다."
+
+        - alert: DiskWillFillIn24Hours
+          expr: |
+            predict_linear(
+              node_filesystem_free_bytes{fstype!~"tmpfs|overlay"}[6h], 24*3600
+            ) < node_filesystem_size_bytes * 0.1
+          for: 30m
+          labels:
+            severity: warning
+            category: predictive
+            team: sre
+          annotations:
+            summary: "디스크 24시간 내 10% 미만 예측"
+            description: "{{ $labels.instance }} {{ $labels.mountpoint }} 디스크가 24시간 내 10% 미만으로 예측됩니다."
+
+        - alert: DiskWillFillIn7Days
+          expr: |
+            predict_linear(
+              node_filesystem_free_bytes{fstype!~"tmpfs|overlay"}[24h], 7*24*3600
+            ) < 0
+          for: 1h
+          labels:
+            severity: info
+            category: predictive
+            team: sre
+          annotations:
+            summary: "디스크 7일 내 포화 예측"
+
+    # --- 메모리 예측 (FR-PA.2) ---
+    - name: predictive-memory
+      rules:
+        - alert: MemoryOOMPredicted1Hour
+          expr: |
+            predict_linear(
+              container_memory_usage_bytes{container!=""}[30m], 3600
+            ) > on(namespace, pod, container) kube_pod_container_resource_limits{resource="memory"} * 0.9
+          for: 10m
+          labels:
+            severity: warning
+            category: predictive
+            team: sre
+          annotations:
+            summary: "메모리 1시간 내 90% 초과 예측"
+            description: "{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} 메모리가 1시간 내 limit의 90%를 초과할 것으로 예측됩니다."
+
+        - alert: MemoryOOMPredicted4Hours
+          expr: |
+            predict_linear(
+              container_memory_usage_bytes{container!=""}[2h], 4*3600
+            ) > on(namespace, pod, container) kube_pod_container_resource_limits{resource="memory"}
+          for: 15m
+          labels:
+            severity: warning
+            category: predictive
+            team: sre
+          annotations:
+            summary: "메모리 4시간 내 OOM 예측"
+
+    # --- 인증서 만료 예측 (FR-PA.3) ---
+    - name: predictive-certificates
+      rules:
+        - alert: CertExpiringIn30Days
+          expr: |
+            (certmanager_certificate_expiration_timestamp_seconds - time()) < 30 * 24 * 3600
+          for: 1h
+          labels:
+            severity: info
+            category: predictive
+            team: platform
+          annotations:
+            summary: "인증서 30일 내 만료"
+            description: "{{ $labels.name }} 인증서가 {{ $value | humanizeDuration }} 후 만료됩니다."
+
+        - alert: CertExpiringIn7Days
+          expr: |
+            (certmanager_certificate_expiration_timestamp_seconds - time()) < 7 * 24 * 3600
+          for: 30m
+          labels:
+            severity: warning
+            category: predictive
+            team: platform
+          annotations:
+            summary: "인증서 7일 내 만료 - 긴급 갱신 필요"
+
+        - alert: CertExpiringIn1Day
+          expr: |
+            (certmanager_certificate_expiration_timestamp_seconds - time()) < 24 * 3600
+          for: 5m
+          labels:
+            severity: critical
+            category: predictive
+            team: platform
+          annotations:
+            summary: "인증서 24시간 내 만료 - 즉시 갱신 필요"
+
+    # --- SLO 위반 예측 (FR-PA.4) ---
+    - name: predictive-slo
+      rules:
+        - alert: SLOViolationPredicted1Hour
+          expr: |
+            predict_linear(
+              saas:error_budget:consumed_ratio[1h], 3600
+            ) > 1
+          for: 15m
+          labels:
+            severity: warning
+            category: predictive
+            team: sre
+          annotations:
+            summary: "에러 예산 1시간 내 소진 예측"
+            description: "현재 소진율 추세로 에러 예산이 1시간 내 완전 소진될 것으로 예측됩니다."
+
+        - alert: SLOViolationPredicted6Hours
+          expr: |
+            predict_linear(
+              saas:error_budget:consumed_ratio[6h], 6*3600
+            ) > 1
+          for: 30m
+          labels:
+            severity: info
+            category: predictive
+            team: sre
+          annotations:
+            summary: "에러 예산 6시간 내 소진 예측"
+
+    # --- PV 포화 예측 ---
+    - name: predictive-pv
+      rules:
+        - alert: PVWillFillIn24Hours
+          expr: |
+            predict_linear(
+              kubelet_volume_stats_used_bytes[6h], 24*3600
+            ) > kubelet_volume_stats_capacity_bytes * 0.85
+          for: 30m
+          labels:
+            severity: warning
+            category: predictive
+            team: sre
+          annotations:
+            summary: "PV 24시간 내 85% 초과 예측"
+            description: "{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} PV가 24시간 내 85%를 초과할 것으로 예측됩니다."

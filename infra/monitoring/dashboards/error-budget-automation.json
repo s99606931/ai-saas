@@ -1,0 +1,89 @@
+{
+  "description": "SRE 에러 버짓 자동화 + 온콜 현황 대시보드 (MTU-N255)",
+  "editable": true,
+  "panels": [
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 100, "title": "에러 버짓 종합", "type": "row" },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 10 }, { "color": "yellow", "value": 25 }, { "color": "green", "value": 50 }] }, "min": 0, "max": 100 } },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] }, "showThresholdLabels": true, "showThresholdMarkers": true },
+      "targets": [{ "expr": "sre:error_budget:remaining_ratio", "legendFormat": "잔여 에러 버짓", "refId": "A" }],
+      "title": "에러 버짓 잔여량",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 3 }, { "color": "yellow", "value": 7 }, { "color": "green", "value": 14 }] } } },
+      "gridPos": { "h": 6, "w": 4, "x": 8, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sre:error_budget:days_remaining", "legendFormat": "잔여 일수", "refId": "A" }],
+      "title": "소진 예측 (남은 일수)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 10 }] } } },
+      "gridPos": { "h": 6, "w": 4, "x": 12, "y": 1 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sre:error_budget:burn_rate_1h", "legendFormat": "소진율 (%/h)", "refId": "A" }],
+      "title": "시간당 소진율",
+      "type": "stat"
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 1 }, "id": 101, "title": "온콜 현황", "type": "row" },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } },
+      "gridPos": { "h": 5, "w": 4, "x": 16, "y": 1 },
+      "id": 10,
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "oncall:active:p1_count", "legendFormat": "P1 (Critical)", "refId": "A" }],
+      "title": "활성 P1",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 3 }] } } },
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 1 },
+      "id": 11,
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "oncall:active:p2_count", "legendFormat": "P2 (Warning)", "refId": "A" }],
+      "title": "활성 P2",
+      "type": "stat"
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 }, "id": 102, "title": "추세", "type": "row" },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "thresholdsStyle": { "mode": "line" } }, "unit": "percent", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 25 }, { "color": "red", "value": 0 }] } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 20,
+      "targets": [{ "expr": "sre:error_budget:remaining_ratio", "legendFormat": "에러 버짓 잔여 (%)", "refId": "A" }],
+      "title": "에러 버짓 잔여량 추세",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" } } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 21,
+      "targets": [
+        { "expr": "oncall:active:p1_count", "legendFormat": "P1", "refId": "A" },
+        { "expr": "oncall:active:p2_count", "legendFormat": "P2", "refId": "B" },
+        { "expr": "oncall:active:p3_count", "legendFormat": "P3", "refId": "C" }
+      ],
+      "title": "인시던트 등급별 활성 수 추세",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["sre", "error-budget", "oncall", "csap-d06", "mtu-n255"],
+  "time": { "from": "now-30d", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "SRE 에러 버짓 + 온콜",
+  "uid": "sre-error-budget",
+  "version": 1
+}

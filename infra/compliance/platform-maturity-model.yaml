@@ -1,0 +1,134 @@
+# Design Ref: MTU-N243
+# Plan SC: FR-PM.1, FR-PM.2
+# CNCF 플랫폼 성숙도 모델 - 공공기관 SaaS 확장
+
+version: "1.0"
+model: "CNCF Platform Maturity + CSAP/N2SF Extension"
+
+levels:
+  L1: { name: "Initial", score: 1, description: "수동 프로세스, 문서화 부재" }
+  L2: { name: "Managed", score: 2, description: "기본 자동화, 일부 문서화" }
+  L3: { name: "Defined", score: 3, description: "표준화된 프로세스, 자동화 파이프라인" }
+  L4: { name: "Measured", score: 4, description: "메트릭 기반 의사결정, SLO/SLI" }
+  L5: { name: "Optimizing", score: 5, description: "자율 최적화, 예측적 운영" }
+
+domains:
+  cicd:
+    name: "CI/CD 파이프라인"
+    checks:
+      - id: CICD-01
+        name: "자동화된 빌드/테스트"
+        l3: "Gitea Actions 워크플로우 존재"
+        check_path: ".gitea/workflows/"
+      - id: CICD-02
+        name: "보안 스캔 통합"
+        l3: "Trivy/SBOM/Cosign 파이프라인 통합"
+        check_path: "infra/cosign/"
+      - id: CICD-03
+        name: "배포 자동화"
+        l4: "GitOps (Flux) + 카나리/블루그린"
+        check_path: "infra/flux/"
+      - id: CICD-04
+        name: "Feature Flag"
+        l4: "점진적 배포 지원"
+        check_path: "infra/feature-flags/"
+      - id: CICD-05
+        name: "Hotfix 파이프라인"
+        l4: "긴급 배포 자동화"
+        check_path: ".gitea/workflows/hotfix-pipeline.yaml"
+
+  observability:
+    name: "관측성"
+    checks:
+      - id: OBS-01
+        name: "메트릭 수집"
+        l3: "Prometheus + ServiceMonitor"
+        check_path: "infra/monitoring/"
+      - id: OBS-02
+        name: "로그 집중화"
+        l3: "Loki + 구조화 로깅"
+        check_path: "infra/monitoring/dashboards/"
+      - id: OBS-03
+        name: "분산 추적"
+        l4: "Tempo + OTel"
+        check_path: "infra/monitoring/rules/"
+      - id: OBS-04
+        name: "비즈니스 KPI"
+        l4: "Executive 대시보드"
+        check_path: "infra/monitoring/dashboards/business-kpi-dashboard.json"
+      - id: OBS-05
+        name: "예측적 알림"
+        l5: "predict_linear 기반"
+        check_path: "infra/monitoring/alerts/predictive-alerts.yaml"
+
+  security:
+    name: "보안 컴플라이언스"
+    checks:
+      - id: SEC-01
+        name: "CSAP 통제항목"
+        l3: "79개 항목 커버리지"
+        check_path: "infra/compliance/"
+      - id: SEC-02
+        name: "공급망 보안"
+        l4: "SBOM + Cosign + SLSA"
+        check_path: "infra/cosign/"
+      - id: SEC-03
+        name: "네트워크 격리"
+        l4: "NetworkPolicy + Cilium"
+        check_path: "infra/network-policies/"
+      - id: SEC-04
+        name: "API 표준 준수"
+        l3: "공공 API 자동 검증"
+        check_path: "scripts/api-standard-validator.sh"
+      - id: SEC-05
+        name: "전자정부 호환"
+        l3: "호환성 체크리스트"
+        check_path: "infra/compliance/egov-compatibility-checklist.yaml"
+
+  infrastructure:
+    name: "인프라 자동화"
+    checks:
+      - id: INF-01
+        name: "IaC"
+        l3: "Helm + Crossplane"
+        check_path: "infra/helm/"
+      - id: INF-02
+        name: "GitOps"
+        l4: "Flux + Drift Detection"
+        check_path: "infra/flux/"
+      - id: INF-03
+        name: "LDAP 연동"
+        l3: "공공기관 AD 연동"
+        check_path: "infra/keycloak/ldap-federation/"
+      - id: INF-04
+        name: "멀티테넌트"
+        l4: "자동 프로비저닝"
+        check_path: "scripts/tenant-provisioning/"
+      - id: INF-05
+        name: "DR 자동화"
+        l4: "페일오버 자동화"
+        check_path: "infra/dr/"
+
+  governance:
+    name: "거버넌스"
+    checks:
+      - id: GOV-01
+        name: "감사 로그"
+        l3: "audit.jsonl 자동 기록"
+        check_path: ".claude/audit.jsonl"
+      - id: GOV-02
+        name: "PDCA 문서화"
+        l4: "Plan/Design/Report 전수"
+        check_path: "docs/archive/"
+      - id: GOV-03
+        name: "변경 영향 분석"
+        l4: "위험도 자동 평가"
+        check_path: "scripts/change-impact-analysis-v2.sh"
+      - id: GOV-04
+        name: "DORA 메트릭"
+        l4: "4 핵심 메트릭 추적"
+        check_path: "packages/dora-exporter/"
+      - id: GOV-05
+        name: "SRE 문화"
+        l5: "SLO/에러예산/포스트모템"
+        check_path: "infra/slo/"

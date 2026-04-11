@@ -1,0 +1,2 @@
+# DRY-RUN: dora:grade:overall_score
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1712793600,"42"]}]}}

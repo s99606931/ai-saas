@@ -1,0 +1,2 @@
+# DRY-RUN: dora:change_failure_rate:ratio
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1712793600,"42"]}]}}

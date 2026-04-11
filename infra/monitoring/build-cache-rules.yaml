@@ -1,0 +1,104 @@
+# =============================================================================
+# 빌드 캐시 모니터링 Recording Rules
+# Design Ref: MTU-N254 Design
+# Plan SC: FR-N254.4
+# CSAP: D-12 (시스템 개발 보안)
+#
+# 적용: kubectl apply -f infra/monitoring/build-cache-rules.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: build-cache-rules
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+    app.kubernetes.io/component: build-cache
+  annotations:
+    csap.ref/d12: "시스템개발보안 -- 빌드 캐시 효율성 모니터링"
+    design.ref: "MTU-N254 Design"
+spec:
+  groups:
+    - name: build:cache
+      interval: 1m
+      rules:
+        # 빌드 캐시 히트율 (%)
+        - record: build:cache:hit_rate
+          expr: |
+            (
+              sum(increase(buildkit_cache_hits_total[1h]))
+              / clamp_min(
+                sum(increase(buildkit_cache_hits_total[1h]))
+                + sum(increase(buildkit_cache_misses_total[1h])), 1
+              )
+            ) * 100 or vector(0)
+
+        # 빌드 캐시 크기 (bytes)
+        - record: build:cache:size_bytes
+          expr: |
+            sum(buildkit_cache_bytes) or vector(0)
+
+        # 평균 빌드 시간 (초)
+        - record: build:duration:avg_seconds
+          expr: |
+            avg(rate(buildkit_build_duration_seconds_sum[1h])
+            / clamp_min(rate(buildkit_build_duration_seconds_count[1h]), 0.001))
+            or vector(0)
+
+        # 빌드 횟수 (시간당)
+        - record: build:count:hourly
+          expr: |
+            sum(increase(buildkit_build_duration_seconds_count[1h]))
+            or vector(0)
+
+        # pnpm store 캐시 히트율
+        - record: build:pnpm:cache_hit_rate
+          expr: |
+            (
+              sum(increase(ci_pnpm_cache_hit_total[1h]))
+              / clamp_min(sum(increase(ci_pnpm_cache_total[1h])), 1)
+            ) * 100 or vector(0)
+
+    - name: build:cache:alerts
+      rules:
+        # 캐시 히트율 저하
+        - alert: BuildCacheHitRateLow
+          expr: build:cache:hit_rate < 50
+          for: 1h
+          labels:
+            severity: warning
+            category: cicd
+            csap_ref: D-12
+          annotations:
+            summary: "빌드 캐시 히트율 {{ $value }}% -- 50% 미만"
+            description: |
+              빌드 캐시 히트율이 50% 미만으로 떨어졌습니다.
+              Dockerfile 레이어 순서 또는 캐시 정책을 점검하십시오.
+
+        # 캐시 용량 초과
+        - alert: BuildCacheSizeExceeded
+          expr: build:cache:size_bytes > 21474836480  # 20GB
+          for: 30m
+          labels:
+            severity: warning
+            category: cicd
+          annotations:
+            summary: "빌드 캐시 크기 {{ $value | humanize1024 }} -- 20GB 초과"
+            description: |
+              빌드 캐시 크기가 20GB를 초과했습니다.
+              cache-gc.sh를 실행하거나 자동 GC 정책을 조정하십시오.
+
+        # 빌드 시간 장기화
+        - alert: BuildDurationHigh
+          expr: build:duration:avg_seconds > 600
+          for: 30m
+          labels:
+            severity: warning
+            category: cicd
+          annotations:
+            summary: "평균 빌드 시간 {{ $value }}초 -- 10분 초과"
+            description: |
+              평균 빌드 시간이 10분을 초과했습니다.
+              캐시 히트율과 Dockerfile 최적화를 점검하십시오.

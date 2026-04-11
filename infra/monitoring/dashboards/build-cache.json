@@ -1,0 +1,77 @@
+{
+  "description": "빌드 캐시 모니터링 대시보드 (MTU-N254)",
+  "editable": true,
+  "panels": [
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 100, "title": "캐시 종합", "type": "row" },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 50 }, { "color": "green", "value": 80 }] } } },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "build:cache:hit_rate", "legendFormat": "캐시 히트율", "refId": "A" }],
+      "title": "캐시 히트율",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "bytes", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10737418240 }, { "color": "red", "value": 21474836480 }] } } },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "build:cache:size_bytes", "legendFormat": "캐시 크기", "refId": "A" }],
+      "title": "캐시 크기",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 300 }, { "color": "red", "value": 600 }] } } },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "build:duration:avg_seconds", "legendFormat": "평균 빌드 시간", "refId": "A" }],
+      "title": "평균 빌드 시간",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "build:count:hourly", "legendFormat": "시간당 빌드", "refId": "A" }],
+      "title": "시간당 빌드 횟수",
+      "type": "stat"
+    },
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 }, "id": 101, "title": "추세", "type": "row" },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2 }, "unit": "percent" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 10,
+      "targets": [
+        { "expr": "build:cache:hit_rate", "legendFormat": "BuildKit 캐시", "refId": "A" },
+        { "expr": "build:pnpm:cache_hit_rate", "legendFormat": "pnpm store", "refId": "B" }
+      ],
+      "title": "캐시 히트율 추세",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 }, "unit": "s" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 11,
+      "targets": [{ "expr": "build:duration:avg_seconds", "legendFormat": "평균 빌드 시간", "refId": "A" }],
+      "title": "빌드 시간 추세",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["build", "cache", "cicd", "csap-d12", "mtu-n254"],
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "Asia/Seoul",
+  "title": "빌드 캐시 모니터링",
+  "uid": "build-cache",
+  "version": 1
+}

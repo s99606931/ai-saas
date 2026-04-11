@@ -1,0 +1,64 @@
+# =============================================================================
+# BuildKit 데몬 설정 — 원격 캐시 최적화
+# Design Ref: MTU-N254 Design
+# Plan SC: FR-N254.1
+# CSAP: D-12 (시스템 개발 보안 -- 빌드 재현성)
+#
+# 적용: buildkitd --config infra/buildkit/buildkitd.toml
+# =============================================================================
+
+# 디버그 설정
+debug = false
+
+[log]
+  format = "json"
+
+# 작업자 설정 — OCI (containerd)
+[worker.oci]
+  enabled = true
+  gc = true
+  gckeepstorage = 10000  # 10GB 캐시 보존
+  max-parallelism = 4     # 동시 빌드 레이어 수
+
+  # 캐시 GC 정책
+  [[worker.oci.gcpolicy]]
+    keepBytes = 10737418240  # 10GB
+    keepDuration = 604800    # 7일 (초)
+    filters = ["type==regular"]
+
+  [[worker.oci.gcpolicy]]
+    keepBytes = 5368709120   # 5GB
+    keepDuration = 259200    # 3일
+    filters = ["type==source.local"]
+
+  [[worker.oci.gcpolicy]]
+    all = true
+    keepBytes = 20737418240  # 20GB 전체 상한
+
+# 레지스트리 캐시 설정 — Harbor
+[registry."harbor.local"]
+  http = false
+  insecure = false
+  ca = ["/etc/buildkit/certs/harbor-ca.crt"]
+
+  [[registry."harbor.local".keypair]]
+    key = "/etc/buildkit/certs/harbor-client.key"
+    cert = "/etc/buildkit/certs/harbor-client.crt"
+
+# 프론트엔드 설정
+[frontend."dockerfile.v0"]
+  enabled = true
+
+[frontend."gateway.v0"]
+  enabled = true
+
+# gRPC 설정
+[grpc]
+  address = ["unix:///run/buildkit/buildkitd.sock"]
+  uid = 0
+  gid = 0
+
+# DNS 설정
+[dns]
+  nameservers = ["10.43.0.10"]  # CoreDNS ClusterIP
+  searchDomains = ["svc.cluster.local"]

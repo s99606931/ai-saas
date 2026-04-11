@@ -1,0 +1,300 @@
+# =============================================================================
+# DORA Four Keys Recording Rules v2
+# Design Ref: MTU-N251 Design §3.2~3.5
+# Plan SC: FR-N251.2, FR-N251.3, FR-N251.4, FR-N251.5, FR-N251.6
+# CSAP: D-06(침해사고 관리), D-12(시스템 개발 보안)
+#
+# 기존 dora-metrics-rules.yaml(MTU-N126) 대체
+# 변경점: Pushgateway 기반 정밀 측정, 등급 자동 판정, 팀별 분리
+#
+# 적용: kubectl apply -f infra/monitoring/dora-metrics-rules-v2.yaml
+# =============================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: dora-metrics-rules-v2
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+    app.kubernetes.io/part-of: observability-stack
+    app.kubernetes.io/component: dora-four-keys
+  annotations:
+    csap.ref/d06: "침해사고관리 -- DORA Four Keys 완전 자동화"
+    csap.ref/d12: "시스템개발보안 -- CI/CD 품질 메트릭 기반 배포 게이트"
+    design.ref: "MTU-N251 Design §3.2~3.5"
+spec:
+  groups:
+    # =================================================================
+    # 그룹 1: 배포 빈도 (Deployment Frequency)
+    # Design Ref: §3.2
+    # =================================================================
+    - name: dora:v2:deployment_frequency
+      interval: 1m
+      rules:
+        # 시간당 배포 횟수 (Pushgateway 기반)
+        - record: dora:deployment_frequency:hourly
+          expr: |
+            sum(increase(
+              dora_deployment_total[1h]
+            )) or vector(0)
+
+        # 일간 배포 횟수
+        - record: dora:deployment_frequency:daily
+          expr: |
+            sum(increase(
+              dora_deployment_total[24h]
+            )) or vector(0)
+
+        # 주간 배포 횟수
+        - record: dora:deployment_frequency:weekly
+          expr: |
+            sum(increase(
+              dora_deployment_total[7d]
+            )) or vector(0)
+
+        # 월간 배포 횟수
+        - record: dora:deployment_frequency:monthly
+          expr: |
+            sum(increase(
+              dora_deployment_total[30d]
+            )) or vector(0)
+
+        # 팀별 일간 배포 횟수
+        - record: dora:deployment_frequency:daily_by_team
+          expr: |
+            sum by (team) (increase(
+              dora_deployment_total[24h]
+            )) or vector(0)
+
+        # 네임스페이스별 일간 배포 횟수
+        - record: dora:deployment_frequency:daily_by_namespace
+          expr: |
+            sum by (namespace) (increase(
+              dora_deployment_total[24h]
+            )) or vector(0)
+
+        # K8s 기반 배포 (Pushgateway 보완용)
+        - record: dora:deployment_frequency:k8s_daily
+          expr: |
+            sum(increase(
+              kube_deployment_status_observed_generation[24h]
+            )) or vector(0)
+
+    # =================================================================
+    # 그룹 2: 변경 리드타임 (Lead Time for Changes)
+    # Design Ref: §3.2
+    # =================================================================
+    - name: dora:v2:lead_time
+      interval: 1m
+      rules:
+        # 리드타임 P50 (중앙값, 초)
+        - record: dora:lead_time:p50
+          expr: |
+            histogram_quantile(0.50,
+              sum(rate(dora_deployment_duration_seconds_bucket[24h])) by (le)
+            ) or vector(0)
+
+        # 리드타임 P90
+        - record: dora:lead_time:p90
+          expr: |
+            histogram_quantile(0.90,
+              sum(rate(dora_deployment_duration_seconds_bucket[24h])) by (le)
+            ) or vector(0)
+
+        # 리드타임 P99
+        - record: dora:lead_time:p99
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(dora_deployment_duration_seconds_bucket[24h])) by (le)
+            ) or vector(0)
+
+        # 평균 리드타임 (분)
+        - record: dora:lead_time:avg_minutes
+          expr: |
+            (
+              sum(rate(dora_deployment_duration_seconds_sum[24h]))
+              / clamp_min(sum(rate(dora_deployment_duration_seconds_count[24h])), 0.001)
+            ) / 60 or vector(0)
+
+        # 팀별 평균 리드타임
+        - record: dora:lead_time:avg_by_team
+          expr: |
+            (
+              sum by (team) (rate(dora_deployment_duration_seconds_sum[24h]))
+              / clamp_min(sum by (team) (rate(dora_deployment_duration_seconds_count[24h])), 0.001)
+            ) / 60 or vector(0)
+
+    # =================================================================
+    # 그룹 3: 변경 실패율 (Change Failure Rate)
+    # Design Ref: §3.4
+    # =================================================================
+    - name: dora:v2:change_failure_rate
+      interval: 1m
+      rules:
+        # 실패 배포 수 (롤백+핫픽스+CrashLoop 종합)
+        - record: dora:change_failure:total_daily
+          expr: |
+            (
+              sum(increase(dora_deployment_failure_total[24h]))
+              + sum(increase(dora_deployment_total{type="rollback"}[24h]))
+              + sum(increase(dora_deployment_total{type="hotfix"}[24h]))
+            ) or vector(0)
+
+        # 변경 실패율 (%)
+        - record: dora:change_failure_rate:ratio
+          expr: |
+            (
+              dora:change_failure:total_daily
+              / clamp_min(dora:deployment_frequency:daily, 1)
+            ) * 100 or vector(0)
+
+        # 주간 변경 실패율 (%)
+        - record: dora:change_failure_rate:weekly_ratio
+          expr: |
+            (
+              (
+                sum(increase(dora_deployment_failure_total[7d]))
+                + sum(increase(dora_deployment_total{type="rollback"}[7d]))
+                + sum(increase(dora_deployment_total{type="hotfix"}[7d]))
+              )
+              / clamp_min(dora:deployment_frequency:weekly, 1)
+            ) * 100 or vector(0)
+
+        # 팀별 CFR
+        - record: dora:change_failure_rate:by_team
+          expr: |
+            (
+              sum by (team) (increase(dora_deployment_failure_total[24h]))
+              / clamp_min(sum by (team) (increase(dora_deployment_total[24h])), 1)
+            ) * 100 or vector(0)
+
+        # CrashLoopBackOff 기반 실패 (보완)
+        - record: dora:change_failure:crashloop_count
+          expr: |
+            count(
+              kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"}
+            ) or vector(0)
+
+    # =================================================================
+    # 그룹 4: 서비스 복구 시간 (MTTR)
+    # Design Ref: §3.3
+    # =================================================================
+    - name: dora:v2:mttr
+      interval: 1m
+      rules:
+        # 인시던트 평균 복구 시간 (분)
+        - record: dora:mttr:avg_minutes
+          expr: |
+            (
+              sum(rate(dora_incident_duration_seconds_sum[7d]))
+              / clamp_min(sum(rate(dora_incident_duration_seconds_count[7d])), 0.001)
+            ) / 60 or vector(0)
+
+        # MTTR P50 (분)
+        - record: dora:mttr:p50_minutes
+          expr: |
+            histogram_quantile(0.50,
+              sum(rate(dora_incident_duration_seconds_bucket[7d])) by (le)
+            ) / 60 or vector(0)
+
+        # MTTR P90 (분)
+        - record: dora:mttr:p90_minutes
+          expr: |
+            histogram_quantile(0.90,
+              sum(rate(dora_incident_duration_seconds_bucket[7d])) by (le)
+            ) / 60 or vector(0)
+
+        # 현재 활성 인시던트 평균 지속 시간 (분)
+        - record: dora:mttr:active_incident_avg
+          expr: |
+            avg(
+              time() - ALERTS_FOR_STATE{alertstate="firing", severity=~"critical|warning"}
+            ) / 60 or vector(0)
+
+        # P1 인시던트 MTTR
+        - record: dora:mttr:p1_avg_minutes
+          expr: |
+            avg(
+              time() - ALERTS_FOR_STATE{alertstate="firing", severity="critical"}
+            ) / 60 or vector(0)
+
+        # 감지 시간 (MTTD)
+        - record: dora:mttd:detection_delay_avg
+          expr: |
+            avg(
+              ALERTS_FOR_STATE{alertstate="firing"}
+              - on(alertname)
+              group_left()
+              ALERTS_FOR_STATE{alertstate="pending"}
+            ) / 60 or vector(0)
+
+    # =================================================================
+    # 그룹 5: DORA 등급 자동 판정
+    # Design Ref: §3.5
+    # 1=Elite, 2=High, 3=Medium, 4=Low
+    # =================================================================
+    - name: dora:v2:grade
+      interval: 5m
+      rules:
+        # 배포 빈도 등급
+        # Elite: 주 수회+(>3), High: 주1~3, Medium: 월1~주1, Low: <월1
+        - record: dora:grade:deployment_frequency
+          expr: |
+            (
+              (dora:deployment_frequency:weekly > 3) * 1
+              + (dora:deployment_frequency:weekly > 1 and dora:deployment_frequency:weekly <= 3) * 2
+              + (dora:deployment_frequency:monthly >= 1 and dora:deployment_frequency:weekly <= 1) * 3
+              + (dora:deployment_frequency:monthly < 1) * 4
+            ) or vector(4)
+
+        # 리드타임 등급
+        # Elite: <1h(3600s), High: <1d(86400s), Medium: <1w(604800s), Low: >1w
+        - record: dora:grade:lead_time
+          expr: |
+            (
+              (dora:lead_time:p50 > 0 and dora:lead_time:p50 < 3600) * 1
+              + (dora:lead_time:p50 >= 3600 and dora:lead_time:p50 < 86400) * 2
+              + (dora:lead_time:p50 >= 86400 and dora:lead_time:p50 < 604800) * 3
+              + (dora:lead_time:p50 >= 604800) * 4
+            ) or vector(4)
+
+        # 변경 실패율 등급
+        # Elite: <5%, High: 5~15%, Medium: 15~30%, Low: >30%
+        - record: dora:grade:change_failure_rate
+          expr: |
+            (
+              (dora:change_failure_rate:ratio >= 0 and dora:change_failure_rate:ratio < 5) * 1
+              + (dora:change_failure_rate:ratio >= 5 and dora:change_failure_rate:ratio < 15) * 2
+              + (dora:change_failure_rate:ratio >= 15 and dora:change_failure_rate:ratio < 30) * 3
+              + (dora:change_failure_rate:ratio >= 30) * 4
+            ) or vector(4)
+
+        # MTTR 등급
+        # Elite: <1h(60m), High: <1d(1440m), Medium: <1w(10080m), Low: >1w
+        - record: dora:grade:mttr
+          expr: |
+            (
+              (dora:mttr:avg_minutes > 0 and dora:mttr:avg_minutes < 60) * 1
+              + (dora:mttr:avg_minutes >= 60 and dora:mttr:avg_minutes < 1440) * 2
+              + (dora:mttr:avg_minutes >= 1440 and dora:mttr:avg_minutes < 10080) * 3
+              + (dora:mttr:avg_minutes >= 10080) * 4
+            ) or vector(4)
+
+        # 종합 등급 (4개 평균, 반올림)
+        - record: dora:grade:overall
+          expr: |
+            ceil(
+              (
+                dora:grade:deployment_frequency
+                + dora:grade:lead_time
+                + dora:grade:change_failure_rate
+                + dora:grade:mttr
+              ) / 4
+            ) or vector(4)
+
+        # 종합 등급 라벨 (Grafana Value Mapping용)
+        # 1=Elite, 2=High, 3=Medium, 4=Low
+        - record: dora:grade:overall_score
+          expr: |
+            dora:grade:overall or vector(4)
