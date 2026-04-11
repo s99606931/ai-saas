@@ -15,3 +15,11 @@
 
 ## 산출물
 - `document-generator.ts` (433줄)
+- `tests/unit/document-generator.test.ts` (약 280줄, 24 테스트)
+
+## 테스트 커버리지 (Q-Gate G4)
+
+- **테스트 파일**: `tests/unit/document-generator.test.ts`
+- **테스트 수**: 24건
+- **커버 범위**: 5개 양식 생성, 템플릿 렌더링, AI 본문 생성, 문서 검증, 이력 관리, 팩토리
+- **검증 항목**: 협조전/보고서/회의록/기안문/공고문 생성, 첨부파일 조건부 렌더링, 참조문서번호, 미치환 변수 제거, PII 마스킹, LLM 프로바이더 호출 검증

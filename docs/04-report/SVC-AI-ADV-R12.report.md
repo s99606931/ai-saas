@@ -21,7 +21,15 @@
 
 | 파일 | 줄 수 |
 |------|-------|
-| `intelligent-search.ts` | 약 340줄 |
+| `intelligent-search.ts` | 약 370줄 |
+| `tests/unit/intelligent-search.test.ts` | 약 480줄 (40 테스트) |
+
+## 테스트 커버리지 (Q-Gate G4)
+
+- **테스트 파일**: `tests/unit/intelligent-search.test.ts`
+- **테스트 수**: 40건
+- **커버 범위**: classifyIntent, rewriteQuery, generateFacets, summarizeResults, executeIntelligentSearch, intelligentSearchRequestSchema
+- **검증 항목**: 의도 분류 5유형, 쿼리 재작성, 필터 변환, 날짜 추출, 패싯 생성, 결과 요약, Zod 스키마 검증, 통합 파이프라인
 
 ---
 
@@ -30,3 +38,4 @@
 | 버전 | 일자 | 내용 | 작성자 |
 |------|------|------|-------|
 | 1.0.0 | 2026-04-11 | 초기 작성 | PM Lead (Opus) |
+| 1.1.0 | 2026-04-11 | 단위 테스트 40건 추가 (Q-Gate G4 달성) | CTO Team (Opus) |
