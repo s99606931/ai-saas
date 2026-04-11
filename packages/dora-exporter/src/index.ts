@@ -14,6 +14,9 @@ import { DORAClassifier, DORALevel } from './classifier';
 import { LeadTimeCalculator } from './lead-time';
 import { ChangeFailureDetector } from './change-failure';
 import { MTTRTracker } from './mttr-tracker';
+import { TrendAnalyzer } from './trend-analyzer';
+import { ReportGenerator } from './report-generator';
+import { EventQueue, DORAEventType } from './event-queue';
 
 // Design Ref: §3.5 - Prometheus 메트릭 정의
 const register = new Registry();
@@ -96,6 +99,20 @@ const leadTimeCalculator = new LeadTimeCalculator();
 const changeFailureDetector = new ChangeFailureDetector();
 const mttrTracker = new MTTRTracker();
 const classifier = new DORAClassifier();
+const trendAnalyzer = new TrendAnalyzer();
+const reportGenerator = new ReportGenerator(trendAnalyzer);
+const eventQueue = new EventQueue({ maxQueueSize: 10000, maxRetries: 3 });
+
+// Design Ref: §3.3 — 이벤트 큐 핸들러 등록
+eventQueue.setHandler(async (event) => {
+  const { team, service, environment, type } = event;
+  if (type === DORAEventType.Deployment) {
+    deploymentTotal.inc({ team, service, environment });
+  } else if (type === DORAEventType.DeploymentFailure || type === DORAEventType.Rollback || type === DORAEventType.Hotfix) {
+    changeFailureDetector.recordFailure(team, service);
+    changeFailureRate.set({ team, service }, changeFailureDetector.getRate(team, service));
+  }
+});
 
 /**
  * Gitea Webhook 수신 엔드포인트
@@ -204,6 +221,101 @@ app.post('/classify', async (_req, res) => {
     res.status(200).json({ results });
   } catch (error) {
     process.stderr.write(JSON.stringify({ level: 'error', component: 'dora-exporter', action: 'classify', error: (error as Error).message, ts: new Date().toISOString() }) + '\n');
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * 주간 보고서 생성 엔드포인트
+ * Design Ref: §3.2, §3.8
+ * Plan SC: FR-N251.9
+ */
+app.get('/report/weekly', async (req, res) => {
+  try {
+    // 현재 메트릭 스냅샷 기록
+    const teams = changeFailureDetector.getTeams();
+    for (const team of teams) {
+      trendAnalyzer.recordSnapshot({
+        deploymentFrequency: await getDeploymentRate(team),
+        leadTimeSeconds: await getMedianLeadTime(team),
+        changeFailureRate: changeFailureDetector.getTeamRate(team),
+        mttrSeconds: mttrTracker.getMedianMTTR(team),
+      });
+    }
+
+    const format = req.query.format as string;
+    const teamFilter = req.query.team as string;
+    const config = {
+      team: teamFilter,
+      csapRefs: ['D-06', 'D-12'],
+    };
+
+    if (format === 'evidence') {
+      const evidence = reportGenerator.generateAuditEvidence(config);
+      res.status(200).json(evidence);
+    } else {
+      const markdown = reportGenerator.generateWeeklyReport(config);
+      if (format === 'json') {
+        const report = trendAnalyzer.analyzeWeekly();
+        res.status(200).json(report);
+      } else {
+        res.set('Content-Type', 'text/markdown; charset=utf-8');
+        res.status(200).send(markdown);
+      }
+    }
+  } catch (error) {
+    process.stderr.write(JSON.stringify({ level: 'error', component: 'dora-exporter', action: 'report_weekly', error: (error as Error).message, ts: new Date().toISOString() }) + '\n');
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * 추세 데이터 API 엔드포인트
+ * Design Ref: §3.1
+ * Plan SC: FR-N251.6
+ */
+app.get('/api/trends', async (req, res) => {
+  try {
+    const period = req.query.period as string;
+    const count = Math.min(parseInt(req.query.count as string || '30', 10), 365);
+
+    if (period === 'monthly') {
+      const report = trendAnalyzer.analyzeMonthly();
+      res.status(200).json(report);
+    } else {
+      const report = trendAnalyzer.analyzeWeekly();
+      const snapshots = trendAnalyzer.getRecentSnapshots(count);
+      res.status(200).json({
+        ...report,
+        snapshots,
+        snapshotCount: trendAnalyzer.getSnapshotCount(),
+      });
+    }
+  } catch (error) {
+    process.stderr.write(JSON.stringify({ level: 'error', component: 'dora-exporter', action: 'api_trends', error: (error as Error).message, ts: new Date().toISOString() }) + '\n');
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * 이벤트 큐 상태 API
+ * Design Ref: §3.3
+ * Plan SC: FR-N251.1
+ */
+app.get('/api/queue/stats', (_req, res) => {
+  res.status(200).json(eventQueue.getStats());
+});
+
+/**
+ * 이벤트 큐 배치 처리 트리거
+ * Design Ref: §3.3
+ */
+app.post('/api/queue/flush', async (_req, res) => {
+  try {
+    const result = await eventQueue.flush();
+    res.status(200).json(result);
+  } catch (error) {
+    process.stderr.write(JSON.stringify({ level: 'error', component: 'dora-exporter', action: 'queue_flush', error: (error as Error).message, ts: new Date().toISOString() }) + '\n');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
