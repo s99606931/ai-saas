@@ -126,13 +126,15 @@ export function createToolExecutors(
 
     calculate: async (params): Promise<ToolCallResult> => {
       const expression = String(params['expression'] ?? '');
-      // 안전한 수학 표현식만 허용
+      // CSAP D-12: 안전한 수학 표현식만 허용 (Function 생성자/eval 사용 금지)
       if (!/^[\d\s+\-*/().,]+$/.test(expression)) {
         return { success: false, output: '', error: '허용되지 않는 계산식입니다. 숫자와 사칙연산만 가능합니다.' };
       }
       try {
-        // eslint-disable-next-line no-eval
-        const result = Function(`"use strict"; return (${expression})`)() as number;
+        const result = safeEvaluate(expression);
+        if (result === null) {
+          return { success: false, output: '', error: '계산 실패: 유효하지 않은 수식입니다' };
+        }
         return { success: true, output: String(result) };
       } catch {
         return { success: false, output: '', error: '계산 실패' };
@@ -186,4 +188,121 @@ function extractSimpleEntities(text: string): Record<string, string[]> {
     amounts: [...new Set((text.match(/\d+,?\d*원|\d+만원|\d+억원/g) ?? []))],
     organizations: [...new Set((text.match(/\w+부|\w+청|\w+원|\w+처|\w+청/g) ?? []))].slice(0, 5),
   };
+}
+
+/**
+ * 안전한 수학 표현식 평가기 (CSAP D-12 준수)
+ *
+ * Function 생성자/eval 대신 재귀 하강 파서로 사칙연산 + 괄호를 평가합니다.
+ * 코드 인젝션 위험 0%. OWASP A03:2021 Injection 방지.
+ *
+ * 지원 연산: +, -, *, /, 괄호, 소수점
+ */
+function safeEvaluate(expression: string): number | null {
+  // 토큰화: 숫자, 연산자, 괄호
+  const tokens: string[] = [];
+  const cleaned = expression.replace(/,/g, '').replace(/\s+/g, '');
+
+  let i = 0;
+  while (i < cleaned.length) {
+    const ch = cleaned[i];
+    if (ch === undefined) break;
+
+    if ((ch >= '0' && ch <= '9') || ch === '.') {
+      let num = '';
+      while (i < cleaned.length) {
+        const c = cleaned[i];
+        if (c === undefined) break;
+        if ((c >= '0' && c <= '9') || c === '.') {
+          num += c;
+          i++;
+        } else {
+          break;
+        }
+      }
+      tokens.push(num);
+    } else if ('+-*/()'.includes(ch)) {
+      tokens.push(ch);
+      i++;
+    } else {
+      return null; // 허용되지 않는 문자
+    }
+  }
+
+  let pos = 0;
+
+  function peek(): string | undefined {
+    return tokens[pos];
+  }
+
+  function consume(): string {
+    const token = tokens[pos];
+    pos++;
+    return token ?? '';
+  }
+
+  // expression = term (('+' | '-') term)*
+  function parseExpression(): number | null {
+    let left = parseTerm();
+    if (left === null) return null;
+
+    while (peek() === '+' || peek() === '-') {
+      const op = consume();
+      const right = parseTerm();
+      if (right === null) return null;
+      left = op === '+' ? left + right : left - right;
+    }
+    return left;
+  }
+
+  // term = factor (('*' | '/') factor)*
+  function parseTerm(): number | null {
+    let left = parseFactor();
+    if (left === null) return null;
+
+    while (peek() === '*' || peek() === '/') {
+      const op = consume();
+      const right = parseFactor();
+      if (right === null) return null;
+      if (op === '/') {
+        if (right === 0) return null; // 0 나누기 방지
+        left = left / right;
+      } else {
+        left = left * right;
+      }
+    }
+    return left;
+  }
+
+  // factor = '(' expression ')' | number | unary
+  function parseFactor(): number | null {
+    const token = peek();
+    if (token === undefined) return null;
+
+    // 단항 연산자 처리
+    if (token === '-' || token === '+') {
+      const op = consume();
+      const factor = parseFactor();
+      if (factor === null) return null;
+      return op === '-' ? -factor : factor;
+    }
+
+    if (token === '(') {
+      consume(); // '('
+      const result = parseExpression();
+      if (result === null || peek() !== ')') return null;
+      consume(); // ')'
+      return result;
+    }
+
+    // 숫자
+    const num = parseFloat(consume());
+    if (isNaN(num) || !isFinite(num)) return null;
+    return num;
+  }
+
+  const result = parseExpression();
+  if (result === null || pos !== tokens.length) return null;
+  if (!isFinite(result)) return null;
+  return result;
 }

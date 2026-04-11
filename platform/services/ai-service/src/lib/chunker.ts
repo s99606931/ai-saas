@@ -103,3 +103,84 @@ function splitIntoSentences(text: string): string[] {
 export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 2);
 }
+
+// ── 부모-자식 계층적 청킹 ──────────────────────────────────────────────────
+// Design Ref: SVC-AI-ADV-R1 DESIGN §5
+// Plan SC: FR-ADV1.6
+
+export interface HierarchicalChunk {
+  /** 부모 청크 (컨텍스트 전달용, 1024 토큰) */
+  parent: TextChunk;
+  /** 자식 청크 배열 (검색 인덱싱용, 256 토큰) */
+  children: TextChunk[];
+  /** 부모 청크 ID (parentIndex 기반) */
+  parentIndex: number;
+}
+
+/**
+ * 계층적 청킹: 세분화 청크(256토큰)로 검색 → 부모 청크(1024토큰) 반환
+ * Plan SC: FR-ADV1.6
+ *
+ * 전략:
+ * 1. 부모 청크로 먼저 분할 (1024 토큰, 오버랩 100 토큰)
+ * 2. 각 부모 청크를 자식 청크로 세분화 (256 토큰, 오버랩 25 토큰)
+ * 3. 검색 시 자식 청크 매칭 → 부모 청크 컨텍스트 반환
+ *
+ * @param text 원본 텍스트
+ * @param parentMaxTokens 부모 청크 최대 토큰 수 (기본 1024)
+ * @param childMaxTokens 자식 청크 최대 토큰 수 (기본 256)
+ */
+export function hierarchicalChunk(
+  text: string,
+  parentMaxTokens = 1024,
+  childMaxTokens = 256,
+): HierarchicalChunk[] {
+  // 1. 부모 청크 생성
+  const parentOverlap = Math.floor(parentMaxTokens * 0.1); // 10% 오버랩
+  const parentChunks = chunkText(text, parentMaxTokens, parentOverlap);
+
+  // 2. 각 부모 청크를 자식 청크로 세분화
+  const hierarchical: HierarchicalChunk[] = [];
+  let globalChildIndex = 0;
+
+  for (let pIdx = 0; pIdx < parentChunks.length; pIdx++) {
+    const parent = parentChunks[pIdx];
+    if (!parent) continue;
+
+    const childOverlap = Math.floor(childMaxTokens * 0.1); // 10% 오버랩
+    const childChunks = chunkText(parent.content, childMaxTokens, childOverlap);
+
+    // 자식 청크의 글로벌 인덱스 재할당
+    const indexedChildren = childChunks.map((child) => ({
+      ...child,
+      chunkIndex: globalChildIndex++,
+      // 부모 대비 상대 오프셋을 원본 대비 절대 오프셋으로 변환
+      startChar: parent.startChar + child.startChar,
+      endChar: parent.startChar + child.endChar,
+    }));
+
+    hierarchical.push({
+      parent,
+      children: indexedChildren,
+      parentIndex: pIdx,
+    });
+  }
+
+  return hierarchical;
+}
+
+/**
+ * 자식 청크 ID에서 부모 청크를 조회하는 매핑 테이블 생성
+ * 검색 시 자식→부모 역참조에 사용
+ */
+export function buildChildToParentMap(
+  hierarchical: HierarchicalChunk[],
+): Map<number, TextChunk> {
+  const map = new Map<number, TextChunk>();
+  for (const group of hierarchical) {
+    for (const child of group.children) {
+      map.set(child.chunkIndex, group.parent);
+    }
+  }
+  return map;
+}

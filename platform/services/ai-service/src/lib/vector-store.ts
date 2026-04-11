@@ -7,7 +7,9 @@
 
 import { prisma } from './prisma.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma 모델 미생성 상태, SVC-AI-2026 스키마 추가 시 제거
+// NOTE: Record<string, unknown> 미사용 — Prisma 모델(AiKnowledgeDocument/Chunk) 미생성 상태.
+//       SVC-AI-2026 스키마 추가 시 타입 안전한 Prisma Client로 교체 예정. 2026-07-01 재검토.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma 모델 미생성 상태
 const db = prisma as Record<string, any>;
 
 export interface VectorDocument {

@@ -11,7 +11,10 @@ import type { DataGrade } from '@public-saas/types';
 import { maskPII } from '../lib/pii-masking.js';
 import { chunkText } from '../lib/chunker.js';
 import { storeChunks, getKnowledgeStats } from '../lib/vector-store.js';
-import { runRAG, generateEmbedding } from '../lib/rag-engine.js';
+import { runRAG, runAdvancedRAG, generateEmbedding } from '../lib/rag-engine.js';
+import type { AdvancedRAGOptions } from '../lib/rag-engine.js';
+// NOTE: Record<string, unknown> 미사용 — Prisma 모델(AiKnowledgeDocument/Chunk) 미생성 상태.
+//       SVC-AI-2026 스키마 추가 시 타입 안전한 Prisma Client로 교체 예정. 2026-07-01 재검토.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma 모델 미생성 상태 (SVC-AI-2026 스키마 추가 시 제거)
 import { prisma } from '../lib/prisma.js';
 
@@ -186,6 +189,116 @@ export async function ragQueryHandler(
     await reply.status(502).send({
       success: false,
       error: { code: 'RAG_QUERY_FAILED', message: 'RAG 질의 처리 중 오류가 발생했습니다.' },
+    });
+  }
+}
+
+// ── Advanced RAG Query ────────────────────────────────────────────────────
+// Design Ref: SVC-AI-ADV-R1 DESIGN §6
+// Plan SC: FR-ADV1.7
+// POST /ai/rag/query/advanced — 하이브리드 검색 + Reranking + 쿼리 확장
+
+const advancedQuerySchema = z.object({
+  tenantId: z.string().uuid(),
+  grade: z.enum(['O']),
+  question: z.string().min(1).max(2000),
+  topK: z.number().int().min(1).max(20).optional().default(5),
+  minScore: z.number().min(0).max(1).optional().default(0.25),
+  embedModelId: z.string().optional(),
+  chatModelId: z.string().optional(),
+  // Advanced RAG 전용 옵션
+  searchMode: z.enum(['semantic', 'keyword', 'hybrid']).optional().default('hybrid'),
+  enableReranking: z.boolean().optional().default(true),
+  enableQueryExpansion: z.boolean().optional().default(false),
+  enableCompression: z.boolean().optional().default(false),
+  bm25Weight: z.number().min(0).max(1).optional().default(0.4),
+});
+
+type AdvancedQueryBody = z.infer<typeof advancedQuerySchema>;
+
+/**
+ * Advanced RAG 쿼리 핸들러
+ * Plan SC: FR-ADV1.7
+ *
+ * 기존 /ai/rag/query의 상위 호환:
+ * - searchMode: 'hybrid' (BM25+시맨틱 RRF), 'keyword' (BM25 중심), 'semantic' (기존 동작)
+ * - enableReranking: LLM Cross-encoder Reranking
+ * - enableQueryExpansion: LLM 쿼리 재작성
+ * - enableCompression: 컨텍스트 압축 (관련 구절만 추출)
+ */
+export async function ragAdvancedQueryHandler(
+  request: FastifyRequest<{ Body: AdvancedQueryBody }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const body = advancedQuerySchema.parse(request.body);
+  const actor = (request.headers['x-user-id'] as string) || 'system';
+
+  // N2SF N-05: C/S등급 차단
+  try {
+    validateDataGrade(body.grade as DataGrade);
+  } catch (error) {
+    if (error instanceof DataGradeViolationError) {
+      await logAiEvent('AI_GRADE_VIOLATION', actor, 'rag-advanced', body.tenantId, request.ip,
+        request.headers['user-agent'] ?? 'unknown', { grade: body.grade, blocked: true, endpoint: 'rag/query/advanced' });
+      await reply.status(403).send({ success: false, error: { code: error.code, message: error.message } });
+      return;
+    }
+    throw error;
+  }
+
+  try {
+    // 1. 질문 임베딩 생성
+    const queryEmbedding = await generateEmbedding(body.question, body.embedModelId);
+
+    // 2. 채팅 모델 설정 조회
+    let chatModelConfig: { provider: string; endpoint: string; name: string } | undefined;
+    if (body.chatModelId) {
+      const model = await prisma.aiModel.findUnique({ where: { id: body.chatModelId } });
+      if (model?.isActive) {
+        chatModelConfig = { provider: model.provider, endpoint: model.endpoint, name: model.name };
+      }
+    }
+
+    // 3. Advanced RAG 파이프라인 실행
+    const advancedOptions: AdvancedRAGOptions = {
+      topK: body.topK,
+      minScore: body.minScore,
+      searchMode: body.searchMode,
+      enableReranking: body.enableReranking,
+      enableQueryExpansion: body.enableQueryExpansion,
+      enableCompression: body.enableCompression,
+      bm25Weight: body.bm25Weight,
+    };
+
+    const ragResponse = await runAdvancedRAG(
+      body.tenantId,
+      body.question,
+      queryEmbedding,
+      advancedOptions,
+      chatModelConfig,
+    );
+
+    await logAiEvent('RAG_ADVANCED_QUERY', actor, 'rag-advanced', body.tenantId, request.ip,
+      request.headers['user-agent'] ?? 'unknown', {
+        question: maskPII(body.question).slice(0, 100),
+        searchMode: body.searchMode,
+        enableReranking: body.enableReranking,
+        enableQueryExpansion: body.enableQueryExpansion,
+        enableCompression: body.enableCompression,
+        contextChunks: ragResponse.contextChunks,
+        tokensUsed: ragResponse.tokensUsed,
+        retrievalStats: ragResponse.retrievalStats,
+      });
+
+    await reply.status(200).send({
+      success: true,
+      data: ragResponse,
+    });
+  } catch (err) {
+    request.log.error(err, 'Advanced RAG query 실패');
+    await reply.status(502).send({
+      success: false,
+      error: { code: 'RAG_ADVANCED_QUERY_FAILED', message: 'Advanced RAG 질의 처리 중 오류가 발생했습니다.' },
     });
   }
 }

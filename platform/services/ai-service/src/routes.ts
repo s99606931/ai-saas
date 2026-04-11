@@ -16,9 +16,10 @@ import { aiUsageTrendHandler, modelAnalyticsHandler } from './handlers/ai-analyt
 import { chatStreamHandler } from './handlers/ai-stream.handler.js';
 import { embedHandler } from './handlers/ai-embed.handler.js';
 import { providerHealthHandler, providerModelsHandler } from './handlers/ai-provider.handler.js';
-import { ragIngestHandler, ragQueryHandler } from './handlers/ai-rag.handler.js';
-import { agentHandler } from './handlers/ai-agent.handler.js';
+import { ragIngestHandler, ragQueryHandler, ragAdvancedQueryHandler } from './handlers/ai-rag.handler.js';
+import { agentHandler, advancedAgentHandler } from './handlers/ai-agent.handler.js';
 import { structuredOutputHandler } from './handlers/ai-structured.handler.js';
+import { functionCallHandler } from './handlers/ai-function.handler.js';
 import { documentAnalyzeHandler, documentCompareHandler } from './handlers/ai-document.handler.js';
 import { workflowHandler } from './handlers/ai-workflow.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
@@ -306,6 +307,39 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     ragQueryHandler as never,
   );
 
+  // ── SVC-AI-ADV-R1: Advanced RAG (FR-ADV1.7) ────────────────
+
+  app.post(
+    '/ai/rag/query/advanced',
+    {
+      schema: {
+        description: 'Advanced RAG 질의: 하이브리드 검색(BM25+시맨틱 RRF) + Cross-encoder Reranking + 쿼리 확장 + 컨텍스트 압축',
+        tags: ['ai', 'rag'],
+        body: {
+          type: 'object' as const,
+          required: ['tenantId', 'grade', 'question'] as const,
+          properties: {
+            tenantId: { type: 'string' as const, format: 'uuid' },
+            grade: { type: 'string' as const, enum: ['O'] },
+            question: { type: 'string' as const, maxLength: 2000 },
+            topK: { type: 'integer' as const, minimum: 1, maximum: 20, default: 5 },
+            minScore: { type: 'number' as const, minimum: 0, maximum: 1, default: 0.25 },
+            embedModelId: { type: 'string' as const },
+            chatModelId: { type: 'string' as const },
+            searchMode: { type: 'string' as const, enum: ['semantic', 'keyword', 'hybrid'], default: 'hybrid' },
+            enableReranking: { type: 'boolean' as const, default: true },
+            enableQueryExpansion: { type: 'boolean' as const, default: false },
+            enableCompression: { type: 'boolean' as const, default: false },
+            bm25Weight: { type: 'number' as const, minimum: 0, maximum: 1, default: 0.4 },
+          },
+        },
+        response: { 200: modelResponse, 403: errorResponse, 502: errorResponse },
+      },
+      preHandler: chatLimiter,
+    },
+    ragAdvancedQueryHandler as never,
+  );
+
   // ── SVC-AI-2026: ReAct 에이전트 (FR-AI26.2) ─────────────────
 
   app.post(
@@ -331,6 +365,40 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       preHandler: agentLimiter,
     },
     agentHandler as never,
+  );
+
+  // ── SVC-AI-ADV-R2: Advanced Agent (FR-ADV2.6) ────────────────
+
+  app.post(
+    '/ai/agent/advanced',
+    {
+      schema: {
+        description: 'Advanced AI Agent: ReAct / Plan-Execute / Multi-Agent Orchestrator + 세션 메모리',
+        tags: ['ai', 'agent'],
+        body: {
+          type: 'object' as const,
+          required: ['tenantId', 'grade', 'query'] as const,
+          properties: {
+            tenantId: { type: 'string' as const, format: 'uuid' },
+            grade: { type: 'string' as const, enum: ['O'] },
+            query: { type: 'string' as const, maxLength: 4000 },
+            maxIterations: { type: 'integer' as const, minimum: 1, maximum: 10, default: 10 },
+            tools: { type: 'array' as const, items: { type: 'string' as const } },
+            modelId: { type: 'string' as const },
+            mode: { type: 'string' as const, enum: ['react', 'plan-execute', 'orchestrate'], default: 'react' },
+            sessionId: { type: 'string' as const, maxLength: 100 },
+            enableMemory: { type: 'boolean' as const, default: false },
+            subAgents: {
+              type: 'array' as const,
+              items: { type: 'string' as const, enum: ['researcher', 'analyst', 'writer', 'reviewer'] },
+            },
+          },
+        },
+        response: { 200: modelResponse, 403: errorResponse, 502: errorResponse },
+      },
+      preHandler: agentLimiter,
+    },
+    advancedAgentHandler as never,
   );
 
   // ── SVC-AI-2026: 구조화 출력 (FR-AI26.3) ────────────────────
@@ -360,6 +428,44 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       preHandler: chatLimiter,
     },
     structuredOutputHandler as never,
+  );
+
+  // ── SVC-AI-ADV-R4: Function Calling (FR-ADV4.5) ──────────────
+
+  app.post(
+    '/ai/function-call',
+    {
+      schema: {
+        description: 'OpenAI 호환 Function Calling: 구조화된 도구 호출 + 다중 라운드',
+        tags: ['ai', 'function-calling'],
+        body: {
+          type: 'object' as const,
+          required: ['tenantId', 'grade', 'messages'] as const,
+          properties: {
+            tenantId: { type: 'string' as const, format: 'uuid' },
+            grade: { type: 'string' as const, enum: ['O'] },
+            messages: {
+              type: 'array' as const,
+              items: {
+                type: 'object' as const,
+                properties: {
+                  role: { type: 'string' as const, enum: ['system', 'user', 'assistant'] },
+                  content: { type: 'string' as const, maxLength: 8192 },
+                },
+              },
+              minItems: 1,
+            },
+            tools: { type: 'array' as const, items: { type: 'string' as const } },
+            toolChoice: { type: 'string' as const, enum: ['auto', 'none'], default: 'auto' },
+            maxRounds: { type: 'integer' as const, minimum: 1, maximum: 10, default: 5 },
+            modelId: { type: 'string' as const },
+          },
+        },
+        response: { 200: modelResponse, 403: errorResponse, 502: errorResponse },
+      },
+      preHandler: agentLimiter,
+    },
+    functionCallHandler as never,
   );
 
   // ── SVC-AI-2026: 장문서 분석 (FR-AI26.4) ────────────────────
