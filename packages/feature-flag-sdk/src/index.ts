@@ -100,12 +100,13 @@ export class UnleashFeatureFlagClient implements IFeatureFlagClient {
     // const unleash = await startUnleash({ ... });
     // 여기서는 인터페이스 정의 및 구조 제공
     this.initialized = true;
-    console.log(`[FeatureFlag] 초기화 완료: ${this.config.appName} → ${this.config.apiUrl}`);
+    // NOTE: 프로덕션에서는 구조화된 로거로 교체 필요 (NFR-2 운영 가시성)
+    process.stdout.write(JSON.stringify({ level: 'info', component: 'feature-flag', msg: `초기화 완료: ${this.config.appName} → ${this.config.apiUrl}`, ts: new Date().toISOString() }) + '\n');
   }
 
-  isEnabled(flagName: string, context?: FeatureFlagContext): boolean {
+  isEnabled(flagName: string, _context?: FeatureFlagContext): boolean {
     if (!this.initialized) {
-      console.warn('[FeatureFlag] 미초기화 상태. fallback: false');
+      process.stderr.write(JSON.stringify({ level: 'warn', component: 'feature-flag', msg: '미초기화 상태. fallback: false', ts: new Date().toISOString() }) + '\n');
       return false;
     }
 
@@ -119,7 +120,7 @@ export class UnleashFeatureFlagClient implements IFeatureFlagClient {
     return false;
   }
 
-  getVariant(flagName: string, context?: FeatureFlagContext): string | undefined {
+  getVariant(flagName: string, _context?: FeatureFlagContext): string | undefined {
     if (!this.initialized) return undefined;
     return this.variantCache.get(flagName);
   }
@@ -134,7 +135,7 @@ export class UnleashFeatureFlagClient implements IFeatureFlagClient {
     this.flagCache.clear();
     this.variantCache.clear();
     this.initialized = false;
-    console.log('[FeatureFlag] 클라이언트 종료');
+    process.stdout.write(JSON.stringify({ level: 'info', component: 'feature-flag', msg: '클라이언트 종료', ts: new Date().toISOString() }) + '\n');
   }
 }
 

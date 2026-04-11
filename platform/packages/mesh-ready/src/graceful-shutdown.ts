@@ -40,8 +40,14 @@ export class GracefulShutdown {
     this.timeout = options.timeout ?? DEFAULT_TIMEOUT;
     this.cleanupHandlers = options.cleanupHandlers ?? [];
     this.logger = options.logger ?? {
-      info: (msg: string) => console.log(`[graceful-shutdown] ${msg}`),
-      error: (msg: string) => console.error(`[graceful-shutdown] ${msg}`),
+      // NOTE: 폴백 로거. 프로덕션에서는 반드시 구조화된 로거를 주입하세요.
+      // Design Ref: SVC-MESH-R13 — NFR-2 운영 가시성
+      info: (msg: string) => {
+        process.stdout.write(JSON.stringify({ level: 'info', component: 'graceful-shutdown', msg, ts: new Date().toISOString() }) + '\n');
+      },
+      error: (msg: string) => {
+        process.stderr.write(JSON.stringify({ level: 'error', component: 'graceful-shutdown', msg, ts: new Date().toISOString() }) + '\n');
+      },
     };
   }
 
@@ -137,10 +143,13 @@ export class GracefulShutdown {
       this.decrementRequests();
     });
 
-    // SIGTERM 핸들러 등록
+    // SIGTERM 핸들러 등록 — unhandled rejection 방지 (.catch 필수)
     const handler = () => {
       this.shutdown(app).then(() => {
         process.exit(0);
+      }).catch((err) => {
+        this.logger.error(`셧다운 중 오류 발생: ${String(err)}`);
+        process.exit(1);
       });
     };
 

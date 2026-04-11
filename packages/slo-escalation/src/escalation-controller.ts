@@ -107,7 +107,15 @@ export class SLOEscalationController {
     };
 
     if (!policy) {
-      console.warn(`[SLO Escalation] 정책 미등록 서비스: ${service}`);
+      process.stderr.write(
+        JSON.stringify({
+          level: 'warn',
+          component: 'slo-escalation',
+          action: 'policy_missing',
+          service,
+          ts: new Date().toISOString(),
+        }) + '\n',
+      );
       this.recordEvent(event);
       return event;
     }
@@ -152,7 +160,17 @@ export class SLOEscalationController {
       `[SLO ${levelLabel}] ${data.service} - ${data.sloName}: ` +
       `에러 버짓 ${data.budgetBurnRate}% 소진 (잔여: ${data.budgetRemaining}%)`;
 
-    console.log(`[${channel.toUpperCase()}] → ${target}: ${message}`);
+    process.stdout.write(
+      JSON.stringify({
+        level: 'info',
+        component: 'slo-escalation',
+        action: 'notify',
+        channel: channel.toUpperCase(),
+        target,
+        message,
+        ts: new Date().toISOString(),
+      }) + '\n',
+    );
     // 실제 구현에서는 각 채널 API 호출
   }
 
@@ -160,7 +178,17 @@ export class SLOEscalationController {
    * 자동 행동 트리거
    */
   private async triggerAction(action: string, service: string, level: EscalationLevel): Promise<void> {
-    console.log(`[ACTION] ${action} triggered for ${service} at ${level} level`);
+    process.stdout.write(
+      JSON.stringify({
+        level: 'info',
+        component: 'slo-escalation',
+        action: 'trigger_action',
+        runbookAction: action,
+        service,
+        escalationLevel: level,
+        ts: new Date().toISOString(),
+      }) + '\n',
+    );
     // 실제 구현: 런북 실행, 변경 동결, 포스트모템 생성 등
   }
 

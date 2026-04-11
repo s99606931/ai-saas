@@ -75,11 +75,13 @@ export class ModelCIPipeline {
     // MLflow API 호출 (모의)
     const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-    console.log(`[Model CI] 학습 실행 기록: ${runId}`);
-    console.log(`  실험: ${validated.experimentName}`);
-    console.log(`  모델: ${validated.modelName}`);
-    console.log(`  파라미터: ${JSON.stringify(validated.params)}`);
-    console.log(`  메트릭: ${JSON.stringify(validated.metrics)}`);
+    // Design Ref: MTU-N173 §3.4 — 구조화된 로깅 (CSAP D-06 감사 추적)
+    process.stdout.write(JSON.stringify({
+      level: 'info', component: 'model-ci', action: 'log_training_run',
+      runId, experiment: validated.experimentName, model: validated.modelName,
+      params: validated.params, metrics: validated.metrics,
+      ts: new Date().toISOString(),
+    }) + '\n');
 
     return { runId };
   }
@@ -124,10 +126,10 @@ export class ModelCIPipeline {
     }
 
     const passed = reasons.length === 0;
-    console.log(`[Model CI] 검증 결과: ${passed ? 'PASS' : 'FAIL'}`);
-    if (!passed) {
-      reasons.forEach(r => console.log(`  - ${r}`));
-    }
+    process.stdout.write(JSON.stringify({
+      level: passed ? 'info' : 'warn', component: 'model-ci', action: 'validate_model',
+      runId, passed, reasons, ts: new Date().toISOString(),
+    }) + '\n');
 
     return { passed, reasons };
   }
@@ -140,8 +142,10 @@ export class ModelCIPipeline {
     modelName: string,
     stage: ModelStage = ModelStage.Staging,
   ): Promise<{ version: number; stage: ModelStage }> {
-    console.log(`[Model CI] 모델 등록: ${modelName} → ${stage}`);
-    console.log(`  소스 실행: ${runId}`);
+    process.stdout.write(JSON.stringify({
+      level: 'info', component: 'model-ci', action: 'register_model',
+      modelName, stage, runId, ts: new Date().toISOString(),
+    }) + '\n');
 
     // MLflow Model Registry API (모의)
     const version = Math.floor(Math.random() * 100) + 1;
@@ -157,12 +161,13 @@ export class ModelCIPipeline {
     version: number,
     targetStage: ModelStage,
   ): Promise<{ success: boolean }> {
-    console.log(`[Model CI] 스테이지 전환: ${modelName} v${version} → ${targetStage}`);
-
-    // 프로덕션 전환 시 추가 검증
-    if (targetStage === ModelStage.Production) {
-      console.log('  [주의] 프로덕션 전환 - A/B 테스트 결과 확인 필요');
-    }
+    process.stdout.write(JSON.stringify({
+      level: targetStage === ModelStage.Production ? 'warn' : 'info',
+      component: 'model-ci', action: 'promote_model',
+      modelName, version, targetStage,
+      notice: targetStage === ModelStage.Production ? '프로덕션 전환 — A/B 테스트 결과 확인 필요' : undefined,
+      ts: new Date().toISOString(),
+    }) + '\n');
 
     return { success: true };
   }

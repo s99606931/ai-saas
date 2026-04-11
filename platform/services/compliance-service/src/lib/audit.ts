@@ -16,7 +16,7 @@ export async function logComplianceEvent(action: string, metadata?: Record<strin
     target: 'compliance',
     targetType: 'compliance',
     tenantId: 'system',
-    ip: process.env.SERVICE_IP || '0.0.0.0',
+    ip: process.env.SERVICE_IP || '127.0.0.1', // CSAP D-06: 내부 서비스 루프백 기본값
     userAgent: 'compliance-service/1.0',
     metadata,
   });

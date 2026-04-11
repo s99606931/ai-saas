@@ -138,7 +138,7 @@ app.post('/webhook/gitea', async (req, res) => {
       res.status(400).json({ error: 'Invalid webhook payload', details: error.issues });
       return;
     }
-    console.error('Webhook processing error:', (error as Error).message);
+    process.stderr.write(JSON.stringify({ level: 'error', component: 'dora-exporter', action: 'webhook_gitea', error: (error as Error).message, ts: new Date().toISOString() }) + '\n');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -176,7 +176,7 @@ app.post('/webhook/alertmanager', async (req, res) => {
       res.status(400).json({ error: 'Invalid alert payload', details: error.issues });
       return;
     }
-    console.error('Alert processing error:', (error as Error).message);
+    process.stderr.write(JSON.stringify({ level: 'error', component: 'dora-exporter', action: 'webhook_alertmanager', error: (error as Error).message, ts: new Date().toISOString() }) + '\n');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -203,7 +203,7 @@ app.post('/classify', async (_req, res) => {
 
     res.status(200).json({ results });
   } catch (error) {
-    console.error('Classification error:', (error as Error).message);
+    process.stderr.write(JSON.stringify({ level: 'error', component: 'dora-exporter', action: 'classify', error: (error as Error).message, ts: new Date().toISOString() }) + '\n');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -274,8 +274,11 @@ async function getMedianLeadTime(team: string): Promise<number> {
 const PORT = parseInt(process.env.DORA_EXPORTER_PORT || '9170', 10);
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`DORA Exporter listening on port ${PORT}`);
-  console.log('Endpoints: /webhook/gitea, /webhook/alertmanager, /metrics, /healthz');
+  process.stdout.write(JSON.stringify({
+    level: 'info', component: 'dora-exporter', action: 'server_start',
+    port: PORT, endpoints: ['/webhook/gitea', '/webhook/alertmanager', '/metrics', '/healthz'],
+    ts: new Date().toISOString(),
+  }) + '\n');
 });
 
 export { app, register };
