@@ -29,7 +29,7 @@ describe('SSE 이벤트 인코딩 (FR-ADV6.1)', () => {
     expect(text).toContain('event: token');
     expect(text).toContain('"delta":"안녕"');
     expect(text).toContain('"index":0');
-    expect(text).toEndWith('\n\n');
+    expect(text.endsWith('\n\n')).toBe(true);
   });
 
   it('사용량 이벤트를 SSE 형식으로 인코딩한다', () => {
