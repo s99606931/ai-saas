@@ -200,6 +200,12 @@
 | **SVC-AI-ADV-R20** Multi-Agent Collaboration (다중 에이전트 협업) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R20-multi-agent-collaboration/` |
 | **SVC-AI-ADV-R21** Context Window Manager (컨텍스트 윈도우 관리) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R21-context-window-manager/` |
 | **SVC-AI-ADV-R22** AI Explainability (AI 설명 가능성) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R22-ai-explainability/` |
+| **SVC-AI-ADV-R23** Semantic Router (의미 기반 라우팅) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R23-semantic-router/` |
+| **SVC-AI-ADV-R24** Embedding Pipeline (임베딩 파이프라인) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R24-embedding-pipeline/` |
+| **SVC-AI-ADV-R25** AI Model Registry (모델 레지스트리) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R25-ai-model-registry/` |
+| **SVC-AI-ADV-R26** Fine-Tuning Data Pipeline (파인튜닝 데이터) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R26-fine-tuning-pipeline/` |
+| **SVC-AI-ADV-R27** AI Gateway Orchestrator (게이트웨이) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R27-ai-gateway/` |
+| **SVC-AI-ADV-R28** AI Compliance Checker (규제 준수 검증) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R28-ai-compliance-checker/` |
 | **SVC-REQVALID-R28** 요청 검증기 패키지 | 2026-04-11 | 100% | (완료, 아카이브 대기) |
 
 ## av-skill 요약
