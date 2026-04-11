@@ -193,6 +193,13 @@
 | **SVC-AI-ADV-R13** Autonomous Document Generation (공문서 자동 생성) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R13-document-generator/` |
 | **SVC-AI-ADV-R14** AI Workflow Orchestrator (작업 흐름 오케스트레이터) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R14-workflow-orchestrator/` |
 | **SVC-AI-ADV-R15** AI Rate Limiter & Quota Manager (속도 제한 + 할당량) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R15-rate-limiter/` |
+| **SVC-AI-ADV-R16** LLM Evaluation Framework (LLM 평가 프레임워크) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R16-llm-evaluator/` |
+| **SVC-AI-ADV-R17** A2A Protocol (Agent-to-Agent 상호운용) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R17-a2a-protocol/` |
+| **SVC-AI-ADV-R18** Prompt A/B Testing (프롬프트 A/B 테스트) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R18-prompt-ab-testing/` |
+| **SVC-AI-ADV-R19** AI Feedback Loop (AI 피드백 루프) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R19-ai-feedback-loop/` |
+| **SVC-AI-ADV-R20** Multi-Agent Collaboration (다중 에이전트 협업) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R20-multi-agent-collaboration/` |
+| **SVC-AI-ADV-R21** Context Window Manager (컨텍스트 윈도우 관리) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R21-context-window-manager/` |
+| **SVC-AI-ADV-R22** AI Explainability (AI 설명 가능성) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R22-ai-explainability/` |
 | **SVC-REQVALID-R28** 요청 검증기 패키지 | 2026-04-11 | 100% | (완료, 아카이브 대기) |
 
 ## av-skill 요약
