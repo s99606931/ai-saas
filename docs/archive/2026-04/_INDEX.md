@@ -167,6 +167,30 @@
 | **MTU-N102** Thanos 장기 메트릭 저장소 + Grafana 연합 | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N102-thanos-metrics/` |
 | **MTU-N103** GitOps 시크릿 회전 자동화 (Vault + ESO) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N103-secret-rotation/` |
 | **MTU-N104** 8라운드 통합 검증 (8/8 ALL PASS) | 2026-04-10 | 100% | `docs/archive/2026-04/MTU-N104-round8-integration/` |
+| **SVC-AI-ADV-R1** Advanced RAG 하이브리드 검색 + Reranking | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R1-advanced-rag/` |
+| **SVC-AI-ADV-R2** Agentic AI Pipeline (Plan-Execute + Memory) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R2-agentic-pipeline/` |
+| **SVC-AI-ADV-R3** AI Safety Guardrails (프롬프트 인젝션 탐지) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R3-ai-guardrails/` |
+| **SVC-AI-ADV-R4** Structured Tool Use / Function Calling | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R4-function-calling/` |
+| **SVC-AI-ADV-R5** Knowledge Graph RAG (엔티티/관계 추출) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R5-knowledge-graph-rag/` |
+| **SVC-AI-ADV-R6** AI Streaming & SSE (토큰 스트리밍) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R6-streaming-sse/` |
+| **SVC-AI-ADV-R7** MCP 서버 (Model Context Protocol) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R7-mcp-server/` |
+| **SVC-GRACEFUL-R26** 그레이스풀 셧다운 패키지 | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-GRACEFUL-R26/` |
+| **SVC-RATELIMIT-R27** Rate Limiter 패키지 | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-RATELIMIT-R27/` |
+| **MTU-TECH-STACK-2026Q2** 기술 스택 표준화 지침서 3종 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-TECH-STACK-2026Q2/` |
+| **MTU-N241** Trivy 취약점 모니터링 자동화 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N241-trivy-vuln-monitoring/` |
+| **MTU-N242** 예측 알림 (Predictive Alerting) | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N242-predictive-alerting/` |
+| **MTU-N243** 플랫폼 성숙도 평가 모델 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N243-platform-maturity-assessment/` |
+| **MTU-N251** DORA Four Keys 메트릭 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N251-dora-four-keys/` |
+| **MTU-N252** AIOps RCA (AI 장애 원인 분석) | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N252-aiops-rca/` |
+| **MTU-N253** CSAP 증거 수집 v2 자동화 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N253-csap-evidence-v2/` |
+| **MTU-N254** BuildKit 캐시 최적화 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N254-buildkit-cache/` |
+| **MTU-N255** SRE Error Budget 자동화 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N255-sre-error-budget/` |
+| **SVC-AI-ADV-R8** AI Cost Optimizer (시맨틱 캐시 + 모델 라우팅) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R8-cost-optimizer/` |
+| **SVC-AI-ADV-R9** AI Observability (LLM 메트릭 + 프롬프트 버저닝) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R9-ai-observability/` |
+| **SVC-AI-ADV-R10** Multimodal AI (문서 이미지 분석) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R10-multimodal/` |
+| **SVC-AI-ADV-R11** Conversational Memory (다중 세션 대화 기억) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R11-conversational-memory/` |
+| **SVC-AI-ADV-R12** AI-powered Search (지능형 검색) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R12-intelligent-search/` |
+| **SVC-REQVALID-R28** 요청 검증기 패키지 | 2026-04-11 | 100% | (완료, 아카이브 대기) |
 
 ## av-skill 요약
 
