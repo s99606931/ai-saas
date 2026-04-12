@@ -1,75 +1,14 @@
 {
   "version": "1.0",
-  "enabled": true,
+  "enabled": false,
   "teamName": "",
   "feature": "public-saas-framework",
   "pdcaPhase": "archived",
   "orchestrationPattern": "leader",
   "ctoAgent": "opus",
-  "startedAt": "2026-04-12T11:35:09.969Z",
-  "lastUpdated": "2026-04-12T12:05:13.789Z",
-  "teammates": [
-    {
-      "name": "a0404765282cab81a",
-      "role": "implementer",
-      "model": "sonnet",
-      "status": "completed",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-12T11:35:09.971Z",
-      "lastActivityAt": "2026-04-12T11:50:28.148Z"
-    },
-    {
-      "name": "a3bc0c7974be25bae",
-      "role": "pm-lead",
-      "model": "sonnet",
-      "status": "completed",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-12T11:35:28.548Z",
-      "lastActivityAt": "2026-04-12T11:45:09.605Z"
-    },
-    {
-      "name": "a8a79082eeb21b237",
-      "role": "pm-lead",
-      "model": "sonnet",
-      "status": "completed",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-12T11:45:27.479Z",
-      "lastActivityAt": "2026-04-12T11:56:59.179Z"
-    },
-    {
-      "name": "a2dd1e182e9082cbe",
-      "role": "implementer",
-      "model": "sonnet",
-      "status": "completed",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-12T11:51:11.630Z",
-      "lastActivityAt": "2026-04-12T12:04:23.985Z"
-    },
-    {
-      "name": "ac74f1197d0c79922",
-      "role": "pm-lead",
-      "model": "sonnet",
-      "status": "spawning",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-12T11:57:14.643Z",
-      "lastActivityAt": "2026-04-12T11:57:14.643Z"
-    },
-    {
-      "name": "a8029250d01976ce2",
-      "role": "implementer",
-      "model": "sonnet",
-      "status": "spawning",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-12T12:05:13.788Z",
-      "lastActivityAt": "2026-04-12T12:05:13.788Z"
-    }
-  ],
+  "startedAt": "2026-04-12T12:18:17.914Z",
+  "lastUpdated": "2026-04-12T12:19:46.430Z",
+  "teammates": [],
   "progress": {
     "totalTasks": 0,
     "completedTasks": 0,
@@ -78,5 +17,5 @@
     "pendingTasks": 0
   },
   "recentMessages": [],
-  "sessionId": "e99363ab-9aa5-4d90-a751-98515d72da60"
+  "sessionId": "03cca394-51a0-4795-8e8f-512dcf3356b8"
 }
