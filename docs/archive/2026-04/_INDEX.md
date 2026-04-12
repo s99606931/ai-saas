@@ -502,3 +502,25 @@
 | **MTU-N253** CSAP 증거 수집 자동화 v2 | 2026-04-11 | 96.5% | `docs/archive/2026-04/MTU-N253-csap-evidence-v2/` |
 | **MTU-N254** 빌드 캐시 분산화 (BuildKit + 원격 캐시) | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N254-buildkit-cache/` |
 | **MTU-N255** SRE 에러 버짓 자동 액션 + 온콜 자동화 | 2026-04-11 | 100% | `docs/archive/2026-04/MTU-N255-sre-error-budget/` |
+
+## 2026-04-11 — N281~N299 자율 사이클 (PM Lead 자율 모드)
+
+- [MTU-N281](./MTU-N281-electronic-approval-ai/_INDEX.md): 전자결재 AI 어시스턴트 (9개 테스트)
+- [MTU-N282](./MTU-N282-official-document-reviewer/_INDEX.md): 공문서 AI 자동 검토 (5개 테스트)
+- [MTU-N283](./MTU-N283-civil-petition-automation/_INDEX.md): 민원 처리 자동화 플로우 (6개 테스트)
+- [MTU-N284](./MTU-N284-policy-impact-analysis/_INDEX.md): 정책 영향 분석 AI (6개 테스트)
+- [MTU-N285](./MTU-N285-public-data-portal/_INDEX.md): 공공데이터 포털 연동 분석 (4개 테스트)
+- [MTU-N286](./MTU-N286-multitenant-rls/_INDEX.md): 멀티테넌트 RLS 자동화 (6개 테스트)
+- [MTU-N287](./MTU-N287-tenant-onboarding-ai/_INDEX.md): 테넌트 온보딩 자동화 AI (3개 테스트)
+- [MTU-N288](./MTU-N288-anomaly-login-detection/_INDEX.md): AI 기반 이상 로그인 탐지 (6개 테스트)
+- [MTU-N289](./MTU-N289-api-traffic-ueba/_INDEX.md): 실시간 API 이상 트래픽 탐지 (3개 테스트)
+- [MTU-N290](./MTU-N290-compliance-ai-reporter/_INDEX.md): 보안 컴플라이언스 AI 리포터 (6개 테스트)
+- [MTU-N291](./MTU-N291-finops-capacity-planning/_INDEX.md): FinOps AI 용량 계획 (5개 테스트)
+- [MTU-N292](./MTU-N292-sre-postmortem-generator/_INDEX.md): SRE 포스트모텀 자동 생성 (1개 테스트)
+- [MTU-N293](./MTU-N293-b2g-contract-management/_INDEX.md): B2G 계약 관리 AI (6개 테스트)
+- [MTU-N294](./MTU-N294-dr-scenario-test/_INDEX.md): 자동 DR 시나리오 테스트 (6개 테스트)
+- [MTU-N295](./MTU-N295-vulnerability-patch-workflow/_INDEX.md): 취약점 패치 워크플로우 자동화 (1개 테스트)
+- [MTU-N296](./MTU-N296-meeting-minutes-ai/_INDEX.md): 회의록 AI 요약/액션아이템 추출 (1개 테스트)
+- [MTU-N297](./MTU-N297-budget-analysis-ai/_INDEX.md): 예산서 AI 분석/이상 탐지 (5개 테스트)
+- [MTU-N298](./MTU-N298-regulatory-sandbox-analyzer/_INDEX.md): 규제 샌드박스 영향도 분석 (1개 테스트)
+- [MTU-N299](./MTU-N299-procurement-bid-analyzer/_INDEX.md): 공공조달 입찰 분석 (5개 테스트)
