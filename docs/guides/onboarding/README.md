@@ -224,6 +224,7 @@ k3s 클러스터 운영과 Helm, 컴포넌트 관리를 다룹니다.
 | [12-chaos-engineering.md](04-infrastructure/12-chaos-engineering.md) | 카오스 엔지니어링 — LitmusChaos, 실험 5종, GameDay, CSAP DR 통합 |
 | [components/10-keda-advanced.md](04-infrastructure/components/10-keda-advanced.md) | KEDA 심화 — Redis BullMQ 스케일링, Prometheus Scaler, Cron 야간 다운, ScaledJob |
 | [14-storage-management.md](04-infrastructure/14-storage-management.md) | 스토리지 관리 — PV/PVC/StorageClass, 3계층 StorageClass, 용량 경보, 온라인 확장, CSAP D-10 |
+| [15-network-policies-advanced.md](04-infrastructure/15-network-policies-advanced.md) | NetworkPolicy 심화 — 제로 트러스트 네트워킹, 네임스페이스 격리 매트릭스, 서비스별 레시피 10개, Kyverno 자동 강제, CSAP D-08 매핑 |
 | **kubernetes/** | **k3s 운영 및 관리 (3개)** |
 | [kubernetes/01-k3s-basics.md](04-infrastructure/kubernetes/01-k3s-basics.md) | k3s 입문 — Pod, kubectl, k9s |
 | [kubernetes/02-helm-charts.md](04-infrastructure/kubernetes/02-helm-charts.md) | Helm 차트 관리 |
@@ -248,6 +249,7 @@ k3s 클러스터 운영과 Helm, 컴포넌트 관리를 다룹니다.
 | **alerting/** | **AlertManager 알림 (2개)** |
 | [alerting/01-alertmanager-guide.md](05-monitoring/alerting/01-alertmanager-guide.md) | 알림 채널 5개, PrometheusRule 작성, 온콜 |
 | [alerting/02-alert-runbooks.md](05-monitoring/alerting/02-alert-runbooks.md) | 알림 런북 10개 — HighErrorRate, CrashLoopBackOff, SLO 에러버짓 등 |
+| [alerting/03-escalation-playbook.md](05-monitoring/alerting/03-escalation-playbook.md) | 에스컬레이션 플레이북 — P1~P4 대응 매트릭스, TOP 15 알림 플레이북, 사고 대응 역할 분담, Post-Mortem 작성, SLO 자동화 |
 | **dora/** | **DORA 4 Keys (1개)** |
 | [dora/01-dora-metrics.md](05-monitoring/dora/01-dora-metrics.md) | 배포 빈도, 리드 타임, 변경 실패율, 복구 시간 |
 | **slo/** | **SLO/SLI/SLA (1개)** |
@@ -279,6 +281,7 @@ Gitea Actions 기반 CI/CD 파이프라인과 Q-Gate를 다룹니다.
 | [08-blue-green-deployment.md](06-cicd/08-blue-green-deployment.md) | 블루/그린 배포 — Flagger+Linkerd, 3전략 비교, 트래픽 전환 0→50→100%, 롤백 절차, 스테이징 실습 |
 | [09-environment-promotion.md](06-cicd/09-environment-promotion.md) | 환경 승격 프로세스 — dev→stg→prod 흐름, 수동 승인 게이트, 핫픽스 긴급 경로, 20개 사전 체크리스트 |
 | [10-gitops-advanced.md](06-cicd/10-gitops-advanced.md) | GitOps 심화 — Flux2 5개 컨트롤러, HelmRelease dependsOn, Kustomize 환경별 오버레이, Image Automation |
+| [11-progressive-delivery.md](06-cicd/11-progressive-delivery.md) | Progressive Delivery — Flagger 카나리 심화, A/B 테스트(헤더 라우팅), Feature Flag 라이프사이클, Shadow 배포, Ring 배포, DORA 연계 |
 | **deployment/** | **배포 전략 (2개)** |
 | [deployment/01-gitops-deploy.md](06-cicd/deployment/01-gitops-deploy.md) | GitOps 배포 — Flux HelmRelease |
 | [deployment/02-hotfix-process.md](06-cicd/deployment/02-hotfix-process.md) | 핫픽스 프로세스 — 긴급 배포 |

@@ -733,3 +733,12 @@ XAI 추론 추적·테넌트 과금 리포트·공공 서류 인텐트 분류·�
 - **SVC-AI-ADV-R176**: NL Query Optimizer (`nl-query-optimizer.ts`, 11 테스트) — 자연어→SELECT/집계/JOIN SQL 변환 + SQL 주입/주석 인젝션 보안 검사.
 - **SVC-AI-ADV-R177**: User Behavior Anomaly Detector (`user-behavior-anomaly-detector.ts`, 9 테스트) — EXCESSIVE_REQUESTS/CREDENTIAL_STUFFING/BULK_EXPORT/UNUSUAL_TIME 탐지.
 - **SVC-AI-ADV-R178**: Realtime Audit Reporter (`realtime-audit-reporter.ts`, 12 테스트) — 테넌트별 감사 이벤트 append-only + CSAP D-06/D-08, N2SF N-05 준수 검사 + 리스크 스코어 보고서.
+- **SVC-AI-ADV-R196**: Test Data Generator AI (`test-data-generator-ai.ts`, 9 테스트) — N2SF C/S 등급 차단 + uuid/email/phone/date/boolean 필드 타입 자동 생성.
+- **SVC-AI-ADV-R197**: Security Vuln Auto Fixer (`security-vuln-auto-fixer.ts`, 7 테스트) — SQL_INJECTION/XSS/HARDCODED_SECRET AUTO 수정, INSECURE_DESERIALIZATION/PATH_TRAVERSAL MANUAL.
+- **SVC-AI-ADV-R198**: Multitenant Data Migrator AI (`multitenant-data-migrator-ai.ts`, 8 테스트) — LARGE→HIGH 위험 차단, SMALL→LOW 자동 실행, 단계별 마이그레이션.
+- **SVC-AI-ADV-R199**: Public Service Quality Predictor (`public-service-quality-predictor.ts`, 8 테스트) — avgSatisfaction 기반 EXCELLENT/GOOD/FAIR/POOR + 처리기간/민원수 위험 요인.
+- **SVC-AI-ADV-R200**: Resource Autoscaling AI (`resource-autoscaling-ai.ts`, 8 테스트) — 최근 3개 스냅샷 평균 CPU/메모리 80%↑ SCALE_UP, 30%↓ SCALE_DOWN, min/max 경계 준수.
+- **SVC-AI-ADV-R201**: Code Vuln Auto Patcher (`code-vuln-auto-patcher.ts`, 8 테스트) — 메이저 버전 변경 여부 기반 AUTO/MANUAL 전략, APPLIED/PENDING 상태 추적.
+- **SVC-AI-ADV-R202**: AI Dynamic API Router (`ai-dynamic-api-router.ts`, 7 테스트) — ROUND_ROBIN/LATENCY/WEIGHTED/LEAST_CONN 라우팅, UNHEALTHY 제외 fallback.
+- **SVC-AI-ADV-R203**: Public Data Auto Labeler (`public-data-auto-labeler.ts`, 8 테스트) — N2SF C/S 차단 + 키워드 기반 POLICY/FINANCE/WELFARE/INFRASTRUCTURE/ENVIRONMENT/GENERAL 분류.
+- **SVC-AI-ADV-R204**: RCA Engine AI v2 (`rca-engine-ai-v2.ts`, 8 테스트) — 이벤트 신호 키워드 기반 INFRASTRUCTURE/APPLICATION/DATABASE/NETWORK/HUMAN_ERROR 근본원인 + confidence 산출.

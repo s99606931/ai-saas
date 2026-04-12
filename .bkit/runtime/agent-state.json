@@ -1,65 +1,14 @@
 {
   "version": "1.0",
-  "enabled": true,
+  "enabled": false,
   "teamName": "",
   "feature": "public-saas-framework",
   "pdcaPhase": "archived",
   "orchestrationPattern": "leader",
   "ctoAgent": "opus",
-  "startedAt": "2026-04-12T12:22:13.834Z",
-  "lastUpdated": "2026-04-12T12:29:07.207Z",
-  "teammates": [
-    {
-      "name": "acf31f887145df85f",
-      "role": "implementer",
-      "model": "sonnet",
-      "status": "spawning",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-12T12:22:13.836Z",
-      "lastActivityAt": "2026-04-12T12:22:13.836Z"
-    },
-    {
-      "name": "a0e910efa14edd01a",
-      "role": "ai-impl-c",
-      "model": "sonnet",
-      "status": "completed",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-12T12:28:27.421Z",
-      "lastActivityAt": "2026-04-12T12:28:43.192Z"
-    },
-    {
-      "name": "acd88851f81314f50",
-      "role": "ai-impl-b",
-      "model": "sonnet",
-      "status": "completed",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-12T12:28:32.027Z",
-      "lastActivityAt": "2026-04-12T12:28:48.115Z"
-    },
-    {
-      "name": "a72cb0b02d1496fe0",
-      "role": "ai-impl-b",
-      "model": "sonnet",
-      "status": "spawning",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-12T12:28:48.429Z",
-      "lastActivityAt": "2026-04-12T12:28:48.429Z"
-    },
-    {
-      "name": "a07ed5b6324cfaab5",
-      "role": "ai-impl-c",
-      "model": "sonnet",
-      "status": "spawning",
-      "currentTask": null,
-      "taskId": null,
-      "startedAt": "2026-04-12T12:29:07.206Z",
-      "lastActivityAt": "2026-04-12T12:29:07.206Z"
-    }
-  ],
+  "startedAt": "2026-04-12T21:46:28.792Z",
+  "lastUpdated": "2026-04-12T21:46:45.695Z",
+  "teammates": [],
   "progress": {
     "totalTasks": 0,
     "completedTasks": 0,
@@ -68,5 +17,5 @@
     "pendingTasks": 0
   },
   "recentMessages": [],
-  "sessionId": "e99363ab-9aa5-4d90-a751-98515d72da60"
+  "sessionId": "03cca394-51a0-4795-8e8f-512dcf3356b8"
 }

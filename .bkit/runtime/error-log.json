@@ -88,5 +88,113 @@
     "agentId": null,
     "agentType": null,
     "message": ""
+  },
+  {
+    "timestamp": "2026-04-12T13:23:25.686Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a39c4937dad6a67ac",
+    "agentType": "pm-lead",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-12T13:23:26.368Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "af409c316fcd4fe86",
+    "agentType": "ai-impl-a",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-12T13:23:26.478Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": null,
+    "agentType": null,
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-12T13:23:26.905Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a3d9ec83019ad316e",
+    "agentType": "ai-impl-a",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-12T13:23:27.554Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "ab8fa42f2e9185367",
+    "agentType": "ai-impl-a",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-12T13:23:33.481Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a7636d961145559f2",
+    "agentType": "ai-impl-b",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-12T13:23:33.901Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "aa4fba1a4c076016f",
+    "agentType": "ai-impl-b",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-12T13:23:34.325Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a4627d9e6bee5a613",
+    "agentType": "ai-impl-b",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-12T13:23:55.610Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a2bae1e5d0517fd22",
+    "agentType": "implementer",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-12T13:24:31.331Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a72d13d4f7be5c9ff",
+    "agentType": "implementer",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-12T13:25:06.747Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a7a863ac2ec4337f5",
+    "agentType": "implementer",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-12T13:25:07.752Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": null,
+    "agentType": null,
+    "message": ""
   }
 ]
