@@ -17832,3 +17832,57 @@
 {"timestamp":"2026-04-12T12:20:02Z","tool":"Edit/Write","user":"kunkin"}
 {"timestamp":"2026-04-12T12:20:03Z","tool":"Bash","user":"kunkin"}
 {"timestamp":"2026-04-12T12:20:04Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:07Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:07Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:08Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:10Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:10Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:14Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:14Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:15Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:16Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:21Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:22Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:23Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:23Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:32Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:33Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:38Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:39Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:46Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:47Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:51Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:53Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:55Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:55Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:20:55Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:00Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:04Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:04Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:06Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:06Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:09Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:09Z","tool":"Bash","user":"kunkin"}
+{"ts":"2026-04-12T21:20:00Z","actor":"implementer","action":"MTU_IMPL_COMPLETE","target":"SVC-AI-ADV-R122","files":["platform/services/ai-service/src/lib/compliance-report-generator.ts","platform/services/ai-service/src/lib/__tests__/compliance-report-generator.test.ts"],"matchRate":100,"notes":"준수 보고서 생성기: FR-R122.1~R122.8 구현, CSAP D-06 감사 로그, N2SF C/S 등급 guard"}
+{"ts":"2026-04-12T21:21:00Z","actor":"implementer","action":"MTU_IMPL_COMPLETE","target":"SVC-AI-ADV-R123","files":["platform/services/ai-service/src/lib/ai-token-budget-manager.ts","platform/services/ai-service/src/lib/__tests__/ai-token-budget-manager.test.ts"],"matchRate":100,"notes":"AI 토큰 예산 관리자: FR-R123.1~R123.9 구현, 롤링 윈도우 쿼터, QuotaExceededError"}
+{"ts":"2026-04-12T21:22:00Z","actor":"implementer","action":"MTU_IMPL_COMPLETE","target":"SVC-AI-ADV-R124","files":["platform/services/ai-service/src/lib/llm-input-injection-sentinel.ts","platform/services/ai-service/src/lib/__tests__/llm-input-injection-sentinel.test.ts"],"matchRate":100,"notes":"LLM 입력 인젝션 센티넬: FR-R124.1~R124.9 구현, 한국어/영어 패턴, 결정적 탐지"}
+{"ts":"2026-04-12T21:23:00Z","actor":"implementer","action":"MTU_IMPL_COMPLETE","target":"SVC-AI-ADV-R125","files":["platform/services/ai-service/src/lib/rag-source-attribution.ts","platform/services/ai-service/src/lib/__tests__/rag-source-attribution.test.ts"],"matchRate":100,"notes":"RAG 출처 귀속: FR-R125.1~R125.9 구현, Jaccard 유사도, 인용 마크업"}
+{"ts":"2026-04-12T21:24:00Z","actor":"implementer","action":"MTU_IMPL_COMPLETE","target":"SVC-AI-ADV-R126","files":["platform/services/ai-service/src/lib/ai-usage-forecaster.ts","platform/services/ai-service/src/lib/__tests__/ai-usage-forecaster.test.ts"],"matchRate":100,"notes":"AI 사용량 예측기: FR-R126.1~R126.9 구현, Holt 지수평활, MAPE, 신뢰구간"}
+{"ts":"2026-04-12T21:25:00Z","actor":"implementer","action":"MTU_IMPL_COMPLETE","target":"SVC-AI-ADV-R127","files":["platform/services/ai-service/src/lib/agent-task-scheduler.ts","platform/services/ai-service/src/lib/__tests__/agent-task-scheduler.test.ts"],"matchRate":100,"notes":"에이전트 태스크 스케줄러: FR-R127.1~R127.9 구현, DAG Kahn 정렬, 병렬 실행"}
+{"ts":"2026-04-12T21:26:00Z","actor":"implementer","action":"MTU_IMPL_COMPLETE","target":"SVC-AI-ADV-R128","files":["platform/services/ai-service/src/lib/ai-embedding-drift-monitor.ts","platform/services/ai-service/src/lib/__tests__/ai-embedding-drift-monitor.test.ts"],"matchRate":100,"notes":"임베딩 드리프트 모니터: FR-R128.1~R128.6 구현, KL divergence, PSI, severity 분류"}
+{"ts":"2026-04-12T21:27:00Z","actor":"implementer","action":"MTU_IMPL_COMPLETE","target":"SVC-AI-ADV-R129","files":["platform/services/ai-service/src/lib/multi-model-consensus-voter.ts","platform/services/ai-service/src/lib/__tests__/multi-model-consensus-voter.test.ts"],"matchRate":100,"notes":"멀티모델 합의 투표자: FR-R129.1~R129.7 구현, majority/weighted/RCV 전략"}
+{"ts":"2026-04-12T21:28:00Z","actor":"implementer","action":"BATCH_ARCHIVE","target":"SVC-AI-ADV-R122~R129","result":"success","count":8,"tests_total":132,"notes":"R122~R129 전 MTU PDCA 완료: 구현 8개, 테스트 132개 통과, TypeScript strict 컴파일 통과"}
+{"timestamp":"2026-04-12T12:21:11Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:11Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:12Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:14Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:20Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:27Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:29Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:33Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:37Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:41Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:44Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:44Z","tool":"Edit/Write","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:50Z","tool":"Bash","user":"kunkin"}
+{"timestamp":"2026-04-12T12:21:50Z","tool":"Bash","user":"kunkin"}

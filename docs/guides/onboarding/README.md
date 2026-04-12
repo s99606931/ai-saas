@@ -362,8 +362,9 @@ PDCA 사이클, MTU 관리, 행안부 감리 대응을 다룹니다.
 | [11-final-project.md](10-exercises/11-final-project.md) | 졸업 프로젝트: AI 사용량 리포트 API — 전체 PDCA 사이클 혼자 수행 (100점 평가) | 10~16시간 |
 | [12-advanced-ai-lab.md](10-exercises/12-advanced-ai-lab.md) | 실습 12: 고급 AI 기능 개발 — RAG 파이프라인, N2SF 검증, 스트리밍 SSE, 비용 제어, 100점 평가 | 4~5시간 |
 | [13-security-hardening-lab.md](10-exercises/13-security-hardening-lab.md) | 실습 13: 보안 강화 — Falco 규칙, Vault Dynamic Secrets, NetworkPolicy, Pod Security Standards, 100점 채점 | 3~4시간 |
+| [14-full-stack-feature.md](10-exercises/14-full-stack-feature.md) | 실습 14: 풀스택 피처 개발 — 공지사항 CRUD API + SSE 알림 + Next.js UI, RBAC, auditLog, 100점 평가 | 4~5시간 |
 
-### 11-faq/ — 자주 묻는 질문 (115개)
+### 11-faq/ — 자주 묻는 질문 (140개)
 
 역할별로 분류된 FAQ입니다. 빠른 답변이 필요할 때 참조하십시오.
 
@@ -376,6 +377,7 @@ PDCA 사이클, MTU 관리, 행안부 감리 대응을 다룹니다.
 | [04-ai-faq.md](11-faq/04-ai-faq.md) | AI/LLM 개발 FAQ — RAG, N2SF 규정, 성능 최적화, 트러블슈팅 | 25개 |
 | [05-operations-faq.md](11-faq/05-operations-faq.md) | 운영 FAQ — 배포/DB/보안사고/성능 긴급 대응, CSAP 감리관 즉시 대응 | 25개 |
 | [06-performance-faq.md](11-faq/06-performance-faq.md) | 성능 최적화 FAQ — API 레이턴시 진단, DB 인덱스, Redis 캐시, K8s 리소스, 모니터링 기반 진단 | 25개 |
+| [07-devops-faq.md](11-faq/07-devops-faq.md) | DevOps/인프라 운영 심화 FAQ — K8s 고급 운영, CI/CD, 모니터링, 보안 운영, 비용 최적화 | 25개 |
 
 ---
 
@@ -797,3 +799,4 @@ git push origin docs/onboarding-guide-improvement
 | 3.1.0 | 2026-04-12 | 이터레이션 14 추가: DDD(바운디드 컨텍스트+집계 루트), 새 마이크로서비스 추가 가이드(feedback-service 실습), 에러 핸들링(24개 코드), 블루/그린 배포, SRE 온콜 완전 가이드(TOP 10 알림 초동대응), 보안 인시던트 대응(TOP 5 시나리오), 고급 AI 실습(RAG+스트리밍), 서비스 계측(OTel+DORA), 성능 FAQ(25개). 총 202파일 153,710줄 | Implementer Team (병렬 에이전트) |
 | 3.2.0 | 2026-04-12 | 이터레이션 15-A 추가: Prisma 마이그레이션 전략(Expand-Contract+대용량), TypeScript 고급 패턴(Branded Type+Result), 팀 기술 공유 문화(ADR+RFC+포스트모템). 총 205파일 156,810줄 | Implementer Team (병렬 에이전트) |
 | 3.3.0 | 2026-04-12 | 이터레이션 15-B/C 추가: KEDA 심화(Redis+Prometheus+Cron Scaler), PII 마스킹 실전(N2SF N-05+5가지 방법), DB 디버깅(EXPLAIN+락+RLS), 변경관리(CR+CAB+CSAP D-05), 멀티 에이전트 패턴(Cascade 심화+감리 자동화), 보안 강화 실습(Falco+Vault+NetworkPolicy). 총 211파일 164,780줄 | Implementer Team (병렬 에이전트) |
+| 3.4.0 | 2026-04-12 | 이터레이션 16 추가: 비즈니스 메트릭 카탈로그(32개 지표), 환경 승격 프로세스(dev→stg→prod), CI/CD 디버깅(4개 시나리오), AI/ML 패키지 심화(ml-pipeline+feature-flag), WebSocket/SSE 실시간 기능, 풀스택 실습(공지사항+SSE+Next.js), 의존성 보안(SBOM+Trivy), 데이터 아키텍처(SHA-256+ClickHouse), DevOps FAQ(25개). 총 220파일 177,700줄 | Implementer Team (병렬 에이전트) |
