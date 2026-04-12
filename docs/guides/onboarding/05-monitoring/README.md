@@ -21,12 +21,23 @@ graph TD
   B1 --> B2[02-grafana-guide.md\nGrafana 대시보드 + 알림]
   B2 --> C[로깅 — 사건 기록 조회]
   C --> C1[01-loki-guide.md\nLoki + LogQL 기초]
-  C1 --> D[DORA — 팀 성과 측정]
+  C1 --> T[추적 — 요청 여정 시각화]
+  T --> T1[tracing/01-tempo-otel.md\nTempo + OpenTelemetry 분산 추적]
+  T1 --> D[DORA — 팀 성과 측정]
   D --> D1[01-dora-metrics.md\n4대 지표 이해]
-  D1 --> E[완료 — 내 서비스 모니터링 가능]
+  D1 --> AL[알림 — 자동 알림 체계]
+  AL --> AL1[alerting/01-alertmanager-guide.md\nAlertManager 라우팅 + 채널]
+  AL1 --> SL[SLO — 서비스 수준 목표]
+  SL --> SL1[slo/01-slo-guide.md\n에러버짓 + 에스컬레이션]
+  SL1 --> PR[프로파일링 — 코드 수준 성능 분석]
+  PR --> PR1[profiling/01-pyroscope-guide.md\nPyroscope Flame Graph + 메모리 누수]
+  PR1 --> E[완료 — 내 서비스 모니터링 가능]
 
   style A fill:#4CAF50,color:#fff
   style E fill:#2196F3,color:#fff
+  style T1 fill:#C62828,color:#fff
+  style AL1 fill:#E65100,color:#fff
+  style SL1 fill:#4527A0,color:#fff
 ```
 
 ---
@@ -38,7 +49,12 @@ graph TD
 | `metrics/` | `01-prometheus-basics.md` | Prometheus + PromQL 기초 | 60분 |
 | `metrics/` | `02-grafana-guide.md` | Grafana 대시보드 만들기 | 45분 |
 | `logging/` | `01-loki-guide.md` | Loki + LogQL 로그 조회 | 45분 |
+| `tracing/` | `01-tempo-otel.md` | Grafana Tempo + OpenTelemetry 분산 추적 | 60분 |
 | `dora/` | `01-dora-metrics.md` | DORA 4대 지표 이해 | 30분 |
+| `alerting/` | `01-alertmanager-guide.md` | AlertManager 라우팅, 채널, Silencing | 60분 |
+| `slo/` | `01-slo-guide.md` | SLO 개념, 에러버짓, 에스컬레이션 | 60분 |
+| `profiling/` | `README.md` | 지속적 프로파일링 학습 맵 | 5분 |
+| `profiling/` | `01-pyroscope-guide.md` | Pyroscope CPU/메모리 프로파일링 + Flame Graph + Tempo 연결 | 90분 |
 
 ---
 

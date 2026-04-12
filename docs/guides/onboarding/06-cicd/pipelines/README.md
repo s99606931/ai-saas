@@ -22,6 +22,7 @@
 
 1. **`01-ci-walkthrough.md`** — CI 파이프라인 전체 흐름 따라가기, 각 단계 상세 이해, 실패 시 디버깅
 2. **`02-quality-gate.md`** — Q-Gate G1~G7 상세 분석, 로컬 사전 점검 방법
+3. **`03-devsecops.md`** — DevSecOps 도구 (Semgrep, Trivy, Cosign, Kyverno, Falco), Q-Gate G5/G6 통과법
 
 ---
 
@@ -34,3 +35,13 @@
 | main 브랜치 머지 | CD (배포) |
 | `hotfix/*` 브랜치 push | Hotfix 파이프라인 |
 | `v*` 태그 push | Release 파이프라인 |
+
+---
+
+## 파일 목록
+
+| 파일 | 내용 | 소요 시간 |
+|------|------|---------|
+| `01-ci-walkthrough.md` | CI 파이프라인 전체 흐름, 단계별 설명, 실패 디버깅 | 60분 |
+| `02-quality-gate.md` | Q-Gate G1~G7 상세 분석, 로컬 사전 점검 | 60분 |
+| `03-devsecops.md` | Semgrep/Trivy/Cosign/Kyverno/Falco 도구, OWASP/CSAP 게이트 | 90분 |

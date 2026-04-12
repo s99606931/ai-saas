@@ -22,10 +22,30 @@ GitOps 배포:
 
 1. **`01-gitops-deploy.md`** — 코드 머지 후 자동 배포 흐름, 배포 상태 확인, 롤백 방법
 2. **`02-hotfix-process.md`** — 긴급 핫픽스 배포, 단계별 절차, 백포트
+3. **`03-canary-deploy.md`** — Flagger 카나리 배포, 단계적 트래픽 이전, 자동 롤백 조건
 
 ---
 
-## 핵심 명령어 미리보기
+---
+
+## 카나리 배포 핵심 명령어 미리보기
+
+```bash
+# 카나리 배포 상태 확인
+kubectl get canary -n saas-production
+
+# 카나리 이벤트 스트리밍
+kubectl get events -n saas-production \
+  --field-selector involvedObject.name=auth-service --watch
+
+# 수동 롤백
+kubectl annotate canary auth-service \
+  -n saas-production flagger.app/action=rollback
+```
+
+---
+
+## GitOps 핵심 명령어 미리보기
 
 ```bash
 # 현재 배포 상태 확인

@@ -40,10 +40,18 @@ graph TD
   C --> C1[coding/01-secure-patterns.md\n보안 코딩 패턴 — 90분]
   C1 --> D[감사 로그]
   D --> D1[audit/01-audit-logging.md\n감사 로그 작성 — 45분]
-  D1 --> E[완료 — 보안 코드 작성 가능]
+  D1 --> N[N2SF 데이터 분류]
+  N --> N1[n2sf/01-data-classification.md\nAI API 데이터 등급 — 60분]
+  N1 --> T[위협 모델링]
+  T --> T1[threat-modeling/01-threat-model.md\n7가지 위협 시나리오 — 120분]
+  T1 --> EV[증거 수집]
+  EV --> EV1[csap/03-evidence-collection.md\n감리 산출물 완전 가이드 — 90분]
+  EV1 --> E[완료 — 보안 코드 작성 + 감리 대응 가능]
 
   style A fill:#4CAF50,color:#fff
   style E fill:#2196F3,color:#fff
+  style T1 fill:#FF9800,color:#fff
+  style EV1 fill:#9C27B0,color:#fff
 ```
 
 ---
@@ -54,8 +62,11 @@ graph TD
 |------|------|------|----------|
 | `csap/` | `01-what-is-csap.md` | CSAP 초보자 설명 | 60분 |
 | `csap/` | `02-dev-checklist.md` | 개발자 체크리스트 | 45분 |
+| `csap/` | `03-evidence-collection.md` | CSAP 증거 수집 — 13개 도메인, 자동/수동 수집, 감리 준비 | 90분 |
 | `coding/` | `01-secure-patterns.md` | 보안 코딩 패턴 모음 | 90분 |
 | `audit/` | `01-audit-logging.md` | 감사 로그 작성법 | 45분 |
+| `n2sf/` | `01-data-classification.md` | N2SF 데이터 3등급, PII 마스킹, AI 등급 체크 | 60분 |
+| `threat-modeling/` | `01-threat-model.md` | STRIDE 기반 7가지 위협 시나리오, DREAD 평가, Attack Surface | 120분 |
 
 ---
 

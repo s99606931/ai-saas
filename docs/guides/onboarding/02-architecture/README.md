@@ -24,7 +24,10 @@
 ```mermaid
 flowchart TD
     A([1장 완료]) --> B[01-system-overview.md\n전체 아키텍처 이해\n약 3시간]
-    B --> C[services/ 폴더]
+    B --> B2[02-multitenancy.md\n멀티테넌트 격리\n약 2시간]
+    B2 --> B3[03-data-flow.md\n데이터 흐름 완전 가이드\n약 3시간]
+    B3 --> B4[04-service-interactions.md\n비즈니스 시나리오 기반\n서비스 간 협업\n약 3시간]
+    B4 --> C[services/ 폴더]
     C --> D[services/README.md\n17개 서비스 전체 목록\n약 1시간]
     D --> E[services/01-api-gateway.md\nAPI Gateway 심화\n약 2시간]
     E --> F[services/02-auth-service.md\nAuth Service 심화\n약 2시간]
@@ -32,6 +35,7 @@ flowchart TD
 
     style A fill:#1565C0,color:#fff
     style G fill:#2E7D32,color:#fff
+    style B4 fill:#7B1FA2,color:#fff
 ```
 
 ---
@@ -41,6 +45,9 @@ flowchart TD
 | 파일 | 내용 | 예상 학습 시간 |
 |------|------|--------------|
 | `01-system-overview.md` | 전체 시스템 아키텍처 (C4 다이어그램, 서비스 통신 흐름) | 3시간 |
+| `02-multitenancy.md` | 멀티테넌트 격리 원리, 테넌트별 데이터 분리 패턴 | 2시간 |
+| `03-data-flow.md` | 로그인·API·이벤트·AI·감사 로그 5가지 데이터 흐름 | 3시간 |
+| `04-service-interactions.md` | 비즈니스 시나리오 4가지로 이해하는 서비스 간 협업 (온보딩, AI, 청구, 보안) | 3시간 |
 | `services/README.md` | 17개 서비스 전체 목록 표 (포트, 역할, CSAP 매핑) | 1시간 |
 | `services/01-api-gateway.md` | API Gateway 역할, 라우팅 규칙, Rate Limiting, 실제 코드 | 2시간 |
 | `services/02-auth-service.md` | 인증 플로우, JWT, MFA, CSAP D-08 준수 방법, 실습 | 2시간 |
@@ -54,3 +61,6 @@ flowchart TD
 - API Gateway의 Rate Limiting이 어떻게 동작하는지 설명할 수 있다
 - auth-service의 로그인 플로우를 단계별로 설명할 수 있다
 - CSAP D-08 접근 제어가 코드에서 어떻게 구현되는지 보여줄 수 있다
+- 멀티테넌트 격리가 DB와 애플리케이션 계층에서 어떻게 적용되는지 설명할 수 있다
+- AI 요청 시 N2SF 데이터 등급 검사와 PII 마스킹이 어떤 순서로 수행되는지 설명할 수 있다
+- 감사 로그 SHA-256 해시 체인이 무결성을 어떻게 보장하는지 설명할 수 있다

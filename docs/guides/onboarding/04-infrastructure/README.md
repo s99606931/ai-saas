@@ -38,6 +38,12 @@ graph TD
         C1 --> C2 --> C3 --> C4
     end
 
+    subgraph DR["재해 복구"]
+        D1["08-disaster-recovery.md\nRPO/RTO 개념 + PITR + Velero\nDR 시나리오 + 분기 훈련"]
+    end
+
+    COMP --> DR
+
     K8S --> COMP
 ```
 
@@ -77,6 +83,7 @@ graph TD
 | `components/02-cert-manager.md` | 인증서 자동 관리, ClusterIssuer | 30분 |
 | `components/03-postgresql.md` | CloudNativePG HA, 마이그레이션, 백업 | 45분 |
 | `components/04-vault.md` | 시크릿 관리, External Secrets Operator | 45분 |
+| `08-disaster-recovery.md` | 재해 복구(DR) — RPO/RTO, PITR, Redis/Vault 복원, Velero, DR 훈련 | 60분 |
 
 ---
 
