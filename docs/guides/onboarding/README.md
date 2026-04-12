@@ -74,7 +74,7 @@ flowchart TD
 
 ---
 
-## 전체 구조 (3레벨 / 205개 파일 / 156,810줄)
+## 전체 구조 (3레벨 / 211개 파일 / 164,780줄)
 
 ### 루트 파일 — 개요·이력·기여
 
@@ -191,6 +191,7 @@ flowchart TD
 | [22-typescript-advanced.md](03-development/22-typescript-advanced.md) | TypeScript 고급 패턴 — Branded Type, Discriminated Union, Result 패턴, Zod 통합, 흔한 타입 에러 10가지 |
 | [vibecoding/](03-development/vibecoding/) | Claude Code 바이브코딩 심화 |
 | [vibecoding/04-prompt-engineering.md](03-development/vibecoding/04-prompt-engineering.md) | 프롬프트 엔지니어링 — 작업 유형별 패턴, Cascade 에이전트, 안티패턴 |
+| [vibecoding/05-multi-agent-patterns.md](03-development/vibecoding/05-multi-agent-patterns.md) | 멀티 에이전트 패턴 — Cascade 완전 가이드, 5개 에이전트 역할 심화, 비용 최적화, 감리 자동화 |
 
 ### 04-infrastructure/ — k3s + 컴포넌트
 
@@ -214,6 +215,7 @@ k3s 클러스터 운영과 Helm, 컴포넌트 관리를 다룹니다.
 | [10-cost-optimization.md](04-infrastructure/10-cost-optimization.md) | 비용 최적화 — VPA, KEDA 야간 스케일다운, AI 모델 라우팅, 캐싱 |
 | [11-capacity-planning.md](04-infrastructure/11-capacity-planning.md) | 용량 계획 — 트래픽 예측, ResourceQuota, k6 시뮬레이션, 계절성 패턴 |
 | [12-chaos-engineering.md](04-infrastructure/12-chaos-engineering.md) | 카오스 엔지니어링 — LitmusChaos, 실험 5종, GameDay, CSAP DR 통합 |
+| [components/10-keda-advanced.md](04-infrastructure/components/10-keda-advanced.md) | KEDA 심화 — Redis BullMQ 스케일링, Prometheus Scaler, Cron 야간 다운, ScaledJob |
 | **kubernetes/** | **k3s 운영 및 관리 (3개)** |
 | [kubernetes/01-k3s-basics.md](04-infrastructure/kubernetes/01-k3s-basics.md) | k3s 입문 — Pod, kubectl, k9s |
 | [kubernetes/02-helm-charts.md](04-infrastructure/kubernetes/02-helm-charts.md) | Helm 차트 관리 |
@@ -285,6 +287,8 @@ CSAP 79개 항목, N2SF 데이터 분류, 보안 코딩 규칙을 다룹니다.
 | **coding/** | **보안 코딩 (2개)** |
 | [coding/01-secure-patterns.md](07-security/coding/01-secure-patterns.md) | RBAC, Zod, SQL 주입 방지, XSS 방지 |
 | [coding/02-owasp-patterns.md](07-security/coding/02-owasp-patterns.md) | OWASP Top 10 (2021) — 취약/안전 코드 비교, Semgrep, CSAP D-12 매핑 |
+| **n2sf/** | **N2SF 심화 (2개)** |
+| [n2sf/02-pii-masking-guide.md](07-security/n2sf/02-pii-masking-guide.md) | PII 마스킹 실전 가이드 — N2SF N-05, 5가지 마스킹 방법, AI 전송 전 자동 탐지, CI/CD 통합 |
 | **csap/** | **CSAP 심화 (4개)** |
 | [csap/04-compliance-automation.md](07-security/csap/04-compliance-automation.md) | 컴플라이언스 자동화 — csap-evidence.yml 해설, Kyverno/Falco 연동, 갭 분석 |
 | [05-security-hardening.md](07-security/05-security-hardening.md) | 보안 강화 — Pod Security Standards, NetworkPolicy, Falco, Vault Dynamic Secrets |
@@ -310,6 +314,7 @@ PDCA 사이클, MTU 관리, 행안부 감리 대응을 다룹니다.
 | [pdca/04-pdca-checklist.md](08-document-management/pdca/04-pdca-checklist.md) | PDCA 완성 체크리스트 — Plan/Design/Do/Check 65개 항목, PR 템플릿 |
 | [05-audit-preparation.md](08-document-management/05-audit-preparation.md) | 감리 준비 — 4주 타임라인, TOP10 결함 예방, 산출물 목록, 질의응답 시뮬레이션 |
 | [06-technical-writing.md](08-document-management/06-technical-writing.md) | 기술 문서 작성 — Mermaid 6종 도식, 공공기관 문서 기준, 추적성 매트릭스 작성법 |
+| [07-change-management.md](08-document-management/07-change-management.md) | 변경 관리 프로세스 — CR 템플릿, CAB 승인, CSAP D-05, 롤백 계획, DORA Four Keys 연계 |
 | **mtu-system/** | **MTU 체계 (2개 파일)** |
 | [mtu-system/01-mtu-explained.md](08-document-management/mtu-system/01-mtu-explained.md) | MTU 완전 이해 — 5가지 유형, 의존성 그래프 |
 | [mtu-system/02-mtu-templates.md](08-document-management/mtu-system/02-mtu-templates.md) | 즉시 복사 가능한 MTU 템플릿 4종 |
@@ -329,6 +334,7 @@ PDCA 사이클, MTU 관리, 행안부 감리 대응을 다룹니다.
 | [03-performance-guide.md](09-troubleshooting/03-performance-guide.md) | 성능 최적화 — DB, Redis, HPA, KEDA, Turbo | 40분 |
 | [04-incident-management.md](09-troubleshooting/04-incident-management.md) | 인시던트 관리 — P1~P4 대응, 사후 검토, CSAP D-06 기록 | 30분 |
 | [05-network-debugging.md](09-troubleshooting/05-network-debugging.md) | 네트워크 디버깅 — K8s 네트워킹 구조, 오류 패턴 5가지, 3가지 실전 시나리오 | 40분 |
+| [06-database-debugging.md](09-troubleshooting/06-database-debugging.md) | DB 전용 디버깅 — EXPLAIN ANALYZE 해석, 락 탐지, 마이그레이션 실패 복구, RLS 오류, N+1 시나리오 | 50분 |
 
 ### 10-exercises/ — 실습 9종 (핵심 경험)
 
@@ -348,6 +354,7 @@ PDCA 사이클, MTU 관리, 행안부 감리 대응을 다룹니다.
 | [10-security-audit-exercise.md](10-exercises/10-security-audit-exercise.md) | 실습 10: Semgrep 보안 감사 — 취약점 탐지·수정·Q-Gate G5 자가 평가 | 2~3시간 |
 | [11-final-project.md](10-exercises/11-final-project.md) | 졸업 프로젝트: AI 사용량 리포트 API — 전체 PDCA 사이클 혼자 수행 (100점 평가) | 10~16시간 |
 | [12-advanced-ai-lab.md](10-exercises/12-advanced-ai-lab.md) | 실습 12: 고급 AI 기능 개발 — RAG 파이프라인, N2SF 검증, 스트리밍 SSE, 비용 제어, 100점 평가 | 4~5시간 |
+| [13-security-hardening-lab.md](10-exercises/13-security-hardening-lab.md) | 실습 13: 보안 강화 — Falco 규칙, Vault Dynamic Secrets, NetworkPolicy, Pod Security Standards, 100점 채점 | 3~4시간 |
 
 ### 11-faq/ — 자주 묻는 질문 (115개)
 
@@ -782,3 +789,4 @@ git push origin docs/onboarding-guide-improvement
 | 3.0.0 | 2026-04-12 | 이터레이션 13 추가: 비동기 패턴 심화(BullMQ+DLQ+SSE), 알림/CRM 서비스 실제 코드 심화, 환경 변수·의존성 관리 실전 가이드, 릴리스 관리(semantic-release), 고급 로그 분석(LogQL 20개+SHA-256 무결성 검증), 네트워크 디버깅, 기술 문서 작성(Mermaid 6종). 총 193파일 141,400줄 | Implementer Team (병렬 에이전트) |
 | 3.1.0 | 2026-04-12 | 이터레이션 14 추가: DDD(바운디드 컨텍스트+집계 루트), 새 마이크로서비스 추가 가이드(feedback-service 실습), 에러 핸들링(24개 코드), 블루/그린 배포, SRE 온콜 완전 가이드(TOP 10 알림 초동대응), 보안 인시던트 대응(TOP 5 시나리오), 고급 AI 실습(RAG+스트리밍), 서비스 계측(OTel+DORA), 성능 FAQ(25개). 총 202파일 153,710줄 | Implementer Team (병렬 에이전트) |
 | 3.2.0 | 2026-04-12 | 이터레이션 15-A 추가: Prisma 마이그레이션 전략(Expand-Contract+대용량), TypeScript 고급 패턴(Branded Type+Result), 팀 기술 공유 문화(ADR+RFC+포스트모템). 총 205파일 156,810줄 | Implementer Team (병렬 에이전트) |
+| 3.3.0 | 2026-04-12 | 이터레이션 15-B/C 추가: KEDA 심화(Redis+Prometheus+Cron Scaler), PII 마스킹 실전(N2SF N-05+5가지 방법), DB 디버깅(EXPLAIN+락+RLS), 변경관리(CR+CAB+CSAP D-05), 멀티 에이전트 패턴(Cascade 심화+감리 자동화), 보안 강화 실습(Falco+Vault+NetworkPolicy). 총 211파일 164,780줄 | Implementer Team (병렬 에이전트) |
