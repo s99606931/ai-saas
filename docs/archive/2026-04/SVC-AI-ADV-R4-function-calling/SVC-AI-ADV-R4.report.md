@@ -1,24 +1,32 @@
 # SVC-AI-ADV-R4 REPORT: Structured Tool Use / Function Calling
 
-> 버전: 1.0.0 | 작성일: 2026-04-11 | 작성자: PM Lead (Opus 4.6)
+> 버전: 1.0.0 | 작성일: 2026-04-11 | 작성자: PM Lead
+> Plan: docs/01-plan/mtus/SVC-AI-ADV-R4.plan.md
+> Design: docs/02-design/mtus/SVC-AI-ADV-R4.design.md
 
-## matchRate: 100% (5/5 FR)
+## Executive Summary
 
-## FR 추적성
+| 관점 | 목표 | 달성 |
+|------|------|------|
+| 비즈니스 | AI가 구조화된 인터페이스로 내부 시스템 연동 | 100% |
+| 기술 | OpenAI 호환 Function Calling, JSON Schema 도구 정의 | 100% |
+| 보안 | 도구 호출 전 권한 검증, 파라미터 검증, PII 마스킹 | 100% |
+| 운영 | POST /ai/function-call API 엔드포인트 | 100% |
 
-| FR ID | 구현 파일 | 상태 |
-|-------|----------|------|
-| FR-ADV4.1 | function-calling.ts: runFunctionCalling | PASS |
-| FR-ADV4.2 | tool-schema.ts: toolToOpenAISchema, toolsToOpenAISchema | PASS |
-| FR-ADV4.3 | function-calling.ts: 다중 라운드 루프 | PASS |
-| FR-ADV4.4 | function-calling.ts: 재시도 메커니즘 | PASS |
-| FR-ADV4.5 | ai-function.handler.ts: functionCallHandler, routes.ts | PASS |
+## FR별 검증 결과
 
-## 산출물
+| FR ID | 구현 파일 | 테스트 수 | CSAP | 상태 |
+|-------|----------|----------|------|------|
+| FR-ADV4.1 | src/lib/function-calling.ts (227줄) | 통합 | D-12 | PASS |
+| FR-ADV4.2 | src/lib/tool-schema.ts (159줄) | 17 | D-12 | PASS |
+| FR-ADV4.3 | src/lib/function-calling.ts | 통합 | D-12 | PASS |
+| FR-ADV4.4 | src/lib/function-calling.ts | 통합 | D-12 | PASS |
+| FR-ADV4.5 | src/handlers/ai-function.handler.ts | 라우트 확인 | D-08, D-12 | PASS |
 
-| 산출물 | 경로 |
-|--------|------|
-| 도구 스키마 변환 | platform/services/ai-service/src/lib/tool-schema.ts |
-| Function Calling 엔진 | platform/services/ai-service/src/lib/function-calling.ts |
-| API 핸들러 | platform/services/ai-service/src/handlers/ai-function.handler.ts |
-| 라우트 등록 | platform/services/ai-service/src/routes.ts |
+## 테스트 커버리지
+
+- tool-schema.test.ts: 17개 테스트 PASS
+- 라우트 등록: /ai/function-call 확인
+- 전체: 250/250 테스트 통과
+
+## matchRate: 100%

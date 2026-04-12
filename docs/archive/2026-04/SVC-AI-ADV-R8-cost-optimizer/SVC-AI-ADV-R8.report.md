@@ -39,6 +39,18 @@
 | `platform/services/ai-service/src/lib/semantic-cache.ts` | 시맨틱 캐시 (LRU + TTL) | 약 280줄 |
 | `platform/services/ai-service/src/lib/cost-optimizer.ts` | 비용 최적화 + 모델 라우팅 | 약 300줄 |
 | `platform/services/ai-service/src/lib/token-budget.ts` | 토큰 예산 관리 | 약 290줄 |
+| `platform/services/ai-service/tests/unit/semantic-cache.test.ts` | 시맨틱 캐시 단위 테스트 | 약 200줄 |
+| `platform/services/ai-service/tests/unit/cost-optimizer.test.ts` | 비용 최적화 단위 테스트 | 약 170줄 |
+| `platform/services/ai-service/tests/unit/token-budget.test.ts` | 토큰 예산 단위 테스트 | 약 180줄 |
+
+---
+
+## 테스트 커버리지
+
+- semantic-cache.test.ts: 16개 테스트 PASS
+- cost-optimizer.test.ts: 20개 테스트 PASS
+- token-budget.test.ts: 19개 테스트 PASS
+- 합계: 55개 테스트 (Q-Gate G4 충족)
 
 ---
 

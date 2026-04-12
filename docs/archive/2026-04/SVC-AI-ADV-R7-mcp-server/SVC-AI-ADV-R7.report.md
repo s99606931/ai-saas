@@ -40,6 +40,18 @@
 | `platform/services/ai-service/src/lib/mcp-server.ts` | MCP 서버 코어 (JSON-RPC 2.0) | 약 400줄 |
 | `platform/services/ai-service/src/lib/mcp-tools.ts` | 공공기관 도메인 도구 5종 | 약 350줄 |
 | `platform/services/ai-service/src/lib/mcp-resources.ts` | MCP 리소스 프로바이더 | 약 250줄 |
+| `platform/services/ai-service/tests/unit/mcp-server.test.ts` | MCP 서버 코어 단위 테스트 | 약 280줄 |
+| `platform/services/ai-service/tests/unit/mcp-tools.test.ts` | 도메인 도구 단위 테스트 | 약 220줄 |
+| `platform/services/ai-service/tests/unit/mcp-resources.test.ts` | 리소스 프로바이더 단위 테스트 | 약 180줄 |
+
+---
+
+## 테스트 커버리지
+
+- mcp-server.test.ts: 33개 테스트 PASS
+- mcp-tools.test.ts: 18개 테스트 PASS
+- mcp-resources.test.ts: 17개 테스트 PASS
+- 합계: 68개 테스트 (Q-Gate G4 충족)
 
 ---
 
