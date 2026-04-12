@@ -937,6 +937,240 @@ echo ""
 echo "=== 진단 완료 ==="
 ```
 
+### 7.5 Linkerd Proxy 버전 업그레이드
+
+Linkerd 컨트롤 플레인과 데이터 플레인(프록시) 버전이 일치해야 합니다. 프록시만 업그레이드하거나, 컨트롤 플레인만 업그레이드하면 통신 문제가 발생할 수 있습니다.
+
+```bash
+# 현재 버전 불일치 탐지
+linkerd check --proxy -n public-saas 2>&1 | grep -i "version mismatch"
+
+# 컨트롤 플레인 업그레이드
+linkerd upgrade | kubectl apply -f -
+
+# 업그레이드 상태 확인
+linkerd check
+
+# 데이터 플레인(프록시) 업그레이드
+# 방법 1: Deployment 재시작으로 새 프록시 주입
+kubectl rollout restart -n public-saas \
+  deploy/ai-service \
+  deploy/security-monitor-service \
+  deploy/compliance-service
+
+# 방법 2: 자동 업그레이드 어노테이션 (권장)
+kubectl annotate namespace public-saas \
+  config.linkerd.io/proxy-version=stable-2.14.10
+
+# 모든 프록시 업그레이드 완료 확인
+linkerd viz stat -n public-saas deploy | \
+  awk 'NR==1 || $2 != "0/0"'  # MESHED 컬럼이 0/0인 것 없어야 함
+```
+
+### 7.6 네트워크 정책과 Linkerd 연동
+
+Linkerd mTLS는 암호화와 인증을 담당합니다. k8s NetworkPolicy는 트래픽 경로 자체를 차단합니다. 두 계층을 함께 사용하면 심층 방어(Defense in Depth)가 됩니다.
+
+```yaml
+# k8s/network-policy/ai-service-policy.yaml
+# Design Ref: INFRA-MESH-16 §7.6
+# CSAP D-10: 네트워크 접근 제어
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-service-ingress
+  namespace: public-saas
+spec:
+  podSelector:
+    matchLabels:
+      app: ai-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Linkerd 컨트롤 플레인에서만 프록시 포트 접근 허용
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: linkerd
+      ports:
+        - port: 4143  # linkerd-proxy inbound
+        - port: 4191  # linkerd-proxy admin
+
+    # 같은 네임스페이스의 서비스에서만 HTTP 접근
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: public-saas
+      ports:
+        - port: 3003  # ai-service HTTP
+
+  egress:
+    # 같은 네임스페이스 내부 통신 허용
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: public-saas
+
+    # DNS 조회 허용 (CoreDNS)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 53
+          protocol: UDP
+
+    # Linkerd 컨트롤 플레인 통신 허용
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: linkerd
+```
+
+---
+
+## 8. Linkerd 고급 패턴
+
+### 8.1 멀티클러스터 Linkerd 연동
+
+이 프로젝트가 향후 DR(재해 복구) 클러스터를 구성할 경우, Linkerd의 멀티클러스터 기능으로 클러스터 간 mTLS 통신을 구현할 수 있습니다.
+
+```bash
+# 멀티클러스터 설치
+linkerd multicluster install | kubectl apply -f -
+
+# 대상 클러스터에 게이트웨이 설치
+linkerd multicluster install --gateway=true | kubectl apply -f -
+
+# 서비스 미러링: 클러스터 A의 ai-service를 클러스터 B에서 접근
+kubectl label svc ai-service -n public-saas \
+  mirror.linkerd.io/exported=true
+
+# 클러스터 B에서 ai-service-cluster-a로 접근 가능
+# (자동으로 mTLS 암호화 + 게이트웨이 경유)
+```
+
+### 8.2 서비스 프로파일 기반 메트릭 분리
+
+`ServiceProfile`을 정의하면 경로별 메트릭이 Prometheus에 별도로 수집됩니다. 이를 통해 `/ai/chat`과 `/ai/rag/query`의 SLO를 독립적으로 추적할 수 있습니다.
+
+```yaml
+# k8s/linkerd/service-profile-detailed.yaml
+# ServiceProfile이 있어야 경로별 메트릭 분리 수집
+
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: ai-service.public-saas.svc.cluster.local
+  namespace: public-saas
+spec:
+  routes:
+    - name: POST /ai/chat
+      condition:
+        method: POST
+        pathRegex: ^/ai/chat$
+      # 이 경로가 별도 메트릭 레이블로 수집됨:
+      # route="POST /ai/chat"
+
+    - name: POST /ai/rag/query
+      condition:
+        method: POST
+        pathRegex: ^/ai/rag/query$
+
+    - name: POST /ai/agent
+      condition:
+        method: POST
+        pathRegex: ^/ai/agent.*
+
+    - name: GET /ai/models
+      condition:
+        method: GET
+        pathRegex: ^/ai/models.*
+```
+
+```promql
+# 경로별 성공률 쿼리 (ServiceProfile 경로명 활용)
+sum(rate(
+  response_total{
+    namespace="public-saas",
+    deployment="ai-service",
+    route="POST /ai/chat",
+    classification="success"
+  }[5m]
+)) /
+sum(rate(
+  response_total{
+    namespace="public-saas",
+    deployment="ai-service",
+    route="POST /ai/chat"
+  }[5m]
+))
+```
+
+### 8.3 Linkerd Extension 생태계
+
+```bash
+# Linkerd Viz 확장 (메트릭 대시보드)
+linkerd viz install | kubectl apply -f -
+linkerd viz dashboard &
+
+# Linkerd Jaeger 확장 (분산 추적)
+linkerd jaeger install | kubectl apply -f -
+# 모든 서비스 요청에 자동으로 x-b3-traceid 헤더 추가
+# Jaeger UI에서 end-to-end 추적 확인 가능
+
+# Linkerd Multicluster 확장 (멀티클러스터 연동)
+linkerd multicluster install | kubectl apply -f -
+
+# 설치된 확장 목록 확인
+linkerd extension list
+# viz
+# jaeger
+# multicluster
+
+# Viz 메트릭이 Prometheus에 올바르게 수집되는지 확인
+curl -s http://localhost:9090/api/v1/query?query=linkerd_request_total | \
+  jq '.data.result | length'
+```
+
+### 8.4 Linkerd와 Ingress 연동
+
+외부 트래픽이 클러스터로 들어오는 Ingress 지점에서도 Linkerd를 활성화하면, 외부 → 내부 트래픽도 관측할 수 있습니다.
+
+```yaml
+# k8s/ingress/nginx-linkerd.yaml
+# NGINX Ingress Controller에 Linkerd 주입
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+  annotations:
+    # Ingress Controller Pod에 Linkerd 주입
+    linkerd.io/inject: enabled
+spec:
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+        # Ingress에서 내부 서비스로 보내는 트래픽도 mTLS
+        config.linkerd.io/skip-inbound-ports: "80,443"
+```
+
+```bash
+# Ingress로 들어온 요청의 경로 추적
+linkerd viz tap -n ingress-nginx deploy/ingress-nginx-controller \
+  --to namespace/public-saas \
+  --method GET
+
+# Ingress → ai-service 지연시간 분석
+linkerd viz top -n public-saas deploy/ai-service \
+  --from namespace/ingress-nginx
+```
+
 ---
 
 ## 변경 이력
