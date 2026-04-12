@@ -5,7 +5,19 @@
  * Plan SC: FR-R98.1 ~ FR-R98.5
  *
  * 공공 포털 신규 사용자를 위한 역할별 맞춤 튜토리얼 엔진.
+ * CSAP D-06 감사 로그 소급 적용 (2026-04-12 세션 #139).
  */
+
+export interface OnboardingAuditEntry {
+  timestamp: string
+  action:
+    | 'registerTemplate'
+    | 'startOnboarding'
+    | 'completeStep'
+    | 'getNextStep'
+    | 'progressReport'
+  detail?: Record<string, unknown>
+}
 
 export interface OnboardingStep {
   id: string
@@ -40,9 +52,28 @@ export class AiOnboardingEngine {
   private readonly templates = new Map<string, OnboardingStep[]>()
   private readonly progress = new Map<string, OnboardingProgress>()
   private readonly now: () => number
+  private readonly auditLog: OnboardingAuditEntry[] = []
 
   constructor(opts: EngineOptions = {}) {
     this.now = opts.now ?? (() => Date.now())
+  }
+
+  /**
+   * CSAP D-06: 감사 로그 조회 (append-only).
+   */
+  getAuditLog(): readonly OnboardingAuditEntry[] {
+    return this.auditLog
+  }
+
+  private audit(
+    action: OnboardingAuditEntry['action'],
+    detail?: Record<string, unknown>,
+  ): void {
+    this.auditLog.push({
+      timestamp: new Date(this.now()).toISOString(),
+      action,
+      ...(detail !== undefined ? { detail } : {}),
+    })
   }
 
   /**
@@ -51,6 +82,7 @@ export class AiOnboardingEngine {
   registerTemplate(userRole: string, steps: OnboardingStep[]): void {
     const sorted = [...steps].sort((a, b) => a.order - b.order)
     this.templates.set(userRole, sorted)
+    this.audit('registerTemplate', { userRole, stepCount: sorted.length })
   }
 
   /**
@@ -69,6 +101,7 @@ export class AiOnboardingEngine {
       lastActiveAt: ts,
     }
     this.progress.set(userId, prog)
+    this.audit('startOnboarding', { userId, userRole })
     return prog
   }
 
@@ -85,6 +118,7 @@ export class AiOnboardingEngine {
       prog.completedSteps.push(stepId)
     }
     prog.lastActiveAt = new Date(this.now()).toISOString()
+    this.audit('completeStep', { userId, stepId })
     return prog
   }
 

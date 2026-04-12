@@ -6,7 +6,14 @@
  *
  * TypeScript 함수 시그니처를 정규식으로 추출하여 JSDoc 템플릿 생성.
  * 감리 문서 자동화용 (행안부 기준).
+ * CSAP D-06 감사 로그 소급 적용 (2026-04-12 세션 #139).
  */
+
+export interface AutoDocAuditEntry {
+  timestamp: string
+  action: 'parseSignature' | 'generateJsDoc' | 'generateForFile'
+  detail?: Record<string, unknown>
+}
 
 export interface FunctionParam {
   name: string
@@ -34,6 +41,26 @@ const ARROW_REGEX =
   /(export\s+)?const\s+(\w+)\s*=\s*(async\s+)?\(([^)]*)\)\s*:\s*([^=]+?)=>/g
 
 export class AutoDocGenerator {
+  private readonly auditLog: AutoDocAuditEntry[] = []
+
+  /**
+   * CSAP D-06: 감사 로그 조회 (append-only).
+   */
+  getAuditLog(): readonly AutoDocAuditEntry[] {
+    return this.auditLog
+  }
+
+  private audit(
+    action: AutoDocAuditEntry['action'],
+    detail?: Record<string, unknown>,
+  ): void {
+    this.auditLog.push({
+      timestamp: new Date().toISOString(),
+      action,
+      ...(detail !== undefined ? { detail } : {}),
+    })
+  }
+
   /**
    * FR-R99.1: 소스에서 함수 시그니처 추출.
    */
@@ -67,6 +94,7 @@ export class AutoDocGenerator {
       )
     }
 
+    this.audit('parseSignature', { count: results.length })
     return results
   }
 
@@ -92,6 +120,7 @@ export class AutoDocGenerator {
       lines.push(' * @async')
     }
     lines.push(' */')
+    this.audit('generateJsDoc', { function: sig.name })
     return lines.join('\n')
   }
 
@@ -100,10 +129,12 @@ export class AutoDocGenerator {
    */
   generateForFile(source: string): JsDocBlock[] {
     const sigs = this.parseSignature(source)
-    return sigs.map((sig) => ({
+    const blocks = sigs.map((sig) => ({
       functionName: sig.name,
       comment: this.generateJsDoc(sig),
     }))
+    this.audit('generateForFile', { blocks: blocks.length })
+    return blocks
   }
 
   private buildSig(
