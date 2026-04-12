@@ -10,6 +10,20 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./tokens": {
+      "types": "./dist/tokens/index.d.ts",
+      "import": "./dist/tokens/index.js"
+    },
+    "./tokens.css": "./src/tokens/index.css",
+    "./tokens/base.css": "./src/tokens/base.css",
+    "./tokens/semantic.css": "./src/tokens/semantic.css",
+    "./tokens/component.css": "./src/tokens/component.css",
+    "./tokens/themes/default.css": "./src/tokens/themes/default.css",
+    "./tokens/themes/dark.css": "./src/tokens/themes/dark.css",
+    "./tokens/themes/government.css": "./src/tokens/themes/government.css",
+    "./tokens/themes/finance.css": "./src/tokens/themes/finance.css",
+    "./tokens/themes/healthcare.css": "./src/tokens/themes/healthcare.css",
+    "./tokens/themes/high-contrast.css": "./src/tokens/themes/high-contrast.css",
     "./atoms/*": {
       "types": "./dist/atoms/*.d.ts",
       "import": "./dist/atoms/*.js"

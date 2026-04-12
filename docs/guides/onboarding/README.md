@@ -74,7 +74,7 @@ flowchart TD
 
 ---
 
-## 전체 구조 (3레벨 / 211개 파일 / 164,780줄)
+## 전체 구조 (3레벨 / 220개 파일 / 177,700줄)
 
 ### 루트 파일 — 개요·이력·기여
 
@@ -155,10 +155,12 @@ flowchart TD
 | [10-architecture-evolution.md](02-architecture/10-architecture-evolution.md) | 아키텍처 발전 로드맵 — Phase 0→3, 기술 부채 5개, 2026~2027 계획 |
 | [11-domain-driven-design.md](02-architecture/11-domain-driven-design.md) | 도메인 주도 설계(DDD) — 바운디드 컨텍스트 맵, 집계 루트, 도메인 이벤트, 실제 코드 분석 |
 | [12-new-service-guide.md](02-architecture/12-new-service-guide.md) | 새 마이크로서비스 추가 완전 가이드 — 보일러플레이트, 공통 패키지 연동, K8s/CI/CD 설정, feedback-service 실습 |
+| [13-data-architecture.md](02-architecture/13-data-architecture.md) | 데이터 아키텍처 — OLTP 구조, SHA-256 감사 체인, Redis 이벤트, CSAP D-10 보존, ClickHouse 도입 계획 |
 | **packages/** | **공유 패키지 심화 (27개)** |
 | [packages/README.md](02-architecture/packages/README.md) | 전체 패키지 목록 및 카테고리 |
 | [packages/01-core-packages.md](02-architecture/packages/01-core-packages.md) | auth-sdk, rbac, audit-sdk, rate-limit, secret-manager |
 | [packages/02-infra-packages.md](02-architecture/packages/02-infra-packages.md) | mesh-ready, health, circuit-breaker, event-bus, feature-flag-sdk, slo-escalation |
+| [packages/03-ai-packages.md](02-architecture/packages/03-ai-packages.md) | AI/ML 패키지 심화 — ml-pipeline(ModelCI+DriftDetector), feature-flag-sdk AI A/B 테스트, slo-escalation 정책 |
 
 ### 03-development/ — 개발 + 바이브코딩
 
@@ -189,6 +191,7 @@ flowchart TD
 | [20-error-handling.md](03-development/20-error-handling.md) | 중앙화된 에러 핸들링 — AppError 계층, 에러 코드 24개, CSAP D-12 PII 노출 방지, Loki 연동 |
 | [21-prisma-migration-strategy.md](03-development/21-prisma-migration-strategy.md) | Prisma 마이그레이션 전략 — Expand-Contract, 대용량 테이블, 멀티테넌시, 프로덕션 안전 체크리스트 |
 | [22-typescript-advanced.md](03-development/22-typescript-advanced.md) | TypeScript 고급 패턴 — Branded Type, Discriminated Union, Result 패턴, Zod 통합, 흔한 타입 에러 10가지 |
+| [23-websocket-realtime.md](03-development/23-websocket-realtime.md) | WebSocket/SSE 실시간 기능 — Fastify WebSocket, JWT 핸드셰이크, SSE 스트리밍, Next.js 연동, mTLS |
 | [vibecoding/](03-development/vibecoding/) | Claude Code 바이브코딩 심화 |
 | [vibecoding/04-prompt-engineering.md](03-development/vibecoding/04-prompt-engineering.md) | 프롬프트 엔지니어링 — 작업 유형별 패턴, Cascade 에이전트, 안티패턴 |
 | [vibecoding/05-multi-agent-patterns.md](03-development/vibecoding/05-multi-agent-patterns.md) | 멀티 에이전트 패턴 — Cascade 완전 가이드, 5개 에이전트 역할 심화, 비용 최적화, 감리 자동화 |
@@ -232,6 +235,7 @@ k3s 클러스터 운영과 Helm, 컴포넌트 관리를 다룹니다.
 | [metrics/01-prometheus-basics.md](05-monitoring/metrics/01-prometheus-basics.md) | Counter/Gauge/Histogram, PromQL, ServiceMonitor |
 | [metrics/02-grafana-guide.md](05-monitoring/metrics/02-grafana-guide.md) | 대시보드 생성, 패널 설정 |
 | [metrics/03-custom-metrics.md](05-monitoring/metrics/03-custom-metrics.md) | 커스텀 메트릭 — prom-client, 비즈니스 메트릭 설계, PromQL 12개 예제 |
+| [metrics/04-business-metrics-catalog.md](05-monitoring/metrics/04-business-metrics-catalog.md) | 비즈니스 메트릭 카탈로그 — 32개 지표(MAT/DORA/CSAP/AI), PromQL, Grafana 패널, dora-exporter 분석 |
 | **logging/** | **Loki 로그 (1개)** |
 | [logging/01-loki-guide.md](05-monitoring/logging/01-loki-guide.md) | LogQL 기초, PII 탐지 쿼리 |
 | **tracing/** | **분산 추적 (1개)** |
@@ -267,6 +271,7 @@ Gitea Actions 기반 CI/CD 파이프라인과 Q-Gate를 다룹니다.
 | [06-supply-chain-security.md](06-cicd/06-supply-chain-security.md) | 공급망 보안 — SLSA Level 3, Cosign, SBOM(Syft/Grype), Kyverno 검증 |
 | [07-release-management.md](06-cicd/07-release-management.md) | 릴리스 관리 — semantic-release, release-pipeline-v2.yaml 해설, CHANGELOG 자동화 |
 | [08-blue-green-deployment.md](06-cicd/08-blue-green-deployment.md) | 블루/그린 배포 — Flagger+Linkerd, 3전략 비교, 트래픽 전환 0→50→100%, 롤백 절차, 스테이징 실습 |
+| [09-environment-promotion.md](06-cicd/09-environment-promotion.md) | 환경 승격 프로세스 — dev→stg→prod 흐름, 수동 승인 게이트, 핫픽스 긴급 경로, 20개 사전 체크리스트 |
 | **deployment/** | **배포 전략 (2개)** |
 | [deployment/01-gitops-deploy.md](06-cicd/deployment/01-gitops-deploy.md) | GitOps 배포 — Flux HelmRelease |
 | [deployment/02-hotfix-process.md](06-cicd/deployment/02-hotfix-process.md) | 핫픽스 프로세스 — 긴급 배포 |
@@ -287,6 +292,7 @@ CSAP 79개 항목, N2SF 데이터 분류, 보안 코딩 규칙을 다룹니다.
 | **coding/** | **보안 코딩 (2개)** |
 | [coding/01-secure-patterns.md](07-security/coding/01-secure-patterns.md) | RBAC, Zod, SQL 주입 방지, XSS 방지 |
 | [coding/02-owasp-patterns.md](07-security/coding/02-owasp-patterns.md) | OWASP Top 10 (2021) — 취약/안전 코드 비교, Semgrep, CSAP D-12 매핑 |
+| [coding/03-dependency-security.md](07-security/coding/03-dependency-security.md) | 의존성 보안 — pnpm audit, Trivy, SBOM(Syft+Grype), Cosign Attestation, 라이선스 검사, 공급망 공격 대응 |
 | **n2sf/** | **N2SF 심화 (2개)** |
 | [n2sf/02-pii-masking-guide.md](07-security/n2sf/02-pii-masking-guide.md) | PII 마스킹 실전 가이드 — N2SF N-05, 5가지 마스킹 방법, AI 전송 전 자동 탐지, CI/CD 통합 |
 | **csap/** | **CSAP 심화 (4개)** |
@@ -335,6 +341,7 @@ PDCA 사이클, MTU 관리, 행안부 감리 대응을 다룹니다.
 | [04-incident-management.md](09-troubleshooting/04-incident-management.md) | 인시던트 관리 — P1~P4 대응, 사후 검토, CSAP D-06 기록 | 30분 |
 | [05-network-debugging.md](09-troubleshooting/05-network-debugging.md) | 네트워크 디버깅 — K8s 네트워킹 구조, 오류 패턴 5가지, 3가지 실전 시나리오 | 40분 |
 | [06-database-debugging.md](09-troubleshooting/06-database-debugging.md) | DB 전용 디버깅 — EXPLAIN ANALYZE 해석, 락 탐지, 마이그레이션 실패 복구, RLS 오류, N+1 시나리오 | 50분 |
+| [07-cicd-debugging.md](09-troubleshooting/07-cicd-debugging.md) | CI/CD 디버깅 — 빌드/테스트/보안 게이트 실패 원인별 해결, Semgrep 오탐 처리, 배포 실패 진단, 4개 시나리오 | 40분 |
 
 ### 10-exercises/ — 실습 9종 (핵심 경험)
 
