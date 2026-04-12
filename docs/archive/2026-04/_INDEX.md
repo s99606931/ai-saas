@@ -585,3 +585,13 @@ AI 안전 스트리밍·분산 추적·평가 하네스·멀티모달 RAG·비�
 - **SVC-AI-ADV-R79**: Multi-LLM Fallback Router (`multi-llm-fallback-router.ts`, 15 테스트) — priority/cost/latency 정책 + 시크릿 하드코딩 차단 + 서킷브레이커(3회 실패 open/30s 쿨다운) + half-open 복귀 + 호출 집계
 - **SVC-AI-ADV-R80**: AI Telemetry Replayer (`ai-telemetry-replayer.ts`, 14 테스트) — C/S 등급 차단 + 이메일/전화/주민번호 마스킹 + FNV-1a 해시 비교 replay + 회귀 판정(match·latency) + TTL evict
 
+## SVC-AI-ADV R81~R85 (2026-04-12 세션 #132, 9차 PM 세션)
+
+Agentic 코드 리뷰·시맨틱 캐시 워머·대화 컨텍스트 압축·AI 결정 설명(XAI)·시간 추론 엔진 모듈 5종 PDCA 완료. 109개 단위 테스트 100% 통과. TypeScript strict 0 에러.
+
+- **SVC-AI-ADV-R81**: Agentic Code Reviewer (`agentic-code-reviewer.ts`, 21 테스트) — 4단계 파이프라인(design/security/quality/compliance) + 시크릿/SQLi/XSS/평문저장 regex + executor 주입형 + compliance fail 자동 block + CSAP D-12/D-06
+- **SVC-AI-ADV-R82**: Semantic Cache Warmer (`semantic-cache-warmer.ts`, 18 테스트) — 빈도×시간감쇠(0.5^dt/h) 랭킹 + PII 마스킹 + LRU maxCandidates + budgetPerRun 강제 중단 + BUDGET_EXCEEDED 이벤트
+- **SVC-AI-ADV-R83**: Conversation Context Pruner (`conversation-context-pruner.ts`, 16 테스트) — 역할/키워드/최근성 가중 점수 + keepSystem/keepLastN 강제 보존 + summarizer executor 주입 + 토큰 40%+ 절감 확인
+- **SVC-AI-ADV-R84**: AI Decision Explainer (`ai-decision-explainer.ts`, 19 테스트) — value×weight 기여도 분해 + Top-K 정렬 + 4단계 구조화 서술(입력/가중/판정/대안) + what-if flip 탐지 + 행정기본법 제20조 대응
+- **SVC-AI-ADV-R85**: Temporal Reasoning Engine (`temporal-reasoning-engine.ts`, 35 테스트) — 한국어 상대 날짜 파서(오늘/어제/N일/N주/N개월/절대) + Allen 13종 관계 + KST 고정 + 휴일 주입형 영업일/기한 계산 + 결정적(LLM 불필요)
+
