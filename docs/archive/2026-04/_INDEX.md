@@ -544,3 +544,13 @@
 - **SVC-AI-ADV-R56**: Cross-Document Reasoning (`cross-document-reasoning.ts`, 13 테스트) — 참조 그래프 BFS + 순환 방지 + 근거 체인 생성
 - **SVC-AI-ADV-R57**: Privacy-Preserving Inference (`privacy-preserving-inference.ts`, 18 테스트) — 라플라스/가우시안 DP + k-익명화 + ε 예산 관리
 - **SVC-AI-ADV-R58**: AI Watermark Advanced (`ai-watermark-advanced.ts`, 18 테스트) — Kirchenbauer 그린리스트 z-score 검증 + HMAC 서명
+
+## SVC-AI-ADV R59~R63 (2026-04-12 세션 #128)
+
+런타임 AI 방어·분산 RAG·계획 실행·캐시 라우팅 모듈 5종 PDCA 완료. 89개 단위 테스트 100% 통과.
+
+- **SVC-AI-ADV-R59**: Semantic Firewall (`semantic-firewall.ts`, 24 테스트) — 인젝션/탈옥/콘텐츠 3단 탐지 + 정책 핫리로드 + N2SF 차단
+- **SVC-AI-ADV-R60**: Federated RAG (`federated-rag.ts`, 14 테스트) — 병렬 연합 검색 + RRF 머지 + 노드 서킷브레이커 + 데이터 주권
+- **SVC-AI-ADV-R61**: Tool-Use Planner (`tool-use-planner.ts`, 14 테스트) — DAG 계획 + 백트래킹 + 도구 RBAC + depth/retry 한계
+- **SVC-AI-ADV-R62**: Retrieval Fallback Chain (`retrieval-fallback-chain.ts`, 16 테스트) — BM25→Dense→Web→LLM 순차 폴백 + 등급별 제한 + 품질 조기종료
+- **SVC-AI-ADV-R63**: Prompt Cache-Aware Router (`prompt-cache-aware-router.ts`, 21 테스트) — 테넌트 sticky 해시 라우팅 + TTL 만료 + hit rate 메트릭
