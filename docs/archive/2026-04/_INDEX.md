@@ -619,3 +619,13 @@ WCAG 2.2 전용 접근성 스캐너·그래프 이상 전파기·PII-Safe 합성
 - **SVC-AI-ADV-R116**: Streaming Response Assembler (`streaming-response-assembler.ts`, 11 테스트) — LLM 스트리밍 토큰 누적 buffer + 점진적 JSON 복구 파서(미종료 문자열/괄호 균형/trailing comma) + onPartial/onComplete/onError 콜백 + Zod-style validator + 이메일/주민번호/전화번호 실시간 PII 마스킹 + C/S 등급 생성자 차단.
 - **SVC-AI-ADV-R117**: Cross-Lingual AI Bridge (`cross-lingual-ai-bridge.ts`, 11 테스트) — ko/en/zh/ja 유니코드 범위 기반 언어 감지 + 공공기관 용어 사전(행정안전부/개인정보보호법/정부24/국가정보원 등 8항목) 후처리 치환 + dual-text 원문 병기 + PII 마스킹 후 외부 translator 호출 + C/S 차단 + glossaryApplied 반영 confidence 가중.
 
+## SVC-AI-ADV R118~R122 (2026-04-12 세션 #140, 11차 PM 세션 m)
+
+정책 기반 응답 필터링·AI 부하분산·문서 인텔리전스 파이프라인·피드백 루프 최적화기·규정 준수 리포트 생성기 5종 PDCA 완료. 60개 단위 테스트 100% 통과. TypeScript strict 0 에러. CSAP D-06 감사 + N2SF N-05 등급 차단 전면 적용.
+
+- **SVC-AI-ADV-R118**: Policy-Aware Response Filter (`policy-aware-response-filter.ts`, 12 테스트) — 7종 기본 정책 규칙(PII 이메일/주민번호/전화·SYS-PATH·허위광고·비속어·정치편향) 사전 컴파일 + block/mask/flag 액션 분기 + 첫 block 시 early exit + addRule 커스텀 규칙 + policyVersion 추적 + C/S 차단. 공공기관 AI 응답 출력 말단 가드.
+- **SVC-AI-ADV-R119**: AI Load Balancer (`ai-load-balancer.ts`, 13 테스트) — 5전략(round-robin/weighted/least-loaded/cost-optimal/latency-optimal) + inFlight/maxConcurrency 동시성 제어 + p95 레이턴시 윈도우(20) + 최근 결과(10) 기반 실패율 과반 시 healthy→degraded 자동 전환 + tag hint 필터 + NoBackendAvailableError + C/S 차단. 다백엔드 AI 라우팅.
+- **SVC-AI-ADV-R120**: Document Intelligence Pipeline (`document-intelligence-pipeline.ts`, 10 테스트) — Stage 인터페이스 + 기본 OCR/Classify(4카테고리 키워드)/Extract(date/amount/law/applicant 정규식)/Structure 스테이지 + skipOnFailure + retries 재시도 + 재귀 PII 마스킹(structured 결과) + DocumentPackage(confidences/skipped/duration) + C/S 차단. 문서 자동처리 end-to-end.
+- **SVC-AI-ADV-R121**: Feedback Loop Optimizer (`feedback-loop-optimizer.ts`, 13 테스트) — variant 등록 + 1~5 rating + signal(thumbs-up/down/report) + 95% 신뢰구간(1.96·std/√n) + minSamples 미달 insufficient 분류 + ciLower > 4.0 promote / ciUpper < 2.5 또는 reports > 5 demote + comment PII 스크럽 + C/S 차단. 프롬프트 A/B 자동 운영. (기존 `ai-feedback-loop.ts`와 별도 최적화 모듈)
+- **SVC-AI-ADV-R122**: Compliance Report Generator (`compliance-report-generator.ts`, 12 테스트) — CSAP/N2SF/MOIS 3프레임워크 ControlItem/Evidence 레지스트리 + compliant/partial/non-compliant/not-applicable 상태 + 프레임워크별 coverageRate(compliant/requiredTotal) + 미흡 항목 추출 + Markdown 리포트(헤더/테이블/미흡/증적 목록) + JSON summary + 증적 C/S 차단. 분기 감리 대응 자동화.
+
