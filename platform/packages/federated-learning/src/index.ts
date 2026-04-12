@@ -21,3 +21,18 @@ export {
   synthesizeHistogram,
 } from './differential-privacy.js';
 export type { DpBudget, DpQueryRecord } from './differential-privacy.js';
+
+export {
+  fedProxAggregate,
+  scaffoldAggregate,
+  recommendStrategy,
+  computeStrategyMetrics,
+} from './strategies.js';
+export type { StrategyName, StrategyMetrics } from './strategies.js';
+
+export {
+  ContributionAuditor,
+  shapleyApproximation,
+  detectAnomalies,
+} from './contribution-audit.js';
+export type { ContributionScore, RewardEntry } from './contribution-audit.js';
