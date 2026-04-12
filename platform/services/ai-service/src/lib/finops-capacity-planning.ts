@@ -73,8 +73,10 @@ function linearTrend(values: number[]): number {
   let num = 0;
   let den = 0;
   for (let i = 0; i < n; i++) {
-    num += (xs[i] - meanX) * (values[i] - meanY);
-    den += (xs[i] - meanX) ** 2;
+    const x = xs[i] ?? 0;
+    const y = values[i] ?? 0;
+    num += (x - meanX) * (y - meanY);
+    den += (x - meanX) ** 2;
   }
   return den === 0 ? 0 : num / den;
 }
@@ -82,6 +84,8 @@ function linearTrend(values: number[]): number {
 export function forecastCapacity(metrics: readonly ResourceMetric[]): CapacityForecast | null {
   if (metrics.length === 0) return null;
   const sorted = [...metrics].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+  const first = sorted[0];
+  if (!first) return null;
   const values = sorted.map((m) => m.value);
   const avg = movingAverage(values, Math.min(7, values.length));
   const trend = linearTrend(values);
@@ -93,8 +97,8 @@ export function forecastCapacity(metrics: readonly ResourceMetric[]): CapacityFo
   else if (forecast30 < 30 && forecast90 < 30) recommendedAction = 'scale_down';
 
   return {
-    resourceId: sorted[0].resourceId,
-    type: sorted[0].type,
+    resourceId: first.resourceId,
+    type: first.type,
     currentAvgUsage: avg,
     forecast30dUsage: forecast30,
     forecast90dUsage: forecast90,
@@ -106,6 +110,8 @@ export function forecastCapacity(metrics: readonly ResourceMetric[]): CapacityFo
 // FR-N291.2: 비용 최적화 권고
 export function optimizeCost(metrics: readonly ResourceMetric[]): CostOptimization | null {
   if (metrics.length === 0) return null;
+  const first = metrics[0];
+  if (!first) return null;
   const avgUsage = movingAverage(metrics.map((m) => m.value), metrics.length);
   const monthlyCost = metrics.reduce((s, m) => s + m.costKrw, 0) * (24 * 30 / metrics.length);
   let optimized = monthlyCost;
@@ -118,7 +124,7 @@ export function optimizeCost(metrics: readonly ResourceMetric[]): CostOptimizati
     recommendation = '리저브드 인스턴스 전환 (장기 절감)';
   }
   return {
-    resourceId: metrics[0].resourceId,
+    resourceId: first.resourceId,
     currentMonthlyCostKrw: monthlyCost,
     optimizedMonthlyCostKrw: optimized,
     savingsKrw: monthlyCost - optimized,

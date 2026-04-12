@@ -85,8 +85,10 @@ export function comparePolicyTexts(oldText: string, newText: string): PolicyDiff
   const modified: { old: string; new: string }[] = [];
   const minLen = Math.min(oldLines.length, newLines.length);
   for (let i = 0; i < minLen; i++) {
-    if (oldLines[i] !== newLines[i] && oldLines[i].length > 0 && newLines[i].length > 0) {
-      modified.push({ old: oldLines[i], new: newLines[i] });
+    const oldLine = oldLines[i];
+    const newLine = newLines[i];
+    if (oldLine && newLine && oldLine !== newLine) {
+      modified.push({ old: oldLine, new: newLine });
     }
   }
   return { added, removed, modified };

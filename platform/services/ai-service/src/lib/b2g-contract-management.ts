@@ -160,7 +160,9 @@ export function fulfillObligation(contractId: string, obligationId: string, acto
   if (!list) return false;
   const idx = list.findIndex((o) => o.obligationId === obligationId);
   if (idx < 0) return false;
-  list[idx] = { ...list[idx], status: 'fulfilled' };
+  const current = list[idx];
+  if (!current) return false;
+  list[idx] = { ...current, status: 'fulfilled' };
   recordAudit({
     tenantId,
     actor,
