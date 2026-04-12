@@ -76,11 +76,16 @@ describe('KosisStatisticsAnalyzer', () => {
       ...risingSeries,
       seriesId: 'POP004',
       dataPoints: [
+        { year: 2015, value: 100 },
+        { year: 2016, value: 102 },
+        { year: 2017, value: 98 },
+        { year: 2018, value: 101 },
+        { year: 2019, value: 99 },
         { year: 2020, value: 100 },
-        { year: 2021, value: 102 },
-        { year: 2022, value: 98 },
+        { year: 2021, value: 103 },
+        { year: 2022, value: 97 },
         { year: 2023, value: 101 },
-        { year: 2024, value: 300 },  // 이상치
+        { year: 2024, value: 500 },  // 명백한 이상치
       ],
     })
     const outliers = analyzer.detectOutliers('POP004')

@@ -58,12 +58,15 @@ describe('RealtimeTransactionAnomalyDetector', () => {
   })
 
   it('고빈도 거래 → VELOCITY', () => {
-    const now = Date.now()
+    // 업무 시간대(10시)로 고정하여 UNUSUAL_HOUR 탐지 방지
+    const baseTime = new Date()
+    baseTime.setHours(10, 0, 0, 0)
+    const base = baseTime.getTime()
     for (let i = 0; i < 4; i++) {
-      detector.detect({ transactionId: `T_V${i}`, accountId: 'ACC001', type: 'PAYMENT', amount: 10_000, timestamp: now, location: '서울' })
+      detector.detect({ transactionId: `T_V${i}`, accountId: 'ACC001', type: 'PAYMENT', amount: 10_000, timestamp: base + i * 100, location: '서울' })
     }
-    // 5번째 → VELOCITY 탐지
-    const result = detector.detect({ transactionId: 'T_V4', accountId: 'ACC001', type: 'PAYMENT', amount: 10_000, timestamp: now + 1000, location: '서울' })
+    // 5번째 → VELOCITY 탐지 (1분 내 5건)
+    const result = detector.detect({ transactionId: 'T_V4', accountId: 'ACC001', type: 'PAYMENT', amount: 10_000, timestamp: base + 400, location: '서울' })
     expect(result).not.toBeNull()
     expect(result!.anomalyType).toBe('VELOCITY')
   })

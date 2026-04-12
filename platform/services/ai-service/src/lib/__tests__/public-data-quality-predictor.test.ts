@@ -31,7 +31,7 @@ describe('PublicDataQualityPredictor', () => {
 
   it('측정 없으면 기본 점수 FAIR', () => {
     const result = predictor.predict('DS001')
-    expect(result.level).toBe('GOOD')  // 기본값 70 → FAIR이지만 4차원 평균 70 → FAIR
+    expect(result.level).toBe('FAIR')  // 기본값 70 → FAIR (60≤score<75)
   })
 
   it('높은 점수 → EXCELLENT', () => {
