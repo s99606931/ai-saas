@@ -1,0 +1,16 @@
+{
+  "name": "@public-saas/edge-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "description": "공공기관 SaaS 플랫폼 -- 엣지 런타임 (WASM 매니페스트/정책, PQC 마이그레이션, 서비스 메시 자동 구성)",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "test": "vitest run", "typecheck": "tsc --noEmit" },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}
