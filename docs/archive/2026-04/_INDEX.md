@@ -603,3 +603,14 @@ WCAG 2.2 전용 접근성 스캐너·그래프 이상 전파기·PII-Safe 합성
 - **SVC-AI-ADV-R101**: Graph Anomaly Propagator (`graph-anomaly-propagator.ts`, 8 테스트) — PageRank 변형 알고리즘 + alpha/epsilon 기반 수렴 탐지 + 가중 에지 전파 + topK 위험 노드 랭킹 + 고립 노드 안전 처리 + CSAP D-06 감사 로그 (addNode/addEdge/setScore/propagate)
 - **SVC-AI-ADV-R102**: PII-Safe Test Data Factory (`pii-safe-data-factory.ts`, 9 테스트) — 공공 DB 스키마(RRN/PHONE/EMAIL/NAME/ADDRESS) 특화 합성 데이터 생성 + mulberry32 PRNG 시드 재현성 + uniform/normal/categorical 분포 + verifyNoPii 재검증 + N2SF N-05 guardDataGrade() C/S 차단 + CSAP D-06 getAuditLog()
 
+## SVC-AI-ADV R103~R107 (2026-04-12 세션 #139, 11차 PM 세션 k)
+
+지식 증류·AI 인시던트 대응 플레이북·멀티테넌트 파인튜닝·대화형 민원서류 입력·프롬프트 시맨틱 버전관리 5종 PDCA 완료. 51개 단위 테스트 100% 통과. TypeScript strict 0 에러. CSAP D-06 감사 + N2SF N-05 등급 차단 전면 적용. 추가로 ai-onboarding-engine / autodoc-generator 2개 모듈에 `getAuditLog()` 감사 로그 소급 적용 (CSAP D-06 소급 보완).
+
+- **SVC-AI-ADV-R103**: Knowledge Distillation Engine (`knowledge-distillation-engine.ts`, 9 테스트) — Teacher-Student 샘플 Jaccard 일치율 + 고가치 샘플(저일치) 정렬 + PII 마스킹 JSONL 학습셋 출력 + C/S 등급 차단. 대형 LLM 호출 비용 절감 오프라인 파이프라인.
+- **SVC-AI-ADV-R104**: AI Incident Response Playbook (`ai-incident-response-playbook.ts`, 10 테스트) — 장애 유형별 키워드 triage (환각/지연/편향/유출) + severity 판정 + executor 주입형 단계 순차 실행 + 실패 시 중단 + stepExecuted/incidentResolved 감사. CSAP D-06 침해사고 관리 대응.
+- **SVC-AI-ADV-R105**: Multi-Tenant Model Fine-tuner (`multi-tenant-model-finetuner.ts`, 10 테스트) — 테넌트별 파인튜닝 작업 큐/상태 + 활성 버전 promote/rollback + 교차 테넌트 접근 BLOCKED + activationOrder 기반 결정적 롤백 + N2SF N-05 학습 데이터 등급 차단.
+- **SVC-AI-ADV-R106**: Conversational Form Filler (`conversational-form-filler.ts`, 11 테스트) — 자연어 문장 → 민원 서류 슬롯(text/phone/email/rrn/date/enum) 결정적 추출 + PII 자동 마스킹 저장(`010-****-5678`/`a***@domain`) + 필수 필드 누락 재질문 + finalize 검증. 고령층 대화형 민원 접수 지원.
+- **SVC-AI-ADV-R107**: Semantic Version Control for Prompts (`prompt-semantic-version-control.ts`, 11 테스트) — SemVer major/minor/patch bump + 공통 프리픽스/서픽스 라인 diff (-/+) + activationOrder 기반 rollback + 하드코딩 시크릿 패턴(sk-/AKIA/PRIVATE KEY) 차단. 기존 prompt-versioning.ts(순번+A/B)와 별도 모듈.
+- **소급 보완(2종)**: `ai-onboarding-engine.ts` (R98) + `autodoc-generator.ts` (R99)에 `OnboardingAuditEntry`/`AutoDocAuditEntry` + 내부 `audit()` + `getAuditLog()` 추가. registerTemplate/startOnboarding/completeStep / parseSignature/generateJsDoc/generateForFile 전 액션 감사 로그. 기존 테스트(14개) 전부 통과 확인.
+
