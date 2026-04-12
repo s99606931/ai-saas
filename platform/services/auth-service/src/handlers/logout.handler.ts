@@ -1,13 +1,15 @@
 // 로그아웃 핸들러
 // Design Ref: DESIGN-MTU-P01 Section 2 — POST /auth/logout
-// Plan SC: FR-P01.4
-// CSAP: D-08-03 로그아웃 시 토큰 무효화
+// Design Ref: SVC-AUTHR2-R50.design.md §2 (R2 Problem Details)
+// Plan SC: FR-P01.4, FR-AUTHR2.1
+// CSAP: D-08-03 로그아웃 시 토큰 무효화, D-12-03 표준 에러
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { logoutSchema } from '../schemas/login.schema.js';
 import { verifyToken } from '../lib/jwt.js';
 import { removeSession, blacklistToken } from '../lib/session.js';
 import { logAuthEvent } from '../lib/audit.js';
+import { AuthProblemTypes, problemReply } from '../lib/problem-reply.js';
 
 /**
  * 로그아웃 핸들러
@@ -19,9 +21,10 @@ import { logAuthEvent } from '../lib/audit.js';
 export async function logoutHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = logoutSchema.safeParse(request.body);
   if (!parseResult.success) {
-    await reply.status(400).send({
-      success: false,
-      error: { code: 'VALIDATION_ERROR', message: '갱신 토큰을 제공하세요' },
+    await problemReply(request, reply, {
+      type: AuthProblemTypes.validation,
+      title: '갱신 토큰을 제공하세요',
+      status: 400,
     });
     return;
   }

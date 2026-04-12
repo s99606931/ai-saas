@@ -1,7 +1,8 @@
 // 로그인 핸들러
 // Design Ref: DESIGN-MTU-P01 Section 2 — POST /auth/login
-// Plan SC: FR-P01.1, FR-P01.6, FR-P01.8, FR-P01.12
-// CSAP: D-08-01 인증, D-08-06 계정 잠금
+// Design Ref: SVC-AUTHR2-R50.design.md §2, §3.1 (R2 Problem Details + Email 정규화)
+// Plan SC: FR-P01.1, FR-P01.6, FR-P01.8, FR-P01.12, FR-AUTHR2.1, FR-AUTHR2.3, FR-AUTHR2.6
+// CSAP: D-08-01 인증, D-08-06 계정 잠금, D-12-01 입력 검증, D-12-03 표준 에러
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { loginSchema } from '../schemas/login.schema.js';
@@ -14,6 +15,18 @@ import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
 import { getUserPermissions } from '../lib/permissions.js';
 import { verifyTotp } from '../lib/totp.js';
 import { decryptMfaSecret } from '../lib/mfa-crypto.js';
+import { stripControlChars, truncate } from '@public-saas/input-sanitizer';
+import { AuthProblemTypes, problemReply } from '../lib/problem-reply.js';
+
+/**
+ * 이메일 입력 정규화
+ * Design Ref: SVC-AUTHR2-R50.design.md §3.1
+ * Plan SC: FR-AUTHR2.3
+ */
+function normalizeEmail(raw: string): string {
+  // RFC 5321: 이메일 최대 320자
+  return truncate(stripControlChars(raw), 320).trim().toLowerCase();
+}
 
 /**
  * 로그인 핸들러
@@ -33,17 +46,18 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
   // 1. 입력 검증
   const parseResult = loginSchema.safeParse(request.body);
   if (!parseResult.success) {
-    await reply.status(400).send({
-      success: false,
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: parseResult.error.issues.map((i) => i.message).join(', '),
-      },
+    await problemReply(request, reply, {
+      type: AuthProblemTypes.validation,
+      title: '입력 값이 유효하지 않습니다',
+      status: 400,
+      detail: parseResult.error.issues.map((i) => i.message).join(', '),
     });
     return;
   }
 
-  const { email, password, tenantSlug } = parseResult.data;
+  // Plan SC: FR-AUTHR2.3 -- 이메일 정규화 (제어문자 제거 + trim + lowercase)
+  const email = normalizeEmail(parseResult.data.email);
+  const { password, tenantSlug } = parseResult.data;
   const ip = request.ip;
   const userAgent = request.headers['user-agent'] ?? 'unknown';
 
@@ -53,9 +67,10 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
   });
 
   if (!tenant || tenant.status !== 'ACTIVE') {
-    await reply.status(401).send({
-      success: false,
-      error: { code: 'AUTH_TENANT_NOT_FOUND', message: '테넌트를 찾을 수 없습니다' },
+    await problemReply(request, reply, {
+      type: AuthProblemTypes.tenantNotFound,
+      title: '테넌트를 찾을 수 없습니다',
+      status: 401,
     });
     return;
   }
@@ -68,9 +83,10 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
   if (!user) {
     // 감사 로그: 존재하지 않는 사용자 로그인 시도
     await logAuthEvent('LOGIN_FAIL_USER_NOT_FOUND', email, tenant.id, ip, userAgent);
-    await reply.status(401).send({
-      success: false,
-      error: { code: 'AUTH_INVALID_CREDENTIALS', message: '이메일 또는 비밀번호가 올바르지 않습니다' },
+    await problemReply(request, reply, {
+      type: AuthProblemTypes.invalidCredentials,
+      title: '이메일 또는 비밀번호가 올바르지 않습니다',
+      status: 401,
     });
     return;
   }
@@ -78,11 +94,13 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
   // 4. 계정 잠금 확인 (CSAP D-08-06)
   if (user.lockedUntil && user.lockedUntil > new Date()) {
     await logAuthEvent('LOGIN_FAIL_ACCOUNT_LOCKED', user.id, tenant.id, ip, userAgent);
-    await reply.status(423).send({
-      success: false,
-      error: {
-        code: 'AUTH_ACCOUNT_LOCKED',
-        message: `계정이 잠겨 있습니다. ${user.lockedUntil.toISOString()} 이후 다시 시도하세요`,
+    await problemReply(request, reply, {
+      type: AuthProblemTypes.accountLocked,
+      title: '계정이 잠겨 있습니다',
+      status: 423,
+      detail: `${user.lockedUntil.toISOString()} 이후 다시 시도하세요`,
+      extensions: {
+        lockedUntil: user.lockedUntil.toISOString(),
       },
     });
     return;
@@ -110,9 +128,10 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
       failedAttempts: newFailedCount,
     });
 
-    await reply.status(401).send({
-      success: false,
-      error: { code: 'AUTH_INVALID_CREDENTIALS', message: '이메일 또는 비밀번호가 올바르지 않습니다' },
+    await problemReply(request, reply, {
+      type: AuthProblemTypes.invalidCredentials,
+      title: '이메일 또는 비밀번호가 올바르지 않습니다',
+      status: 401,
     });
     return;
   }
@@ -125,12 +144,10 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
     if (!mfaCode) {
       // MFA 활성 사용자가 코드를 제공하지 않은 경우
       await logAuthEvent('LOGIN_MFA_REQUIRED', user.id, tenant.id, ip, userAgent);
-      await reply.status(403).send({
-        success: false,
-        error: {
-          code: 'MFA_REQUIRED',
-          message: 'MFA 인증 코드가 필요합니다',
-        },
+      await problemReply(request, reply, {
+        type: AuthProblemTypes.mfaRequired,
+        title: 'MFA 인증 코드가 필요합니다',
+        status: 403,
       });
       return;
     }
@@ -141,12 +158,10 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
 
     if (!isMfaValid) {
       await logAuthEvent('LOGIN_FAIL_MFA_INVALID', user.id, tenant.id, ip, userAgent);
-      await reply.status(401).send({
-        success: false,
-        error: {
-          code: 'MFA_INVALID_CODE',
-          message: 'MFA 인증 코드가 올바르지 않습니다',
-        },
+      await problemReply(request, reply, {
+        type: AuthProblemTypes.mfaInvalid,
+        title: 'MFA 인증 코드가 올바르지 않습니다',
+        status: 401,
       });
       return;
     }

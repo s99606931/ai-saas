@@ -34,7 +34,10 @@
     "@public-saas/rbac": "workspace:*",
     "@public-saas/mesh-ready": "workspace:*",
     "@public-saas/config-vault": "workspace:*",
-    "@public-saas/event-bus": "workspace:*"
+    "@public-saas/event-bus": "workspace:*",
+    "@public-saas/problem-details": "workspace:*",
+    "@public-saas/input-sanitizer": "workspace:*",
+    "@public-saas/trace-context": "workspace:*"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.0",

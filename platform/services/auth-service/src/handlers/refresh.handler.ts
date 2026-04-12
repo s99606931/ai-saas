@@ -1,7 +1,8 @@
 // 토큰 갱신 핸들러
 // Design Ref: DESIGN-MTU-P01 Section 2 — POST /auth/refresh
-// Plan SC: FR-P01.3
-// CSAP: D-08-02 세션 관리 — Refresh Token Rotation
+// Design Ref: SVC-AUTHR2-R50.design.md §2 (R2 Problem Details)
+// Plan SC: FR-P01.3, FR-AUTHR2.1, FR-AUTHR2.6
+// CSAP: D-08-02 세션 관리 — Refresh Token Rotation, D-12-03 표준 에러
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { refreshSchema } from '../schemas/login.schema.js';
@@ -11,6 +12,7 @@ import { logAuthEvent } from '../lib/audit.js';
 import { prisma } from '../lib/prisma.js';
 import { AUTH_CONSTANTS } from '@public-saas/auth-sdk';
 import { getUserPermissions } from '../lib/permissions.js';
+import { AuthProblemTypes, problemReply } from '../lib/problem-reply.js';
 
 /**
  * 토큰 갱신 핸들러
@@ -23,9 +25,10 @@ import { getUserPermissions } from '../lib/permissions.js';
 export async function refreshHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const parseResult = refreshSchema.safeParse(request.body);
   if (!parseResult.success) {
-    await reply.status(400).send({
-      success: false,
-      error: { code: 'VALIDATION_ERROR', message: '갱신 토큰을 제공하세요' },
+    await problemReply(request, reply, {
+      type: AuthProblemTypes.validation,
+      title: '갱신 토큰을 제공하세요',
+      status: 400,
     });
     return;
   }
@@ -35,9 +38,10 @@ export async function refreshHandler(request: FastifyRequest, reply: FastifyRepl
   try {
     // 블랙리스트 확인 (이미 무효화된 토큰)
     if (await isTokenBlacklisted(refreshToken)) {
-      await reply.status(401).send({
-        success: false,
-        error: { code: 'AUTH_TOKEN_REVOKED', message: '토큰이 무효화되었습니다' },
+      await problemReply(request, reply, {
+        type: AuthProblemTypes.tokenRevoked,
+        title: '토큰이 무효화되었습니다',
+        status: 401,
       });
       return;
     }
@@ -51,9 +55,10 @@ export async function refreshHandler(request: FastifyRequest, reply: FastifyRepl
     });
 
     if (!user) {
-      await reply.status(401).send({
-        success: false,
-        error: { code: 'AUTH_USER_NOT_FOUND', message: '사용자를 찾을 수 없습니다' },
+      await problemReply(request, reply, {
+        type: AuthProblemTypes.userNotFound,
+        title: '사용자를 찾을 수 없습니다',
+        status: 401,
       });
       return;
     }
@@ -94,9 +99,10 @@ export async function refreshHandler(request: FastifyRequest, reply: FastifyRepl
       },
     });
   } catch {
-    await reply.status(401).send({
-      success: false,
-      error: { code: 'AUTH_TOKEN_EXPIRED', message: '갱신 토큰이 만료되었습니다' },
+    await problemReply(request, reply, {
+      type: AuthProblemTypes.tokenExpired,
+      title: '갱신 토큰이 만료되었습니다',
+      status: 401,
     });
   }
 }

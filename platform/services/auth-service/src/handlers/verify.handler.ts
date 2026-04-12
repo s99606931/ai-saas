@@ -1,10 +1,12 @@
 // 토큰 검증 핸들러
 // Design Ref: DESIGN-MTU-P01 Section 2 — GET /auth/verify
-// Plan SC: FR-P01.2
+// Design Ref: SVC-AUTHR2-R50.design.md §2 (R2 Problem Details)
+// Plan SC: FR-P01.2, FR-AUTHR2.1
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { verifyToken } from '../lib/jwt.js';
 import { isTokenBlacklisted } from '../lib/session.js';
+import { AuthProblemTypes, problemReply } from '../lib/problem-reply.js';
 
 /**
  * 토큰 검증 핸들러
@@ -15,9 +17,10 @@ export async function verifyHandler(request: FastifyRequest, reply: FastifyReply
   const authHeader = request.headers.authorization;
 
   if (!authHeader?.startsWith('Bearer ')) {
-    await reply.status(401).send({
-      success: false,
-      error: { code: 'AUTH_NO_TOKEN', message: '인증 토큰이 제공되지 않았습니다' },
+    await problemReply(request, reply, {
+      type: AuthProblemTypes.noToken,
+      title: '인증 토큰이 제공되지 않았습니다',
+      status: 401,
     });
     return;
   }
@@ -27,9 +30,10 @@ export async function verifyHandler(request: FastifyRequest, reply: FastifyReply
   try {
     // 블랙리스트 확인
     if (await isTokenBlacklisted(token)) {
-      await reply.status(401).send({
-        success: false,
-        error: { code: 'AUTH_TOKEN_REVOKED', message: '토큰이 무효화되었습니다' },
+      await problemReply(request, reply, {
+        type: AuthProblemTypes.tokenRevoked,
+        title: '토큰이 무효화되었습니다',
+        status: 401,
       });
       return;
     }
@@ -42,9 +46,10 @@ export async function verifyHandler(request: FastifyRequest, reply: FastifyReply
       data: payload,
     });
   } catch {
-    await reply.status(401).send({
-      success: false,
-      error: { code: 'AUTH_TOKEN_INVALID', message: '유효하지 않거나 만료된 토큰입니다' },
+    await problemReply(request, reply, {
+      type: AuthProblemTypes.tokenInvalid,
+      title: '유효하지 않거나 만료된 토큰입니다',
+      status: 401,
     });
   }
 }
