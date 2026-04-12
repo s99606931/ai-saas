@@ -1,0 +1,13 @@
+{
+  "name": "@ai-saas/business-intelligence",
+  "version": "1.0.0",
+  "description": "BI/Analytics 고도화 (MTU-N471~N474)",
+  "main": "dist/index.js",
+  "scripts": { "build": "tsc", "test": "jest --coverage" },
+  "dependencies": { "zod": "^3.23.0" },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0"
+  }
+}

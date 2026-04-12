@@ -1,0 +1,13 @@
+{
+  "name": "@ai-saas/orchestration-ai",
+  "version": "1.0.0",
+  "description": "서비스 오케스트레이션 + 이벤트 + API GW + 멀티리전 (MTU-N483~N486)",
+  "main": "dist/index.js",
+  "scripts": { "build": "tsc", "test": "jest --coverage" },
+  "dependencies": { "zod": "^3.23.0" },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0"
+  }
+}
