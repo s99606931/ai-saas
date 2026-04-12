@@ -822,3 +822,30 @@ XAI 추론 추적·테넌트 과금 리포트·공공 서류 인텐트 분류·�
 - **SVC-AI-ADV-R285**: Zero Trust Security Verifier AI (`zero-trust-security-verifier-ai.ts`, 8 테스트) — 엔티티 신뢰점수 + 컨텍스트(location/device/timeOfDay) 기반 가감점 + 임계값 미달 거부 + 이상 이벤트 기록.
 - **SVC-AI-ADV-R286**: SLA Violation Preventer AI (`sla-violation-preventer-ai.ts`, 7 테스트) — SLA 등록(responseTime/availability/errorRate) + safe/warning/critical 위험 레벨 + getAtRiskServices + C/S 차단.
 - **SVC-AI-ADV-R287**: Public Admin Language Corrector (`public-admin-language-corrector.ts`, 7 테스트) — 비표준 용어 등록 + inspect(탐지+count) + correct(교정 적용) + C/S 차단 + getAuditLog.
+- **SVC-AI-ADV-R295**: Public Service KPI Automator (`public-service-kpi-automator.ts`, 9 테스트) — UP/DOWN KPI + 가중 점수 + ≥100%→ON_TRACK/≥80%→AT_RISK/CRITICAL + RISING/FALLING/FLAT 트렌드(최근3, 5% 임계).
+- **SVC-AI-ADV-R296**: Cloud Migration Planner AI (`cloud-migration-planner-ai.ts`, 8 테스트) — C/S→K3S_ON_PREMISE 강제+blocker / LEGACY→REFACTOR / 대형(CPU≥8/mem≥32)→REPLATFORM+HYBRID / REHOST + 의존성×3일 추가.
+- **SVC-AI-ADV-R297**: Auto Data Classifier v2 (`auto-data-classifier-v2.ts`, 6 테스트) — SSN/BANK/PASSPORT→C / PHONE/EMAIL/NAME→S / 패턴없음→O + 최고등급 우선 + C등급 AI전송금지 권고.
+- **SVC-AI-ADV-R298**: Security Compliance Auto Corrector (`security-compliance-auto-corrector.ts`, 8 테스트) — autoFixable+규칙→FIXED / false→PENDING_MANUAL + CRITICAL×25/HIGH×15/MEDIUM×8/LOW×3 감점.
+- **SVC-AI-ADV-R299**: Service Catalog Recommender AI (`service-catalog-recommender-ai.ts`, 7 테스트) — 조직유형+30/카테고리+25/인기도+20/평점+15 점수 + topN 정렬 + 사용중 제외.
+- **SVC-AI-ADV-R300**: Employee Competency Analyzer AI (`employee-competency-analyzer-ai.ts`, 7 테스트) — gap≥2→HIGH/≥1→MEDIUM/LOW + 초과→strengths + PII 마스킹(첫글자+*) + HIGH→개발권고.
+- **SVC-AI-ADV-R301**: Security Test Generator AI (`security-test-generator-ai.ts`, 8 테스트) — 문자열→SQL_INJECTION(CRITICAL)+XSS(HIGH) / authRequired→AUTH_BYPASS / GET/PUT/DELETE→IDOR / sensitive→SENSITIVE_EXPOSURE.
+- **SVC-AI-ADV-R302**: Realtime Threat Intelligence AI (`realtime-threat-intelligence-ai.ts`, 9 테스트) — PRIVILEGE_ESC×70/MALWARE×50/DATA_EXFIL×40 점수 + ≥70→CRITICAL + BRUTE_FORCE/PORT_SCANNING 패턴 + IP마스킹(x.x.*.*).
+- **SVC-AI-ADV-R303**: Public Data Lifecycle Manager AI (`public-data-lifecycle-manager-ai.ts`, 8 테스트) — legalHold→LEGAL_HOLD / 기간만료→DELETE / 90일미접근→ARCHIVE / 30일→DORMANT + C등급 SecureWipe 권고.
+- **SVC-AI-ADV-R304**: Microservice Performance Profiler AI (`microservice-performance-profiler-ai.ts`, 8 테스트) — 서비스/SLO 등록 + CPU/Memory/RT 기록 + p95/p99 백분위수 + p99>SLO 병목 탐지 + exceedRatio.
+- **SVC-AI-ADV-R305**: Citizen Complaint Pattern Analyzer (`citizen-complaint-pattern-analyzer.ts`, 8 테스트) — 유형/targetDays 등록 + SHA-256 16자 PII 마스킹 + avgProcessingDays>targetDays*1.2 지연 + 개선 제안(담당자 증원/자동화).
+- **SVC-AI-ADV-R306**: Auth Token Lifecycle Manager AI (`auth-token-lifecycle-manager-ai.ts`, 8 테스트) — UUID 발급 + TTL 만료 + blacklist 폐기 + 갱신(새 TTL) + owner 마스킹 감사 로그.
+- **SVC-AI-ADV-R307**: Service Availability Predictor AI (`service-availability-predictor-ai.ts`, 8 테스트) — 서비스/목표가용성 등록 + 가중 이동평균 예측(최근 데이터 가중↑) + target 미달 시 atRisk + Alert 생성.
+- **SVC-AI-ADV-R308**: Public Data Linkage Automator v2 (`public-data-linkage-automator-v2.ts`, 7 테스트) — 소스/타겟 등록 + FieldMapping 규칙 실행 + targetSchema 검증 + missingFields 반환.
+- **SVC-AI-ADV-R309**: Code Complexity Reducer AI (`code-complexity-reducer-ai.ts`, 8 테스트) — cyclomatic×10/depth×20/param×15 점수 + 가중합(50/30/20) + CRITICAL/HIGH/MEDIUM/LOW + 리팩토링 제안(함수 분리/Early return/파라미터 객체/단일 책임).
+- **SVC-AI-ADV-R310**: Smart API Version Manager (`smart-api-version-manager.ts`, 8 테스트) — semver 파싱 + major→breaking/minor→compatible/patch→compatible + active 버전 업그레이드 경로 추천.
+- **SVC-AI-ADV-R311**: Decision Support AI (`decision-support-ai.ts`, 7 테스트) — 의사결정/가중 기준 등록 + 가중 합산 점수(WAS) + 정규화 + 대안 순위화 + 최적 대안 추천.
+- **SVC-AI-ADV-R312**: Anomaly Model Optimizer AI (`anomaly-model-optimizer-ai.ts`, 8 테스트) — 모델/초기 임계값 등록 + F1(2*P*R/(P+R)) 계산 + F1 최대 임계값 탐색 + 개선률 반환.
+- **SVC-AI-ADV-R313**: Digital Transformation Assessor AI (`digital-transformation-assessor-ai.ts`, 8 테스트) — 차원별 가중점수 + ≥90→OPTIMIZING/≥75→MANAGED/≥60→DEFINED/≥40→DEVELOPING/INITIAL + WEAK→권고사항.
+- **SVC-AI-ADV-R314**: Service Maturity Assessor AI (`service-maturity-assessor-ai.ts`, 7 테스트) — 가용성/응답시간/배포빈도/MTTR/모니터링/알림/CI-CD/커버리지 100점 + ≥90→L5/≥75→L4/≥55→L3/≥35→L2/L1.
+- **SVC-AI-ADV-R315**: Event Driven Arch Analyzer AI (`event-driven-arch-analyzer-ai.ts`, 8 테스트) — lag>10000→CRITICAL/컨슈머없음→DEGRADED/에러율>5%→CRITICAL + OVERLOADED/UNDERUTILIZED 처리량 분석.
+- **SVC-AI-ADV-R316**: Public Input Validator AI (`public-input-validator-ai.ts`, 8 테스트) — REQUIRED(CRITICAL)/FORMAT(HIGH)/RANGE(MEDIUM)/CUSTOM길이(MEDIUM) + CRITICAL/HIGH 없으면 isValid=true.
+- **SVC-AI-ADV-R317**: Intelligent Service Gateway v2 (`intelligent-service-gateway-v2.ts`, 8 테스트) — 차단클라이언트→DENY / C/S등급+payload→BLOCK_DATA_GRADE(N2SF) / rateLimit초과→THROTTLE / ALLOW.
+- **SVC-AI-ADV-R318**: Code Test Auto Generator v2 (`code-test-auto-generator-v2.ts`, 9 테스트) — HAPPY_PATH/ERROR_CASE/EDGE_CASE/BOUNDARY/async 테스트 자동생성 + coverageEstimate 계산.
+- **SVC-AI-ADV-R319**: Security Vuln Priority Classifier (`security-vuln-priority-classifier.ts`, 8 테스트) — CVSS×10+악용중+20+자산중요도+exploitability×5 → CRITICAL(1일)/HIGH(7일)/MEDIUM/LOW/INFORMATIONAL.
+- **SVC-AI-ADV-R320**: Public Service Comparison Analyzer (`public-service-comparison-analyzer.ts`, 7 테스트) — min-max 정규화 + higherIsBetter반전 + 가중평균 compositeScore + percentile + bestInClass.
+- **SVC-AI-ADV-R321**: Failure Pattern Library AI (`failure-pattern-library-ai.ts`, 8 테스트) — 증상 부분매칭 + matchScore≥50%→isRecognized + topMatches3개 + confidence<40%→escalation.
