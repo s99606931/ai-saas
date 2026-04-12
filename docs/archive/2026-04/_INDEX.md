@@ -849,3 +849,22 @@ XAI 추론 추적·테넌트 과금 리포트·공공 서류 인텐트 분류·�
 - **SVC-AI-ADV-R319**: Security Vuln Priority Classifier (`security-vuln-priority-classifier.ts`, 8 테스트) — CVSS×10+악용중+20+자산중요도+exploitability×5 → CRITICAL(1일)/HIGH(7일)/MEDIUM/LOW/INFORMATIONAL.
 - **SVC-AI-ADV-R320**: Public Service Comparison Analyzer (`public-service-comparison-analyzer.ts`, 7 테스트) — min-max 정규화 + higherIsBetter반전 + 가중평균 compositeScore + percentile + bestInClass.
 - **SVC-AI-ADV-R321**: Failure Pattern Library AI (`failure-pattern-library-ai.ts`, 8 테스트) — 증상 부분매칭 + matchScore≥50%→isRecognized + topMatches3개 + confidence<40%→escalation.
+- **SVC-AI-ADV-R331**: Service Dependency Auto Updater (`service-dependency-auto-updater.ts`, 8 테스트) — 보안패치→AUTO_UPDATE CRITICAL/breaking→MANUAL_REVIEW HIGH/라이선스비호환→BLOCK CRITICAL + 최신버전→권고없음.
+- **SVC-AI-ADV-R332**: Public Data Standardizer AI (`public-data-standardizer-ai.ts`, 8 테스트) — ISO/DOT/SLASH/COMPACT 날짜 정규화 + MISSING_VALUE HIGH(-20pts)/TYPE_MISMATCH MEDIUM(-10pts) + qualityScore<60→isAcceptable false.
+- **SVC-AI-ADV-R333**: Realtime Pricing Optimizer AI (`realtime-pricing-optimizer-ai.ts`, 8 테스트) — N2SF C/S등급→BLOCKED + loadRatio≥0.9→SURGE×1.2 / <0.3→DISCOUNT×0.85 / 경쟁사10%이하→DISCOUNT + [min,max] 클램프.
+- **SVC-AI-ADV-R334**: Error Budget Manager AI (`error-budget-manager-ai.ts`, 9 테스트) — allowedErrorRate=1-targetSuccessRate + remaining≤0→EXHAUSTED/≤25%→WARNING + burnRate=actual/allowed + projectedExhaustionDays.
+- **SVC-AI-ADV-R335**: Digital Identity Manager AI (`digital-identity-manager-ai.ts`, 8 테스트) — sensitive속성→maskedValue(첫+*+끝) + daysUntilExpiry<0→EXPIRED/≤30→EXPIRING_SOON + userId 마스킹 감사 로그.
+- **SVC-AI-ADV-R336**: Rollout Strategy Optimizer AI (`rollout-strategy-optimizer-ai.ts`, 8 테스트) — HOTFIX→IMMEDIATE(100%) / HIGH||hasDbMigration→BLUE_GREEN / MEDIUM→CANARY(5%→25%→100%) / LOW→ROLLING(20%→60%→100%).
+- **SVC-AI-ADV-R337**: Public Contract Analyzer v2 (`public-contract-analyzer-v2.ts`, 8 테스트) — isOnerous+30/keywords×10/PENALTY+20/LIABILITY+25 + 공공조달 1억초과 IP_RIGHTS누락/CONFIDENTIALITY누락 complianceFlag.
+- **SVC-AI-ADV-R338**: Multitenant Quota Manager AI (`multitenant-quota-manager-ai.ts`, 9 테스트) — ≥100%→EXCEEDED/≥90%→THROTTLED/≥75%→WARNING + overallStatus=최대심각도 + STANDARD→PREMIUM 업그레이드 권고.
+- **SVC-AI-ADV-R339**: Public Service Notification v2 (`public-service-notification-v2.ts`, 8 테스트) — {{변수}} 렌더링 + userId앞2+*+뒤2 마스킹 + 템플릿없음→SKIPPED_NO_TEMPLATE + dispatchBatch 집계.
+- **SVC-AI-ADV-R349**: Predictive Workload Distributor (`predictive-workload-distributor.ts`, 6 테스트) — SMA 부하 예측 + 저부하 노드 greedy 할당 + overflow 반환 + C/S차단 + 감사 로그.
+- **SVC-AI-ADV-R350**: Emergency Resource Allocator (`emergency-resource-allocator.ts`, 6 테스트) — 우선순위 가중(critical 1000/high 100/medium 10/low 1) + 유형·근접도 기반 최소 응답시간 배분 + C/S차단.
+- **SVC-AI-ADV-R351**: Inference Batch Optimizer (`inference-batch-optimizer.ts`, 5 테스트) — 모델별 큐 + maxBatchSize 도달 시 즉시 flush + timeoutMs 경과 시 부분 flush + executor 콜백.
+- **SVC-AI-ADV-R352**: Medical Data Anonymizer v2 (`medical-data-anonymizer-v2.ts`, 6 테스트) — quasi-id 그룹핑 + k-익명성 + l-다양성 동시 위반 탐지 + C/S 원본 차단 + CSAP D-12.
+- **SVC-AI-ADV-R353**: Data Lineage Tracker v2 (`data-lineage-tracker-v2.ts`, 6 테스트) — 필드 단위 정방향/역방향 인접리스트 + BFS upstream/downstream + 순환 safe + C/S차단.
+- **SVC-AI-ADV-R354**: Official Document Classifier (`official-document-classifier.ts`, 6 테스트) — 카테고리 사전 + 키워드 빈도 집계 + 최고점 카테고리 + score/sum = confidence + unclassified 폴백.
+- **SVC-AI-ADV-R355**: AI Capacity Planner v2 (`ai-capacity-planner-v2.ts`, 6 테스트) — SMA windowSize 이동평균 + target 초과→scale-out(ceil(overflow/perNodeCapacity)) + low 미만→scale-in / band 유지→hold.
+- **SVC-AI-ADV-R356**: Citizen Portal Personalizer (`citizen-portal-personalizer.ts`, 5 테스트) — 사용자별 서비스 이용 score = Σexp(-λ·daysAgo) 지수감쇠 + Top-N 정렬 + 사용자 정보 C/S 차단.
+- **SVC-AI-ADV-R357**: Public Sector HR Analyzer (`public-sector-hr-analyzer.ts`, 5 테스트) — 부서 평균 대비 skillScore 갭 + performance/tenure/training/absence/salary 5축 이직위험 0~100 가중 + flags 목록.
+- **SVC-AI-ADV-R358**: AI Ethics Compliance Checker (`ai-ethics-compliance-checker.ts`, 6 테스트) — EU AI Act 4단계(unacceptable/high/limited/minimal) 키워드 분류 + KCA 10원칙 체크리스트 점수 ≥0.7 && !unacceptable→compliant.
