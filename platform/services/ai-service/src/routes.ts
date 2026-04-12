@@ -22,6 +22,36 @@ import { structuredOutputHandler } from './handlers/ai-structured.handler.js';
 import { functionCallHandler } from './handlers/ai-function.handler.js';
 import { documentAnalyzeHandler, documentCompareHandler } from './handlers/ai-document.handler.js';
 import { workflowHandler } from './handlers/ai-workflow.handler.js';
+import {
+  agentMarketplaceRegisterHandler,
+  agentMarketplaceSearchHandler,
+  agentExecuteHandler,
+  agentAuditTrailHandler,
+  agentRollbackHandler,
+} from './handlers/ai-agent-ecosystem.handler.js';
+import {
+  citizenClassifyHandler,
+  regulationInterpretHandler,
+  documentOcrHandler,
+  surveyGenerateHandler,
+  budgetAnalyzeHandler,
+} from './handlers/ai-public.handler.js';
+import {
+  carbonTrackHandler,
+  esgReportGenerateHandler,
+  aiImpactAssessHandler,
+  governanceTransparencyHandler,
+} from './handlers/ai-governance.handler.js';
+import {
+  anomalyDetectHandler,
+  dlpScanHandler,
+  threatFeedHandler,
+} from './handlers/ai-security.handler.js';
+import {
+  dataQualityCheckHandler,
+  dataCatalogSearchHandler,
+  dataStreamIngestHandler,
+} from './handlers/ai-data.handler.js';
 import { createRateLimiter } from '@public-saas/rate-limit';
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
@@ -551,5 +581,195 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       preHandler: workflowLimiter,
     },
     workflowHandler as never,
+  );
+
+  // ── R14: AI 에이전트 마켓플레이스/실행/감사 (MTU-N531~N535) ──────────
+  // FR-AI-ECO.1~FR-AI-ECO.5
+  app.post(
+    '/ai/agents/marketplace/register',
+    {
+      schema: { description: 'AI 에이전트 마켓플레이스 등록', tags: ['ai', 'agent-ecosystem'], response: { 201: modelResponse, 403: errorResponse } },
+      preHandler: writeLimiter,
+    },
+    agentMarketplaceRegisterHandler as never,
+  );
+
+  app.get(
+    '/ai/agents/marketplace/search',
+    {
+      schema: { description: 'AI 에이전트 마켓플레이스 검색', tags: ['ai', 'agent-ecosystem'], response: { 200: modelResponse } },
+      preHandler: readLimiter,
+    },
+    agentMarketplaceSearchHandler as never,
+  );
+
+  app.post(
+    '/ai/agents/execute',
+    {
+      schema: { description: 'AI 에이전트 실행 (Plan-Execute / ReAct)', tags: ['ai', 'agent-ecosystem'], response: { 200: modelResponse, 403: errorResponse } },
+      preHandler: agentLimiter,
+    },
+    agentExecuteHandler as never,
+  );
+
+  app.get(
+    '/ai/agents/:id/audit-trail',
+    {
+      schema: { description: 'AI 에이전트 감사 추적 조회 (CSAP D-06)', tags: ['ai', 'agent-ecosystem'], params: idParam, response: { 200: modelResponse } },
+      preHandler: readLimiter,
+    },
+    agentAuditTrailHandler as never,
+  );
+
+  app.post(
+    '/ai/agents/:id/rollback',
+    {
+      schema: { description: 'AI 에이전트 버전 롤백', tags: ['ai', 'agent-ecosystem'], params: idParam, response: { 200: modelResponse, 403: errorResponse } },
+      preHandler: writeLimiter,
+    },
+    agentRollbackHandler as never,
+  );
+
+  // ── R14: 공공 AI API (MTU-N536~N540) ────────────────────────────────
+  // FR-AI-PUB.1~FR-AI-PUB.5
+  app.post(
+    '/ai/public/citizen/classify',
+    {
+      schema: { description: '민원 자동 분류 (PII 마스킹)', tags: ['ai', 'public'], response: { 200: modelResponse, 403: errorResponse } },
+      preHandler: chatLimiter,
+    },
+    citizenClassifyHandler as never,
+  );
+
+  app.post(
+    '/ai/public/regulation/interpret',
+    {
+      schema: { description: '법령 해석 + 출처 인용', tags: ['ai', 'public'], response: { 200: modelResponse, 403: errorResponse } },
+      preHandler: chatLimiter,
+    },
+    regulationInterpretHandler as never,
+  );
+
+  app.post(
+    '/ai/public/document/ocr',
+    {
+      schema: { description: '행정문서 OCR (한/영 + 표 추출)', tags: ['ai', 'public'], response: { 200: modelResponse, 403: errorResponse } },
+      preHandler: ragLimiter,
+    },
+    documentOcrHandler as never,
+  );
+
+  app.post(
+    '/ai/public/survey/generate',
+    {
+      schema: { description: '전자설문 자동 생성', tags: ['ai', 'public'], response: { 200: modelResponse, 403: errorResponse } },
+      preHandler: chatLimiter,
+    },
+    surveyGenerateHandler as never,
+  );
+
+  app.post(
+    '/ai/public/budget/analyze',
+    {
+      schema: { description: '예산집행 분석 + 리스크 평가', tags: ['ai', 'public'], response: { 200: modelResponse, 403: errorResponse } },
+      preHandler: chatLimiter,
+    },
+    budgetAnalyzeHandler as never,
+  );
+
+  // ── R14: ESG/거버넌스 AI (MTU-N541~N544) ───────────────────────────
+  // FR-ESG-GOV.1~FR-ESG-GOV.4
+  app.post(
+    '/ai/esg/carbon/track',
+    {
+      schema: { description: '탄소배출 추적 (Scope 1/2/3)', tags: ['ai', 'esg'], response: { 200: modelResponse, 403: errorResponse } },
+      preHandler: writeLimiter,
+    },
+    carbonTrackHandler as never,
+  );
+
+  app.get(
+    '/ai/esg/report/generate',
+    {
+      schema: { description: 'ESG 보고서 생성 (GRI/SASB/TCFD/K-ESG)', tags: ['ai', 'esg'], response: { 200: modelResponse } },
+      preHandler: readLimiter,
+    },
+    esgReportGenerateHandler as never,
+  );
+
+  app.post(
+    '/ai/governance/impact/assess',
+    {
+      schema: { description: 'AI 영향 평가 (편향/투명성/설명가능성)', tags: ['ai', 'governance'], response: { 200: modelResponse, 403: errorResponse } },
+      preHandler: writeLimiter,
+    },
+    aiImpactAssessHandler as never,
+  );
+
+  app.get(
+    '/ai/governance/transparency',
+    {
+      schema: { description: '투명성 보고서 (자동 결정/이의/감사)', tags: ['ai', 'governance'], response: { 200: modelResponse } },
+      preHandler: readLimiter,
+    },
+    governanceTransparencyHandler as never,
+  );
+
+  // ── R14: 보안 AI (MTU-N545~N547) ────────────────────────────────────
+  // FR-AI-SEC.1~FR-AI-SEC.3
+  app.post(
+    '/ai/security/anomaly/detect',
+    {
+      schema: { description: '이상 탐지 (로그인/API/파일/네트워크)', tags: ['ai', 'security'], response: { 200: modelResponse, 403: errorResponse } },
+      preHandler: writeLimiter,
+    },
+    anomalyDetectHandler as never,
+  );
+
+  app.post(
+    '/ai/security/dlp/scan',
+    {
+      schema: { description: 'DLP 스캔 (RRN/전화/이메일/카드 등)', tags: ['ai', 'security'], response: { 200: modelResponse, 403: errorResponse } },
+      preHandler: writeLimiter,
+    },
+    dlpScanHandler as never,
+  );
+
+  app.get(
+    '/ai/security/threat/feed',
+    {
+      schema: { description: '위협 인텔리전스 피드 (KrCERT/MISP/OTX)', tags: ['ai', 'security'], response: { 200: modelResponse } },
+      preHandler: readLimiter,
+    },
+    threatFeedHandler as never,
+  );
+
+  // ── R14: 데이터 플랫폼 AI (MTU-N548~N550) ──────────────────────────
+  // FR-AI-DATA.1~FR-AI-DATA.3
+  app.post(
+    '/ai/data/quality/check',
+    {
+      schema: { description: '데이터 품질 검사 (5개 룰셋)', tags: ['ai', 'data'], response: { 200: modelResponse, 403: errorResponse } },
+      preHandler: writeLimiter,
+    },
+    dataQualityCheckHandler as never,
+  );
+
+  app.get(
+    '/ai/data/catalog/search',
+    {
+      schema: { description: '데이터 카탈로그 검색', tags: ['ai', 'data'], response: { 200: modelResponse } },
+      preHandler: readLimiter,
+    },
+    dataCatalogSearchHandler as never,
+  );
+
+  app.post(
+    '/ai/data/stream/ingest',
+    {
+      schema: { description: '스트리밍 데이터 수집', tags: ['ai', 'data'], response: { 200: modelResponse, 403: errorResponse } },
+      preHandler: writeLimiter,
+    },
+    dataStreamIngestHandler as never,
   );
 }
