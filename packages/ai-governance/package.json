@@ -1,0 +1,21 @@
+{
+  "name": "@ai-saas/ai-governance",
+  "version": "1.0.0",
+  "description": "AI 거버넌스 (영향평가/투명성/설명/윤리) MTU-N463~N466",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --coverage",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.4",
+    "typescript": "^5.5.0"
+  }
+}

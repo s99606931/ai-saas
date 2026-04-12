@@ -5,3 +5,5 @@
 
 export * from './federated-coordinator';
 export * from './differential-privacy';
+export * from './strategies/fl-variants';
+export * from './strategies/contribution-audit';
