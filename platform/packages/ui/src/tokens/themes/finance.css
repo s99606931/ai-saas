@@ -1,0 +1,70 @@
+/* ============================================================
+ * DS-TOKEN-R1 — Theme: finance (금융)
+ * Plan SC: FR-DST.8
+ *
+ * 딥그린 #15803d + 골드 액센트 — 금융 비즈니스 스타일
+ * 활성화: <html class="theme-finance">
+ * ============================================================ */
+
+.theme-finance {
+  /* Surfaces — 미세한 웜 톤 */
+  --color-surface:                 #fefefc;
+  --color-surface-variant:         #f7f9f5;
+  --color-surface-container:       #eef3ea;
+  --color-surface-container-high:  #e0e9da;
+  --color-surface-inverse:         var(--color-green-950);
+
+  --color-on-surface:              #0a1f12;
+  --color-on-surface-variant:      var(--color-green-800);
+  --color-on-surface-muted:        var(--color-green-600);
+
+  /* Primary — 금융 딥그린 */
+  --color-primary:                 var(--color-green-700);
+  --color-primary-hover:           var(--color-green-800);
+  --color-primary-active:          var(--color-green-900);
+  --color-primary-container:       var(--color-green-100);
+  --color-on-primary:              var(--color-white);
+  --color-on-primary-container:    var(--color-green-900);
+
+  /* Secondary — 골드 */
+  --color-secondary:               var(--color-gold-600);
+  --color-secondary-hover:         var(--color-gold-700);
+  --color-secondary-container:     var(--color-gold-100);
+  --color-on-secondary:            var(--color-white);
+  --color-on-secondary-container:  var(--color-gold-900);
+
+  /* Tertiary — 슬레이트 */
+  --color-tertiary:                var(--color-slate-700);
+  --color-tertiary-container:      var(--color-slate-100);
+
+  /* Outline */
+  --color-outline:                 #c7d6c0;
+  --color-outline-variant:         #dde7d6;
+
+  /* Focus */
+  --color-focus-ring:              var(--color-green-600);
+
+  /* Component — 신뢰감 있는 모서리 */
+  --button-radius:                 var(--radius-md);
+  --card-radius:                   var(--radius-lg);
+}
+
+.theme-finance.dark {
+  --color-surface:                 #061410;
+  --color-surface-variant:         var(--color-green-950);
+  --color-surface-container:       var(--color-green-900);
+  --color-surface-container-high:  var(--color-green-800);
+
+  --color-on-surface:              #e6f1ea;
+  --color-on-surface-variant:      var(--color-green-200);
+  --color-on-surface-muted:        var(--color-green-300);
+
+  --color-primary:                 var(--color-green-400);
+  --color-primary-hover:           var(--color-green-300);
+  --color-primary-container:       var(--color-green-800);
+  --color-on-primary:              var(--color-green-950);
+
+  --color-secondary:               var(--color-gold-400);
+  --color-secondary-container:     var(--color-gold-800);
+  --color-on-secondary:            var(--color-gold-950);
+}

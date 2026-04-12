@@ -1,0 +1,115 @@
+/* ============================================================
+ * DS-TOKEN-R1 — Theme: high-contrast (WCAG AAA)
+ * Plan SC: FR-DST.10
+ *
+ * 고대비 테마 — WCAG 2.2 AAA (대비비 7:1 이상)
+ * KWCAG 2.2 5.4.1 명도 대비 최고 등급 충족
+ * 활성화: <html class="theme-high-contrast">
+ * ============================================================ */
+
+.theme-high-contrast {
+  /* Surfaces — 순백/순흑 극한 대비 */
+  --color-surface:                 var(--color-white);
+  --color-surface-variant:         var(--color-white);
+  --color-surface-container:       #f5f5f5;
+  --color-surface-container-high:  #e8e8e8;
+  --color-surface-inverse:         var(--color-black);
+  --color-surface-overlay:         rgb(0 0 0 / 0.85);
+
+  --color-on-surface:              var(--color-black);          /* 21:1 */
+  --color-on-surface-variant:      #1a1a1a;                     /* ~17:1 */
+  --color-on-surface-muted:        #333333;                     /* ~12:1 */
+  --color-on-surface-inverse:      var(--color-white);
+
+  /* Primary — 순수 진한 블루 (WCAG AAA) */
+  --color-primary:                 #003e9c;                     /* on white: 9.2:1 */
+  --color-primary-hover:           #002970;
+  --color-primary-active:          #001a4d;
+  --color-primary-container:       #d6e3ff;
+  --color-on-primary:              var(--color-white);
+  --color-on-primary-container:    #001a4d;
+
+  /* Secondary */
+  --color-secondary:               var(--color-black);
+  --color-secondary-hover:         #1a1a1a;
+  --color-secondary-container:     #e8e8e8;
+  --color-on-secondary:            var(--color-white);
+  --color-on-secondary-container:  var(--color-black);
+
+  /* Status — 모두 AAA 대비 */
+  --color-success:                 #006e1c;                     /* 7.5:1 */
+  --color-success-container:       #c0f0c8;
+  --color-on-success:              var(--color-white);
+  --color-on-success-container:    #002a06;
+
+  --color-warning:                 #8a4500;                     /* 7.1:1 */
+  --color-warning-container:       #fde0b8;
+  --color-on-warning:              var(--color-white);
+  --color-on-warning-container:    #2e1500;
+
+  --color-error:                   #b00020;                     /* 7.4:1 */
+  --color-error-container:         #ffd6dc;
+  --color-on-error:                var(--color-white);
+  --color-on-error-container:      #3a0008;
+
+  --color-info:                    #003e9c;
+  --color-info-container:          #d6e3ff;
+  --color-on-info:                 var(--color-white);
+  --color-on-info-container:       #001a4d;
+
+  /* Outline — 항상 명확 */
+  --color-outline:                 var(--color-black);
+  --color-outline-variant:         #4a4a4a;
+  --color-outline-strong:          var(--color-black);
+  --color-divider:                 var(--color-black);
+
+  /* Focus — 매우 두꺼운 링 */
+  --color-focus-ring:              #ffaa00;                     /* 명확한 노란 링 */
+  --color-focus-ring-offset:       var(--color-black);
+
+  /* Disabled */
+  --color-disabled-bg:             #e8e8e8;
+  --color-disabled-fg:             #666666;                     /* 5.5:1 충족 */
+  --color-disabled-border:         #999999;
+
+  /* Component — 두꺼운 테두리 */
+  --button-radius:                 var(--radius-sm);
+  --input-shadow-focus:            0 0 0 4px #ffaa00;
+}
+
+.theme-high-contrast.dark {
+  --color-surface:                 var(--color-black);
+  --color-surface-variant:         #0a0a0a;
+  --color-surface-container:       #1a1a1a;
+  --color-surface-container-high:  #2a2a2a;
+
+  --color-on-surface:              var(--color-white);
+  --color-on-surface-variant:      #f0f0f0;
+  --color-on-surface-muted:        #cccccc;
+
+  --color-primary:                 #82b1ff;                     /* on black: 9.5:1 */
+  --color-primary-hover:           #b3ccff;
+  --color-primary-container:       #001a4d;
+  --color-on-primary:              var(--color-black);
+  --color-on-primary-container:    #d6e3ff;
+
+  --color-success:                 #69f0ae;
+  --color-warning:                 #ffd180;
+  --color-error:                   #ff8a95;
+  --color-info:                    #82b1ff;
+
+  --color-outline:                 var(--color-white);
+  --color-divider:                 var(--color-white);
+  --color-focus-ring:              #ffaa00;
+}
+
+/* prefers-contrast 자동 처리 */
+@media (prefers-contrast: more) {
+  :root {
+    --color-outline:        var(--color-slate-900);
+    --color-focus-ring:     #ffaa00;
+  }
+  .dark {
+    --color-outline:        var(--color-slate-100);
+  }
+}

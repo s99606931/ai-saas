@@ -1,0 +1,116 @@
+/* ============================================================
+ * DS-TOKEN-R1 — Layer 3: Component Tokens
+ * Design Ref: docs/02-design/mtus/DS-TOKEN-R1.design.md
+ * Plan SC: FR-DST.4
+ *
+ * 컴포넌트별 토큰 — semantic 토큰을 참조
+ * 컴포넌트 변경 시 이 파일만 수정하면 됨.
+ * ============================================================ */
+
+:root {
+  /* ═══════════════ Button ═══════════════ */
+  --button-height-sm:        2rem;     /* 32px */
+  --button-height-md:        2.5rem;   /* 40px */
+  --button-height-lg:        3rem;     /* 48px */
+  --button-padding-x-sm:     var(--space-3);
+  --button-padding-x-md:     var(--space-4);
+  --button-padding-x-lg:     var(--space-6);
+  --button-font-size-sm:     var(--font-size-sm);
+  --button-font-size-md:     var(--font-size-base);
+  --button-font-size-lg:     var(--font-size-lg);
+  --button-font-weight:      var(--font-weight-medium);
+  --button-radius:           var(--radius-md);
+  --button-transition:       background-color var(--motion-duration-fast) var(--motion-ease-out),
+                             color var(--motion-duration-fast) var(--motion-ease-out),
+                             border-color var(--motion-duration-fast) var(--motion-ease-out),
+                             box-shadow var(--motion-duration-fast) var(--motion-ease-out);
+
+  --button-primary-bg:           var(--color-primary);
+  --button-primary-bg-hover:     var(--color-primary-hover);
+  --button-primary-bg-active:    var(--color-primary-active);
+  --button-primary-fg:           var(--color-on-primary);
+
+  --button-secondary-bg:         var(--color-surface-variant);
+  --button-secondary-bg-hover:   var(--color-surface-container);
+  --button-secondary-fg:         var(--color-on-surface);
+  --button-secondary-border:     var(--color-outline);
+
+  --button-ghost-bg:             transparent;
+  --button-ghost-bg-hover:       var(--color-surface-container);
+  --button-ghost-fg:             var(--color-on-surface);
+
+  --button-danger-bg:            var(--color-error);
+  --button-danger-bg-hover:      var(--color-error-hover);
+  --button-danger-fg:            var(--color-on-error);
+
+  --button-link-fg:              var(--color-primary);
+  --button-link-fg-hover:        var(--color-primary-hover);
+
+  /* ═══════════════ Input / TextField ═══════════════ */
+  --input-height-sm:        2rem;
+  --input-height-md:        2.5rem;
+  --input-height-lg:        3rem;
+  --input-padding-x:        var(--space-3);
+  --input-font-size:        var(--font-size-base);
+  --input-bg:               var(--color-surface);
+  --input-fg:               var(--color-on-surface);
+  --input-placeholder:      var(--color-on-surface-muted);
+  --input-border:           var(--color-outline);
+  --input-border-hover:     var(--color-outline-strong);
+  --input-border-focus:     var(--color-primary);
+  --input-border-error:     var(--color-error);
+  --input-radius:           var(--radius-md);
+  --input-shadow-focus:     0 0 0 3px rgb(37 99 235 / 0.15);
+
+  /* ═══════════════ Card ═══════════════ */
+  --card-bg:                var(--color-surface);
+  --card-border:            var(--color-outline-variant);
+  --card-radius:            var(--radius-lg);
+  --card-padding:           var(--space-6);
+  --card-shadow:            var(--shadow-sm);
+  --card-shadow-hover:      var(--shadow-md);
+
+  /* ═══════════════ Badge ═══════════════ */
+  --badge-height:           1.5rem;
+  --badge-padding-x:        var(--space-2);
+  --badge-font-size:        var(--font-size-xs);
+  --badge-font-weight:      var(--font-weight-medium);
+  --badge-radius:           var(--radius-full);
+
+  /* ═══════════════ Modal / Dialog ═══════════════ */
+  --modal-bg:               var(--color-surface);
+  --modal-border:           var(--color-outline-variant);
+  --modal-radius:           var(--radius-xl);
+  --modal-shadow:           var(--shadow-2xl);
+  --modal-overlay:          var(--color-surface-overlay);
+  --modal-padding:          var(--space-6);
+  --modal-max-w-sm:         24rem;
+  --modal-max-w-md:         32rem;
+  --modal-max-w-lg:         48rem;
+
+  /* ═══════════════ Tooltip ═══════════════ */
+  --tooltip-bg:             var(--color-surface-inverse);
+  --tooltip-fg:             var(--color-on-surface-inverse);
+  --tooltip-radius:         var(--radius-sm);
+  --tooltip-padding-x:      var(--space-2);
+  --tooltip-padding-y:      var(--space-1);
+  --tooltip-font-size:      var(--font-size-xs);
+
+  /* ═══════════════ Table ═══════════════ */
+  --table-bg:               var(--color-surface);
+  --table-header-bg:        var(--color-surface-variant);
+  --table-header-fg:        var(--color-on-surface);
+  --table-row-bg-hover:     var(--color-surface-container);
+  --table-border:           var(--color-outline-variant);
+  --table-cell-padding-x:   var(--space-4);
+  --table-cell-padding-y:   var(--space-3);
+
+  /* ═══════════════ Sidebar / Navigation ═══════════════ */
+  --sidebar-bg:             var(--color-surface);
+  --sidebar-border:         var(--color-outline-variant);
+  --nav-item-fg:            var(--color-on-surface-variant);
+  --nav-item-fg-active:     var(--color-primary);
+  --nav-item-bg-hover:      var(--color-surface-container);
+  --nav-item-bg-active:     var(--color-primary-container);
+  --nav-item-radius:        var(--radius-md);
+}

@@ -1,0 +1,66 @@
+/* ============================================================
+ * DS-TOKEN-R1 — Theme: government (정부24 스타일)
+ * Plan SC: FR-DST.7
+ *
+ * 정부24 딥블루 + 화이트 — 한국 공공기관 표준 스타일
+ * 활성화: <html class="theme-government">
+ * ============================================================ */
+
+.theme-government {
+  /* Surfaces */
+  --color-surface:                 var(--color-white);
+  --color-surface-variant:         #f5f7fb;
+  --color-surface-container:       #eef2fa;
+  --color-surface-container-high:  #e0e7f5;
+  --color-surface-inverse:         var(--color-deep-blue-900);
+
+  --color-on-surface:              #0c1437;
+  --color-on-surface-variant:      var(--color-deep-blue-700);
+  --color-on-surface-muted:        var(--color-deep-blue-500);
+
+  /* Primary — 정부24 딥블루 */
+  --color-primary:                 var(--color-deep-blue-700);
+  --color-primary-hover:           var(--color-deep-blue-800);
+  --color-primary-active:          var(--color-deep-blue-900);
+  --color-primary-container:       var(--color-deep-blue-100);
+  --color-on-primary:              var(--color-white);
+  --color-on-primary-container:    var(--color-deep-blue-900);
+
+  /* Secondary */
+  --color-secondary:               var(--color-slate-700);
+  --color-secondary-container:     var(--color-slate-100);
+
+  /* Tertiary — 정부 액센트 옐로우 */
+  --color-tertiary:                var(--color-amber-600);
+  --color-tertiary-container:      var(--color-amber-100);
+  --color-on-tertiary:             var(--color-white);
+
+  /* Outline (좀 더 명확하게) */
+  --color-outline:                 #c7d2eb;
+  --color-outline-variant:         #dde4f3;
+  --color-outline-strong:          var(--color-deep-blue-300);
+
+  /* Focus */
+  --color-focus-ring:              var(--color-deep-blue-500);
+
+  /* Component */
+  --button-radius:                 var(--radius-sm);  /* 정부 스타일은 각진 모서리 */
+  --card-radius:                   var(--radius-md);
+  --input-radius:                  var(--radius-sm);
+}
+
+.theme-government.dark {
+  --color-surface:                 #0a1028;
+  --color-surface-variant:         var(--color-deep-blue-950);
+  --color-surface-container:       var(--color-deep-blue-900);
+  --color-surface-container-high:  var(--color-deep-blue-800);
+
+  --color-on-surface:              #e6ebf8;
+  --color-on-surface-variant:      var(--color-deep-blue-200);
+  --color-on-surface-muted:        var(--color-deep-blue-300);
+
+  --color-primary:                 var(--color-deep-blue-300);
+  --color-primary-hover:           var(--color-deep-blue-200);
+  --color-primary-container:       var(--color-deep-blue-800);
+  --color-on-primary:              var(--color-deep-blue-950);
+}

@@ -1,0 +1,231 @@
+/* ============================================================
+ * DS-TOKEN-R1 — Layer 1: Base Tokens (Primitives)
+ * Design Ref: docs/02-design/mtus/DS-TOKEN-R1.design.md §색상 팔레트
+ * Plan SC: FR-DST.1, FR-DST.2
+ *
+ * 원시 토큰 — 절대 변하지 않는 디자인시스템 어휘
+ * 컴포넌트는 직접 사용 금지. semantic.css를 통해서만 참조.
+ * ============================================================ */
+
+:root {
+  /* ─────────────── Color Palette: Slate (중립) ─────────────── */
+  --color-slate-50:  #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #020617;
+
+  /* ─────────────── Color Palette: Blue (공공기관 기본) ─────────────── */
+  --color-blue-50:  #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+  --color-blue-950: #172554;
+
+  /* ─────────────── Color Palette: Deep Blue (정부24) ─────────────── */
+  --color-deep-blue-50:  #eef2ff;
+  --color-deep-blue-100: #e0e7ff;
+  --color-deep-blue-200: #c7d2fe;
+  --color-deep-blue-300: #a5b4fc;
+  --color-deep-blue-400: #818cf8;
+  --color-deep-blue-500: #6366f1;
+  --color-deep-blue-600: #4f46e5;
+  --color-deep-blue-700: #4338ca;
+  --color-deep-blue-800: #3730a3;
+  --color-deep-blue-900: #312e81;
+  --color-deep-blue-950: #1e1b4b;
+
+  /* ─────────────── Color Palette: Green (성공/금융) ─────────────── */
+  --color-green-50:  #f0fdf4;
+  --color-green-100: #dcfce7;
+  --color-green-200: #bbf7d0;
+  --color-green-300: #86efac;
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+  --color-green-700: #15803d;
+  --color-green-800: #166534;
+  --color-green-900: #14532d;
+  --color-green-950: #052e16;
+
+  /* ─────────────── Color Palette: Gold (금융 액센트) ─────────────── */
+  --color-gold-50:  #fefce8;
+  --color-gold-100: #fef9c3;
+  --color-gold-200: #fef08a;
+  --color-gold-300: #fde047;
+  --color-gold-400: #facc15;
+  --color-gold-500: #eab308;
+  --color-gold-600: #ca8a04;
+  --color-gold-700: #a16207;
+  --color-gold-800: #854d0e;
+  --color-gold-900: #713f12;
+  --color-gold-950: #422006;
+
+  /* ─────────────── Color Palette: Mint (의료) ─────────────── */
+  --color-mint-50:  #ecfeff;
+  --color-mint-100: #cffafe;
+  --color-mint-200: #a5f3fc;
+  --color-mint-300: #67e8f9;
+  --color-mint-400: #22d3ee;
+  --color-mint-500: #06b6d4;
+  --color-mint-600: #0891b2;
+  --color-mint-700: #0e7490;
+  --color-mint-800: #155e75;
+  --color-mint-900: #164e63;
+  --color-mint-950: #083344;
+
+  /* ─────────────── Color Palette: Red (위험) ─────────────── */
+  --color-red-50:  #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-red-900: #7f1d1d;
+  --color-red-950: #450a0a;
+
+  /* ─────────────── Color Palette: Amber (주의) ─────────────── */
+  --color-amber-50:  #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-300: #fcd34d;
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+  --color-amber-800: #92400e;
+  --color-amber-900: #78350f;
+  --color-amber-950: #451a03;
+
+  /* ─────────────── White / Black ─────────────── */
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* ═══════════════ Spacing Scale (4px 기반) ═══════════════ */
+  --space-0:  0;
+  --space-px: 1px;
+  --space-1:  0.25rem;  /*  4px */
+  --space-2:  0.5rem;   /*  8px */
+  --space-3:  0.75rem;  /* 12px */
+  --space-4:  1rem;     /* 16px */
+  --space-5:  1.25rem;  /* 20px */
+  --space-6:  1.5rem;   /* 24px */
+  --space-8:  2rem;     /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-20: 5rem;     /* 80px */
+  --space-24: 6rem;     /* 96px */
+
+  /* ═══════════════ Border Radius ═══════════════ */
+  --radius-none: 0;
+  --radius-xs:   0.125rem; /*  2px */
+  --radius-sm:   0.25rem;  /*  4px */
+  --radius-md:   0.5rem;   /*  8px */
+  --radius-lg:   0.75rem;  /* 12px */
+  --radius-xl:   1rem;     /* 16px */
+  --radius-2xl:  1.5rem;   /* 24px */
+  --radius-full: 9999px;
+
+  /* ═══════════════ Typography ═══════════════ */
+  --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+               system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'D2Coding', 'Cascadia Code', Consolas, monospace;
+
+  /* Fluid Typography (clamp 기반) */
+  --font-size-xs:   clamp(0.7rem, 0.65rem + 0.25vw, 0.75rem);
+  --font-size-sm:   clamp(0.8rem, 0.75rem + 0.25vw, 0.875rem);
+  --font-size-base: clamp(0.9rem, 0.85rem + 0.25vw, 1rem);
+  --font-size-lg:   clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --font-size-xl:   clamp(1.125rem, 1.05rem + 0.375vw, 1.25rem);
+  --font-size-2xl:  clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --font-size-3xl:  clamp(1.5rem, 1.35rem + 0.75vw, 1.875rem);
+  --font-size-4xl:  clamp(1.875rem, 1.65rem + 1.125vw, 2.25rem);
+  --font-size-5xl:  clamp(2.25rem, 1.95rem + 1.5vw, 3rem);
+
+  --font-weight-light:    300;
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  --line-height-tight:   1.25;
+  --line-height-snug:    1.375;
+  --line-height-normal:  1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose:   2;
+
+  --letter-spacing-tighter: -0.05em;
+  --letter-spacing-tight:   -0.025em;
+  --letter-spacing-normal:  0;
+  --letter-spacing-wide:    0.025em;
+  --letter-spacing-wider:   0.05em;
+
+  /* ═══════════════ Shadows ═══════════════ */
+  --shadow-xs:  0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm:  0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+
+  /* ═══════════════ Motion ═══════════════ */
+  --motion-duration-instant: 0ms;
+  --motion-duration-fast:    150ms;
+  --motion-duration-base:    250ms;
+  --motion-duration-slow:    400ms;
+  --motion-duration-slower:  600ms;
+
+  --motion-ease-linear:  linear;
+  --motion-ease-in:      cubic-bezier(0.4, 0, 1, 1);
+  --motion-ease-out:     cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-in-out:  cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-ease-spring:  cubic-bezier(0.5, 1.25, 0.75, 1.25);
+
+  /* ═══════════════ Z-Index ═══════════════ */
+  --z-base:     0;
+  --z-dropdown: 1000;
+  --z-sticky:   1100;
+  --z-overlay:  1200;
+  --z-modal:    1300;
+  --z-popover:  1400;
+  --z-toast:    1500;
+  --z-tooltip:  1600;
+
+  /* ═══════════════ Layout ═══════════════ */
+  --layout-rail-w:           52px;
+  --layout-rail-expanded-w:  200px;
+  --layout-tabs-h:           36px;
+  --layout-sidebar-w:        240px;
+  --layout-ai-panel-w:       360px;
+  --layout-navbar-h:         56px;
+  --layout-bottom-tab-h:     56px;
+  --layout-content-max-w:    1440px;
+}
+
+/* prefers-reduced-motion 자동 처리 — NFR-DST.3 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration-instant: 0ms;
+    --motion-duration-fast:    0ms;
+    --motion-duration-base:    0ms;
+    --motion-duration-slow:    0ms;
+    --motion-duration-slower:  0ms;
+  }
+}

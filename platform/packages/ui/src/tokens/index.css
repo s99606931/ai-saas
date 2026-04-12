@@ -1,0 +1,24 @@
+/* ============================================================
+ * DS-TOKEN-R1 — 디자인 토큰 통합 진입점
+ * Design Ref: docs/02-design/mtus/DS-TOKEN-R1.design.md
+ *
+ * 사용법 (portal globals.css):
+ *   @import "@public-saas/ui/tokens";
+ *
+ * 토큰 로드 순서가 중요:
+ *   1) base       — 원시 값 (변경 없음)
+ *   2) semantic   — default 시맨틱 역할
+ *   3) component  — 컴포넌트별 토큰
+ *   4) themes/*   — 각 테마는 클래스 셀렉터로 격리됨
+ * ============================================================ */
+
+@import "./base.css";
+@import "./semantic.css";
+@import "./component.css";
+
+@import "./themes/default.css";
+@import "./themes/dark.css";
+@import "./themes/government.css";
+@import "./themes/finance.css";
+@import "./themes/healthcare.css";
+@import "./themes/high-contrast.css";
