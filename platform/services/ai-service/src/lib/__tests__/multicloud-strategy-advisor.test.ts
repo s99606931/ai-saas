@@ -58,13 +58,15 @@ describe('SVC-AI-ADV-R129 MulticloudStrategyAdvisor', () => {
     expect(report.totalEstimatedMonthlyCostKrw).toBeGreaterThan(0)
   })
 
-  it('[FR-R129.6] hybridRatio 0% when all on-premise', () => {
+  it('[FR-R129.6] hybridRatio 0% when on-premise is cheapest', () => {
     const advisor = new MulticloudStrategyAdvisor()
-    // Force on-premise by very low budget
-    advisor.registerWorkload(makeProfile({ monthlyCostBudgetKrw: 1 }))
+    // Budget just enough for on-premise (base=0 + resources) but not cloud (base>=140_000)
+    // on-premise: 0 + 4*20k + 8*8k + 100*200 + 1*50k = 0+80k+64k+20k+50k = 214k
+    // ncp: 150k + 214k = 364k — over budget
+    advisor.registerWorkload(makeProfile({ monthlyCostBudgetKrw: 250_000 }))
     const report = advisor.generateStrategy()
-    // on-premise has base cost 0, should be recommended
     expect(report.hybridRatio).toBe(0)
+    expect(report.recommendations[0]!.recommendedProvider).toBe('on-premise')
   })
 
   it('throws when recommending unknown workload', () => {

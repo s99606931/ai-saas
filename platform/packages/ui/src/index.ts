@@ -1,9 +1,8 @@
 // 공공기관 SaaS 플랫폼 — 공통 UI 컴포넌트 라이브러리
-// Design Ref: docs/02-design/mtus/DS-TOKEN-R1.design.md
-// Plan SC: FR-DST.11
-// MTU-U1 디자인 시스템 + DS-TOKEN-R1 토큰 시스템
+// Design Ref: DS-TOKEN-R1, DS-ATOM-R1, DS-ATOM-R2
+// Plan SC: FR-DST.11, FR-DSA.11
 
-// ─────────── 디자인 토큰 (TypeScript 메타) ───────────
+// ─────────── 디자인 토큰 ───────────
 export {
   type ThemeName,
   type ThemeMode,
@@ -14,8 +13,38 @@ export {
   buildThemeClassName,
 } from './tokens/index.js';
 
-// ─────────── 컴포넌트 타입 (DS-ATOM-R1 이전 스텁) ───────────
-// NOTE: 실제 컴포넌트 구현은 DS-ATOM-R1 이터레이션에서 추가
-export type { ButtonProps, BadgeProps, InputProps } from './atoms/types.js';
+// ─────────── Atoms (DS-ATOM-R1 + R2) ───────────
+export {
+  cn,
+  cva,
+  type VariantProps,
+  // R1
+  Button,
+  type ButtonProps,
+  Badge,
+  type BadgeProps,
+  Spinner,
+  type SpinnerProps,
+  Icon,
+  type IconProps,
+  type IconSize,
+  // R2
+  Input,
+  type InputProps,
+  Textarea,
+  type TextareaProps,
+  Checkbox,
+  type CheckboxProps,
+  Switch,
+  type SwitchProps,
+  Label,
+  type LabelProps,
+  // Variants
+  buttonVariants,
+  badgeVariants,
+  inputVariants,
+} from './atoms/index.js';
+
+// ─────────── Molecules / Organisms 스텁 ───────────
 export type { DataTableProps, FormFieldProps, StatusCardProps } from './molecules/types.js';
 export type { SidebarProps, HeaderProps } from './organisms/types.js';

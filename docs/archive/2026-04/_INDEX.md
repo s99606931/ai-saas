@@ -725,3 +725,11 @@ XAI 추론 추적·테넌트 과금 리포트·공공 서류 인텐트 분류·�
 - **SVC-AI-ADV-R211**: Deployment Risk Assessor AI (`deployment-risk-assessor-ai.ts`, 6 테스트) — DB 마이그레이션(+30)/롤백 미비(+20)/프로덕션(+20)/대규모 변경(+20) + CRITICAL/HIGH 시 approvalRequired=true.
 - **SVC-AI-ADV-R212**: Code Quality Improver AI (`code-quality-improver-ai.ts`, 6 테스트) — CRITICAL×20+HIGH×10+MEDIUM×5+LOW×1 감점 품질 점수 + 유형별 집계 + CRITICAL=0 && 점수≥60 통과 기준. CSAP D-12.
 - **SVC-AI-ADV-R213**: Incident Auto Responder AI (`incident-auto-responder-ai.ts`, 7 테스트) — P1→PAGE_ONCALL(PRIMARY)+SCALE_OUT / P4→CIRCUIT_BREAKER+NOTIFY만 / 심각도별 예상 해결 시간(30/60/240/480분) + 상태 추적.
+- **SVC-AI-ADV-R171**: Autonomous Infra Optimizer (`autonomous-infra-optimizer.ts`, 5+ 테스트) — 고부하(>85%)/저부하(<20%) 이상 탐지 + scale_up/scale_down/rebalance/evict 액션 + 인프라 보고서.
+- **SVC-AI-ADV-R172**: AI Code Generator (`ai-code-generator.ts`, 9 테스트) — TypeScript/CRUD 템플릿 코드 자동 생성 + 하드코딩 시크릿 탐지 (sk-패턴, password=).
+- **SVC-AI-ADV-R173**: API Spec Generator AI (`api-spec-generator-ai.ts`, 7 테스트) — EndpointSpec → OpenAPI 3.0 자동 생성 + /admin 경로 RBAC 누락 경고 + 중복 경로 탐지.
+- **SVC-AI-ADV-R174**: Vulnerability Patch Advisor (`vulnerability-patch-advisor.ts`, 6 테스트) — CVE 취약점 등록 + 심각도별 패치 권고 (CRITICAL: 즉시) + 정렬 보고서.
+- **SVC-AI-ADV-R175**: Service Dependency Optimizer (`service-dependency-optimizer.ts`, 7 테스트) — DFS 순환 의존성 탐지 + 깊이 초과 체인 + HIGH_LATENCY 권고.
+- **SVC-AI-ADV-R176**: NL Query Optimizer (`nl-query-optimizer.ts`, 11 테스트) — 자연어→SELECT/집계/JOIN SQL 변환 + SQL 주입/주석 인젝션 보안 검사.
+- **SVC-AI-ADV-R177**: User Behavior Anomaly Detector (`user-behavior-anomaly-detector.ts`, 9 테스트) — EXCESSIVE_REQUESTS/CREDENTIAL_STUFFING/BULK_EXPORT/UNUSUAL_TIME 탐지.
+- **SVC-AI-ADV-R178**: Realtime Audit Reporter (`realtime-audit-reporter.ts`, 12 테스트) — 테넌트별 감사 이벤트 append-only + CSAP D-06/D-08, N2SF N-05 준수 검사 + 리스크 스코어 보고서.
