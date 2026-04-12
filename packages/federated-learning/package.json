@@ -1,0 +1,21 @@
+{
+  "name": "@ai-saas/federated-learning",
+  "version": "1.0.0",
+  "description": "연합학습 조정자 + 차등 프라이버시 (MTU-N459~N460)",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --coverage",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.4",
+    "typescript": "^5.5.0"
+  }
+}
