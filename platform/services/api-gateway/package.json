@@ -33,7 +33,8 @@
     "@public-saas/rbac": "workspace:*",
     "@public-saas/api-version": "workspace:*",
     "@public-saas/mesh-ready": "workspace:*",
-    "@public-saas/config-vault": "workspace:*"
+    "@public-saas/config-vault": "workspace:*",
+    "@public-saas/problem-details": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

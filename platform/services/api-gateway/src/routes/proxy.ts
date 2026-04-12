@@ -1,12 +1,35 @@
 // 프록시 라우트 등록
 // Design Ref: DESIGN-MTU-P04 라우팅 설계
-// Plan SC: FR-P04.1, FR-P04.2, FR-P04.3, FR-P04.11
+// Design Ref: SVC-APIGWR2-R51.design.md §2.3 (플러그인 프록시 에러 Problem Details)
+// Plan SC: FR-P04.1, FR-P04.2, FR-P04.3, FR-P04.11, FR-APIGWR2.4, FR-APIGWR2.5
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import httpProxy from '@fastify/http-proxy';
 import { SERVICE_REGISTRY, getServiceEntry } from '../registry/service-registry.js';
 import { dataGradeMiddleware } from '../middleware/data-grade.middleware.js';
 import { circuitBreaker, CircuitOpenError } from '../lib/circuit-breaker.js';
+import {
+  badGateway,
+  forbidden,
+  problem,
+  serviceUnavailable,
+  withTraceId,
+  type ProblemDetails,
+} from '@public-saas/problem-details';
+import { extractGatewayTraceId, GATEWAY_ERROR_BASE } from '../plugins/problem-error.js';
+
+async function sendProblem(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  pd: ProblemDetails,
+): Promise<void> {
+  const traceId = extractGatewayTraceId(request);
+  const withTrace = traceId ? withTraceId(pd, traceId) : pd;
+  void reply
+    .status(withTrace.status)
+    .header('content-type', 'application/problem+json; charset=utf-8');
+  await reply.send(withTrace);
+}
 
 const AUTH_SERVICE_URL = process.env['AUTH_SVC_URL'] ?? 'http://auth-service:3001';
 
@@ -189,13 +212,15 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
       const pluginEntry = getServiceEntry(params.pluginId);
 
       if (!pluginEntry) {
-        await reply.status(404).send({
-          success: false,
-          error: {
-            code: 'SERVICE_NOT_FOUND',
-            message: `서비스 '${params.pluginId}'를 찾을 수 없습니다`,
-          },
-        });
+        await sendProblem(
+          request,
+          reply,
+          problem({
+            type: `${GATEWAY_ERROR_BASE}/plugin-not-found`,
+            title: `서비스 '${params.pluginId}'를 찾을 수 없습니다`,
+            status: 404,
+          }),
+        );
         return;
       }
 
@@ -207,10 +232,11 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
           (p) => userPermissions.includes(p) || userPermissions.includes('admin:all'),
         );
         if (!hasAll) {
-          await reply.status(403).send({
-            success: false,
-            error: { code: 'FORBIDDEN', message: '이 플러그인에 접근할 권한이 없습니다' },
-          });
+          await sendProblem(
+            request,
+            reply,
+            forbidden('이 플러그인에 접근할 권한이 없습니다'),
+          );
           return;
         }
       }
@@ -258,25 +284,17 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
         // Circuit Breaker OPEN — 서비스 일시 차단
         if (error instanceof CircuitOpenError) {
           app.log.warn({ serviceId: params.pluginId }, `Circuit breaker OPEN: ${params.pluginId}`);
-          await reply.status(503).send({
-            success: false,
-            error: {
-              code: 'SERVICE_UNAVAILABLE',
-              message: error.message,
-              retryAfterMs: error.retryAfterMs,
-            },
-          });
+          const circuitPd = serviceUnavailable(error.message);
+          (circuitPd as Record<string, unknown>)['retryAfterMs'] = error.retryAfterMs;
+          (circuitPd as Record<string, unknown>)['type'] = `${GATEWAY_ERROR_BASE}/circuit-open`;
+          await sendProblem(request, reply, circuitPd);
           return;
         }
 
         app.log.error({ err: error }, `동적 프록시 실패: ${targetUrl}`);
-        await reply.status(502).send({
-          success: false,
-          error: {
-            code: 'PROXY_ERROR',
-            message: `서비스 '${params.pluginId}' 연결 실패`,
-          },
-        });
+        const proxyPd = badGateway(`서비스 '${params.pluginId}' 연결 실패`);
+        (proxyPd as Record<string, unknown>)['type'] = `${GATEWAY_ERROR_BASE}/proxy-error`;
+        await sendProblem(request, reply, proxyPd);
       }
     },
   );

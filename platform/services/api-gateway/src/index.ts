@@ -23,6 +23,8 @@ import auditLoggerPlugin from './plugins/audit-logger.js';
 import correlationIdPlugin from './plugins/correlation-id.js';
 import swaggerPlugin from './plugins/swagger.js';
 import securityHeadersPlugin from './plugins/security-headers.js';
+import problemErrorPlugin, { extractGatewayTraceId } from './plugins/problem-error.js';
+import { forbidden, withTraceId } from '@public-saas/problem-details';
 import { ipFilterMiddleware } from './middleware/ip-filter.middleware.js';
 import { circuitBreaker } from './lib/circuit-breaker.js';
 
@@ -88,6 +90,10 @@ async function main(): Promise<void> {
   // Correlation ID -- 분산 추적 (Plan SC: FR-P04.9 보완, CSAP D-06)
   await app.register(correlationIdPlugin);
 
+  // Plan SC: FR-APIGWR2.1, FR-APIGWR2.2 -- 전역 Problem Details 에러 핸들러
+  // Design Ref: SVC-APIGWR2-R51.design.md §2.1
+  await app.register(problemErrorPlugin);
+
   // OpenAPI 문서 (Plan SC: FR-P04.10, CSAP D-12)
   await app.register(swaggerPlugin);
 
@@ -147,14 +153,16 @@ async function main(): Promise<void> {
   });
 
   // FR-GW.3: Circuit Breaker 모니터링 엔드포인트 (CSAP D-07 가용성)
+  // Design Ref: SVC-APIGWR2-R51.design.md §2.2 -- admin 403을 Problem Details로 전환
   app.get('/admin/circuits', async (request, reply) => {
     const internalKey = process.env['INTERNAL_SERVICE_KEY'];
     const providedKey = request.headers['x-internal-service-key'];
     if (!internalKey || providedKey !== internalKey) {
-      await reply.status(403).send({
-        success: false,
-        error: { code: 'ADMIN_AUTH_REQUIRED', message: '관리 엔드포인트 접근 권한이 없습니다' },
-      });
+      let pd = forbidden('관리 엔드포인트 접근 권한이 없습니다');
+      const traceId = extractGatewayTraceId(request);
+      if (traceId) pd = withTraceId(pd, traceId);
+      void reply.status(403).header('content-type', 'application/problem+json; charset=utf-8');
+      await reply.send(pd);
       return;
     }
     return {
@@ -168,10 +176,11 @@ async function main(): Promise<void> {
     const internalKey = process.env['INTERNAL_SERVICE_KEY'];
     const providedKey = request.headers['x-internal-service-key'];
     if (!internalKey || providedKey !== internalKey) {
-      await reply.status(403).send({
-        success: false,
-        error: { code: 'ADMIN_AUTH_REQUIRED', message: '관리 엔드포인트 접근 권한이 없습니다' },
-      });
+      let pd = forbidden('관리 엔드포인트 접근 권한이 없습니다');
+      const traceId = extractGatewayTraceId(request);
+      if (traceId) pd = withTraceId(pd, traceId);
+      void reply.status(403).header('content-type', 'application/problem+json; charset=utf-8');
+      await reply.send(pd);
       return;
     }
     const { serviceId } = request.params as { serviceId: string };
