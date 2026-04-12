@@ -565,3 +565,13 @@ AI 안전 스트리밍·분산 추적·평가 하네스·멀티모달 RAG·비�
 - **SVC-AI-ADV-R69**: Multi-Modal RAG (`multimodal-rag.ts`, 12 테스트) — text/image/ocr 통합 인덱스 + 가중합/RRF 퓨전 랭킹 + EXIF GPS 차단
 - **SVC-AI-ADV-R70**: Cost-Aware Batch Scheduler (`cost-aware-batch-scheduler.ts`, 15 테스트) — 시간대별 가격표 + 마감 기반 최적 슬롯 + 우선순위 + 재시도
 
+## SVC-AI-ADV R71~R75 (2026-04-12 세션 #130, 7차 PM 세션)
+
+멀티에이전트 협업 프로토콜·CoT 검증·AI 코드 샌드박스·컨텍스트 메모리·동적 Few-Shot 선택 모듈 5종 PDCA 완료. 93개 단위 테스트 100% 통과. TypeScript strict 0 에러.
+
+- **SVC-AI-ADV-R71**: Multi-Agent Collaboration Protocol (`multi-agent-protocol.ts`, 23 테스트) — propose/accept/reject/result/aggregate 5종 메시지 + 순환/깊이/등급/권한 검증 + concat/vote/first 집계 + 타임아웃 tick
+- **SVC-AI-ADV-R72**: Chain-of-Thought Verifier (`cot-verifier.ts`, 13 테스트) — Step/단계 파싱 + 참조 그래프 DFS 사이클 감지 + 수치 일관성(1% 오차) + 모순/고아/미지원 결론 탐지 + 0~1 점수
+- **SVC-AI-ADV-R73**: AI Sandbox Execution (`ai-sandbox-execution.ts`, 23 테스트) — Python/JS 금지 API 정적 검사 + 네트워크·파일쓰기 강제 차단 + CPU/wall/메모리/stdout/steps 한계 시뮬레이션
+- **SVC-AI-ADV-R74**: Contextual Memory Manager (`contextual-memory-manager.ts`, 17 테스트) — agent/user/tenant 3축 키 + slot/우선순위/TTL + LRU eviction (slot/key/total) + 요약 생성
+- **SVC-AI-ADV-R75**: Dynamic Few-Shot Selector (`dynamic-few-shot-selector.ts`, 17 테스트) — Jaccard+코사인 혼합 유사도 + MMR 다양성(λ) + 카테고리 편향 경고(>60%)
+
