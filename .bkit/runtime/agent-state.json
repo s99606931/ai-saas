@@ -7,7 +7,7 @@
   "orchestrationPattern": "leader",
   "ctoAgent": "opus",
   "startedAt": "2026-04-12T12:22:13.834Z",
-  "lastUpdated": "2026-04-12T12:24:08.765Z",
+  "lastUpdated": "2026-04-12T12:28:43.194Z",
   "teammates": [
     {
       "name": "acf31f887145df85f",
@@ -18,6 +18,26 @@
       "taskId": null,
       "startedAt": "2026-04-12T12:22:13.836Z",
       "lastActivityAt": "2026-04-12T12:22:13.836Z"
+    },
+    {
+      "name": "a0e910efa14edd01a",
+      "role": "ai-impl-c",
+      "model": "sonnet",
+      "status": "completed",
+      "currentTask": null,
+      "taskId": null,
+      "startedAt": "2026-04-12T12:28:27.421Z",
+      "lastActivityAt": "2026-04-12T12:28:43.192Z"
+    },
+    {
+      "name": "acd88851f81314f50",
+      "role": "ai-impl-b",
+      "model": "sonnet",
+      "status": "spawning",
+      "currentTask": null,
+      "taskId": null,
+      "startedAt": "2026-04-12T12:28:32.027Z",
+      "lastActivityAt": "2026-04-12T12:28:32.027Z"
     }
   ],
   "progress": {
