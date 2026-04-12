@@ -812,3 +812,13 @@ XAI 추론 추적·테넌트 과금 리포트·공공 서류 인텐트 분류·�
 - **SVC-AI-ADV-R274(v2)**: Service Mesh Configurator AI (`service-mesh-configurator-ai.ts`, 10 테스트) — public→MTLS_PERMISSIVE + rps>1000→CONSISTENT_HASH / latency>300ms→LEAST_CONN / errorRate>10%→AGGRESSIVE(5회) / >5%→MODERATE(3회) / >1%→CONSERVATIVE(1회) / NONE + timeout=latency×3.
 - **SVC-AI-ADV-R275(v2)**: Data Lake Manager AI (`data-lake-manager-ai.ts`, 9 테스트) — N2SF C/S 차단(BLOCKED) + lastAccess≥90일→ARCHIVE(70%) / ≥30일→COLD(40%) / HOT + 용량90%↑→CRITICAL.
 - **SVC-AI-ADV-R276(v2)**: Privacy Compliance Automator AI (`privacy-compliance-automator-ai.ts`, 8 테스트) — SSN/BANK_ACCOUNT 암호화+마스킹 필수 + PHONE 마스킹 필수 + retention>1825일→EXCESSIVE_RETENTION + 동의/법적근거 미비 등록 거부.
+- **SVC-AI-ADV-R278**: Public Service Usage Analyzer (`public-service-usage-analyzer.ts`, 6 테스트) — SHA-256 userId PII 마스킹 + 시간대별 이용 집계 + 피크 hour 탐지 + 7일 vs 전 7일 트렌드(increasing/stable/decreasing) + C/S 차단.
+- **SVC-AI-ADV-R279**: Realtime Security Policy Enforcer (`realtime-security-policy-enforcer.ts`, 7 테스트) — ALLOW/DENY/RATE_LIMIT 규칙 + 패턴 매칭 + 감사 로그 + getAuditLog().
+- **SVC-AI-ADV-R280**: Multimodal Document Understanding v2 (`multimodal-document-understanding-v2.ts`, 7 테스트) — 텍스트/이미지/테이블 분석 + 엔티티 추출 + 요약 + C/S 차단.
+- **SVC-AI-ADV-R281**: Service Registry AI (`service-registry-ai.ts`, 7 테스트) — 서비스 등록/조회/상태 + 헬스체크 + 태그 검색.
+- **SVC-AI-ADV-R282**: Budget Planning Assistant AI (`budget-planning-assistant-ai.ts`, 7 테스트) — 예산 항목 등록 + 집계 + 초과 탐지 + 카테고리별 권고.
+- **SVC-AI-ADV-R283**: API Lifecycle Manager AI (`api-lifecycle-manager-ai.ts`, 7 테스트) — DEV/BETA/STABLE/DEPRECATED 상태 전환 + 폐기 경고 + 버전 관리.
+- **SVC-AI-ADV-R284**: Streaming Data Processor Optimizer (`streaming-data-processor-optimizer.ts`, 7 테스트) — 스트림 처리량 측정 + 배치 크기 최적화 + 병목 탐지 + 권고.
+- **SVC-AI-ADV-R285**: Zero Trust Security Verifier AI (`zero-trust-security-verifier-ai.ts`, 8 테스트) — 엔티티 신뢰점수 + 컨텍스트(location/device/timeOfDay) 기반 가감점 + 임계값 미달 거부 + 이상 이벤트 기록.
+- **SVC-AI-ADV-R286**: SLA Violation Preventer AI (`sla-violation-preventer-ai.ts`, 7 테스트) — SLA 등록(responseTime/availability/errorRate) + safe/warning/critical 위험 레벨 + getAtRiskServices + C/S 차단.
+- **SVC-AI-ADV-R287**: Public Admin Language Corrector (`public-admin-language-corrector.ts`, 7 테스트) — 비표준 용어 등록 + inspect(탐지+count) + correct(교정 적용) + C/S 차단 + getAuditLog.
