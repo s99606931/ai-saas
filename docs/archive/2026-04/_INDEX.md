@@ -554,3 +554,14 @@
 - **SVC-AI-ADV-R61**: Tool-Use Planner (`tool-use-planner.ts`, 14 테스트) — DAG 계획 + 백트래킹 + 도구 RBAC + depth/retry 한계
 - **SVC-AI-ADV-R62**: Retrieval Fallback Chain (`retrieval-fallback-chain.ts`, 16 테스트) — BM25→Dense→Web→LLM 순차 폴백 + 등급별 제한 + 품질 조기종료
 - **SVC-AI-ADV-R63**: Prompt Cache-Aware Router (`prompt-cache-aware-router.ts`, 21 테스트) — 테넌트 sticky 해시 라우팅 + TTL 만료 + hit rate 메트릭
+
+## SVC-AI-ADV R66~R70 (2026-04-12 세션 #129, 4차 PM 세션)
+
+AI 안전 스트리밍·분산 추적·평가 하네스·멀티모달 RAG·비용 인식 배치 스케줄러 모듈 5종 PDCA 완료. 78개 단위 테스트 100% 통과. (R64/R65는 동일 세션에서 별도 진행되어 R66~R70으로 시프트)
+
+- **SVC-AI-ADV-R66**: Token-level Safety Streaming (`token-safety-streaming.ts`, 24 테스트) — 슬라이딩 윈도우 + PII/Jailbreak/Secret 탐지기 + 실시간 인터럽트/마스킹
+- **SVC-AI-ADV-R67**: LLM Distributed Trace (`llm-distributed-trace.ts`, 14 테스트) — OTel 호환 span + 레이턴시 분해 + 병목 자동 식별 + 본문 등급 guard
+- **SVC-AI-ADV-R68**: Eval Harness v2 (`eval-harness-v2.ts`, 13 테스트) — RAGAS 6지표(faithfulness/relevance/precision/recall/similarity/groundedness) + baseline 회귀 판정
+- **SVC-AI-ADV-R69**: Multi-Modal RAG (`multimodal-rag.ts`, 12 테스트) — text/image/ocr 통합 인덱스 + 가중합/RRF 퓨전 랭킹 + EXIF GPS 차단
+- **SVC-AI-ADV-R70**: Cost-Aware Batch Scheduler (`cost-aware-batch-scheduler.ts`, 15 테스트) — 시간대별 가격표 + 마감 기반 최적 슬롯 + 우선순위 + 재시도
+
