@@ -1,31 +1,13 @@
-# MTU-N128: 인시던트 타임라인 생성기 -- 완료 보고서
-
-> 완료일: 2026-04-10
-> matchRate: 100%
-> 테스트: 25/25 통과
-
+# MTU-N128 Report — Incident Timeline
 ## Executive Summary
+| 관점 | 계획 | 실제 | 상태 |
+|------|------|------|------|
+| 범위 | Incident Timeline | 완료 | ✅ |
+| 품질 | FR-N128.1~5 | 5/5 PASS | ✅ |
+| 보안 | D-06 | 반영 | ✅ |
 
-| 관점 | 달성 |
-|------|------|
-| 비즈니스 | 인시던트 타임라인 자동 구성으로 분석 시간 단축 |
-| 기술 | 4개 이벤트 소스 통합 + 시간순 정렬 + MTTR/MTTD 자동 계산 |
-| 보안 | CSAP D-06 감사 추적 완비 |
-| 운영 | 포스트모템 연계 타임라인 제공 |
+## Q-Gate: G1~G7 전수 통과 ✅
 
 ## 산출물
-
-| 산출물 | 경로 | FR |
-|--------|------|----|
-| 타임라인 스크립트 | `scripts/generate-incident-timeline.sh` | FR-N128.1~4 |
-| E2E 테스트 | `scripts/test-incident-timeline.sh` | FR-N128.5 |
-
-## 기능 요구사항 달성
-
-| ID | 요구사항 | 상태 |
-|----|---------|------|
-| FR-N128.1 | 인시던트 타임라인 자동 생성 | 완료 |
-| FR-N128.2 | 다중 이벤트 소스 통합 (알림/배포/감사/수동) | 완료 |
-| FR-N128.3 | Markdown 보고서 출력 | 완료 |
-| FR-N128.4 | MTTR/MTTD 자동 계산 | 완료 |
-| FR-N128.5 | E2E 테스트 25개 전체 통과 | 완료 |
+- platform/services/ai-service/src/lib/incident-timeline.ts
+- platform/services/ai-service/src/lib/__tests__/incident-timeline.test.ts

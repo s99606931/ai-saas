@@ -1,12 +1,13 @@
 // 빌링 핸들러
-// Design Ref: DESIGN-MTU-P08
-// Plan SC: FR-P08.1~FR-P08.5
+// Design Ref: DESIGN-MTU-P08, SVC-BILLR2-R55.design.md §4
+// Plan SC: FR-P08.1~FR-P08.5, FR-BILLR2.2
 // CSAP: D-06 감사 로그
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { logBillingEvent } from '../lib/audit.js';
 import { prisma } from '../lib/prisma.js';
+import { problemReply, BillingProblemTypes } from '../lib/problem-reply.js';
 
 /**
  * 인보이스 목록 조회
@@ -70,9 +71,11 @@ export async function getInvoiceHandler(
   });
 
   if (!invoice) {
-    await reply.status(404).send({
-      success: false,
-      error: { code: 'INVOICE_NOT_FOUND', message: '인보이스를 찾을 수 없습니다' },
+    await problemReply(request, reply, {
+      type: BillingProblemTypes.invoiceNotFound,
+      title: 'Invoice Not Found',
+      status: 404,
+      detail: '인보이스를 찾을 수 없습니다',
     });
     return;
   }
@@ -81,9 +84,11 @@ export async function getInvoiceHandler(
   const jwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const jwtRole = request.headers['x-user-role'] as string | undefined;
   if (jwtRole !== 'SUPER_ADMIN' && jwtTenantId && invoice.subscription.tenantId !== jwtTenantId) {
-    await reply.status(403).send({
-      success: false,
-      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
+    await problemReply(request, reply, {
+      type: BillingProblemTypes.forbidden,
+      title: 'Forbidden',
+      status: 403,
+      detail: '접근 권한이 없습니다',
     });
     return;
   }
@@ -99,9 +104,11 @@ export async function generateInvoiceHandler(request: FastifyRequest, reply: Fas
   const schema = z.object({ subscriptionId: z.string().min(1) });
   const parseResult = schema.safeParse(request.body);
   if (!parseResult.success) {
-    await reply.status(400).send({
-      success: false,
-      error: { code: 'VALIDATION_ERROR', message: '구독 ID가 필요합니다' },
+    await problemReply(request, reply, {
+      type: BillingProblemTypes.validation,
+      title: 'Validation Error',
+      status: 400,
+      detail: '구독 ID가 필요합니다',
     });
     return;
   }
@@ -112,9 +119,11 @@ export async function generateInvoiceHandler(request: FastifyRequest, reply: Fas
   });
 
   if (!subscription) {
-    await reply.status(404).send({
-      success: false,
-      error: { code: 'SUBSCRIPTION_NOT_FOUND', message: '구독을 찾을 수 없습니다' },
+    await problemReply(request, reply, {
+      type: BillingProblemTypes.subscriptionNotFound,
+      title: 'Subscription Not Found',
+      status: 404,
+      detail: '구독을 찾을 수 없습니다',
     });
     return;
   }
@@ -165,9 +174,11 @@ export async function payInvoiceHandler(
 
   const parseResult = schema.safeParse(request.body);
   if (!parseResult.success) {
-    await reply.status(400).send({
-      success: false,
-      error: { code: 'VALIDATION_ERROR', message: parseResult.error.issues.map((i) => i.message).join(', ') },
+    await problemReply(request, reply, {
+      type: BillingProblemTypes.validation,
+      title: 'Validation Error',
+      status: 400,
+      detail: parseResult.error.issues.map((i) => i.message).join(', '),
     });
     return;
   }
@@ -178,18 +189,22 @@ export async function payInvoiceHandler(
     include: { subscription: { select: { tenantId: true } } },
   });
   if (!invoiceCheck) {
-    await reply.status(404).send({
-      success: false,
-      error: { code: 'INVOICE_NOT_FOUND', message: '인보이스를 찾을 수 없습니다' },
+    await problemReply(request, reply, {
+      type: BillingProblemTypes.invoiceNotFound,
+      title: 'Invoice Not Found',
+      status: 404,
+      detail: '인보이스를 찾을 수 없습니다',
     });
     return;
   }
   const payJwtTenantId = request.headers['x-user-tenant-id'] as string | undefined;
   const payJwtRole = request.headers['x-user-role'] as string | undefined;
   if (payJwtRole !== 'SUPER_ADMIN' && payJwtTenantId && invoiceCheck.subscription.tenantId !== payJwtTenantId) {
-    await reply.status(403).send({
-      success: false,
-      error: { code: 'FORBIDDEN', message: '접근 권한이 없습니다' },
+    await problemReply(request, reply, {
+      type: BillingProblemTypes.forbidden,
+      title: 'Forbidden',
+      status: 403,
+      detail: '접근 권한이 없습니다',
     });
     return;
   }
@@ -226,9 +241,11 @@ export async function payInvoiceHandler(
   });
 
   if (!payment) {
-    await reply.status(409).send({
-      success: false,
-      error: { code: 'ALREADY_PAID', message: '이미 결제된 인보이스입니다' },
+    await problemReply(request, reply, {
+      type: BillingProblemTypes.alreadyPaid,
+      title: 'Already Paid',
+      status: 409,
+      detail: '이미 결제된 인보이스입니다',
     });
     return;
   }
@@ -305,9 +322,11 @@ export async function generateTaxInvoiceHandler(
   });
 
   if (!invoice) {
-    await reply.status(404).send({
-      success: false,
-      error: { code: 'INVOICE_NOT_FOUND', message: '인보이스를 찾을 수 없습니다' },
+    await problemReply(request, reply, {
+      type: BillingProblemTypes.invoiceNotFound,
+      title: 'Invoice Not Found',
+      status: 404,
+      detail: '인보이스를 찾을 수 없습니다',
     });
     return;
   }

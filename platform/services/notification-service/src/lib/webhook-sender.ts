@@ -1,38 +1,12 @@
 // 웹훅 발송기
-// Design Ref: DESIGN-MTU-Q2 §2 FR-P11.3
-// Plan SC: FR-P11.3
-// CSAP: D-12 입력 검증 — SSRF 방지
+// Design Ref: DESIGN-MTU-Q2 §2 FR-P11.3, SVC-NOTIFR2-R56.design.md §7
+// Plan SC: FR-P11.3, FR-SSRF.7
+// CSAP: D-12-04 SSRF 방지 — DNS 해석 + CIDR 차단
+
+import { assertSafeUrl } from '@public-saas/ssrf-guard';
 
 const WEBHOOK_TIMEOUT_MS = 5000;
 const MAX_RETRIES = 3;
-
-/** 내부 IP 대역 검사 (SSRF 방지) */
-function isInternalUrl(urlString: string): boolean {
-  try {
-    const url = new URL(urlString);
-    const hostname = url.hostname.toLowerCase();
-
-    // 내부 IP 대역 차단
-    const blockedPatterns = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'];
-
-    if (blockedPatterns.includes(hostname)) return true;
-
-    // 사설 IP 대역 및 클라우드 메타데이터 엔드포인트 차단 (CSAP D-12-04 SSRF 방지)
-    const parts = hostname.split('.');
-    if (parts.length === 4) {
-      const first = parseInt(parts[0] ?? '', 10);
-      const second = parseInt(parts[1] ?? '', 10);
-      if (first === 10) return true;
-      if (first === 172 && second >= 16 && second <= 31) return true;
-      if (first === 192 && second === 168) return true;
-      if (first === 169 && second === 254) return true; // 클라우드 메타데이터 (AWS/GCP/Azure)
-    }
-
-    return false;
-  } catch {
-    return true; // 파싱 불가한 URL은 차단
-  }
-}
 
 interface WebhookPayload {
   subject: string;
@@ -50,16 +24,21 @@ interface WebhookResult {
 }
 
 /**
- * 웹훅 HTTP POST 발송 (재시도 + SSRF 방지)
- * Design Ref: DESIGN-MTU-Q2 §2
+ * 웹훅 HTTP POST 발송 (재시도 + SSRF 방지 강화)
+ * Design Ref: SVC-NOTIFR2-R56.design.md §7
+ * CSAP D-12-04: DNS 해석 후 모든 IP가 차단 대역에 속하지 않아야 통과
  */
-export async function sendWebhook(webhookUrl: string, payload: WebhookPayload): Promise<WebhookResult> {
-  // SSRF 방지: 내부 URL 차단
-  if (isInternalUrl(webhookUrl)) {
+export async function sendWebhook(
+  webhookUrl: string,
+  payload: WebhookPayload,
+): Promise<WebhookResult> {
+  // SSRF 방지 (FR-SSRF.4/.7): URL 파싱, hostname 차단, DNS 해석, CIDR 매칭
+  const ssrfCheck = await assertSafeUrl(webhookUrl);
+  if (!ssrfCheck.safe) {
     return {
       success: false,
       attempts: 0,
-      error: 'SSRF_BLOCKED: 내부 네트워크 대상 웹훅 발송이 차단되었습니다',
+      error: `SSRF_BLOCKED: ${ssrfCheck.reason ?? 'unknown'}`,
     };
   }
 

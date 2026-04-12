@@ -20,6 +20,7 @@
     "@public-saas/auth-sdk": "workspace:*",
     "@public-saas/health": "workspace:*",
     "@public-saas/observability": "workspace:*",
+    "@public-saas/problem-details": "workspace:*",
     "@public-saas/rate-limit": "workspace:*",
     "@public-saas/rbac": "workspace:*",
     "@public-saas/mesh-ready": "workspace:*",

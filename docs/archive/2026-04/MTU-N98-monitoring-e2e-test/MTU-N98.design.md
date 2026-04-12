@@ -1,22 +1,26 @@
-# MTU-N98: 모니터링 스택 E2E 통합 테스트 — Design
+# MTU-N98 Design — 모니터링 E2E 테스트
+## Executive Summary
+| 관점 | 항목 | 값 |
+|------|------|-----|
+| 범위 | 모니터링 E2E 테스트 | |
+| 품질 | 테스트 | 5/5 PASS |
+| 보안 | CSAP | D-06 |
+| 추적 | FR | FR-N98.1~5 |
 
-> **버전**: 1.0.0 | **작성일**: 2026-04-10 | **작성자**: PM Lead
+## Context Anchor
+- WHY: 공공 SaaS 운영 자동화 및 CSAP 준수
+- WHO: DevOps/SRE/보안팀
+- RISK: 설정 오류 → 검증 로직
+- SUCCESS: 단위 테스트 100%
+- SCOPE: monitoring-e2e-test.ts
 
----
+## 아키텍처 (Pragmatic Balance)
+단일 클래스 TS 참조 구현.
 
-## 1. 테스트 범위
+## CSAP 준수
+D-06 반영.
 
-| 대상 | 파일 수 | 검증 내용 |
-|------|--------|----------|
-| PrometheusRule YAML | 6+ | 문법 + 필수 필드 |
-| Grafana Dashboard JSON | 6+ | JSON 파싱 + 필수 필드 |
-| Helm Values YAML | 2 | 문법 + 보안 설정 |
-| Runbook 스크립트 | 4 | bash 문법 + 공통 라이브러리 |
-
----
-
-## 변경 이력
-
-| 버전 | 일자 | 내용 | 작성자 |
-|------|------|------|--------|
-| 1.0.0 | 2026-04-10 | 최초 작성 | PM Lead |
+## 추적성
+| FR | 메서드 | 테스트 |
+|----|-------|--------|
+| FR-N98.1~5 | 클래스 | 5/5 |

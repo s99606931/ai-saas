@@ -119,8 +119,9 @@ describe('E2E: API 게이트웨이 라우팅 (FR-N01.4, CSAP D-10)', () => {
     });
 
     it('미등록 플러그인 접근 시 404를 반환해야 한다', () => {
-      expect(proxyContent).toContain('SERVICE_NOT_FOUND');
-      expect(proxyContent).toContain('404');
+      // FR-P04.11: getServiceEntry 미존재 시 plugin-not-found problem 응답
+      expect(proxyContent).toContain('plugin-not-found');
+      expect(proxyContent).toContain('status: 404');
     });
 
     it('Circuit Breaker가 동적 프록시에 적용되어야 한다 (CSAP D-07)', () => {

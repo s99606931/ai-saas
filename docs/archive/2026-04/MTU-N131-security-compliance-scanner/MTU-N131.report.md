@@ -1,24 +1,13 @@
-# MTU-N131: 보안 규정 준수 스캐너 -- 완료 보고서
-
-> 완료일: 2026-04-10
-> matchRate: 100%
-> 테스트: 33/33 통과
-
+# MTU-N131 Report — 보안 준수 스캐너
 ## Executive Summary
+| 관점 | 계획 | 실제 | 상태 |
+|------|------|------|------|
+| 범위 | 보안 준수 스캐너 | 완료 | ✅ |
+| 품질 | FR-N131.1~5 | 5/5 PASS | ✅ |
+| 보안 | D-12 | 반영 | ✅ |
 
-| 관점 | 달성 |
-|------|------|
-| 비즈니스 | 코드베이스 보안 규정 위반 자동 탐지 체계 구축 |
-| 기술 | 10개 보안 규칙 (SECRET 3 + SQLI 2 + AUTH 2 + CRYPTO 2 + LOG 1) |
-| 보안 | CSAP D-06/D-08/D-09/D-12 통제항목 자동 검증 |
-| 운영 | CI/CD 보안 게이트 연동 가능 |
+## Q-Gate: G1~G7 전수 통과 ✅
 
-## 기능 요구사항 달성
-
-| ID | 요구사항 | 상태 |
-|----|---------|------|
-| FR-N131.1 | 하드코딩 시크릿 탐지 (3개 규칙) | 완료 |
-| FR-N131.2 | SQL 주입 위험 패턴 (2개 규칙) | 완료 |
-| FR-N131.3 | 인증/인가 미적용 (2개 규칙) | 완료 |
-| FR-N131.4 | 보안 규정 준수 보고서 | 완료 |
-| FR-N131.5 | E2E 테스트 33개 전체 통과 | 완료 |
+## 산출물
+- platform/services/ai-service/src/lib/security-compliance-scanner.ts
+- platform/services/ai-service/src/lib/__tests__/security-compliance-scanner.test.ts

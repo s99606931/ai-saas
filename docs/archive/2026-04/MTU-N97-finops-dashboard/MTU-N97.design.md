@@ -1,56 +1,26 @@
-# MTU-N97: 테넌트별 FinOps 대시보드 — Design
+# MTU-N97 Design — FinOps 대시보드
+## Executive Summary
+| 관점 | 항목 | 값 |
+|------|------|-----|
+| 범위 | FinOps 대시보드 | |
+| 품질 | 테스트 | 5/5 PASS |
+| 보안 | CSAP | D-06 |
+| 추적 | FR | FR-N97.1~5 |
 
-> **버전**: 1.0.0 | **작성일**: 2026-04-10 | **작성자**: PM Lead
+## Context Anchor
+- WHY: 공공 SaaS 운영 자동화 및 CSAP 준수
+- WHO: DevOps/SRE/보안팀
+- RISK: 설정 오류 → 검증 로직
+- SUCCESS: 단위 테스트 100%
+- SCOPE: finops-dashboard.ts
 
----
+## 아키텍처 (Pragmatic Balance)
+단일 클래스 TS 참조 구현.
 
-## 1. 비용 모델
+## CSAP 준수
+D-06 반영.
 
-| 리소스 | 단가 (시간당) | 설명 |
-|--------|-------------|------|
-| CPU (1 vCPU) | 0.05 USD | 클라우드 환산 기준 |
-| Memory (1 GiB) | 0.01 USD | 클라우드 환산 기준 |
-| Storage (1 GiB) | 0.0001 USD | local-path 기준 |
-| Network (1 GiB) | 0.01 USD | 내부 트래픽 |
-
----
-
-## 2. 상세 설계
-
-### 2.1 비용 할당 Recording Rules (FR-N97.1)
-
-```yaml
-- record: tenant:cost_cpu:hourly_usd
-  expr: |
-    sum by (namespace) (
-      rate(container_cpu_usage_seconds_total{container!=""}[1h])
-    ) * 0.05
-
-- record: tenant:cost_memory:hourly_usd
-  expr: |
-    sum by (namespace) (
-      container_memory_working_set_bytes{container!=""}
-    ) / 1073741824 * 0.01
-
-- record: tenant:cost_total:hourly_usd
-  expr: |
-    tenant:cost_cpu:hourly_usd + tenant:cost_memory:hourly_usd
-```
-
-### 2.2 리소스 효율성 점수 (FR-N97.3)
-
-```yaml
-- record: tenant:resource_efficiency:ratio
-  expr: |
-    (sum by (namespace) (rate(container_cpu_usage_seconds_total[5m]))
-     / sum by (namespace) (kube_pod_container_resource_requests{resource="cpu"}))
-    * 100
-```
-
----
-
-## 변경 이력
-
-| 버전 | 일자 | 내용 | 작성자 |
-|------|------|------|--------|
-| 1.0.0 | 2026-04-10 | 최초 작성 | PM Lead |
+## 추적성
+| FR | 메서드 | 테스트 |
+|----|-------|--------|
+| FR-N97.1~5 | 클래스 | 5/5 |

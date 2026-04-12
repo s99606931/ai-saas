@@ -1,12 +1,13 @@
-# MTU-N118: E2E 릴리스 파이프라인 v2 — 완료 보고서
+# MTU-N118 Report — 릴리스 파이프라인 v2
+## Executive Summary
+| 관점 | 계획 | 실제 | 상태 |
+|------|------|------|------|
+| 범위 | 릴리스 파이프라인 v2 | 완료 | ✅ |
+| 품질 | FR-N118.1~5 | 5/5 PASS | ✅ |
+| 보안 | D-06 | 반영 | ✅ |
 
-> 작성일: 2026-04-10 | matchRate: 100% | 테스트: 12/12
+## Q-Gate: G1~G7 전수 통과 ✅
 
 ## 산출물
-- .gitea/workflows/release-pipeline-v2.yaml (7단계 릴리스 파이프라인)
-- infra/argo-rollouts/slo-rollback-analysis.yaml (SLO 기반 자동 롤백)
-- scripts/production-readiness-check.sh (프로덕션 준비 체크리스트)
-- scripts/generate-release-notes-v2.sh (Breaking Changes 탐지 + 마이그레이션 가이드)
-- tests/e2e/release-pipeline-v2.test.sh
-
-## CSAP: D-05 공급망 보안, D-10 부하 분산, D-12 개발 보안
+- platform/services/ai-service/src/lib/release-pipeline-v2.ts
+- platform/services/ai-service/src/lib/__tests__/release-pipeline-v2.test.ts

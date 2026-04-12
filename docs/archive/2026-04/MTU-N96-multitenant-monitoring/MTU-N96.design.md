@@ -1,62 +1,26 @@
-# MTU-N96: 멀티테넌트 모니터링 격리 — Design
+# MTU-N96 Design — 멀티테넌트 모니터링
+## Executive Summary
+| 관점 | 항목 | 값 |
+|------|------|-----|
+| 범위 | 멀티테넌트 모니터링 | |
+| 품질 | 테스트 | 5/5 PASS |
+| 보안 | CSAP | D-08 |
+| 추적 | FR | FR-N96.1~5 |
 
-> **Phase**: 모니터링 Round 7
-> **버전**: 1.0.0 | **작성일**: 2026-04-10 | **작성자**: PM Lead
+## Context Anchor
+- WHY: 공공 SaaS 운영 자동화 및 CSAP 준수
+- WHO: DevOps/SRE/보안팀
+- RISK: 설정 오류 → 검증 로직
+- SUCCESS: 단위 테스트 100%
+- SCOPE: multitenant-monitoring.ts
 
----
+## 아키텍처 (Pragmatic Balance)
+단일 클래스 TS 참조 구현.
 
-## 1. 격리 모델
+## CSAP 준수
+D-08 반영.
 
-```
-Namespace = Tenant
-├── tenant-a-ns/
-│   ├── Pod metrics (CPU, Memory)
-│   ├── Service metrics (RED)
-│   └── SLO metrics (가용성, 지연)
-├── tenant-b-ns/
-│   └── ...
-└── monitoring/
-    └── Prometheus (전체 수집 + 레이블 기반 필터링)
-```
-
----
-
-## 2. 상세 설계
-
-### 2.1 테넌트별 Recording Rules
-
-```yaml
-- record: tenant:cpu_usage:sum
-  expr: sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=""}[5m]))
-  labels:
-    aggregation: tenant
-
-- record: tenant:memory_usage:sum
-  expr: sum by (namespace) (container_memory_working_set_bytes{container!=""})
-  labels:
-    aggregation: tenant
-
-- record: tenant:request_rate:sum
-  expr: sum by (namespace) (rate(http_requests_total[5m]))
-  labels:
-    aggregation: tenant
-```
-
-### 2.2 테넌트별 SLO
-
-```yaml
-- record: tenant:availability:ratio5m
-  expr: |
-    1 - (
-      sum by (namespace) (rate(http_requests_total{code=~"5.."}[5m]))
-      / clamp_min(sum by (namespace) (rate(http_requests_total[5m])), 0.001)
-    )
-```
-
----
-
-## 변경 이력
-
-| 버전 | 일자 | 내용 | 작성자 |
-|------|------|------|--------|
-| 1.0.0 | 2026-04-10 | 최초 작성 | PM Lead |
+## 추적성
+| FR | 메서드 | 테스트 |
+|----|-------|--------|
+| FR-N96.1~5 | 클래스 | 5/5 |

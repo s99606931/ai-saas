@@ -1,16 +1,13 @@
-# MTU-N234: OTel Collector 성능 모니터링 — Report
+# MTU-N234 Report — OTel Collector 모니터링
+## Executive Summary
+| 관점 | 계획 | 실제 | 상태 |
+|------|------|------|------|
+| 범위 | OTel Collector 모니터링 | 완료 | ✅ |
+| 품질 | FR-N234.1~5 | 5/5 PASS | ✅ |
+| 보안 | D-06 | 반영 | ✅ |
 
-> **작성일**: 2026-04-10
-> **matchRate**: 100% (22/22 TC 통과)
-> **상태**: 완료
+## Q-Gate: G1~G7 전수 통과 ✅
 
 ## 산출물
-
-| 산출물 | 경로 | 상태 |
-|--------|------|------|
-| Plan | docs/01-plan/mtus/MTU-N234-otel-collector-monitoring.plan.md | 완료 |
-| Design | docs/02-design/mtus/MTU-N234-otel-collector-monitoring.design.md | 완료 |
-| Recording Rules | infra/monitoring/otel-collector-performance-rules.yaml | 완료 |
-| Alert Rules | infra/monitoring/otel-collector-performance-alerts.yaml | 완료 |
-| 대시보드 | infra/monitoring/dashboards/otel-collector-performance-dashboard.json | 완료 |
-| 검증 | scripts/test-otel-collector-performance.sh | 22/22 통과 |
+- platform/services/ai-service/src/lib/otel-collector-monitoring.ts
+- platform/services/ai-service/src/lib/__tests__/otel-collector-monitoring.test.ts

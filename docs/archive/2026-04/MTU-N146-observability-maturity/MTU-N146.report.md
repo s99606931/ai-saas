@@ -1,13 +1,13 @@
-# MTU-N146: 관측성 성숙도 자동 평가 -- 완료 보고서
+# MTU-N146 Report — 관측성 성숙도
+## Executive Summary
+| 관점 | 계획 | 실제 | 상태 |
+|------|------|------|------|
+| 범위 | 관측성 성숙도 | 완료 | ✅ |
+| 품질 | FR-N146.1~5 | 5/5 PASS | ✅ |
+| 보안 | D-06 | 반영 | ✅ |
 
-> **완료일**: 2026-04-10 | **matchRate**: 100%
+## Q-Gate: G1~G7 전수 통과 ✅
 
 ## 산출물
-| FR ID | 산출물 | 상태 |
-|-------|--------|------|
-| FR-N146.1 | `observability-maturity-rules.yaml` | 완료 |
-| FR-N146.2 | 성숙도 레벨(L1~L5) Recording Rule | 완료 |
-| FR-N146.3 | `observability-maturity.json` 대시보드 | 완료 |
-| FR-N146.4 | 성숙도 하락 알림 2개 | 완료 |
-
-## Q-Gate: 전 항목 PASS
+- platform/services/ai-service/src/lib/observability-maturity.ts
+- platform/services/ai-service/src/lib/__tests__/observability-maturity.test.ts

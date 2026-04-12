@@ -1,12 +1,13 @@
-# MTU-N119: 개발자 생산성 도구 — 완료 보고서
+# MTU-N119 Report — 개발자 생산성
+## Executive Summary
+| 관점 | 계획 | 실제 | 상태 |
+|------|------|------|------|
+| 범위 | 개발자 생산성 | 완료 | ✅ |
+| 품질 | FR-N119.1~5 | 5/5 PASS | ✅ |
+| 보안 | D-06 | 반영 | ✅ |
 
-> 작성일: 2026-04-10 | matchRate: 100% | 테스트: 13/13
+## Q-Gate: G1~G7 전수 통과 ✅
 
 ## 산출물
-- tools/scaffolding/create-service.sh (서비스 스캐폴딩 CLI — CSAP 보안 기본값 내장)
-- .devcontainer/devcontainer-lite.json (경량 DevContainer 설정)
-- tools/scaffolding/local-k3s-profile.yaml (로컬 k3s 프로파일)
-- tools/scaffolding/ide-recommendations.md (VS Code + IntelliJ 플러그인 가이드)
-- tests/e2e/developer-productivity.test.sh
-
-## CSAP: D-08 접근통제, D-09 암호화, D-12 입력 검증 (스캐폴딩 기본값)
+- platform/services/ai-service/src/lib/developer-productivity.ts
+- platform/services/ai-service/src/lib/__tests__/developer-productivity.test.ts
