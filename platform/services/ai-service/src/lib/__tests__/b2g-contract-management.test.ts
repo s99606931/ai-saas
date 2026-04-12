@@ -60,8 +60,9 @@ describe('MTU-N293 B2GContractManagement', () => {
     const c = makeContract();
     registerContract(c);
     const obls = extractObligations(c);
-    if (obls.length > 0) {
-      const ok = fulfillObligation(c.contractId, obls[0].obligationId, 'u1', tenantId);
+    const first = obls[0];
+    if (first) {
+      const ok = fulfillObligation(c.contractId, first.obligationId, 'u1', tenantId);
       expect(ok).toBe(true);
     }
   });

@@ -31,7 +31,7 @@ describe('MTU-N284 PolicyImpactAnalysis', () => {
     ];
     const impacts = analyzeImpacts(diff, stakeholders);
     expect(impacts).toHaveLength(2);
-    expect(impacts[0].score).toBeGreaterThanOrEqual(0);
+    expect(impacts[0]?.score ?? -1).toBeGreaterThanOrEqual(0);
   });
 
   it('FR-N284.4: 정책 영향 리포트 + 감사', () => {

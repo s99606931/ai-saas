@@ -1,6 +1,6 @@
 {
   "version": "3.0",
-  "lastUpdated": "2026-04-11T19:46:04.305Z",
+  "lastUpdated": "2026-04-12T06:28:09.688Z",
   "activeFeatures": [
     "public-saas-framework",
     "scripts",
@@ -101,7 +101,34 @@
     "cache-manager",
     "config-loader",
     "pagination",
-    "id-generator"
+    "id-generator",
+    "file-upload",
+    "metrics-collector",
+    "task-queue",
+    "crypto-util",
+    "http-security",
+    "idempotency",
+    "feature-flags",
+    "bulkhead",
+    "backoff",
+    "outbox",
+    "saga",
+    "trace-context",
+    "esg-compliance",
+    "federated-learning",
+    "ai-governance",
+    "edge-runtime",
+    "cluster-autopilot",
+    "business-intelligence",
+    "rpa-automation",
+    "advanced-security",
+    "orchestration-ai",
+    "dev-productivity",
+    "platform-completion",
+    "input-sanitizer",
+    "data-mask",
+    "event-schema-registry",
+    "problem-details"
   ],
   "primaryFeature": "public-saas-framework",
   "features": {
@@ -333,10 +360,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T13:47:08.863Z",
-        "lastUpdated": "2026-04-11T19:46:04.303Z",
+        "lastUpdated": "2026-04-12T06:28:09.686Z",
         "archivedAt": "2026-04-07T09:46:06.742836+00:00"
       },
-      "lastFile": "/data/ai-saas/platform/services/ai-service/src/lib/__tests__/mtu-n356-n370.test.ts"
+      "lastFile": "/data/ai-saas/platform/services/ai-service/src/lib/__tests__/semantic-firewall.test.ts"
     },
     "audit-service": {
       "phase": "do",
@@ -574,10 +601,10 @@
       },
       "timestamps": {
         "started": "2026-04-05T14:53:26.213Z",
-        "lastUpdated": "2026-04-10T00:15:25.356Z",
+        "lastUpdated": "2026-04-12T05:13:07.574Z",
         "archivedAt": "2026-04-07T09:35:55.082196Z"
       },
-      "lastFile": "/data/ai-saas/platform/apps/portal/src/app/layout.tsx"
+      "lastFile": "/data/ai-saas/platform/apps/portal/src/components/ai/PlatformMaturityRadar.tsx"
     },
     "security-monitor-service": {
       "phase": "do",
@@ -876,17 +903,17 @@
       "lastFile": "/data/ai-saas/platform/plugins/public-data-integration/src/env.d.ts"
     },
     "tmp": {
-      "phase": "archived",
-      "phaseNumber": 7,
+      "phase": "do",
+      "phaseNumber": 3,
       "matchRate": null,
       "iterationCount": 0,
       "requirements": [],
       "documents": {},
       "timestamps": {
         "started": "2026-04-06T13:49:12.550Z",
-        "lastUpdated": "2026-04-07T09:35:55.082196Z"
+        "lastUpdated": "2026-04-12T06:26:48.408Z"
       },
-      "lastFile": "/tmp/test-services.sh"
+      "lastFile": "/tmp/archive3.sh"
     },
     "saas-catalog-service": {
       "phase": "do",
@@ -936,9 +963,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-07T16:03:28.484Z",
-        "lastUpdated": "2026-04-10T12:12:28.887Z"
+        "lastUpdated": "2026-04-12T05:51:58.443Z"
       },
-      "lastFile": "/data/ai-saas/tests/performance/scenarios/soak.js"
+      "lastFile": "/data/ai-saas/platform/tests/e2e/scenarios/ai-agent-delegation.e2e.test.ts"
     },
     "MTU-N21": {
       "phase": "archived",
@@ -1339,9 +1366,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-04-10T11:47:21.731Z",
-        "lastUpdated": "2026-04-10T11:47:21.731Z"
+        "lastUpdated": "2026-04-12T04:55:50.593Z"
       },
-      "lastFile": "/data/ai-saas/tests/e2e/privacy-compliance/privacy.test.sh"
+      "lastFile": "/data/ai-saas/packages/privacy-compliance/tests/dsr-processor.test.ts"
     },
     "rate-limit-advanced": {
       "phase": "do",
@@ -1799,6 +1826,357 @@
         "lastUpdated": "2026-04-11T17:12:11.114Z"
       },
       "lastFile": "/data/ai-saas/platform/packages/id-generator/src/id-generator.ts"
+    },
+    "file-upload": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T00:02:48.465Z",
+        "lastUpdated": "2026-04-12T00:05:28.176Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/file-upload/src/file-upload.ts"
+    },
+    "metrics-collector": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T00:06:54.743Z",
+        "lastUpdated": "2026-04-12T00:07:18.652Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/metrics-collector/tests/metrics.test.ts"
+    },
+    "task-queue": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T00:08:22.528Z",
+        "lastUpdated": "2026-04-12T00:08:41.131Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/task-queue/tests/task-queue.test.ts"
+    },
+    "crypto-util": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T00:09:55.503Z",
+        "lastUpdated": "2026-04-12T00:10:16.841Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/crypto-util/tests/crypto-util.test.ts"
+    },
+    "http-security": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T00:11:35.330Z",
+        "lastUpdated": "2026-04-12T00:11:57.278Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/http-security/tests/http-security.test.ts"
+    },
+    "idempotency": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T00:13:04.401Z",
+        "lastUpdated": "2026-04-12T00:13:26.933Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/idempotency/tests/idempotency.test.ts"
+    },
+    "feature-flags": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T00:14:41.336Z",
+        "lastUpdated": "2026-04-12T00:15:05.747Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/feature-flags/tests/feature-flags.test.ts"
+    },
+    "bulkhead": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T00:16:34.358Z",
+        "lastUpdated": "2026-04-12T00:16:55.899Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/bulkhead/tests/bulkhead.test.ts"
+    },
+    "backoff": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T00:18:02.636Z",
+        "lastUpdated": "2026-04-12T00:18:24.000Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/backoff/tests/backoff.test.ts"
+    },
+    "outbox": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T00:19:31.977Z",
+        "lastUpdated": "2026-04-12T00:19:51.792Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/outbox/tests/outbox.test.ts"
+    },
+    "saga": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T00:44:31.656Z",
+        "lastUpdated": "2026-04-12T00:45:52.390Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/saga/tests/saga.test.ts"
+    },
+    "trace-context": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T04:29:13.434Z",
+        "lastUpdated": "2026-04-12T04:30:01.378Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/trace-context/tests/trace-context.test.ts"
+    },
+    "esg-compliance": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T04:31:05.515Z",
+        "lastUpdated": "2026-04-12T04:54:42.509Z"
+      },
+      "lastFile": "/data/ai-saas/packages/esg-compliance/tests/mydata-consent.test.ts"
+    },
+    "federated-learning": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T04:36:32.279Z",
+        "lastUpdated": "2026-04-12T04:57:03.373Z"
+      },
+      "lastFile": "/data/ai-saas/packages/federated-learning/tests/strategies.test.ts"
+    },
+    "ai-governance": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T04:39:09.727Z",
+        "lastUpdated": "2026-04-12T04:58:00.289Z"
+      },
+      "lastFile": "/data/ai-saas/packages/ai-governance/tests/ethics-committee.test.ts"
+    },
+    "edge-runtime": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T04:40:24.328Z",
+        "lastUpdated": "2026-04-12T04:58:39.825Z"
+      },
+      "lastFile": "/data/ai-saas/packages/edge-runtime/tests/pqc-migration.test.ts"
+    },
+    "cluster-autopilot": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T04:41:12.680Z",
+        "lastUpdated": "2026-04-12T04:59:21.707Z"
+      },
+      "lastFile": "/data/ai-saas/packages/cluster-autopilot/tests/service-mesh-ai.test.ts"
+    },
+    "business-intelligence": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T04:43:47.811Z",
+        "lastUpdated": "2026-04-12T04:59:50.721Z"
+      },
+      "lastFile": "/data/ai-saas/packages/business-intelligence/tests/business-intelligence.test.ts"
+    },
+    "rpa-automation": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T04:44:21.055Z",
+        "lastUpdated": "2026-04-12T05:00:14.751Z"
+      },
+      "lastFile": "/data/ai-saas/packages/rpa-automation/tests/rpa-automation.test.ts"
+    },
+    "advanced-security": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T04:45:00.906Z",
+        "lastUpdated": "2026-04-12T05:00:41.869Z"
+      },
+      "lastFile": "/data/ai-saas/packages/advanced-security/tests/advanced-security.test.ts"
+    },
+    "orchestration-ai": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T04:45:35.987Z",
+        "lastUpdated": "2026-04-12T05:01:09.555Z"
+      },
+      "lastFile": "/data/ai-saas/packages/orchestration-ai/tests/orchestration-ai.test.ts"
+    },
+    "dev-productivity": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T04:46:13.700Z",
+        "lastUpdated": "2026-04-12T05:01:31.611Z"
+      },
+      "lastFile": "/data/ai-saas/packages/dev-productivity/tests/dev-productivity.test.ts"
+    },
+    "platform-completion": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T04:47:31.907Z",
+        "lastUpdated": "2026-04-12T04:48:08.018Z"
+      },
+      "lastFile": "/data/ai-saas/packages/platform-completion/src/index.ts"
+    },
+    "input-sanitizer": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T04:50:17.889Z",
+        "lastUpdated": "2026-04-12T04:51:53.119Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/input-sanitizer/tests/input-sanitizer.test.ts"
+    },
+    "data-mask": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T05:44:47.953Z",
+        "lastUpdated": "2026-04-12T05:47:05.465Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/data-mask/src/string-masker.ts"
+    },
+    "event-schema-registry": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T05:57:20.326Z",
+        "lastUpdated": "2026-04-12T05:58:28.098Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/event-schema-registry/tests/event-schema-registry.test.ts"
+    },
+    "problem-details": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-04-12T06:05:01.157Z",
+        "lastUpdated": "2026-04-12T06:05:43.033Z"
+      },
+      "lastFile": "/data/ai-saas/platform/packages/problem-details/tests/problem-details.test.ts"
     }
   },
   "pipeline": {
@@ -1809,7 +2187,7 @@
   "session": {
     "startedAt": "2026-04-05T05:33:14.156Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-04-11T19:46:04.305Z"
+    "lastActivity": "2026-04-12T06:28:09.688Z"
   },
   "history": [
     {
@@ -16256,6 +16634,2892 @@
     },
     {
       "timestamp": "2026-04-11T19:46:04.305Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:02:48.467Z",
+      "feature": "file-upload",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:04:10.559Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:04:25.234Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:04:27.181Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:04:36.187Z",
+      "feature": "file-upload",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:04:41.481Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:05:01.358Z",
+      "feature": "file-upload",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:05:04.475Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:05:09.502Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:05:18.569Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:05:28.178Z",
+      "feature": "file-upload",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:05:49.943Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:06:03.617Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:06:24.461Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:06:37.492Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:06:54.744Z",
+      "feature": "metrics-collector",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:06:56.476Z",
+      "feature": "metrics-collector",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:07:17.259Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:07:18.653Z",
+      "feature": "metrics-collector",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:07:25.549Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:07:48.475Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:07:58.323Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:08:22.531Z",
+      "feature": "task-queue",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:08:23.578Z",
+      "feature": "task-queue",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:08:40.352Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:08:41.133Z",
+      "feature": "task-queue",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:08:50.389Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:09:13.510Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:09:22.471Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:09:55.504Z",
+      "feature": "crypto-util",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:09:57.031Z",
+      "feature": "crypto-util",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:10:07.539Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:10:16.842Z",
+      "feature": "crypto-util",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:10:16.349Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:10:33.826Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:10:46.680Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:11:21.019Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:11:35.332Z",
+      "feature": "http-security",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:11:37.063Z",
+      "feature": "http-security",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:11:57.280Z",
+      "feature": "http-security",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:13:04.402Z",
+      "feature": "idempotency",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:13:06.347Z",
+      "feature": "idempotency",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:13:18.070Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:13:26.935Z",
+      "feature": "idempotency",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:13:30.113Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:13:50.833Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:14:01.247Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:14:41.338Z",
+      "feature": "feature-flags",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:14:42.706Z",
+      "feature": "feature-flags",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:15:05.748Z",
+      "feature": "feature-flags",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:15:05.783Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:15:15.783Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:15:28.866Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:15:38.804Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:15:58.161Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:16:09.698Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:16:32.565Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:16:34.359Z",
+      "feature": "bulkhead",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:16:35.517Z",
+      "feature": "bulkhead",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:16:45.570Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:16:55.900Z",
+      "feature": "bulkhead",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:17:09.082Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:17:17.992Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:17:40.651Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:17:47.848Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:18:02.638Z",
+      "feature": "backoff",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:18:04.410Z",
+      "feature": "backoff",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:18:07.957Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:18:20.632Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:18:24.002Z",
+      "feature": "backoff",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:18:57.347Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:19:31.979Z",
+      "feature": "outbox",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:19:33.730Z",
+      "feature": "outbox",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:19:51.794Z",
+      "feature": "outbox",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:23:21.353Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:23:33.333Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:24:03.135Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:24:10.687Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:24:32.565Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:24:42.334Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:25:03.595Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:25:11.452Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:25:32.319Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:25:40.732Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:26:26.281Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:26:32.565Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:26:55.159Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:27:05.340Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:27:21.404Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:27:28.301Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:27:51.440Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:27:58.600Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:28:20.862Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:28:30.759Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:29:02.191Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:29:09.023Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:29:29.586Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:29:36.509Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:29:57.749Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:30:05.627Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:30:26.473Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:30:33.445Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:30:51.421Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:30:59.311Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:31:37.110Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:31:41.618Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:32:03.656Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:32:10.379Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:32:34.301Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:32:37.878Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:32:59.316Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:33:06.446Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:33:33.281Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:33:39.295Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:37:40.992Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:37:52.560Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:38:17.404Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:38:27.894Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:38:55.345Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:39:04.082Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:39:39.008Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:39:48.784Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:40:16.329Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:40:26.943Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:40:42.167Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:40:44.673Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:41:40.280Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:41:47.788Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:42:09.107Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:42:16.355Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:42:40.363Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:42:47.710Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:42:53.392Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:43:09.481Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:43:11.518Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:43:19.031Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:43:32.545Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:43:44.141Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:43:52.772Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:44:31.656Z",
+      "feature": "saga",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:44:43.257Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:44:51.523Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:45:09.496Z",
+      "feature": "saga",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:45:16.435Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:45:24.317Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:45:40.900Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:45:50.191Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:45:52.392Z",
+      "feature": "saga",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:46:10.664Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:46:17.391Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:46:39.344Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:46:47.867Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:58:21.279Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:58:21.476Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:58:43.647Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:58:52.664Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:59:15.833Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:59:22.953Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:59:52.356Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T00:59:54.317Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:00:21.065Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:00:27.725Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:00:57.991Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:01:22.548Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:05:20.454Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:05:32.937Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:05:47.398Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:06:04.520Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:06:20.950Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:06:33.836Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:06:46.457Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:06:56.503Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:07:04.832Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:07:10.915Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:07:37.449Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:08:29.299Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:08:43.508Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:08:59.155Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:09:14.033Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:09:31.216Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:09:45.920Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:09:55.725Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:10:03.731Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:10:12.384Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:10:20.240Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:10:35.930Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:10:38.227Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:12:18.615Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:12:30.551Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:12:41.683Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:12:55.966Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:13:09.305Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:13:20.934Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:13:30.138Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:13:36.659Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:13:44.468Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:13:52.526Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:15:03.880Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:15:15.576Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:15:31.410Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:15:45.789Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:16:02.868Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:16:15.008Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:16:23.167Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:16:32.839Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:16:39.871Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T01:16:48.534Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:29:13.435Z",
+      "feature": "trace-context",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:29:20.944Z",
+      "feature": "trace-context",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:29:24.834Z",
+      "feature": "trace-context",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:29:31.674Z",
+      "feature": "trace-context",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:29:34.449Z",
+      "feature": "trace-context",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:29:41.356Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:30:01.380Z",
+      "feature": "trace-context",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:31:05.516Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:31:28.408Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:31:45.121Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:32:01.199Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:32:22.250Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:32:22.636Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:33:54.727Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:33:57.956Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:33:59.553Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:34:08.154Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:35:22.658Z",
+      "feature": "privacy-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:35:43.925Z",
+      "feature": "privacy-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:35:57.438Z",
+      "feature": "privacy-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:35:58.233Z",
+      "feature": "privacy-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:36:32.280Z",
+      "feature": "federated-learning",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:36:52.173Z",
+      "feature": "federated-learning",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:36:52.831Z",
+      "feature": "federated-learning",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:38:30.255Z",
+      "feature": "federated-learning",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:38:42.690Z",
+      "feature": "federated-learning",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:38:44.347Z",
+      "feature": "federated-learning",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:39:09.728Z",
+      "feature": "ai-governance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:39:36.183Z",
+      "feature": "ai-governance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:39:47.418Z",
+      "feature": "ai-governance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:39:48.468Z",
+      "feature": "ai-governance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:40:24.329Z",
+      "feature": "edge-runtime",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:40:43.553Z",
+      "feature": "edge-runtime",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:40:44.243Z",
+      "feature": "edge-runtime",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:41:12.681Z",
+      "feature": "cluster-autopilot",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:41:33.995Z",
+      "feature": "cluster-autopilot",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:41:34.796Z",
+      "feature": "cluster-autopilot",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:43:47.813Z",
+      "feature": "business-intelligence",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:44:21.056Z",
+      "feature": "rpa-automation",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:45:00.907Z",
+      "feature": "advanced-security",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:45:35.988Z",
+      "feature": "orchestration-ai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:46:13.701Z",
+      "feature": "dev-productivity",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:47:31.908Z",
+      "feature": "platform-completion",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:48:07.009Z",
+      "feature": "platform-completion",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:48:08.019Z",
+      "feature": "platform-completion",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:49:39.784Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:50:11.837Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:50:17.891Z",
+      "feature": "input-sanitizer",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:50:28.956Z",
+      "feature": "input-sanitizer",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:50:32.684Z",
+      "feature": "input-sanitizer",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:50:45.961Z",
+      "feature": "input-sanitizer",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:50:53.256Z",
+      "feature": "input-sanitizer",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:50:55.972Z",
+      "feature": "input-sanitizer",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:51:21.841Z",
+      "feature": "input-sanitizer",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:51:53.120Z",
+      "feature": "input-sanitizer",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:53:05.240Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:53:25.528Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:53:48.288Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:54:14.385Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:54:42.510Z",
+      "feature": "esg-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:55:20.459Z",
+      "feature": "privacy-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:55:34.728Z",
+      "feature": "privacy-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:55:50.594Z",
+      "feature": "privacy-compliance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:56:16.813Z",
+      "feature": "federated-learning",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:56:37.712Z",
+      "feature": "federated-learning",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:57:03.375Z",
+      "feature": "federated-learning",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:57:21.480Z",
+      "feature": "ai-governance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:57:43.212Z",
+      "feature": "ai-governance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:58:00.290Z",
+      "feature": "ai-governance",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:58:24.998Z",
+      "feature": "edge-runtime",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:58:39.827Z",
+      "feature": "edge-runtime",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:59:03.348Z",
+      "feature": "cluster-autopilot",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:59:21.708Z",
+      "feature": "cluster-autopilot",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T04:59:50.722Z",
+      "feature": "business-intelligence",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:00:14.752Z",
+      "feature": "rpa-automation",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:00:41.870Z",
+      "feature": "advanced-security",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:01:09.556Z",
+      "feature": "orchestration-ai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:01:31.612Z",
+      "feature": "dev-productivity",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:06:47.823Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:07:18.784Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:07:44.718Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:08:09.994Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:08:29.767Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:08:40.761Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:09:06.724Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:10:13.210Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:10:28.915Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:10:43.843Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:11:00.127Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:11:18.048Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:12:01.799Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:12:17.177Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:12:30.186Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:12:47.572Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:13:07.576Z",
+      "feature": "portal",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:44:08.734Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:44:43.416Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:44:47.955Z",
+      "feature": "data-mask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:45:01.254Z",
+      "feature": "data-mask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:45:14.570Z",
+      "feature": "data-mask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:45:17.830Z",
+      "feature": "data-mask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:45:25.356Z",
+      "feature": "data-mask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:45:29.992Z",
+      "feature": "data-mask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:45:32.366Z",
+      "feature": "data-mask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:45:58.579Z",
+      "feature": "data-mask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:46:07.141Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:46:31.584Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:46:41.013Z",
+      "feature": "data-mask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:46:53.093Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:47:02.799Z",
+      "feature": "data-mask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:47:05.467Z",
+      "feature": "data-mask",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:48:16.310Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:48:20.512Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:48:48.256Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:48:58.231Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:49:17.192Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:49:20.431Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:49:44.764Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:49:44.909Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:50:07.690Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:50:18.141Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:50:29.860Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:50:47.748Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:50:55.688Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:51:01.639Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:51:02.631Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:51:11.591Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:51:20.126Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:51:23.735Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:51:26.905Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:51:32.093Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:51:36.387Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:51:53.662Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:51:58.445Z",
+      "feature": "scenarios",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:53:59.108Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:54:07.103Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:54:15.846Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:54:17.854Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:54:23.410Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:54:29.276Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:54:35.645Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:54:42.150Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:54:47.837Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:54:54.859Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:55:01.992Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:55:08.334Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:55:14.417Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:55:19.172Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:55:28.055Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:55:58.002Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:56:00.299Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:56:03.451Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:56:41.973Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:56:59.624Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:57:20.330Z",
+      "feature": "event-schema-registry",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:57:34.802Z",
+      "feature": "event-schema-registry",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:57:39.828Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:57:44.080Z",
+      "feature": "event-schema-registry",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:57:57.435Z",
+      "feature": "event-schema-registry",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:57:59.321Z",
+      "feature": "event-schema-registry",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:58:05.228Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:58:19.760Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:58:28.104Z",
+      "feature": "event-schema-registry",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:58:29.285Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:59:37.387Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:59:38.393Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:59:43.227Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:59:50.591Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T05:59:55.324Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:00:01.938Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:00:02.189Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:00:07.753Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:00:14.621Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:00:47.255Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:01:04.436Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:01:30.114Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:01:39.936Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:01:48.864Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:02:20.413Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:02:48.209Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:03:05.706Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:03:11.548Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:04:29.382Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:04:56.371Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:05:00.557Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:05:01.158Z",
+      "feature": "problem-details",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:05:19.160Z",
+      "feature": "problem-details",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:05:22.192Z",
+      "feature": "problem-details",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:05:24.934Z",
+      "feature": "problem-details",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:05:27.328Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:05:43.035Z",
+      "feature": "problem-details",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:06:00.572Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:06:27.915Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:09:45.423Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:10:05.174Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:10:21.588Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:10:41.356Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:10:57.711Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:11:05.173Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:11:30.109Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:11:38.049Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:11:52.549Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:12:08.856Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:12:24.171Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:12:40.989Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:12:47.219Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:12:53.394Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:13:00.213Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:13:09.401Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:13:20.707Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:13:27.640Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:13:33.394Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:13:41.947Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:14:00.703Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:14:19.728Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:14:39.265Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:15:03.790Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:15:39.375Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:16:07.110Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:16:07.207Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:16:13.473Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:16:21.677Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:16:27.617Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:16:27.984Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:16:34.144Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:16:39.913Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:16:47.627Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:16:48.147Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:16:57.034Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:17:04.037Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:17:09.951Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:17:10.595Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:17:23.497Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:17:30.322Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:17:37.292Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:17:38.714Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:17:43.444Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:17:50.186Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:17:56.693Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:18:02.963Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:18:14.641Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:18:18.840Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:18:20.361Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:18:22.390Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:18:31.609Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:20:31.448Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:20:40.201Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:20:47.501Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:20:52.286Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:21:02.296Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:21:08.723Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:21:14.305Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:21:29.062Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:21:36.188Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:21:42.347Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:21:49.226Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:21:56.340Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:22:03.174Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:22:09.582Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:22:16.571Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:22:31.085Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:22:36.503Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:22:45.366Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:22:53.558Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:23:00.210Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:23:03.801Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:23:34.061Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:23:34.175Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:24:51.046Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:25:12.854Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:26:25.870Z",
+      "feature": "tmp",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:26:48.410Z",
+      "feature": "tmp",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:27:38.870Z",
+      "feature": "ai-service",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-04-12T06:28:09.687Z",
       "feature": "ai-service",
       "phase": "do",
       "action": "updated"

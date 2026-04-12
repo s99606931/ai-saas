@@ -1,0 +1,23 @@
+# MTU-N340 자원 용량 예측 엔진
+
+- **Phase**: Archived
+- **Date**: 2026-04-11
+- **matchRate**: 100%
+- **Q-Gate**: G1~G7 ✅
+
+## Artifacts
+
+- [Plan](MTU-N340-capacity-forecast-engine.plan.md)
+- [Design](MTU-N340-capacity-forecast-engine.design.md)
+- [Report](MTU-N340-capacity-forecast-engine.report.md)
+
+## Implementation
+
+- Module: `platform/services/ai-service/src/lib/capacity-forecast-engine.ts`
+- Test: `platform/services/ai-service/src/lib/__tests__/capacity-forecast-engine.test.ts`
+
+## Compliance
+
+- CSAP D-06 감사 로그 ✅
+- N2SF 데이터 등급 준수 ✅
+- 테넌트 격리 ✅
