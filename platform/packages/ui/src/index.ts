@@ -1,6 +1,6 @@
 // 공공기관 SaaS 플랫폼 — 공통 UI 컴포넌트 라이브러리
-// Design Ref: DS-TOKEN-R1, DS-ATOM-R1, DS-ATOM-R2
-// Plan SC: FR-DST.11, FR-DSA.11
+// Design Ref: DS-TOKEN-R1, DS-ATOM-R1, DS-ATOM-R2, DS-THEME-R1
+// Plan SC: FR-DST.11, FR-DSA.11, FR-DST.13~18
 
 // ─────────── 디자인 토큰 ───────────
 export {
@@ -44,6 +44,25 @@ export {
   badgeVariants,
   inputVariants,
 } from './atoms/index.js';
+
+// ─────────── Theme System (DS-THEME-R1) ───────────
+export {
+  ThemeProvider,
+  type ThemeProviderProps,
+  useTheme,
+  ThemeContext,
+  type ThemeContextValue,
+  ThemeSwitcher,
+  type ThemeSwitcherProps,
+  ModeToggle,
+  type ModeToggleProps,
+  getInitialThemeScript,
+  type InitScriptOptions,
+  STORAGE_KEYS,
+  isBrowser,
+  getSystemPrefersDark,
+  subscribeSystemTheme,
+} from './theme/index.js';
 
 // ─────────── Molecules / Organisms 스텁 ───────────
 export type { DataTableProps, FormFieldProps, StatusCardProps } from './molecules/types.js';
