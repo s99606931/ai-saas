@@ -64,6 +64,18 @@ export {
   subscribeSystemTheme,
 } from './theme/index.js';
 
-// ─────────── Molecules / Organisms 스텁 ───────────
-export type { DataTableProps, FormFieldProps, StatusCardProps } from './molecules/types.js';
+// ─────────── Molecules (DS-MOL-R1) ───────────
+export {
+  FormField,
+  type FormFieldProps,
+  Alert,
+  type AlertProps,
+  alertVariants,
+  type AlertVariant,
+  Card,
+  type CardProps,
+} from './molecules/index.js';
+
+// ─────────── Organisms 스텁 (추후 DS-ORG-R1) ───────────
+export type { DataTableProps, StatusCardProps } from './molecules/types.js';
 export type { SidebarProps, HeaderProps } from './organisms/types.js';
