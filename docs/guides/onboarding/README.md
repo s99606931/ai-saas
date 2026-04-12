@@ -74,7 +74,7 @@ flowchart TD
 
 ---
 
-## 전체 구조 (3레벨 / 238개 파일 / 198,854줄)
+## 전체 구조 (3레벨 / 247개 파일 / 210,016줄)
 
 ### 루트 파일 — 개요·이력·기여
 
@@ -114,6 +114,7 @@ flowchart TD
 | [06-team-practices.md](01-getting-started/06-team-practices.md) | 팀 개발 문화 — 스탠드업, 코드 오너십, PR 문화, 기술 부채 관리 | 30분 |
 | [07-real-scenarios.md](01-getting-started/07-real-scenarios.md) | 첫 주 실전 시나리오 5개 — 버그 수정, 기능 추가, 인시던트, PR 리뷰 대응 | 60분 |
 | [08-knowledge-sharing.md](01-getting-started/08-knowledge-sharing.md) | 팀 기술 공유 문화 — ADR·RFC·포스트모템 작성법, 스터디, 신규 입사자 참여 가이드 | 30분 |
+| [09-first-week-complete.md](01-getting-started/09-first-week-complete.md) | 첫 주 완전 가이드 — Day 1~5 시간표(역할별), 25문항 자가 진단, WWW 회고, 2주차 심화 경로 | 필독 |
 
 ### 02-architecture/ — 서비스 17개 + 패키지 심화
 
@@ -158,11 +159,13 @@ flowchart TD
 | [12-new-service-guide.md](02-architecture/12-new-service-guide.md) | 새 마이크로서비스 추가 완전 가이드 — 보일러플레이트, 공통 패키지 연동, K8s/CI/CD 설정, feedback-service 실습 |
 | [13-data-architecture.md](02-architecture/13-data-architecture.md) | 데이터 아키텍처 — OLTP 구조, SHA-256 감사 체인, Redis 이벤트, CSAP D-10 보존, ClickHouse 도입 계획 |
 | [14-api-versioning.md](02-architecture/14-api-versioning.md) | API 버전 관리 전략 — Breaking/Non-breaking 기준 10가지, Deprecation 절차, 계약 기간 중 변경 정책 |
+| [15-api-gateway-patterns.md](02-architecture/15-api-gateway-patterns.md) | API Gateway 패턴 — Traefik 구성 완전 해설, 라우팅 전략, Rate Limiting, ForwardAuth 인증 통합, 장애 대응 |
 | **packages/** | **공유 패키지 심화 (27개)** |
 | [packages/README.md](02-architecture/packages/README.md) | 전체 패키지 목록 및 카테고리 |
 | [packages/01-core-packages.md](02-architecture/packages/01-core-packages.md) | auth-sdk, rbac, audit-sdk, rate-limit, secret-manager |
 | [packages/02-infra-packages.md](02-architecture/packages/02-infra-packages.md) | mesh-ready, health, circuit-breaker, event-bus, feature-flag-sdk, slo-escalation |
 | [packages/03-ai-packages.md](02-architecture/packages/03-ai-packages.md) | AI/ML 패키지 심화 — ml-pipeline(ModelCI+DriftDetector), feature-flag-sdk AI A/B 테스트, slo-escalation 정책 |
+| [packages/04-package-development-guide.md](02-architecture/packages/04-package-development-guide.md) | 공유 패키지 개발 가이드 — 새 패키지 생성 단계, 버전 관리, dora-exporter/ml-pipeline 심화 분석, TypeDoc |
 
 ### 03-development/ — 개발 + 바이브코딩
 
@@ -196,6 +199,8 @@ flowchart TD
 | [23-websocket-realtime.md](03-development/23-websocket-realtime.md) | WebSocket/SSE 실시간 기능 — Fastify WebSocket, JWT 핸드셰이크, SSE 스트리밍, Next.js 연동, mTLS |
 | [24-caching-strategies.md](03-development/24-caching-strategies.md) | 캐싱 전략 심화 — L1/L2 계층, 멀티테넌트 키 격리, TTL/Event 무효화, 스탬피드 방지, N2SF 캐시 보안 |
 | [25-performance-optimization.md](03-development/25-performance-optimization.md) | Node.js+Fastify 성능 최적화 — Event Loop, AJV 직렬화, Prisma N+1 해결, Redis Pipeline, Clinic.js+Pyroscope 프로파일링, 3가지 최적화 시나리오 |
+| [26-distributed-transactions.md](03-development/26-distributed-transactions.md) | 분산 트랜잭션 패턴 — Saga(Choreography), Outbox 패턴, BullMQ 의존성 체인, 보상 트랜잭션, 멱등성 보장 |
+| [27-ai-mlops-guide.md](03-development/27-ai-mlops-guide.md) | AI/MLOps 실전 가이드 — RAG 파이프라인(rag-engine+chunker+vector-store), 모델 CI/CD, 드리프트 탐지, AI 비용 관리, Fallback 전략 |
 | [vibecoding/](03-development/vibecoding/) | Claude Code 바이브코딩 심화 |
 | [vibecoding/04-prompt-engineering.md](03-development/vibecoding/04-prompt-engineering.md) | 프롬프트 엔지니어링 — 작업 유형별 패턴, Cascade 에이전트, 안티패턴 |
 | [vibecoding/05-multi-agent-patterns.md](03-development/vibecoding/05-multi-agent-patterns.md) | 멀티 에이전트 패턴 — Cascade 완전 가이드, 5개 에이전트 역할 심화, 비용 최적화, 감리 자동화 |
@@ -262,6 +267,7 @@ k3s 클러스터 운영과 Helm, 컴포넌트 관리를 다룹니다.
 | [11-sre-oncall-guide.md](05-monitoring/11-sre-oncall-guide.md) | SRE 온콜 완전 가이드 — P1~P4 30초 분류법, TOP 10 알림 초동 대응, kubectl 치트시트, CSAP D-06 의무 |
 | [12-service-instrumentation.md](05-monitoring/12-service-instrumentation.md) | 서비스 계측 가이드 — OTel SDK 직접 구현, mesh-ready 패키지 분석, DORA 메트릭 수집, N2SF Span 규칙 |
 | [13-cost-monitoring.md](05-monitoring/13-cost-monitoring.md) | FinOps 비용 모니터링 — AI 토큰 비용 추적, 테넌트별 Chargeback, 예산 가드, Grafana 패널 JSON |
+| [14-observability-advanced.md](05-monitoring/14-observability-advanced.md) | 관측가능성 고급 — Exemplar 연결, Multiburn Rate SLO 알림, W3C TraceContext, Loki 고급 쿼리, DORA 심화, 이상 탐지 |
 
 ### 06-cicd/ — 파이프라인 + 배포 + DevSecOps
 
@@ -319,6 +325,8 @@ CSAP 79개 항목, N2SF 데이터 분류, 보안 코딩 규칙을 다룹니다.
 | [07-zero-trust-architecture.md](07-security/07-zero-trust-architecture.md) | Zero Trust 4계층 — Linkerd mTLS, SPIFFE/SPIRE, OPA 정책, Vault 동적 시크릿, 네트워크 정책 |
 | **csap/** | **CSAP 감리 시뮬레이션 (1개)** |
 | [csap/05-csap-audit-simulation.md](07-security/csap/05-csap-audit-simulation.md) | CSAP 감리 시뮬레이션 — 감리관 질의 D-06/D-08/D-09/D-12/N2SF, 79항목 증거 매핑, 8주 타임라인 |
+| **compliance/** | **컴플라이언스 리포팅 (1개)** |
+| [08-compliance-reporting.md](07-security/08-compliance-reporting.md) | 컴플라이언스 리포팅 자동화 — compliance-service 완전 분석, N2SF 자동화, 월간 보고서 생성, 위반 처리 프로세스 |
 
 ### 08-document-management/ — PDCA + MTU + 감리
 
@@ -384,8 +392,9 @@ PDCA 사이클, MTU 관리, 행안부 감리 대응을 다룹니다.
 | [14-full-stack-feature.md](10-exercises/14-full-stack-feature.md) | 실습 14: 풀스택 피처 개발 — 공지사항 CRUD API + SSE 알림 + Next.js UI, RBAC, auditLog, 100점 평가 | 4~5시간 |
 | [15-observability-lab.md](10-exercises/15-observability-lab.md) | 실습 15: 관측가능성 통합 실습 — MELT 4종(Metrics+Events+Logs+Traces) 통합, trace_id 연결, 100점 평가 | 3~4시간 |
 | [16-chaos-engineering-lab.md](10-exercises/16-chaos-engineering-lab.md) | 실습 16: 카오스 엔지니어링 — Pod 종료/네트워크 지연/OOM/DB 차단/멀티 서비스 장애 시뮬레이션, MTTR 측정 | 3~4시간 |
+| [17-disaster-recovery-lab.md](10-exercises/17-disaster-recovery-lab.md) | 실습 17: 재해 복구 훈련 — CNPG Standby 승격, Velero PVC 복구, GitOps 자동 재구축, RTO/RPO 측정, CSAP D-10 증거 | 3~4시간 |
 
-### 11-faq/ — 자주 묻는 질문 (165개)
+### 11-faq/ — 자주 묻는 질문 (195개)
 
 역할별로 분류된 FAQ입니다. 빠른 답변이 필요할 때 참조하십시오.
 
@@ -400,6 +409,7 @@ PDCA 사이클, MTU 관리, 행안부 감리 대응을 다룹니다.
 | [06-performance-faq.md](11-faq/06-performance-faq.md) | 성능 최적화 FAQ — API 레이턴시 진단, DB 인덱스, Redis 캐시, K8s 리소스, 모니터링 기반 진단 | 25개 |
 | [07-devops-faq.md](11-faq/07-devops-faq.md) | DevOps/인프라 운영 심화 FAQ — K8s 고급 운영, CI/CD, 모니터링, 보안 운영, 비용 최적화 | 25개 |
 | [08-ai-security-faq.md](11-faq/08-ai-security-faq.md) | AI 보안 FAQ — 프롬프트 인젝션, N2SF 데이터 분류, AI Gateway, 모델 오염, 23개 실전 Q&A | 23개 |
+| [09-incident-management-faq.md](11-faq/09-incident-management-faq.md) | 장애 관리 FAQ — P1 판단 기준, 초동 30초, CSAP D-06 72시간 보고, Post-Mortem, 30개 Q&A | 30개 |
 
 ---
 
@@ -824,3 +834,4 @@ git push origin docs/onboarding-guide-improvement
 | 3.4.0 | 2026-04-12 | 이터레이션 16 추가: 비즈니스 메트릭 카탈로그(32개 지표), 환경 승격 프로세스(dev→stg→prod), CI/CD 디버깅(4개 시나리오), AI/ML 패키지 심화(ml-pipeline+feature-flag), WebSocket/SSE 실시간 기능, 풀스택 실습(공지사항+SSE+Next.js), 의존성 보안(SBOM+Trivy), 데이터 아키텍처(SHA-256+ClickHouse), DevOps FAQ(25개). 총 220파일 177,700줄 | Implementer Team (병렬 에이전트) |
 | 3.5.0 | 2026-04-12 | 이터레이션 17 추가: 스토리지 관리(PV/PVC+3계층 StorageClass), GitOps 심화(Flux2 5컨트롤러+Kustomize 오버레이), 관측가능성 통합 실습(MELT 4종+trace_id), 캐싱 전략(L1/L2+멀티테넌트 키 격리), API 버전 관리(Breaking/Non-breaking+Deprecation), AI 보안 FAQ(23개+프롬프트 인젝션), FinOps 비용 모니터링(AI 토큰+Chargeback), Zero Trust 4계층(Linkerd mTLS+SPIFFE), 온보딩 평가(25문항 100점). 총 229파일 188,802줄 | Implementer Team (병렬 에이전트) |
 | 3.6.0 | 2026-04-13 | 이터레이션 18 추가: Node.js 성능 최적화(Event Loop+Clinic.js+시나리오 3개), Progressive Delivery(Flagger+A/B+Shadow+Ring), 카오스 엔지니어링 실습(5가지 장애 시뮬레이션), NetworkPolicy 심화(레시피 10개+Kyverno), 서비스 비교 분석(17개 서비스 결정 트리), 멀티테넌트 디버깅(데이터 유출 5시나리오), CSAP 감리 시뮬레이션(79항목 매핑), 에스컬레이션 플레이북(TOP 15 알림), PDCA 자동화(/pm 스킬 완전 가이드). 총 238파일 198,854줄 | Implementer Team (병렬 에이전트) |
+| 3.7.0 | 2026-04-13 | 이터레이션 19 추가: 분산 트랜잭션(Saga+Outbox+BullMQ 의존성 체인), API Gateway(Traefik+ForwardAuth+Rate Limiting), 재해 복구 실습(CNPG 승격+Velero+GitOps 재구축), 관측가능성 고급(Exemplar+Multiburn Rate), 패키지 개발 가이드(dora-exporter+ml-pipeline 심화), 컴플라이언스 리포팅(compliance-service 완전 분석), 첫 주 완전 가이드(Day 1~5 시간표), AI/MLOps(RAG+모델CI+드리프트), 장애 관리 FAQ(30개). 총 247파일 210,016줄 | Implementer Team (병렬 에이전트) |

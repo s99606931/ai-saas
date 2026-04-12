@@ -24,14 +24,7 @@ export interface DataTableColumn<T = unknown> {
   width?: string;
 }
 
-export interface FormFieldProps {
-  label: string;
-  name: string;
-  required?: boolean;
-  error?: string;
-  helperText?: string;
-  children: ReactNode;
-}
+// NOTE: FormFieldProps는 molecules/FormField/index.tsx에서 실제 구현으로 export됨 (DS-MOL-R1)
 
 export interface StatusCardProps {
   title: string;

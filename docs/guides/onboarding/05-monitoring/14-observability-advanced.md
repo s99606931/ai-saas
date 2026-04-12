@@ -1350,6 +1350,77 @@ groups:
           summary: "DORA 등급 하락 감지"
 ```
 
+### 7.6 이상 탐지 결과의 감사 로그 통합
+
+이상 탐지 경보가 발생하면, 단순 경보 발송에 그치지 않고 CSAP D-06 감사 로그에 기록하여 추후 증거로 활용할 수 있어야 합니다.
+
+```typescript
+// 이상 탐지 이벤트 감사 로그 통합
+// Design Ref: platform/services/security-service/src/lib/audit.ts
+
+import { logSecurityEvent } from './audit.js';
+
+interface AnomalyEvent {
+  metric: string;
+  currentValue: number;
+  expectedValue: number;
+  deviationRatio: number;  // 현재값 / 기대값
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  detectedAt: string;
+  affectedService: string;
+  tenantId: string;
+}
+
+async function handleAnomalyDetected(event: AnomalyEvent): Promise<void> {
+  // 이상 탐지 결과를 CSAP D-06 감사 로그에 기록
+  await logSecurityEvent('ANOMALY_DETECTED', {
+    metric: event.metric,
+    severity: event.severity,
+    deviationRatio: event.deviationRatio,
+    affectedService: event.affectedService,
+    // tenantId는 기록 (PII 아님), 구체적 사용자 정보는 기록 금지
+    tenantId: event.tenantId,
+    detectedAt: event.detectedAt,
+  });
+
+  // 심각도에 따른 에스컬레이션
+  if (event.severity === 'critical') {
+    await escalateToPagerDuty(event);
+  } else if (event.severity === 'high') {
+    await notifySlack(event);
+  }
+}
+
+async function escalateToPagerDuty(_event: AnomalyEvent): Promise<void> {
+  // PagerDuty 연동 (packages/slo-escalation 참조)
+}
+
+async function notifySlack(_event: AnomalyEvent): Promise<void> {
+  // Slack Webhook 연동
+}
+```
+
+### 7.7 관측가능성 성숙도 자기 평가
+
+공공기관 SaaS 팀이 관측가능성 수준을 평가하는 체크리스트입니다.
+
+| 레벨 | 항목 | 확인 |
+|------|------|------|
+| Level 1 (기초) | Prometheus 메트릭 수집 | |
+| Level 1 (기초) | Loki 로그 수집 | |
+| Level 1 (기초) | Grafana 기본 대시보드 | |
+| Level 2 (중급) | OTel 분산 추적 연결 | |
+| Level 2 (중급) | SLO 정의 및 에러 예산 | |
+| Level 2 (중급) | Multiburn Rate 경보 | |
+| Level 3 (고급) | Exemplar 메트릭-추적 연결 | |
+| Level 3 (고급) | DORA 4대 지표 수집 | |
+| Level 3 (고급) | Baggage 멀티테넌트 추적 | |
+| Level 4 (전문) | AI 기반 이상 탐지 연동 | |
+| Level 4 (전문) | 계절성 패턴 인식 경보 | |
+| Level 4 (전문) | 감사 로그 완전성 자동 검증 | |
+
+공공기관 SaaS 프레임워크는 현재 Level 3 수준을 목표로 구현되어 있으며, Level 4의 AI 기반 이상 탐지는 Phase 3(FR-AI.7)에서 구현 예정입니다.
+
 ---
 
 ## 변경 이력
