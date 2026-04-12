@@ -575,3 +575,13 @@ AI 안전 스트리밍·분산 추적·평가 하네스·멀티모달 RAG·비�
 - **SVC-AI-ADV-R74**: Contextual Memory Manager (`contextual-memory-manager.ts`, 17 테스트) — agent/user/tenant 3축 키 + slot/우선순위/TTL + LRU eviction (slot/key/total) + 요약 생성
 - **SVC-AI-ADV-R75**: Dynamic Few-Shot Selector (`dynamic-few-shot-selector.ts`, 17 테스트) — Jaccard+코사인 혼합 유사도 + MMR 다양성(λ) + 카테고리 편향 경고(>60%)
 
+## SVC-AI-ADV R76~R80 (2026-04-12 세션 #131, 8차 PM 세션)
+
+에이전트 드라이런·청크 중복 제거·프롬프트 변형 실험·멀티 LLM 폴백 라우터·AI 텔레메트리 재현 모듈 5종 PDCA 완료. 59개 단위 테스트 100% 통과. TypeScript strict 0 에러.
+
+- **SVC-AI-ADV-R76**: Agent Dry-Run Simulator (`agent-dry-run-simulator.ts`, 7 테스트) — 도구 레지스트리 + side-effect 집계(read/write/network/delete/exec) + 위험 점수 + C/S 등급/미등록 도구 BLOCKED
+- **SVC-AI-ADV-R77**: Retrieval Chunk Deduplicator (`retrieval-chunk-deduplicator.ts`, 11 테스트) — 정규화 + FNV-1a 해시 exact dedup + 토큰 Jaccard 의미 dedup(≥0.85) + score 기반 대표 선정 + C/S 등급 차단
+- **SVC-AI-ADV-R78**: Prompt Variant Experimenter (`prompt-variant-experimenter.ts`, 12 테스트) — 가중치 합계 검증 + FNV-1a 결정적 할당 + 변형별 통계(quality/latency/success) + 승자 판정(Δ≥0.05/minSamples)
+- **SVC-AI-ADV-R79**: Multi-LLM Fallback Router (`multi-llm-fallback-router.ts`, 15 테스트) — priority/cost/latency 정책 + 시크릿 하드코딩 차단 + 서킷브레이커(3회 실패 open/30s 쿨다운) + half-open 복귀 + 호출 집계
+- **SVC-AI-ADV-R80**: AI Telemetry Replayer (`ai-telemetry-replayer.ts`, 14 테스트) — C/S 등급 차단 + 이메일/전화/주민번호 마스킹 + FNV-1a 해시 비교 replay + 회귀 판정(match·latency) + TTL evict
+
