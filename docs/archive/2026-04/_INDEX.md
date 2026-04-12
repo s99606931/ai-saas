@@ -207,6 +207,15 @@
 | **SVC-AI-ADV-R27** AI Gateway Orchestrator (게이트웨이) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R27-ai-gateway/` |
 | **SVC-AI-ADV-R28** AI Compliance Checker (규제 준수 검증) | 2026-04-11 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R28-ai-compliance-checker/` |
 | **SVC-REQVALID-R28** 요청 검증기 패키지 | 2026-04-11 | 100% | (완료, 아카이브 대기) |
+| **SVC-AI-ADV-R232** AI기반 자동 API 모니터링 (`api-monitoring-ai.ts`, 9 테스트) | 2026-04-12 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R232-api-monitoring-ai/` |
+| **SVC-AI-ADV-R233** AI기반 공공 데이터 품질 예측 (`public-data-quality-predictor.ts`, 9 테스트) | 2026-04-12 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R233-public-data-quality-predictor/` |
+| **SVC-AI-ADV-R234** AI기반 서비스 메시 트래픽 최적화 (`service-mesh-traffic-optimizer.ts`, 8 테스트) | 2026-04-12 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R234-service-mesh-traffic-optimizer/` |
+| **SVC-AI-ADV-R235** AI기반 자동 보안 감사 보고서 (`auto-security-audit-reporter.ts`, 8 테스트) | 2026-04-12 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R235-auto-security-audit-reporter/` |
+| **SVC-AI-ADV-R236** AI기반 사용자 권한 자동 추천 (`permission-recommendation-ai.ts`, 9 테스트) | 2026-04-12 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R236-permission-recommendation-ai/` |
+| **SVC-AI-ADV-R237** AI기반 서버리스 워크플로우 최적화 (`serverless-workflow-optimizer.ts`, 8 테스트) | 2026-04-12 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R237-serverless-workflow-optimizer/` |
+| **SVC-AI-ADV-R238** AI기반 공공 조달 자동화 (`public-procurement-automation-ai.ts`, 9 테스트) | 2026-04-12 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R238-public-procurement-automation-ai/` |
+| **SVC-AI-ADV-R239** AI기반 실시간 이상 거래 탐지 (`realtime-transaction-anomaly-detector.ts`, 8 테스트) | 2026-04-12 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R239-realtime-transaction-anomaly-detector/` |
+| **SVC-AI-ADV-R240** AI기반 멀티클라우드 네트워크 최적화 (`multicloud-network-optimizer.ts`, 9 테스트) | 2026-04-12 | 100% | `docs/archive/2026-04/SVC-AI-ADV-R240-multicloud-network-optimizer/` |
 
 ## av-skill 요약
 
@@ -742,3 +751,22 @@ XAI 추론 추적·테넌트 과금 리포트·공공 서류 인텐트 분류·�
 - **SVC-AI-ADV-R202**: AI Dynamic API Router (`ai-dynamic-api-router.ts`, 7 테스트) — ROUND_ROBIN/LATENCY/WEIGHTED/LEAST_CONN 라우팅, UNHEALTHY 제외 fallback.
 - **SVC-AI-ADV-R203**: Public Data Auto Labeler (`public-data-auto-labeler.ts`, 8 테스트) — N2SF C/S 차단 + 키워드 기반 POLICY/FINANCE/WELFARE/INFRASTRUCTURE/ENVIRONMENT/GENERAL 분류.
 - **SVC-AI-ADV-R204**: RCA Engine AI v2 (`rca-engine-ai-v2.ts`, 8 테스트) — 이벤트 신호 키워드 기반 INFRASTRUCTURE/APPLICATION/DATABASE/NETWORK/HUMAN_ERROR 근본원인 + confidence 산출.
+- **SVC-AI-ADV-R232**: API Monitoring AI (`api-monitoring-ai.ts`, 9 테스트) — SLA_BREACH/ERROR_RATE/NO_TRAFFIC 알림 + 엔드포인트별 필터 + p99 백분위.
+- **SVC-AI-ADV-R233**: Public Data Quality Predictor (`public-data-quality-predictor.ts`, 9 테스트) — N2SF C/S 차단 + COMPLETENESS/ACCURACY/CONSISTENCY/TIMELINESS 4차원 + 기본70점 FAIR + ≥90 EXCELLENT/≥75 GOOD/≥60 FAIR/<60 POOR.
+- **SVC-AI-ADV-R234**: Service Mesh Traffic Optimizer (`service-mesh-traffic-optimizer.ts`, 8 테스트) — errorRate≥50%→OPEN(retryBudget=0)/20~50%→HALF_OPEN/avgLatency>500ms→LEAST_REQUEST 권고.
+- **SVC-AI-ADV-R235**: Auto Security Audit Reporter (`auto-security-audit-reporter.ts`, 8 테스트) — CRITICAL×20+HIGH×10+MEDIUM×5+LOW×2 감점 + max(0, 100-deduction) complianceScore + criticalIssues 목록.
+- **SVC-AI-ADV-R236**: Permission Recommendation AI (`permission-recommendation-ai.ts`, 9 테스트) — ADMIN>DELETE>WRITE>READ 패턴 기반 최소 권한 + rankDiff≥2→HIGH/≥1→MEDIUM/0→LOW 위험.
+- **SVC-AI-ADV-R237**: Serverless Workflow Optimizer (`serverless-workflow-optimizer.ts`, 8 테스트) — 메모리 사용률<40%→DECREASE/≥85%→INCREASE + HTTP+콜드스타트>30%→ENABLE_PROVISIONED.
+- **SVC-AI-ADV-R238**: Public Procurement Automation AI (`public-procurement-automation-ai.ts`, 9 테스트) — vendorCount<2(+30)/SOLE_SOURCE(+25)/EMERGENCY(+20)/urgency(+20)/>5억(+15) + 1억이상 OR HIGH/VERY_HIGH→위원회 심의.
+- **SVC-AI-ADV-R239**: Realtime Transaction Anomaly Detector (`realtime-transaction-anomaly-detector.ts`, 8 테스트) — LARGE_AMOUNT(3배 초과 CRITICAL 차단)/UNUSUAL_HOUR/FOREIGN_LOCATION(50% 초과 HIGH)/VELOCITY(60초 5건 HIGH 차단).
+- **SVC-AI-ADV-R240**: Multicloud Network Optimizer (`multicloud-network-optimizer.ts`, 9 테스트) — packetLoss>2%→REROUTE / bandwidthUtil>85%→INCREASE_BANDWIDTH / latency>200ms+비온프레미스→ENABLE_CDN.
+- **SVC-AI-ADV-R250**: Team Collaboration Optimizer (`team-collaboration-optimizer.ts`, 9 테스트) — 팀원 부하 분석 + 스킬매칭60%/부하균형40% 배분 권고 + CRITICAL 과부하/DEADLINE_RISK 병목 탐지.
+- **SVC-AI-ADV-R251**: KOSIS Statistics Analyzer (`kosis-statistics-analyzer.ts`, 9 테스트) — 선형 추세(최소제곱)·Z-score 이상치(|z|≥2)·변동계수 기반 TREND/VOLATILITY/EXTREME 인사이트 생성.
+- **SVC-AI-ADV-R252**: Predictive Maintenance AI (`predictive-maintenance-ai.ts`, 9 테스트) — 진동·온도·압력·전류 센서 warn/critical 2단 임계값 이상 탐지 + 가중치 기반 고장확률 + IMMEDIATE/WEEK/MONTH/SCHEDULED 정비 권고.
+- **SVC-AI-ADV-R253**: Model Fairness Evaluator (`model-fairness-evaluator.ts`, 9 테스트) — Demographic Parity·Equal Opportunity 계산 + 80% rule Disparate Impact FAIR/BORDERLINE/BIASED + DATA/MODEL/POSTPROCESS 완화 권고.
+- **SVC-AI-ADV-R254**: Citizen Service Recommender (`citizen-service-recommender.ts`, 10 테스트) — O등급 시민 프로필 전용 + 연령/소득/지역/가구원 자격 매칭 + 자격60+긴급도20+선호20 우선순위 점수 + citizenId 마스킹 감사 로그.
+- **SVC-AI-ADV-R255**: Smart Contract Validator (`smart-contract-validator.ts`, 11 테스트) — 공공계약 필수 조항 keyword 매칭 + 위험 키워드(독점40/면책30/무제한20) 가중치 점수 + VALID(필수100+위험0)/WARN(위험<50)/INVALID(필수누락 또는 위험≥50) 3단 판정 + contractId 마스킹.
+- **SVC-AI-ADV-R256**: AI Budget Allocator (`ai-budget-allocator.ts`, 10 테스트) — priority×0.4+urgency×0.3+execRate×0.3 스코어 + greedy 배분 + 부서 평균 2배 초과 시 10% 차감 형평성 보정 + Gini 계수 FAIR(<0.25)/MODERATE/UNFAIR(≥0.5).
+- **SVC-AI-ADV-R257**: Multilingual NLP Pipeline (`multilingual-nlp-pipeline.ts`, 12 테스트) — 유니코드 범위 기반 ko/zh/en/ru/ar 언어 감지 + 언어별 불용어 제거 키워드 추출 + intent keyword 매칭 점수 분류 + 텍스트 10000자 제한 + citizenId 마스킹.
+- **SVC-AI-ADV-R258**: Digital Twin Sync Engine (`digital-twin-sync-engine.ts`, 12 테스트) — 물리 엔티티 등록·업데이트 + added/removed/changed delta + entityType별 field min/max 규칙 LOW/MED/HIGH 이상 감지 + 버전 이력 관리 + entityId 마스킹.
+- **SVC-AI-ADV-R259**: AI Model Versioning Gateway (`ai-model-versioning-gateway.ts`, 12 테스트) — BLUE/GREEN 모델 등록 + FNV-1a 해시 결정론 트래픽 분할 + recordCall 통계(avgLatency·errorCalls) + rollback 시 GREEN→RETIRED+blue 100% + caller 마스킹.
