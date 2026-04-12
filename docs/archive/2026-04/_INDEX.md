@@ -524,3 +524,23 @@
 - [MTU-N297](./MTU-N297-budget-analysis-ai/_INDEX.md): 예산서 AI 분석/이상 탐지 (5개 테스트)
 - [MTU-N298](./MTU-N298-regulatory-sandbox-analyzer/_INDEX.md): 규제 샌드박스 영향도 분석 (1개 테스트)
 - [MTU-N299](./MTU-N299-procurement-bid-analyzer/_INDEX.md): 공공조달 입찰 분석 (5개 테스트)
+
+## SVC-AI-ADV R49~R53 (2026-04-12 세션 #126)
+
+차세대 AI 추론 최적화·품질 평가 모듈 5종 PDCA 완료. 96개 단위 테스트 100% 통과.
+
+- **SVC-AI-ADV-R49**: LLM-as-a-Judge 자동 품질 평가 (`llm-as-judge.ts`, 23 테스트) — 4축 채점/페어와이즈/앙상블/자기편향감지
+- **SVC-AI-ADV-R50**: Speculative Decoding Router (`speculative-router.ts`, 18 테스트) — draft→target 검증/자동 fallback
+- **SVC-AI-ADV-R51**: Long-Context Compressor (`long-context-compressor.ts`, 19 테스트) — TF-IDF+위치 가중치 압축/청크 모드
+- **SVC-AI-ADV-R52**: Adaptive Retrieval Strategy (`adaptive-retrieval-strategy.ts`, 20 테스트) — BM25/dense/hybrid/multi-hop 자동 라우팅
+- **SVC-AI-ADV-R53**: Self-Correction Loop (`self-correction-loop.ts`, 16 테스트) — Reflexion 패턴 비평→수정 루프
+
+## SVC-AI-ADV R54~R58 (2026-04-12 세션 #127)
+
+테넌트 격리·비용 추적·추론 안전성 모듈 5종 PDCA 완료. 78개 단위 테스트 100% 통과.
+
+- **SVC-AI-ADV-R54**: Multi-Tenant Embedding Cache (`multi-tenant-embedding-cache.ts`, 17 테스트) — 전용/공유 2계층 LRU + 테넌트 격리 + 공유 O등급 한정
+- **SVC-AI-ADV-R55**: AI Cost Allocation (`ai-cost-allocation.ts`, 12 테스트) — 테넌트/모델 단가 테이블 + 호출별 비용 추적 + 기간 집계
+- **SVC-AI-ADV-R56**: Cross-Document Reasoning (`cross-document-reasoning.ts`, 13 테스트) — 참조 그래프 BFS + 순환 방지 + 근거 체인 생성
+- **SVC-AI-ADV-R57**: Privacy-Preserving Inference (`privacy-preserving-inference.ts`, 18 테스트) — 라플라스/가우시안 DP + k-익명화 + ε 예산 관리
+- **SVC-AI-ADV-R58**: AI Watermark Advanced (`ai-watermark-advanced.ts`, 18 테스트) — Kirchenbauer 그린리스트 z-score 검증 + HMAC 서명
