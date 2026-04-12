@@ -1,0 +1,20 @@
+{
+  "name": "@public-saas/data-mask",
+  "version": "0.1.0",
+  "private": true,
+  "description": "공공기관 SaaS -- N2SF 데이터 등급 기반 PII 마스킹 엔진 (CSAP D-09, N2SF N-05)",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}
