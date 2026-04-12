@@ -1,0 +1,13 @@
+{
+  "name": "@ai-saas/platform-completion",
+  "version": "1.0.0",
+  "description": "플랫폼 통합·완성도 모듈 (MTU-N491~N510)",
+  "main": "dist/index.js",
+  "scripts": { "build": "tsc", "test": "jest --coverage" },
+  "dependencies": { "zod": "^3.23.0" },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0"
+  }
+}
