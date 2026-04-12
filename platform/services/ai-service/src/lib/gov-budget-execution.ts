@@ -87,16 +87,19 @@ export class GovBudgetExecution {
       const item = items.find((i) => i.itemId === itemId);
       if (!item) continue;
       const amounts = list.map((e) => e.amount);
-      const mean = amounts.reduce((s, v) => s + v, 0) / Math.max(1, amounts.length);
       const max = Math.max(...amounts);
+      const others = amounts.filter((a) => a !== max);
+      const baselineMean = others.length > 0
+        ? others.reduce((s, v) => s + v, 0) / others.length
+        : max;
       for (const e of list) {
-        if (e.amount > mean * 5 && e.amount === max) {
+        if (e.amount === max && others.length > 0 && e.amount > baselineMean * 5) {
           anomalies.push({
             txId: e.txId,
             itemId,
             kind: 'spike',
             severity: 'high',
-            note: `평균 대비 ${(e.amount / Math.max(1, mean)).toFixed(1)}배 급증`,
+            note: `평균 대비 ${(e.amount / Math.max(1, baselineMean)).toFixed(1)}배 급증`,
           });
         }
       }
