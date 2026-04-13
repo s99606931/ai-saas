@@ -1071,3 +1071,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R528**: School Violence Prevention AI (`school-violence-prevention-ai.ts`, 6 테스트) — 결석/성적하락/동료신고/상담사우려/온라인갈등/자해언급 가중 + 학급크기 정규화 + 자해언급 즉시 urgent + 단계별 조치 권고.
 - **SVC-AI-ADV-R529**: Public Data Quality AI (`public-data-quality-ai.ts`, 6 테스트) — 완전성(결측률)·정확성(무효행)·적시성(갱신경과) 3축 + 가중 종합 + A~F 등급 + 자동 이슈 리스트.
 - **SVC-AI-ADV-R530**: Admin Petition Classifier AI (`admin-petition-classifier-ai.ts`, 6 테스트) — 부서 키워드 점수 + 주민등록번호/전화/이메일 자동 마스킹(CSAP D-12) + 긴급 키워드 기반 routine/priority/urgent + 1·2차 부서 + 신뢰도.
+- **SVC-AI-ADV-R531**: Disaster Management AI System (`disaster-management-ai-system.ts`, 6 테스트) — 재난 이벤트 수집 + 인구·피해액 가중 심각도(info~critical) + 지역 자원 용량 기반 배정 + 미충족 용량 추적.
+- **SVC-AI-ADV-R532**: Environmental Monitoring AI (`environmental-monitoring-ai.ts`, 6 테스트) — PM2.5/PM10/O3/NO2/pH/탁도 측정 수집 + pH 역방향 임계 + good/moderate/unhealthy/hazardous 4단계 공기질 평가.
+- **SVC-AI-ADV-R533**: Road Safety Analytics AI (`road-safety-analytics-ai.ts`, 6 테스트) — 사고 기록 + 사망·심각사고 가중 블랙스팟 위험 점수 + 도로별 누적 통계 + 임계값 기반 필터.
+- **SVC-AI-ADV-R534**: Lifelong Education Matcher AI (`lifelong-education-matcher-ai.ts`, 6 테스트) — 학습자 관심사·지역·수준 매칭 + 정원 초과 제외 + 이름 마스킹 + 수강 신청 시 정원 검증.
+- **SVC-AI-ADV-R535**: Smart City Sensor Aggregator AI (`smart-city-sensor-aggregator-ai.ts`, 6 테스트) — 온도/소음/교통/주차 등 6종 센서 + 평균·표준편차 + Z-score 기반 이상 탐지 + 구역별 조회.
+- **SVC-AI-ADV-R536**: Public Hospital Queue AI (`public-hospital-queue-ai.ts`, 6 테스트) — KTAS 1~5 트리아지 자동 정렬 + 평행 진료실 고려 대기시간 + PII 마스킹 + 진료 완료 제거.
+- **SVC-AI-ADV-R537**: AI Social Media Risk Monitor (`ai-social-media-risk-monitor.ts`, 6 테스트) — 키워드 규칙 가중치 + 도달 수 증폭 계수 + none/low/medium/high 4단계 + 핸들 익명화.
+- **SVC-AI-ADV-R538**: Government Report Summarizer AI (`government-report-summarizer-ai.ts`, 6 테스트) — 제·장·절 헤딩 기반 섹션 분리 + 단어 빈도 기반 핵심 문장 추출 + 부서별 조회 + 이메일/주민번호 마스킹.
+- **SVC-AI-ADV-R539**: AI Disability Service Matcher (`ai-disability-service-matcher.ts`, 6 테스트) — 6유형 장애·중증도·소득등급·연령·지역 5기준 자격 검증 + 저소득 우선 점수 + 지역별 서비스 카운트.
+- **SVC-AI-ADV-R540**: Public Cemetery Management AI (`public-cemetery-management-ai.ts`, 6 테스트) — 매장/납골/자연장 3종 구역 + 해시 가족ID(PII 금지) 계약 + 만료 임박 조회 + 구역별 점유율.
