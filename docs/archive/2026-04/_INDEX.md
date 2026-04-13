@@ -943,3 +943,31 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R402**: Federated Identity Manager AI (`federated-identity-manager-ai.ts`, 6 테스트) — trustedIssuer 검증 + ISO8601 expiry + 역할 매핑 전파(기본 guest) + CSAP D-08 / N-01.
 - **SVC-AI-ADV-R403**: Public Finance Optimizer (`public-finance-optimizer.ts`, 6 테스트) — roi=benefit/max(cost,1) + top3 확대 + bottom3(roi<1.0) 감축 + reallocAmount=bottom.cost*0.2.
 - **SVC-AI-ADV-R404**: AI-Based SLA Enforcer (`ai-sla-enforcer.ts`, 7 테스트) — violationRatio=clip((target-actual)/target, 0~1) + penalty=basePenalty*ratio + L1/L2/L3/none.
+- **SVC-AI-ADV-R394-v2**: Intelligent Log Aggregator AI (`intelligent-log-aggregator-ai.ts`, 8 테스트) — N2SF C/S 차단 + 패턴 키=첫5단어 + 에러율≥0.2||FATAL>0→anomaly + 상위5패턴 반환.
+- **SVC-AI-ADV-R395-v2**: Public Task Risk Assessor AI (`public-task-risk-assessor-ai.ts`, 8 테스트) — N2SF C/S 차단 + 마감초과(+30)/촉박(+20) + 예산5억+(+20) + 이해관계자10명+(+15) + PII(+20) + 외부연계(+15).
+- **SVC-AI-ADV-R396-v2**: Auto SLA Report Generator AI (`auto-sla-report-generator-ai.ts`, 8 테스트) — A/B/C/D/F 등급 + 가용성/응답/에러율/MTTR 차감 + IMPROVED/STABLE/DEGRADED 추세.
+- **SVC-AI-ADV-R397-v2**: Realtime API Threat Detector (`realtime-api-threat-detector.ts`, 8 테스트) — SQL/XSS/경로순회 정규식 + BRUTE_FORCE(60초 내 401 5회+) + RATE_ABUSE(60초 내 100회+) + CRITICAL→blocked.
+- **SVC-AI-ADV-R398-v2**: Smart Resource Reservation AI (`smart-resource-reservation-ai.ts`, 8 테스트) — 시간충돌탐지 + best-fit 최소초과용량 + URGENT→position1 대기열 + 취소처리.
+- **SVC-AI-ADV-R399-v2**: Public Language Corrector V2 (`public-language-corrector-v2.ts`, 7 테스트) — N2SF C/S 차단 + JARGON_MAP(8항목) + INFORMAL_MAP(8항목) + 가독성/격식 점수.
+- **SVC-AI-ADV-R400-v2**: Multitenant Behavior Analyzer AI (`multitenant-behavior-analyzer-ai.ts`, 7 테스트) — BULK_EXPORT(1000건+) + OFF_HOURS_ACCESS(UTC20~02시 3건+) + CROSS_TENANT_PROBE(CRITICAL) + UNUSUAL_VOLUME(1시간 1000건+) + riskScore≥60→blocked.
+- **SVC-AI-ADV-R401-v2**: CICD Optimizer V2 (`cicd-optimizer-v2.ts`, 7 테스트) — PARALLELIZE(비캐시 병렬화2개+) + CACHE_ENABLE(BUILD/TEST) + INCREASE_RESOURCES(병목40%+) + estimatedSavingMs.
+- **SVC-AI-ADV-R402-v2**: Service Dependency Documenter V2 (`service-dependency-documenter-v2.ts`, 8 테스트) — MARKDOWN/MERMAID/JSON 형식 + 아웃바운드/인바운드 의존성 + criticalDependencies 목록.
+- **SVC-AI-ADV-R412**: Intelligent Event Stream Processor (`intelligent-event-stream-processor.ts`, 7 테스트) — HEALTHY/CONGESTED(lag>threshold)/IDLE + OPTIMAL/DEGRADED/CRITICAL(절반초과) + 빈토픽=OPTIMAL + 감사로그.
+- **SVC-AI-ADV-R413**: Employee Skill Matcher AI (`employee-skill-matcher-ai.ts`, 7 테스트) — 역량교집합 점수 + 5년이상경력+10점보너스 + meetsExperience + employeeId PII 마스킹 + topCandidate.
+- **SVC-AI-ADV-R414**: Security Policy Auto Updater (`security-policy-auto-updater.ts`, 7 테스트) — CVE점수(CRITICAL=40/HIGH=30/MEDIUM=15/LOW=5) + URGENT(≥40)/HIGH(≥20)/MEDIUM(≥10)/LOW + CRITICAL→autoRemediable=false + immediateActions.
+- **SVC-AI-ADV-R415**: Realtime Service Topology Analyzer (`realtime-service-topology-analyzer.ts`, 6 테스트) — SPOF(인입0+아웃≥2) + DFS maxDepth + criticalPath(루트부터 아웃엣지 많은 순) + 권고사항.
+- **SVC-AI-ADV-R416**: Public Data Utilization Index AI (`public-data-utilization-index-ai.ts`, 7 테스트) — N2SF C/S 등록 차단 + 접근(0.4)+다운로드(0.6) 정규화점수 + HIGH(≥70)/MEDIUM/LOW_UTILIZATION(<20).
+- **SVC-AI-ADV-R417**: Container Security Scanner V2 (`container-security-scanner-v2.ts`, 7 테스트) — BLOCK(CRITICAL CVE||runAsRoot) + WARNING(HIGH≥2) + PASS + securityScore(100-CVE점수합-root20) + fixAvailable 권고.
+- **SVC-AI-ADV-R418**: Stakeholder Analyzer AI (`stakeholder-analyzer-ai.ts`, 7 테스트) — 영향×관심 사분면(MANAGE_CLOSELY/KEEP_SATISFIED/KEEP_INFORMED/MONITOR, HIGH≥5) + stakeholderId PII 마스킹 + criticalStakeholders.
+- **SVC-AI-ADV-R419**: Service Complexity Reducer AI (`service-complexity-reducer-ai.ts`, 6 테스트) — 복잡도=dep×3+api×2+loc/100+circular+15 + SIMPLE(<10)/MODERATE(<20)/COMPLEX(<35)/OVERLY_COMPLEX(≥35) + splitRecommended + priorityActions.
+- **SVC-AI-ADV-R420**: Multitenant Log Isolation Verifier (`multitenant-log-isolation-verifier.ts`, 6 테스트) — 메시지내 타 tenantId 혼재→VIOLATED+CRITICAL + userId PII 마스킹 감사로그 + 격리 권고사항.
+- **SVC-AI-ADV-R421**: AI-Powered Grant Reviewer (`grant-reviewer-ai.ts`, 6 테스트) — N2SF C/S 차단 + 소득캡/최소연령 자격 + recommendedAmount=base*(1-income/cap) + fraudHistory→HIGH 리스크 + INCOME_OVER_CAP/AGE_UNDER_MIN 사유코드.
+- **SVC-AI-ADV-R422**: Smart Parking Allocator AI (`smart-parking-allocator-ai.ts`, 6 테스트) — EMERGENCY(100)>DISABLED(90)>STAFF(60)>VISITOR(30) 우선순위 정렬 + nearest-fit 배정 + 활용률>0.9→SATURATED alert + NO_SLOT 처리.
+- **SVC-AI-ADV-R423**: Public Transport Optimizer (`public-transport-optimizer.ts`, 6 테스트) — loadRatio>0.85→INCREASE, <0.3→DECREASE, else MAINTAIN + estimatedWaitMin=60/headway + N2SF 차단.
+- **SVC-AI-ADV-R424**: Environmental Impact Assessor (`environmental-impact-assessor.ts`, 6 테스트) — ghg=clip(em*2) + noise=clip((dB-40)*2) + water=clip(ww*5) + totalImpact=ghg*0.5+noise*0.2+water*0.3 + A~E 5등급.
+- **SVC-AI-ADV-R425**: AI-Based Tax Compliance Checker (`tax-compliance-checker-ai.ts`, 6 테스트) — MISSING_TAXPAYER_ID/INVALID_INCOME→CRITICAL + OVER_DEDUCTION(>50%)→HIGH + CALC_MISMATCH(>100원)→MEDIUM + compliant=~(CRITICAL|HIGH).
+- **SVC-AI-ADV-R426**: Workforce Planning AI (`workforce-planning-ai.ts`, 7 테스트) — loadPerHead=workload/headcount + >threshold*1.2→INCREASE, <*0.6→DECREASE + neededDelta=round(workload/th)-headcount + top3 증원 우선순위.
+- **SVC-AI-ADV-R427**: Public Asset Manager AI (`public-asset-manager-ai.ts`, 6 테스트) — ageRatio=elapsed/life + <0.7 KEEP(AGE_OK), <1.0 REVIEW(APPROACHING_EOL), ≥1.0 DISPOSE(END_OF_LIFE) + condition=BAD→강제 DISPOSE(BAD_CONDITION).
+- **SVC-AI-ADV-R428**: Citizen Engagement Analyzer (`citizen-engagement-analyzer.ts`, 6 테스트) — participationRate=participants/target(cap 1) + responseScore=rate*100 + engagementIndex=response*0.5+satisfaction*0.5 + LOW<40/MID<70/HIGH.
+- **SVC-AI-ADV-R429**: AI Policy Impact Simulator v3 (`ai-policy-impact-simulator-v3.ts`, 7 테스트) — revenue=base*(1+elasticityTax*deltaTax) + beneficiaries=base*(1+elasticityBenefit*deltaBenefit) + sideEffect=clip(|dT|*50+|dB|*30) + PROCEED<40/REVIEW<70/REJECT.
+- **SVC-AI-ADV-R430**: Smart Grid Load Balancer AI (`smart-grid-load-balancer-ai.ts`, 7 테스트) — loadRatio>0.9 OVERLOAD, <0.5 SLACK, else NORMAL + overflow=demand-capacity*0.9 + greedy 가장 큰 slack부터 transfer + 과부하 없으면 transfer 없음.
