@@ -991,3 +991,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R448**: Public Contract Monitor (`public-contract-monitor.ts`, 9 테스트) — dueDate<today&progress<1 OVERDUE + daysLeft<7&progress<0.5 AT_RISK + progress≥1 DONE + weighted overallProgress.
 - **SVC-AI-ADV-R449**: Public Finance Audit AI (`public-finance-audit-ai.ts`, 7 테스트) — 한도 테이블(travel=500K/meal=100K/office=200K) + evidence 누락 + date/cat/amount 중복 시그니처 탐지 + HIGH/MED risk.
 - **SVC-AI-ADV-R450**: Public Service Quality Benchmark AI (`public-service-quality-benchmark-ai.ts`, 7 테스트) — 4지표(satisfaction 0.4/response/coverage/transparency 0.2) 가중합 + 동점 satisfaction 우선 + rankings + average.
+- **SVC-AI-ADV-R451**: Traffic Congestion Predictor AI (`traffic-congestion-predictor-ai.ts`, 8 테스트) — 시간 계수(peak 1.6/day 1.0/night 0.5)*날씨(clear 1/rain 1.2/snow 1.5)*(1+event 0.3) + ratio≥2 HIGH/≥1.3 MED.
+- **SVC-AI-ADV-R452**: Public Data Outlier Detector (`public-data-outlier-detector.ts`, 8 테스트) — IQR(Q1/Q3 선형보간) + lower=Q1-1.5IQR/upper=Q3+1.5IQR 범위 밖 LOW/HIGH + Q1/Q3 권고치 제공.
+- **SVC-AI-ADV-R453**: Budget Execution Analyzer V2 (`budget-execution-analyzer-v2.ts`, 8 테스트) — execRate vs expectedRate(monthsElapsed/total) ±0.2 → UNDER/OVER + 말기 0.9+ & exec<0.7 → CARRYOVER_RISK + 부서별 집계.
+- **SVC-AI-ADV-R454**: Disaster Recovery Prioritizer (`disaster-recovery-prioritizer.ts`, 8 테스트) — damage*0.4 + min(residents/10000,1)*0.3 + critW(low1/med2/high3)/3*0.3 정렬 + damage≥0.8&high=URGENT.
+- **SVC-AI-ADV-R455**: AI Permit Processor (`ai-permit-processor.ts`, 8 테스트) — 허가 유형별 필수 문서(building/business/environment) 체크 + 누락 NEED_DOCS + environment 자동 REVIEW 플래그 + 감사 로그.
+- **SVC-AI-ADV-R456**: Public Debt Risk Assessor (`public-debt-risk-assessor.ts`, 8 테스트) — debtRatio*0.5 + repaymentRatio*0.3 + (1-reserveRatio)*0.2 가중합 + ≥0.7 CRITICAL/≥0.5 WARNING/≥0.3 CAUTION/SAFE.
+- **SVC-AI-ADV-R457**: Citizen Complaint Resolver AI (`citizen-complaint-resolver-ai.ts`, 8 테스트) — FAQ 키워드 히트 비율 + 대소문자 무관 토큰 매칭 + score≥0.5 TOP1 반환 + 실패 시 HUMAN_REVIEW.
+- **SVC-AI-ADV-R458**: Public Sector AI Readiness (`public-sector-ai-readiness.ts`, 8 테스트) — data 0.3/infra 0.25/talent 0.25/governance 0.2 가중합 정규화 + ≥0.8 ADVANCED/≥0.6 PROGRESSING/≥0.4 EMERGING/INITIAL + 최약 영역 식별.
+- **SVC-AI-ADV-R459**: Smart Waste Management AI (`smart-waste-management-ai.ts`, 8 테스트) — fillLevel≥0.8 필터 + (0,0) 시작 nearest-neighbor 탐욕 순회 + 총거리 계산 + ≥1.0 overflow 알람.
+- **SVC-AI-ADV-R460**: Interagency Data Exchange AI (`interagency-data-exchange-ai.ts`, 8 테스트) — Mapping 기반 string/number/date(YYYY-MM-DD) 변환 + 누락·NaN·형식 불일치 필드는 lostFields 배열로 보고.
