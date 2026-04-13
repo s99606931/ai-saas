@@ -1111,3 +1111,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R568**: Government Staff Wellness AI (`government-staff-wellness-ai.ts`, 6 테스트) — 익명 참조 + 초과근무/스트레스/수면/운동/병가/번아웃 종합 점수 + healthy/watch/at-risk/critical 4단계 + 맞춤 개입.
 - **SVC-AI-ADV-R569**: AI Mental Health Triage (`ai-mental-health-triage.ts`, 6 테스트) — PHQ/GAD 유사 우울·불안 점수 + 자살관념 가중 × 15 + 지지체계 감점 → routine/priority/urgent/emergency + 자가관리/상담/정신과/입원 의뢰.
 - **SVC-AI-ADV-R570**: Public Food Safety Inspector AI (`public-food-safety-inspector-ai.ts`, 6 테스트) — HACCP 6종 카테고리 가중(냉장/교차오염 ×5) + 심각도 1~5 차감 + excellent/good/warning/fail/closure 5등급 + 중대위반 3건 폐쇄 + 자동 개선조치.
+- **SVC-AI-ADV-R571**: Traffic Accident Analysis AI (`traffic-accident-analysis-ai.ts`, 6 테스트) — 도로유형/기상/야간/차량수/사상자 가중 → minor/moderate/severe/fatal 4단계 + 위치 통계 집계 + 임계값 기반 위험 집중 지점 식별.
+- **SVC-AI-ADV-R572**: AI Flood Evacuation Planner (`ai-flood-evacuation-planner.ts`, 6 테스트) — 강수량·수위/고도 차 기반 normal/watch/warning/emergency 4단계 + 최근접 대피소 우선 + 가용 대체 대피소 fallback + 인구 비율 대피 계획.
+- **SVC-AI-ADV-R573**: Agricultural Land Registry AI (`agricultural-land-registry-ai.ts`, 6 테스트) — 5종 지목 × idle/in_use/converted/reclaimed 상태 + 보호구역 전환 error 검증 + 최소 면적 경고 + 지목별 총 면적 집계.
+- **SVC-AI-ADV-R574**: Public Rental Housing AI (`public-rental-housing-ai.ts`, 6 테스트) — 5종 가구유형 × 소득/자산 한도 자격 + 장애/노인/신혼/다자녀/지역거주/저소득 가점 + 최저 임대료 유닛 배정.
+- **SVC-AI-ADV-R575**: AI Library Recommendation Engine (`ai-library-recommendation-engine.ts`, 6 테스트) — 선호 분야 교집합 × 20점 + 인기도 15/8점 가점 + 선호 저자 가점(평점≥4) + 이미 읽은 도서 제외 + 인기 도서 랭킹.
+- **SVC-AI-ADV-R576**: Youth Counseling AI Advisor (`youth-counseling-ai-advisor.ts`, 6 테스트) — 익명 코드 강제(실명 거부) + 자살사고/자해/학폭/지지망 가중 → low/moderate/high/critical + 1393 자동 연계 + 위기 세션 목록.
+- **SVC-AI-ADV-R577**: Welfare Benefit Matching AI (`welfare-benefit-matching-ai.ts`, 6 테스트) — 가구 구성원 특성(노인/장애/아동/한부모/실직) × 소득/자산 한도 다급여 자격 매칭 + 월 총 잠재 수급액 합산.
+- **SVC-AI-ADV-R578**: Senior Mobility Support AI (`senior-mobility-support-ai.ts`, 6 테스트) — 이동수준(독립/지팡이/보행기/휠체어) × 보호자/휠체어 차량 요건 매칭 + 출발지 근접 + 의료 이동 우선순위 + 배정 히스토리.
+- **SVC-AI-ADV-R579**: Veteran Service Priority AI (`veteran-service-priority-ai.ts`, 6 테스트) — 6종 카테고리(독립/국가유공/전상/6·25/월남/예비) × 장애율/연령/소득/서비스유형 가중 스코어 + 우선순위 큐 랭킹.
+- **SVC-AI-ADV-R580**: Sports Talent Discovery AI (`sports-talent-discovery-ai.ts`, 6 테스트) — 6세~25세 신체프로필 × 6종목(축구/농구/수영/육상/체조/태권도) 적합도 분석 + 신장/점프/스프린트/지구력/유연성/BMI 지표 + 종목별 인재풀.
