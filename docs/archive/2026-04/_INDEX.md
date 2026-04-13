@@ -1051,3 +1051,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R508**: School Performance Analytics AI (`school-performance-analytics-ai.ts`, 6 테스트) — 졸업률·출석·학업·교사비율 가중 + EXCELLENT~NEEDS_IMPROVEMENT 4티어 + 백분위.
 - **SVC-AI-ADV-R509**: AI Park Maintenance Scheduler (`ai-park-maintenance-scheduler.ts`, 6 테스트) — 잔디/가지치기/점검/청소 주기 + ROUTINE/SOON/URGENT + 방문자 가중 작업시간.
 - **SVC-AI-ADV-R510**: Government Debt Risk AI (`government-debt-risk-ai.ts`, 6 테스트) — 부채/GDP·이자/세입·단기부채·급증추세 + STABLE/MONITORING/WARNING/CRITICAL + 재정 권고.
+- **SVC-AI-ADV-R511**: AI Wildfire Early Warning (`ai-wildfire-early-warning.ts`, 6 테스트) — 온도·습도·풍속·식생건조도 다중변수 산불 위험지수 + safe/caution/warning/critical 4단계 + 대피권고.
+- **SVC-AI-ADV-R512**: Gov Energy Efficiency AI (`gov-energy-efficiency-ai.ts`, 6 테스트) — 청사 전력·가스·열량 통합 환산 + 단위면적 효율 점수 + A~E 등급 + 조명/HVAC/외피/행동 절감권고.
+- **SVC-AI-ADV-R513**: AI Public Library Optimizer (`ai-public-library-optimizer.ts`, 6 테스트) — 월별 대출량 트렌드 + 예약 부스트 수요예측 + acquire/maintain/reduce 재고권고 + 카테고리 인기 순위.
+- **SVC-AI-ADV-R514**: Disaster Shelter Allocation AI (`disaster-shelter-allocation-ai.ts`, 6 테스트) — 거리·수용량·접근성 기반 최단 대피소 배분 + 분할 배분 + 가동률 계산.
+- **SVC-AI-ADV-R515**: AI Building Permit Analyzer (`ai-building-permit-analyzer.ts`, 6 테스트) — 용적률·건폐율·높이·이격거리·주차 4용도지역 규칙엔진 + critical/warning/info 이슈 + 100점 환산.
+- **SVC-AI-ADV-R516**: Public Noise Pollution Monitor AI (`public-noise-pollution-monitor-ai.ts`, 6 테스트) — 주거/상업/공업/혼합 시간대(주/야) 한도 비교 + 위반 자동 감지 + low/medium/high 위험도.
+- **SVC-AI-ADV-R517**: AI Waste Reduction Optimizer (`ai-waste-reduction-optimizer.ts`, 6 테스트) — 일반/재활용/음식물/유해/건설 카테고리별 감축률 + 목표량 산출 + 시설 순위 + 권장사항.
+- **SVC-AI-ADV-R518**: Gov Tourism Analytics AI (`gov-tourism-analytics-ai.ts`, 6 테스트) — 월별 방문/체류/지출 통계 + 피크월·계절성 지수 + 지역 요약 + 관광지 순위.
+- **SVC-AI-ADV-R519**: AI Job Placement Service (`ai-job-placement-service.ts`, 6 테스트) — 스킬40+경력20+지역20+급여20 매칭 점수 + 구직자→공고 / 공고→구직자 양방향 추천.
+- **SVC-AI-ADV-R520**: Cultural Heritage Protection AI (`cultural-heritage-protection-ai.ts`, 6 테스트) — 상태·환경·관람압력·연식 통합 위험 + 국가/도/시 등급 가중 + urgent~low 우선순위 + 보존계획 비용·기간 산출.
