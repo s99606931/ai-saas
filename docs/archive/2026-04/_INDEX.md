@@ -1041,3 +1041,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R498**: Public Safety Prediction AI (`public-safety-prediction-ai.ts`, 6 테스트) — 6개 사고 유형 핫스팟 + 사상자 가중 위험점수 + normal/elevated/high/critical 4단계 + 권장 순찰 인원.
 - **SVC-AI-ADV-R499**: AI Subsidy Fraud Detector (`ai-subsidy-fraud-detector.ts`, 6 테스트) — 7개 위험 신호 누적 확률 + 만성수급 이력 + auto_approve/manual_review/investigate/reject 4액션 + 감사 깊이.
 - **SVC-AI-ADV-R500**: Smart Public Office AI (`smart-public-office-ai.ts`, 6 테스트) — **500 라운드 이정표** — IoT 점유·온도·CO2·전력 → 활용도·쾌적도·에너지효율 + 시설 최적화 액션 + KPI 요약.
+- **SVC-AI-ADV-R501**: AI Budget Execution Monitor (`ai-budget-execution-monitor.ts`, 6 테스트) — 항목별 집행률 + NORMAL/UNDER/OVER/CRITICAL 4상태 + 잔액·권고사항.
+- **SVC-AI-ADV-R502**: Gov Asset Depreciation AI (`gov-asset-depreciation-ai.ts`, 6 테스트) — 정액법/정률법 감가상각 + 장부가액·내용연수 + 교체 필요 자동 판정.
+- **SVC-AI-ADV-R503**: AI Public Procurement Fraud (`ai-public-procurement-fraud.ts`, 6 테스트) — 단독입찰·가격클러스터링·근접추정가·동일제출시각 + LOW/MEDIUM/HIGH/CRITICAL 4단계.
+- **SVC-AI-ADV-R504**: Smart Traffic Signal Optimizer (`smart-traffic-signal-optimizer.ts`, 6 테스트) — 남북/동서 우세 판정 + 보행자 가중치 + 동적 녹색시간 산출.
+- **SVC-AI-ADV-R505**: AI Public Event Coordinator (`ai-public-event-coordinator.ts`, 6 테스트) — VENUE/STAFF/EQUIPMENT/PERMIT 자원 검증 + 4상태 + 대규모 행사 안전권고.
+- **SVC-AI-ADV-R506**: Healthcare Resource Allocator AI (`healthcare-resource-allocator-ai.ts`, 6 테스트) — 동일지역 우선 + 부분배분 + OK/PARTIAL/UNMET 3상태 + 자원 차감.
+- **SVC-AI-ADV-R507**: AI Climate Adaptation Planner (`ai-climate-adaptation-planner.ts`, 6 테스트) — 온도/강수/극단기상/해수면 종합점수 + LOW/MODERATE/HIGH/SEVERE + 4범주 적응 액션.
+- **SVC-AI-ADV-R508**: School Performance Analytics AI (`school-performance-analytics-ai.ts`, 6 테스트) — 졸업률·출석·학업·교사비율 가중 + EXCELLENT~NEEDS_IMPROVEMENT 4티어 + 백분위.
+- **SVC-AI-ADV-R509**: AI Park Maintenance Scheduler (`ai-park-maintenance-scheduler.ts`, 6 테스트) — 잔디/가지치기/점검/청소 주기 + ROUTINE/SOON/URGENT + 방문자 가중 작업시간.
+- **SVC-AI-ADV-R510**: Government Debt Risk AI (`government-debt-risk-ai.ts`, 6 테스트) — 부채/GDP·이자/세입·단기부채·급증추세 + STABLE/MONITORING/WARNING/CRITICAL + 재정 권고.
