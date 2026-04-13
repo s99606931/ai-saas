@@ -901,3 +901,45 @@ XAI 추론 추적·테넌트 과금 리포트·공공 서류 인텐트 분류·�
 - **SVC-AI-ADV-R366**: AI Model Explainability v2 (`ai-model-explainability-v2.ts`, 5 테스트) — feature value*weight 기여도 + |contribution| 정규화 + topN 중요도 반환.
 - **SVC-AI-ADV-R367**: Public Infrastructure Health (`public-infrastructure-health.ts`, 5 테스트) — health=1-age*0.3-usage*0.3-damage*0.4 + HIGH/MEDIUM/LOW 우선순위 정렬.
 - **SVC-AI-ADV-R368**: Citizen Satisfaction Predictor v2 (`citizen-satisfaction-predictor-v2.ts`, 6 테스트) — responseTime*0.3+resolution*0.4+courtesy*0.3 → A/B/C/D 등급 + 하위 3개 약점.
+- **SVC-AI-ADV-R358**: Intelligent Workflow Optimizer AI (`intelligent-workflow-optimizer-ai.ts`, 8 테스트) — 의존성없는 단계 병렬그룹 구성 + 병목(최장) 식별 + 최적화 소요시간 = 그룹별 최대값 합산.
+- **SVC-AI-ADV-R359**: Budget Execution Analyzer AI (`budget-execution-analyzer-ai.ts`, 6 테스트) — 집행률≥90%→ON_TRACK/≥50%→AT_RISK/<50%→UNDERSPENT/>100%→OVERSPENT + 초과/부진 권고.
+- **SVC-AI-ADV-R360**: Auto Infra Scaler AI (`auto-infra-scaler-ai.ts`, 8 테스트) — CPU>target×1.2||queue>100→SCALE_UP / CPU<target×0.5&&queue=0→SCALE_DOWN + min/max 레플리카 클램프.
+- **SVC-AI-ADV-R361**: Public Service Usage Predictor (`public-service-usage-predictor.ts`, 6 테스트) — 3개월 이동평균 예측 + 최근/이전 절반 비교 GROWING/STABLE/DECLINING + 데이터 수 기반 신뢰도.
+- **SVC-AI-ADV-R362**: Security Log Anomaly Detector (`security-log-anomaly-detector.ts`, 7 테스트) — 실패≥5→BRUTE_FORCE HIGH/≥10→CRITICAL + 야간접근→OFF_HOURS_ACCESS + userId/IP 마스킹.
+- **SVC-AI-ADV-R363**: Data Pipeline Optimizer AI (`data-pipeline-optimizer-ai.ts`, 6 테스트) — N2SF C/S→BLOCKED + 최소처리량=병목 + errorRate≥5%→blockedStages + 개선예상률.
+- **SVC-AI-ADV-R364**: Public Performance Automator AI (`public-performance-automator-ai.ts`, 5 테스트) — 가중점수 합산(higherIsBetter반전) + ≥95→EXCELLENT/≥80→GOOD/≥60→AVERAGE/≥40→POOR/FAIL.
+- **SVC-AI-ADV-R365**: Multicloud Cost Predictor AI (`multicloud-cost-predictor-ai.ts`, 7 테스트) — 트렌드×1.1(INCREASING)/×0.95(DECREASING) 예측 + 사용률<50%→절감기회+30%.
+- **SVC-AI-ADV-R366**: Realtime Anomaly Detector v3 (`realtime-anomaly-detector-v3.ts`, 8 테스트) — N2SF C/S→BLOCKED + z-score≥2→WARNING/≥3→ANOMALY/≥4→CRITICAL + alert=true시 경보.
+
+## SVC-AI-ADV R367~R375 (2026-04-13 세션, 트랙 B 8차)
+
+API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 건전성 모니터·데이터 품질 검증·코드 취약점 패턴 분석·배포 전략 최적화·지식 베이스 큐레이션·실시간 서비스 품질 보증·멀티테넌트 데이터 격리 검증 v2 9종 PDCA 완료. 64개 단위 테스트 100% 통과. TypeScript strict 0 에러. CSAP D-06/D-08/D-12 + N2SF N-05 전면 적용.
+
+- **SVC-AI-ADV-R367**: API Gateway Optimizer AI (`api-gateway-optimizer-ai.ts`, 8 테스트) — CIRCUIT_BREAK(에러율≥30%) > RATE_LIMIT_ADJUST(요청90%) > CACHE_ENABLE(레이턴시≥500ms) > ROUTE_REMOVE(DEPRECATED+무트래픽) 우선순위.
+- **SVC-AI-ADV-R368**: Complaint Pattern Predictor AI (`complaint-pattern-predictor-ai.ts`, 7 테스트) — N2SF C/S 차단 + INCREASING/STABLE/DECREASING 트렌드 + 계절 패턴(PEAK/NORMAL) + 핫 지역 Top3 + 평균 처리 기간.
+- **SVC-AI-ADV-R369**: Service Dependency Health Monitor (`service-dependency-health-monitor.ts`, 7 테스트) — 다운스트림 영향 분석 + 크리티컬 패스 탐지 + DOWN→CRITICAL + LOW/MEDIUM/HIGH/CRITICAL 리스크.
+- **SVC-AI-ADV-R370**: Data Quality Validator AI (`data-quality-validator-ai.ts`, 7 테스트) — N2SF C/S 차단 + STRING/NUMBER/DATE/EMAIL/PHONE 타입 검증 + PASSED/WARNING/FAILED + qualityScore(통과비율).
+- **SVC-AI-ADV-R371**: Code Vulnerability Pattern Analyzer (`code-vulnerability-pattern-analyzer.ts`, 7 테스트) — 7개 OWASP 패턴(SQL주입/XSS/시크릿/MD5/경로순회/명령주입/민감로그) + 리스크점수 + CRITICAL=0&&<30→passed.
+- **SVC-AI-ADV-R372**: Deployment Strategy Optimizer AI (`deployment-strategy-optimizer-ai.ts`, 6 테스트) — HOTFIX→BLUE_GREEN/SCHEMA_MIGRATION→RECREATE/HIGH→CANARY + approvalRequired(CRITICAL/HIGH) + 롤백 시간.
+- **SVC-AI-ADV-R373**: Public Knowledge Curator AI (`public-knowledge-curator-ai.ts`, 8 테스트) — N2SF C/S 차단 + APPROVED/PENDING_REVIEW/REJECTED/OUTDATED(우선) + 태그 자동 제안 + 키워드 검색.
+- **SVC-AI-ADV-R374**: Realtime Service Quality Assurer (`realtime-service-quality-assurer.ts`, 7 테스트) — SLA 레이턴시/성공률/에러율 위반 탐지 + WITHIN_SLA/AT_RISK/SLA_BREACH + EXCELLENT~UNACCEPTABLE 5단계.
+- **SVC-AI-ADV-R375**: Multitenant Data Isolation Verifier v2 (`multitenant-data-isolation-verifier-v2.ts`, 7 테스트) — STRICT/STANDARD 격리 레벨 + allowedResources 기반 검증 + DELETE→CRITICAL/WRITE→HIGH + violationLog 분리.
+- **SVC-AI-ADV-R385**: Service Mesh Traffic Anomaly Detector (`service-mesh-traffic-anomaly-detector.ts`, 7 테스트) — ERROR_SURGE(×3→CRITICAL)/LATENCY_SPIKE(×2)/TRAFFIC_SPIKE(×3→HIGH)/TRAFFIC_DROP(<20%→MEDIUM) + 기준선 미등록→오류.
+- **SVC-AI-ADV-R386**: Public Conversational AI Assistant (`public-conversational-ai-assistant.ts`, 7 테스트) — N2SF C/S 세션 차단 + 키워드 인텐트 매칭(COMPLAINT/DOCUMENT/PAYMENT/HOURS) + userId 마스킹 + confidence<0.5→humanHandoff.
+- **SVC-AI-ADV-R387**: API Doc Sync AI (`api-doc-sync-ai.ts`, 6 테스트) — IN_SYNC/MISSING_DOC/OUTDATED/DEPRECATED_UNDOCUMENTED + 미문서화 경로 탐지 + deprecated 목록.
+- **SVC-AI-ADV-R388**: Microservice Dependency Optimizer V2 (`microservice-dependency-optimizer-v2.ts`, 6 테스트) — CIRCULAR(A↔B)/HIGH_COUPLING(≥5입방)/SYNC_BOTTLENECK(sync+>1000rpm) + couplingScore(이슈당-15점).
+- **SVC-AI-ADV-R389**: Public Satisfaction Predictor V2 (`public-satisfaction-predictor-v2.ts`, 7 테스트) — 첫접촉해결률/대기시간/처리단계 요인 + HIGH/MEDIUM/LOW 리스크 + userId 마스킹 감사 로그.
+- **SVC-AI-ADV-R390**: Incident Playbook Generator AI (`incident-playbook-generator-ai.ts`, 7 테스트) — SEV1/2→전쟁방+롤백+에스컬레이션(CTO) + 증상기반(DB/메모리/네트워크) 단계 + communicationTemplate.
+- **SVC-AI-ADV-R391**: Cloud Security Posture Manager AI (`cloud-security-posture-manager-ai.ts`, 7 테스트) — CSP-001(공개+미암호화→CRITICAL) + CSP-002(공개→HIGH) + CSP-003(로깅미적용→MEDIUM) + CSP-004(IAM MFA→HIGH) + postureScore.
+- **SVC-AI-ADV-R392**: Public Data Quality Improver V2 (`public-data-quality-improver-v2.ts`, 7 테스트) — MISSING_VALUE/DUPLICATE(recordId)/FORMAT_ERROR(날짜자동정규화)/OUTLIER(age범위) + qualityScore + autoFixedCount.
+- **SVC-AI-ADV-R393**: Service Cost Optimizer V2 (`service-cost-optimizer-v2.ts`, 7 테스트) — RIGHTSIZE(CPU/MEM<30%→HIGH) + RESERVED_INSTANCE(3개월이력+중간활용률) + STORAGE_TIER_DOWN(스토리지>컴퓨트50%) + LICENSE_CONSOLIDATION(>30%) + topOpportunities.
+- **SVC-AI-ADV-R395**: AI-Driven Meeting Scheduler (`meeting-scheduler-ai.ts`, 6 테스트) — availability*0.5 + preference*0.3 + roomFit*0.2 + top3 슬롯 추천 + N2SF 차단.
+- **SVC-AI-ADV-R396**: Public Benefits Calculator (`public-benefits-calculator.ts`, 6 테스트) — 소득캡+최소연령 자격 + baseAmount + perMemberBonus*(size-1) + reason 코드(INCOME_OVER_CAP/AGE_UNDER_MIN).
+- **SVC-AI-ADV-R397**: Social Media Monitor AI (`social-media-monitor-ai.ts`, 6 테스트) — 키워드 기반 crisis/complaint/positive 분류 + score(-100~100) + alertLevel(crisis>=2→high).
+- **SVC-AI-ADV-R398**: AI-Powered Translation Engine (`ai-translation-engine.ts`, 6 테스트) — glossary Map 기반 KO→EN/JA/ZH + missingTerms + coverage 계산 + 공문서 용어 일관성.
+- **SVC-AI-ADV-R399**: Smart Document Router (`smart-document-router.ts`, 6 테스트) — 부서 키워드 매칭 + confidence(top/total) + 부서 내 최저 load 담당자 선택 + 로드 자동 증가.
+- **SVC-AI-ADV-R400**: Public Safety Score Engine (`public-safety-score-engine.ts`, 6 테스트) — crime/fire/accident/disaster 영역별 정규화 + totalScore + riskFactors(<60) + A~D 등급.
+- **SVC-AI-ADV-R401**: AI Contract Risk Scorer (`ai-contract-risk-scorer.ts`, 6 테스트) — 키워드 가중(critical*40+high*25+med*10, cap 100) + 조항 점수 평균 + low/med/high 등급.
+- **SVC-AI-ADV-R402**: Federated Identity Manager AI (`federated-identity-manager-ai.ts`, 6 테스트) — trustedIssuer 검증 + ISO8601 expiry + 역할 매핑 전파(기본 guest) + CSAP D-08 / N-01.
+- **SVC-AI-ADV-R403**: Public Finance Optimizer (`public-finance-optimizer.ts`, 6 테스트) — roi=benefit/max(cost,1) + top3 확대 + bottom3(roi<1.0) 감축 + reallocAmount=bottom.cost*0.2.
+- **SVC-AI-ADV-R404**: AI-Based SLA Enforcer (`ai-sla-enforcer.ts`, 7 테스트) — violationRatio=clip((target-actual)/target, 0~1) + penalty=basePenalty*ratio + L1/L2/L3/none.

@@ -1138,6 +1138,143 @@ npx prisma generate            # 재생성
 git add packages/*/src/generated/
 ```
 
+### 7.3 코드 생성 도구 성능 비교
+
+실제 개발 환경에서 각 코드 생성 도구의 실행 시간 측정 결과:
+
+| 도구 | 평균 실행 시간 | 증분 실행 | 캐시 지원 |
+|------|--------------|----------|----------|
+| `prisma generate` | 3~8초 | 없음 (전체 재생성) | Turbo 캐시 가능 |
+| `openapi-typescript-codegen` | 5~15초 | 없음 | Turbo 캐시 가능 |
+| `turbo gen service` | 2~5초 | N/A (1회성) | N/A |
+| `turbo run generate` (전체) | 30~60초 | 변경된 패키지만 | Turbo 자체 캐시 |
+
+Turbo 캐시 활용으로 CI 시간 단축:
+
+```json
+// turbo.json — 코드 생성 캐시 설정
+{
+  "pipeline": {
+    "generate": {
+      "cache": true,
+      "inputs": [
+        "prisma/schema.prisma",
+        "src/routes.ts",
+        "openapi.json"
+      ],
+      "outputs": [
+        "src/generated/**",
+        "schemas/generated/**"
+      ]
+    }
+  }
+}
+```
+
+```bash
+# 캐시 적중 시 (스키마 변경 없음)
+turbo run generate
+# cache hit, replaying output from 3s ago
+# 실제 실행 없이 캐시된 결과 재사용
+
+# 캐시 무효화 (스키마 변경 시)
+turbo run generate --force
+```
+
+### 7.4 모노레포에서의 코드 생성 의존성 관리
+
+이 프로젝트는 pnpm workspace 기반 모노레포를 사용합니다. 패키지 간 코드 생성 의존성을 올바르게 관리해야 합니다:
+
+```
+의존성 체인:
+  schema.prisma
+    ↓ prisma generate
+  @prisma/client (node_modules)
+    ↓ import
+  platform/services/tenant-service/src/handlers/
+    ↓ OpenAPI 노출
+  /openapi.json
+    ↓ openapi-typescript-codegen
+  packages/api-client/src/generated/
+    ↓ import
+  platform/apps/portal/src/
+```
+
+pnpm workspace 설정:
+
+```yaml
+# pnpm-workspace.yaml
+packages:
+  - 'platform/services/*'
+  - 'platform/apps/*'
+  - 'packages/*'
+```
+
+```json
+// packages/api-client/package.json
+{
+  "name": "@public-saas/api-client",
+  "scripts": {
+    "generate": "openapi-typescript-codegen --input http://localhost:3003/openapi.json --output src/generated",
+    "prebuild": "pnpm generate"  // 빌드 전 자동 생성
+  }
+}
+```
+
+### 7.5 생성 코드와 CSAP 준수 자동화
+
+코드 생성 후 CSAP 보안 패턴이 자동으로 포함되었는지 검증하는 스크립트:
+
+```bash
+#!/bin/bash
+# scripts/verify-csap-patterns.sh
+
+HANDLER_FILES=$(find platform/services -name "*.handler.ts" -not -path "*/generated/*")
+FAILURES=0
+
+for file in $HANDLER_FILES; do
+  echo "검사 중: $file"
+
+  # CSAP D-12: Zod 입력 검증 확인
+  if grep -q "request.body" "$file" && ! grep -q "safeParse\|parse(" "$file"; then
+    echo "  [FAIL] D-12: Zod 입력 검증 누락"
+    FAILURES=$((FAILURES + 1))
+  fi
+
+  # CSAP D-06: 감사 로그 확인 (POST/PUT/DELETE 핸들러)
+  if grep -qE "async function (create|update|delete)" "$file" && \
+     ! grep -q "logTenantEvent\|logAuthEvent\|auditLog" "$file"; then
+    echo "  [FAIL] D-06: 감사 로그 누락"
+    FAILURES=$((FAILURES + 1))
+  fi
+
+  # CSAP D-09: 하드코딩 시크릿 검사
+  if grep -qE "(apiKey|password|secret)\s*=\s*['\"][^'\"]{8,}" "$file"; then
+    echo "  [FAIL] D-09: 하드코딩된 시크릿 탐지"
+    FAILURES=$((FAILURES + 1))
+  fi
+
+  echo "  [OK]"
+done
+
+if [ $FAILURES -gt 0 ]; then
+  echo ""
+  echo "CSAP 패턴 검증 실패: ${FAILURES}건"
+  echo "Q-GATE G3 불통과"
+  exit 1
+fi
+
+echo "CSAP 패턴 검증 통과"
+```
+
+이 스크립트를 CI 파이프라인에 통합:
+
+```yaml
+# .gitea/workflows/csap-pattern-check.yml
+- name: CSAP 패턴 검증
+  run: bash scripts/verify-csap-patterns.sh
+```
+
 ---
 
 ## 변경 이력

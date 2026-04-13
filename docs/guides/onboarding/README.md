@@ -74,7 +74,7 @@ flowchart TD
 
 ---
 
-## 전체 구조 (3레벨 / 247개 파일 / 210,016줄)
+## 전체 구조 (3레벨 / 292개 파일 / 273,558줄)
 
 ### 루트 파일 — 개요·이력·기여
 
@@ -146,6 +146,8 @@ flowchart TD
 | [services/additional-01-notification-deep-dive.md](02-architecture/services/additional-01-notification-deep-dive.md) | 알림 서비스 심화 — 실제 코드 분석, 이메일/SMS/Slack 채널, 템플릿 엔진 |
 | [services/additional-02-crm-deep-dive.md](02-architecture/services/additional-02-crm-deep-dive.md) | CRM 서비스 심화 — 고객/연락처/계약 실제 코드, 상태 전이, 멀티테넌시 격리 |
 | [services/00-services-comparison.md](02-architecture/services/00-services-comparison.md) | 17개 서비스 비교 분석 — 도메인 그룹별 역할, 호출 패턴, 성능 특성, 신규 기능 서비스 선택 결정 트리 |
+| [services/additional-03-tenant-lifecycle.md](02-architecture/services/additional-03-tenant-lifecycle.md) | 테넌트 라이프사이클 완전 가이드 — PENDING→ACTIVE→SUSPENDED→TERMINATED 상태 머신, 가입/해지/데이터 보존 |
+| [services/additional-04-billing-subscription-events.md](02-architecture/services/additional-04-billing-subscription-events.md) | 청구·구독 이벤트 심화 — 결제 실패 상태 머신, 환불 Pro-rata, Webhook HMAC-SHA256, 멱등성 키 |
 | [02-multitenancy.md](02-architecture/02-multitenancy.md) | 멀티테넌시 완전 이해 — 4개 격리 레이어, SUPER_ADMIN |
 | [03-data-flow.md](02-architecture/03-data-flow.md) | 5가지 데이터 흐름 — 로그인/API/이벤트/AI/감사 시퀀스 |
 | [04-service-interactions.md](02-architecture/04-service-interactions.md) | 비즈니스 시나리오 4개 — 온보딩/AI/청구/보안 서비스 협업 |
@@ -160,6 +162,9 @@ flowchart TD
 | [13-data-architecture.md](02-architecture/13-data-architecture.md) | 데이터 아키텍처 — OLTP 구조, SHA-256 감사 체인, Redis 이벤트, CSAP D-10 보존, ClickHouse 도입 계획 |
 | [14-api-versioning.md](02-architecture/14-api-versioning.md) | API 버전 관리 전략 — Breaking/Non-breaking 기준 10가지, Deprecation 절차, 계약 기간 중 변경 정책 |
 | [15-api-gateway-patterns.md](02-architecture/15-api-gateway-patterns.md) | API Gateway 패턴 — Traefik 구성 완전 해설, 라우팅 전략, Rate Limiting, ForwardAuth 인증 통합, 장애 대응 |
+| [16-resilience-patterns.md](02-architecture/16-resilience-patterns.md) | 내결함성 패턴 — Bulkhead/Retry/Timeout/Fallback/Circuit Breaker 심화, 패턴 조합 전략, SLO 에스컬레이션 연동 |
+| [17-saga-patterns-advanced.md](02-architecture/17-saga-patterns-advanced.md) | Saga 패턴 심화 — Choreography vs Orchestration, 보상 트랜잭션 3유형, 멱등성 보장, 테넌트 가입/구독 취소 실전 시나리오 |
+| [18-data-consistency-patterns.md](02-architecture/18-data-consistency-patterns.md) | 데이터 일관성 패턴 — CAP 정리, 최종 일관성, CQRS Read Model, Outbox 패턴 심화, 이벤트 스토어 스냅샷, CSAP D-06 감사 일관성 |
 | **packages/** | **공유 패키지 심화 (27개)** |
 | [packages/README.md](02-architecture/packages/README.md) | 전체 패키지 목록 및 카테고리 |
 | [packages/01-core-packages.md](02-architecture/packages/01-core-packages.md) | auth-sdk, rbac, audit-sdk, rate-limit, secret-manager |
@@ -201,6 +206,16 @@ flowchart TD
 | [25-performance-optimization.md](03-development/25-performance-optimization.md) | Node.js+Fastify 성능 최적화 — Event Loop, AJV 직렬화, Prisma N+1 해결, Redis Pipeline, Clinic.js+Pyroscope 프로파일링, 3가지 최적화 시나리오 |
 | [26-distributed-transactions.md](03-development/26-distributed-transactions.md) | 분산 트랜잭션 패턴 — Saga(Choreography), Outbox 패턴, BullMQ 의존성 체인, 보상 트랜잭션, 멱등성 보장 |
 | [27-ai-mlops-guide.md](03-development/27-ai-mlops-guide.md) | AI/MLOps 실전 가이드 — RAG 파이프라인(rag-engine+chunker+vector-store), 모델 CI/CD, 드리프트 탐지, AI 비용 관리, Fallback 전략 |
+| [28-grpc-service-communication.md](03-development/28-grpc-service-communication.md) | gRPC 서비스 통신 — Protocol Buffers, 인터셉터 체인, N2SF 인터셉터, 스트리밍, Linkerd mTLS+gRPC, 성능 벤치마크 |
+| [29-code-generation-tools.md](03-development/29-code-generation-tools.md) | 코드 생성 도구 — Prisma Generate, OpenAPI 클라이언트 SDK, Turbo Gen 스캐폴딩, AI 보조 생성, 생성 코드 품질 관리 |
+| [30-event-sourcing-cqrs.md](03-development/30-event-sourcing-cqrs.md) | Event Sourcing + CQRS — 불변 이벤트 로그, Projection, Read Model, 최종 일관성, 이벤트 기반 테스트 |
+| [31-nextjs-advanced-patterns.md](03-development/31-nextjs-advanced-patterns.md) | Next.js 15 고급 패턴 — RSC vs RCC, Server Actions, Streaming+Suspense, 병렬 라우트, Edge Runtime 인증 |
+| [32-database-partitioning.md](03-development/32-database-partitioning.md) | PostgreSQL 파티셔닝 전략 — Range/Hash/List 파티셔닝, 테넌트별 파티셔닝, 감사 로그 파티셔닝, Prisma 연동 |
+| [33-rate-limiting-circuit-breaker.md](03-development/33-rate-limiting-circuit-breaker.md) | Rate Limiting + Circuit Breaker 패턴 — Sliding Window, Leaky Bucket, 테넌트별 쿼터, Circuit Breaker 상태 머신, Failover |
+| [34-feature-flag-advanced.md](03-development/34-feature-flag-advanced.md) | Feature Flag 심화 — 피처 플래그 수명주기, 카나리+A/B+실험, 테넌트별 점진적 롤아웃, 플래그 부채 정리 자동화 |
+| [35-message-queue-patterns.md](03-development/35-message-queue-patterns.md) | 메시지 큐 패턴 심화 — BullMQ Queue/Worker/Scheduler, 우선순위 큐, DLQ 완전 가이드, 멀티테넌트 큐 격리, KEDA 연동 |
+| [36-openapi-documentation.md](03-development/36-openapi-documentation.md) | OpenAPI 3.1 문서화 — Fastify 자동 스키마 추출, Scalar UI, openapi-typescript SDK 생성, Contract-First 워크플로우, CSAP D-12 문서 요건 |
+| [37-prisma-realworld-patterns.md](03-development/37-prisma-realworld-patterns.md) | Prisma 실전 패턴 — Cursor 페이지네이션, 배치 처리, Window Function, RLS+$extends 자동 tenantId, pgvector 확장, Expand-Contract 무중단 |
 | [vibecoding/](03-development/vibecoding/) | Claude Code 바이브코딩 심화 |
 | [vibecoding/04-prompt-engineering.md](03-development/vibecoding/04-prompt-engineering.md) | 프롬프트 엔지니어링 — 작업 유형별 패턴, Cascade 에이전트, 안티패턴 |
 | [vibecoding/05-multi-agent-patterns.md](03-development/vibecoding/05-multi-agent-patterns.md) | 멀티 에이전트 패턴 — Cascade 완전 가이드, 5개 에이전트 역할 심화, 비용 최적화, 감리 자동화 |
@@ -230,6 +245,13 @@ k3s 클러스터 운영과 Helm, 컴포넌트 관리를 다룹니다.
 | [components/10-keda-advanced.md](04-infrastructure/components/10-keda-advanced.md) | KEDA 심화 — Redis BullMQ 스케일링, Prometheus Scaler, Cron 야간 다운, ScaledJob |
 | [14-storage-management.md](04-infrastructure/14-storage-management.md) | 스토리지 관리 — PV/PVC/StorageClass, 3계층 StorageClass, 용량 경보, 온라인 확장, CSAP D-10 |
 | [15-network-policies-advanced.md](04-infrastructure/15-network-policies-advanced.md) | NetworkPolicy 심화 — 제로 트러스트 네트워킹, 네임스페이스 격리 매트릭스, 서비스별 레시피 10개, Kyverno 자동 강제, CSAP D-08 매핑 |
+| [16-service-mesh-deep-dive.md](04-infrastructure/16-service-mesh-deep-dive.md) | Linkerd 서비스 메시 심화 — mTLS(SPIFFE/SPIRE), graceful-shutdown 연동, 트래픽 관리, 카나리 TrafficSplit, Golden Signal 자동 수집 |
+| [components/11-helm-advanced.md](04-infrastructure/components/11-helm-advanced.md) | Helm 심화 — Chart 개발(_helpers.tpl), values 계층 구조, HelmRelease CRD 전체 필드, dependsOn, OCI 레지스트리 |
+| [17-autoscaling-advanced.md](04-infrastructure/17-autoscaling-advanced.md) | HPA/VPA/KEDA/Cluster Autoscaler 심화 — 4가지 오토스케일링 전략, KEDA Redis ScaledJob, AI 워크로드 GPU 스케일링, 비용 최적화 연계 |
+| [18-multi-region-strategy.md](04-infrastructure/18-multi-region-strategy.md) | 멀티 리전 전략 — Active-Passive→Active-Active 전환, 데이터 복제 RTO/RPO, Traefik 글로벌 로드밸런싱, 재해 복구 자동화 |
+| [19-infrastructure-cost-guide.md](04-infrastructure/19-infrastructure-cost-guide.md) | 인프라 비용 최적화 완전 가이드 — Spot 인스턴스, VPA/KEDA 자원 최적화, AI API 비용 추적, FinOps 거버넌스 |
+| [20-observability-infrastructure.md](04-infrastructure/20-observability-infrastructure.md) | 관측가능성 인프라 완전 가이드 — Prometheus+Grafana+Loki+Tempo+Pyroscope 스택 구축, ServiceMonitor CRD, 샘플링 전략, CSAP D-06 1년 보존 |
+| [21-k8s-resource-management.md](04-infrastructure/21-k8s-resource-management.md) | K8s 리소스 관리 — ResourceQuota/LimitRange/VPA/PDB, QoS 클래스, graceful-shutdown 연동(terminationGracePeriodSeconds), 테넌트별 Namespace 할당량 |
 | **kubernetes/** | **k3s 운영 및 관리 (3개)** |
 | [kubernetes/01-k3s-basics.md](04-infrastructure/kubernetes/01-k3s-basics.md) | k3s 입문 — Pod, kubectl, k9s |
 | [kubernetes/02-helm-charts.md](04-infrastructure/kubernetes/02-helm-charts.md) | Helm 차트 관리 |
@@ -268,6 +290,9 @@ k3s 클러스터 운영과 Helm, 컴포넌트 관리를 다룹니다.
 | [12-service-instrumentation.md](05-monitoring/12-service-instrumentation.md) | 서비스 계측 가이드 — OTel SDK 직접 구현, mesh-ready 패키지 분석, DORA 메트릭 수집, N2SF Span 규칙 |
 | [13-cost-monitoring.md](05-monitoring/13-cost-monitoring.md) | FinOps 비용 모니터링 — AI 토큰 비용 추적, 테넌트별 Chargeback, 예산 가드, Grafana 패널 JSON |
 | [14-observability-advanced.md](05-monitoring/14-observability-advanced.md) | 관측가능성 고급 — Exemplar 연결, Multiburn Rate SLO 알림, W3C TraceContext, Loki 고급 쿼리, DORA 심화, 이상 탐지 |
+| [15-sre-advanced.md](05-monitoring/15-sre-advanced.md) | SRE 고급 실천 — Toil 식별/제거, 에러 버짓 의사결정, 용량 계획, SLO 에스컬레이션 코드 분석, SRE 성숙도 로드맵 |
+| [16-incident-command-system.md](05-monitoring/16-incident-command-system.md) | 인시던트 커맨드 시스템 — P1~P4 심각도 기준, IC/TechLead/Comms 역할, 30초 프로토콜, 전쟁실 운영, Post-Mortem 작성, CSAP D-06 72h 보고 |
+| [17-alerting-advanced.md](05-monitoring/17-alerting-advanced.md) | 고급 알림 설계 — 알림 피로 방지, 멀티윈도우 번 레이트 SLO, Inhibition/Silence 전략, AlertManager 라우팅 고급, amtool 시뮬레이션, EscalationLevel 연동 |
 
 ### 06-cicd/ — 파이프라인 + 배포 + DevSecOps
 
@@ -288,6 +313,8 @@ Gitea Actions 기반 CI/CD 파이프라인과 Q-Gate를 다룹니다.
 | [09-environment-promotion.md](06-cicd/09-environment-promotion.md) | 환경 승격 프로세스 — dev→stg→prod 흐름, 수동 승인 게이트, 핫픽스 긴급 경로, 20개 사전 체크리스트 |
 | [10-gitops-advanced.md](06-cicd/10-gitops-advanced.md) | GitOps 심화 — Flux2 5개 컨트롤러, HelmRelease dependsOn, Kustomize 환경별 오버레이, Image Automation |
 | [11-progressive-delivery.md](06-cicd/11-progressive-delivery.md) | Progressive Delivery — Flagger 카나리 심화, A/B 테스트(헤더 라우팅), Feature Flag 라이프사이클, Shadow 배포, Ring 배포, DORA 연계 |
+| [12-deployment-strategies-advanced.md](06-cicd/12-deployment-strategies-advanced.md) | 배포 전략 고급 비교 — Rolling/Blue-Green/Canary/Feature Flag/Shadow/Ring 완전 비교, DB 마이그레이션 처리, 전략 선택 결정 트리, DORA 게이트 연동 |
+| [13-testing-in-cicd.md](06-cicd/13-testing-in-cicd.md) | CI/CD 내 테스트 전략 — 단위/통합/E2E 레이어, Testcontainers PostgreSQL 격리, Flaky 테스트 Quarantine, Turbo 병렬화, Q-Gate G4 80% 전략 |
 | **deployment/** | **배포 전략 (2개)** |
 | [deployment/01-gitops-deploy.md](06-cicd/deployment/01-gitops-deploy.md) | GitOps 배포 — Flux HelmRelease |
 | [deployment/02-hotfix-process.md](06-cicd/deployment/02-hotfix-process.md) | 핫픽스 프로세스 — 긴급 배포 |
@@ -327,6 +354,12 @@ CSAP 79개 항목, N2SF 데이터 분류, 보안 코딩 규칙을 다룹니다.
 | [csap/05-csap-audit-simulation.md](07-security/csap/05-csap-audit-simulation.md) | CSAP 감리 시뮬레이션 — 감리관 질의 D-06/D-08/D-09/D-12/N2SF, 79항목 증거 매핑, 8주 타임라인 |
 | **compliance/** | **컴플라이언스 리포팅 (1개)** |
 | [08-compliance-reporting.md](07-security/08-compliance-reporting.md) | 컴플라이언스 리포팅 자동화 — compliance-service 완전 분석, N2SF 자동화, 월간 보고서 생성, 위반 처리 프로세스 |
+| [09-threat-modeling-workshop.md](07-security/09-threat-modeling-workshop.md) | 위협 모델링 워크숍 — AI챗봇/파일업로드 케이스 STRIDE 분석, DREAD 평가, 완화 구현 실습, CSAP D-12 제출 템플릿 |
+| [10-secret-management-guide.md](07-security/10-secret-management-guide.md) | 시크릿 관리 완전 가이드 — Vault KV v2+PKI+Database Engine, ESO ExternalSecret, CI/CD 시크릿 주입, 침해 대응 |
+| [audit/02-audit-trail-advanced.md](07-security/audit/02-audit-trail-advanced.md) | 감사 추적 심화 — SHA-256 체인 완전 분석(computeHash+verifyChainIntegrity), 무결성 검증, 실시간 보안 이벤트 탐지, 법적 제출 |
+| [11-ai-ethics-governance.md](07-security/11-ai-ethics-governance.md) | AI 윤리 및 거버넌스 — N2SF AI 데이터 원칙, 알고리즘 편향 탐지, AI 감사 체계, 공공기관 AI 거버넌스 프레임워크 |
+| [12-penetration-testing-guide.md](07-security/12-penetration-testing-guide.md) | 침투 테스트 가이드 — OWASP WSTG 기반 API 침투 테스트, JWT 위조/테넌트 격리 우회/SQL 주입 5시나리오, CVSS 공공기관 가중치, CSAP D-12 증거 수집 |
+| [13-vault-advanced-guide.md](07-security/13-vault-advanced-guide.md) | Vault 심화 — KV v2 버전 관리, Dynamic DB 크리덴셜, PKI 인증서 자동화, Agent Sidecar 주입, AppRole 응답 래핑, Lease 관리, 침해 대응 |
 
 ### 08-document-management/ — PDCA + MTU + 감리
 
@@ -353,6 +386,7 @@ PDCA 사이클, MTU 관리, 행안부 감리 대응을 다룹니다.
 | [08-onboarding-assessment.md](08-document-management/08-onboarding-assessment.md) | 온보딩 평가 — 25문항 100점 자가 진단, 역할별 최소 기준, 통과/재수강 판정 기준 |
 | **pdca/** | **PDCA 자동화 (1개)** |
 | [pdca/05-pdca-automation.md](08-document-management/pdca/05-pdca-automation.md) | PDCA 자동화 — Claude Code 에이전트 팀 오케스트레이션, /pm 스킬 완전 가이드, Q-Gate 자동화, bkit 상태 파일 해설 |
+| [09-contribution-advanced.md](08-document-management/09-contribution-advanced.md) | 고급 기여 가이드 — 대형 PR 분할 전략, RFC 프로세스, CODEOWNERS, feature-flag 기반 안전한 기여, DORA Gate 연동 |
 
 ### 09-troubleshooting/ — 오류 해결 + 디버깅 + 성능
 
@@ -393,8 +427,14 @@ PDCA 사이클, MTU 관리, 행안부 감리 대응을 다룹니다.
 | [15-observability-lab.md](10-exercises/15-observability-lab.md) | 실습 15: 관측가능성 통합 실습 — MELT 4종(Metrics+Events+Logs+Traces) 통합, trace_id 연결, 100점 평가 | 3~4시간 |
 | [16-chaos-engineering-lab.md](10-exercises/16-chaos-engineering-lab.md) | 실습 16: 카오스 엔지니어링 — Pod 종료/네트워크 지연/OOM/DB 차단/멀티 서비스 장애 시뮬레이션, MTTR 측정 | 3~4시간 |
 | [17-disaster-recovery-lab.md](10-exercises/17-disaster-recovery-lab.md) | 실습 17: 재해 복구 훈련 — CNPG Standby 승격, Velero PVC 복구, GitOps 자동 재구축, RTO/RPO 측정, CSAP D-10 증거 | 3~4시간 |
+| [18-monitoring-dashboard-lab.md](10-exercises/18-monitoring-dashboard-lab.md) | 실습 18: 모니터링 대시보드 구축 — 골든 시그널, SLO 에러버짓, DORA 4개 메트릭 대시보드, PrometheusRule 알림 생성 | 3~4시간 |
+| [19-load-testing-advanced.md](10-exercises/19-load-testing-advanced.md) | 실습 19: 고급 부하 테스트 — k6 시나리오 스크립트, auth/AI API 부하 테스트, DB 병목 분석, Before/After 비교 | 3~4시간 |
+| [20-api-design-workshop.md](10-exercises/20-api-design-workshop.md) | 실습 20: API 설계 워크숍 — 공지사항 API 6개 엔드포인트 설계→구현→OpenAPI→E2E 테스트(테넌트 격리 검증) | 4~5시간 |
+| [21-final-capstone-project.md](10-exercises/21-final-capstone-project.md) | 캡스톤 프로젝트 2: AI 이상 탐지 시스템 — RAG 기반 이상 탐지, CSAP D-12 보안 통합, DORA 메트릭 추적, 감사 로그, 100점 평가 | 8~12시간 |
+| [22-microservice-refactoring-lab.md](10-exercises/22-microservice-refactoring-lab.md) | 실습 22: 마이크로서비스 리팩토링 — ai-service 실제 코드 분석, Dead Code 제거, 함수 분리(80줄↓), 타입 안전성 강화, 커버리지 80% 달성 | 4~5시간 |
+| [23-platform-api-design-lab.md](10-exercises/23-platform-api-design-lab.md) | 실습 23: 플랫폼 API 설계 — 테넌트 통계 대시보드 API 5개 엔드포인트 설계→구현→OpenAPI→E2E 테스트, 100점 평가 | 4~6시간 |
 
-### 11-faq/ — 자주 묻는 질문 (195개)
+### 11-faq/ — 자주 묻는 질문 (325개)
 
 역할별로 분류된 FAQ입니다. 빠른 답변이 필요할 때 참조하십시오.
 
@@ -410,6 +450,11 @@ PDCA 사이클, MTU 관리, 행안부 감리 대응을 다룹니다.
 | [07-devops-faq.md](11-faq/07-devops-faq.md) | DevOps/인프라 운영 심화 FAQ — K8s 고급 운영, CI/CD, 모니터링, 보안 운영, 비용 최적화 | 25개 |
 | [08-ai-security-faq.md](11-faq/08-ai-security-faq.md) | AI 보안 FAQ — 프롬프트 인젝션, N2SF 데이터 분류, AI Gateway, 모델 오염, 23개 실전 Q&A | 23개 |
 | [09-incident-management-faq.md](11-faq/09-incident-management-faq.md) | 장애 관리 FAQ — P1 판단 기준, 초동 30초, CSAP D-06 72시간 보고, Post-Mortem, 30개 Q&A | 30개 |
+| [10-infrastructure-faq.md](11-faq/10-infrastructure-faq.md) | 인프라 운영 심화 FAQ — k3s 클러스터 10개, 스토리지 10개, 네트워크 10개, 총 30개 Q&A | 30개 |
+| [11-platform-engineering-faq.md](11-faq/11-platform-engineering-faq.md) | 플랫폼 엔지니어링 FAQ — 골든 패스 8개, 개발자 경험 9개, 플랫폼 팀 운영 8개, 총 25개 Q&A | 25개 |
+| [12-developer-tools-faq.md](11-faq/12-developer-tools-faq.md) | 개발자 도구 FAQ — IDE/VS Code/JetBrains 설정 8개, Claude Code 활용법 9개, 터미널/CLI 도구 8개, 총 25개 Q&A | 25개 |
+| [13-cicd-advanced-faq.md](11-faq/13-cicd-advanced-faq.md) | CI/CD 고급 FAQ — Gitea Actions 심화 8개, GitOps Flux 운영 9개, DevSecOps 운영 8개, 총 25개 Q&A | 25개 |
+| [14-database-advanced-faq.md](11-faq/14-database-advanced-faq.md) | 데이터베이스 고급 FAQ — PostgreSQL 운영 8개, Prisma 트러블슈팅 9개, 성능 최적화 8개, 총 25개 Q&A | 25개 |
 
 ---
 
@@ -834,4 +879,9 @@ git push origin docs/onboarding-guide-improvement
 | 3.4.0 | 2026-04-12 | 이터레이션 16 추가: 비즈니스 메트릭 카탈로그(32개 지표), 환경 승격 프로세스(dev→stg→prod), CI/CD 디버깅(4개 시나리오), AI/ML 패키지 심화(ml-pipeline+feature-flag), WebSocket/SSE 실시간 기능, 풀스택 실습(공지사항+SSE+Next.js), 의존성 보안(SBOM+Trivy), 데이터 아키텍처(SHA-256+ClickHouse), DevOps FAQ(25개). 총 220파일 177,700줄 | Implementer Team (병렬 에이전트) |
 | 3.5.0 | 2026-04-12 | 이터레이션 17 추가: 스토리지 관리(PV/PVC+3계층 StorageClass), GitOps 심화(Flux2 5컨트롤러+Kustomize 오버레이), 관측가능성 통합 실습(MELT 4종+trace_id), 캐싱 전략(L1/L2+멀티테넌트 키 격리), API 버전 관리(Breaking/Non-breaking+Deprecation), AI 보안 FAQ(23개+프롬프트 인젝션), FinOps 비용 모니터링(AI 토큰+Chargeback), Zero Trust 4계층(Linkerd mTLS+SPIFFE), 온보딩 평가(25문항 100점). 총 229파일 188,802줄 | Implementer Team (병렬 에이전트) |
 | 3.6.0 | 2026-04-13 | 이터레이션 18 추가: Node.js 성능 최적화(Event Loop+Clinic.js+시나리오 3개), Progressive Delivery(Flagger+A/B+Shadow+Ring), 카오스 엔지니어링 실습(5가지 장애 시뮬레이션), NetworkPolicy 심화(레시피 10개+Kyverno), 서비스 비교 분석(17개 서비스 결정 트리), 멀티테넌트 디버깅(데이터 유출 5시나리오), CSAP 감리 시뮬레이션(79항목 매핑), 에스컬레이션 플레이북(TOP 15 알림), PDCA 자동화(/pm 스킬 완전 가이드). 총 238파일 198,854줄 | Implementer Team (병렬 에이전트) |
+| 3.9.0 | 2026-04-13 | 이터레이션 21 추가: 청구·구독 이벤트(결제실패+환불+Webhook HMAC), Event Sourcing+CQRS(Projection+최종일관성), 고급 부하 테스트(k6 시나리오+DB 병목), Helm 심화(Chart개발+HelmRelease CRD), 시크릿 관리(Vault+ESO+침해대응), 플랫폼 엔지니어링 FAQ(25개), 감사 추적 심화(SHA-256 체인 완전 분석), Next.js 15 고급(RSC+Server Actions+Edge Runtime), API 설계 워크숍(6개 엔드포인트+E2E). 총 265파일 233,989줄 | Implementer Team (병렬 에이전트) |
+| 3.8.0 | 2026-04-13 | 이터레이션 20 추가: gRPC 서비스 통신(Protocol Buffers+인터셉터+스트리밍), Linkerd 심화(graceful-shutdown+mTLS+카나리), SRE 고급(Toil 제거+에러버짓 의사결정+escalation-controller 분석), 테넌트 라이프사이클(5단계 가입+해지+CSAP D-10), 코드 생성(Prisma+OpenAPI+Turbo Gen), 인프라 FAQ(30개), 모니터링 대시보드 실습(DORA+SLO+PrometheusRule), 위협 모델링 워크숍(STRIDE+DREAD), 고급 기여 가이드(RFC+CODEOWNERS+DORA Gate). 총 256파일 222,279줄 | Implementer Team (병렬 에이전트) |
 | 3.7.0 | 2026-04-13 | 이터레이션 19 추가: 분산 트랜잭션(Saga+Outbox+BullMQ 의존성 체인), API Gateway(Traefik+ForwardAuth+Rate Limiting), 재해 복구 실습(CNPG 승격+Velero+GitOps 재구축), 관측가능성 고급(Exemplar+Multiburn Rate), 패키지 개발 가이드(dora-exporter+ml-pipeline 심화), 컴플라이언스 리포팅(compliance-service 완전 분석), 첫 주 완전 가이드(Day 1~5 시간표), AI/MLOps(RAG+모델CI+드리프트), 장애 관리 FAQ(30개). 총 247파일 210,016줄 | Implementer Team (병렬 에이전트) |
+| 4.0.0 | 2026-04-13 | 이터레이션 22 추가: HPA/VPA/KEDA 오토스케일링 심화, PostgreSQL 파티셔닝 전략, 멀티 리전 전략(Active-Active 전환), Rate Limiting+Circuit Breaker, Feature Flag 수명주기 심화, 개발자 도구 FAQ(25개), AI 윤리·거버넌스(N2SF+알고리즘 편향), 인프라 비용 최적화(FinOps), 캡스톤 프로젝트 2(AI 이상 탐지+DORA+auditLog). 총 274파일 245,619줄 | Implementer Team (병렬 에이전트) |
+| 4.1.0 | 2026-04-13 | 이터레이션 23 추가: 내결함성 패턴(Bulkhead+CB+Retry+Timeout), 메시지 큐 심화(BullMQ+DLQ+KEDA), Saga 패턴 심화(Choreography vs Orchestration), 관측가능성 인프라(MELT+Exemplar+eBPF), 배포 전략 고급(6가지 전략 비교), 인시던트 커맨드(P1 30초 프로토콜+Post-Mortem), 침투 테스트(OWASP WSTG+CVSS), CI/CD 고급 FAQ(25개), 마이크로서비스 리팩토링 실습. 총 283파일 259,633줄 | Implementer Team (병렬 에이전트) |
+| 4.2.0 | 2026-04-13 | 이터레이션 24 추가: OpenAPI 3.1 문서화(Fastify+Scalar+SDK), Prisma 실전(pgvector+RLS+Expand-Contract), 데이터 일관성(CAP+Outbox+CQRS), K8s 리소스 관리(ResourceQuota+VPA+PDB), 고급 알림(멀티윈도우 번 레이트+Inhibition), CI/CD 테스트 전략(Testcontainers+Flaky Quarantine), Vault 심화(Dynamic Secrets+PKI), DB 고급 FAQ(25개), 플랫폼 API 설계 실습. 총 292파일 273,558줄 | Implementer Team (병렬 에이전트) |

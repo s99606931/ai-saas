@@ -1208,6 +1208,340 @@ velero restore create \
 
 ---
 
+## 8. 테넌트 운영 고급 주제
+
+### 8.1 테넌트 상태 전환 감사 매트릭스
+
+공공기관 SaaS에서 테넌트 상태 전환은 모두 감사 추적 대상입니다. 아래 매트릭스는 각 전환에 대한 감사 필수 항목을 정리합니다:
+
+| 전환 | 트리거 | 감사 이벤트 코드 | CSAP 항목 | 보존 기간 |
+|------|--------|----------------|-----------|-----------|
+| TRIAL → ACTIVE | 결제 완료 | `TENANT_ACTIVATED` | D-06 | 3년 |
+| ACTIVE → SUSPENDED | 결제 미납/보안 | `TENANT_SUSPENDED` | D-06, D-08 | 3년 |
+| SUSPENDED → ACTIVE | 결제 완료/제재 해제 | `TENANT_RESTORED` | D-06 | 3년 |
+| * → ARCHIVED | 해지 요청 | `TENANT_ARCHIVED` | D-06, D-10 | 영구 |
+| ARCHIVED → Hard Delete | 90일 경과 | `TENANT_HARD_DELETED` | D-06, D-10 | 영구 |
+
+감사 로그 기록 패턴 (실제 코드 기반):
+
+```typescript
+// platform/services/tenant-service/src/lib/audit.ts
+// createServiceAuditLogger 팩토리 패턴
+// CSAP D-06: 모든 상태 전환을 append-only 로그로 기록
+
+import { createServiceAuditLogger } from '@public-saas/audit-sdk';
+export const logTenantEvent = createServiceAuditLogger('tenant-service', 'tenant');
+
+// 사용 예시 (tenant.handler.ts에서)
+await logTenantEvent(
+  'TENANT_STATUS_CHANGED',           // 이벤트 코드
+  statusActor,                       // 행위자 (사용자 ID 또는 'system')
+  statusTenantId,                    // 대상 테넌트 ID
+  statusTenantId,                    // 관련 리소스 ID
+  request.ip,                        // 요청 IP (방화벽 로그 연계)
+  request.headers['user-agent'] ?? 'unknown',
+  { newStatus: parseResult.data.status, reason: parseResult.data.reason }
+);
+```
+
+### 8.2 테넌트 격리 검증 절차
+
+신규 테넌트 생성 후 격리가 제대로 작동하는지 검증하는 표준 절차:
+
+```bash
+# 격리 검증 테스트 스크립트
+#!/bin/bash
+TENANT_A_TOKEN="<tenant-a-jwt>"
+TENANT_B_ID="<tenant-b-uuid>"
+
+# 테스트 1: 테넌트 A가 테넌트 B의 데이터에 접근 시도 (403 예상)
+RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+  -H "Authorization: Bearer ${TENANT_A_TOKEN}" \
+  "https://api.example.go.kr/tenants/${TENANT_B_ID}")
+
+if [ "$RESPONSE" = "403" ]; then
+  echo "[PASS] 테넌트 격리 정상: 크로스 테넌트 접근 차단됨"
+else
+  echo "[FAIL] 테넌트 격리 위반! HTTP ${RESPONSE} (N2SF N-03 위반)"
+  exit 1
+fi
+
+# 테스트 2: 테넌트 A가 자신의 데이터에 정상 접근 (200 예상)
+TENANT_A_ID=$(jwt decode ${TENANT_A_TOKEN} | jq -r '.tenantId')
+RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+  -H "Authorization: Bearer ${TENANT_A_TOKEN}" \
+  "https://api.example.go.kr/tenants/${TENANT_A_ID}/usage")
+
+if [ "$RESPONSE" = "200" ]; then
+  echo "[PASS] 자체 테넌트 접근 정상: HTTP 200"
+else
+  echo "[FAIL] 자체 접근 실패: HTTP ${RESPONSE}"
+fi
+```
+
+### 8.3 멀티테넌트 RLS 동작 원리 심화
+
+PostgreSQL Row-Level Security가 애플리케이션 레이어와 함께 이중으로 작동하는 방식:
+
+```sql
+-- 1단계: RLS 정책 정의 (데이터베이스 레벨)
+-- 마이그레이션에서 한 번 설정
+ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Subscription" ENABLE ROW LEVEL SECURITY;
+
+-- 테넌트별 격리 정책 (SET을 통한 컨텍스트 주입)
+CREATE POLICY tenant_user_isolation ON "User"
+  USING (
+    "tenantId"::text = current_setting('app.current_tenant_id', true)
+    OR current_setting('app.role', true) = 'super_admin'
+  );
+
+-- 2단계: Prisma 미들웨어로 컨텍스트 설정 (애플리케이션 레벨)
+-- 쿼리 실행 전 SET 명령으로 현재 테넌트 ID를 DB 세션에 주입
+```
+
+```typescript
+// 실제 RLS 컨텍스트 설정 패턴
+async function withTenantContext<T>(
+  tenantId: string,
+  operation: () => Promise<T>
+): Promise<T> {
+  return await prisma.$transaction(async (tx) => {
+    // DB 세션에 현재 테넌트 컨텍스트 주입
+    await tx.$executeRaw`SET LOCAL app.current_tenant_id = ${tenantId}`;
+    await tx.$executeRaw`SET LOCAL app.role = ${'tenant_user'}`;
+
+    // 이 블록 내 모든 쿼리는 tenantId 필터가 RLS로 자동 적용됨
+    return await operation();
+  });
+}
+
+// 사용 예시
+const users = await withTenantContext(user.tenantId, async () => {
+  // SELECT * FROM "User" 이지만 RLS로 인해
+  // 실제로는 WHERE "tenantId" = $currentTenantId 가 자동 추가됨
+  return await prisma.user.findMany();
+});
+```
+
+### 8.4 테넌트 헬스 스코어카드
+
+각 테넌트의 건전성을 모니터링하는 헬스 스코어카드:
+
+```typescript
+// platform/services/ai-service/src/lib/tenant-health-scorecard.ts에서 영감을 얻은 패턴
+interface TenantHealthScore {
+  tenantId: string;
+  overallScore: number;      // 0~100
+  dimensions: {
+    security: number;        // CSAP 보안 요건 준수도
+    compliance: number;      // 감사 로그 완전성
+    performance: number;     // API 응답 시간
+    usage: number;           // 리소스 사용 효율
+    reliability: number;     // 오류율
+  };
+  alerts: TenantAlert[];
+  lastEvaluatedAt: string;
+}
+
+async function calculateTenantHealth(tenantId: string): Promise<TenantHealthScore> {
+  const [
+    securityEvents,
+    auditCompleteness,
+    apiMetrics,
+    usageMetrics,
+    errorRate,
+  ] = await Promise.all([
+    getSecurityEvents(tenantId, '7d'),
+    checkAuditLogCompleteness(tenantId),
+    getApiLatencyP95(tenantId),
+    getTenantUsageRatio(tenantId),
+    getApiErrorRate(tenantId, '1h'),
+  ]);
+
+  const dimensions = {
+    security: calculateSecurityScore(securityEvents),      // 이상 이벤트 없으면 100
+    compliance: auditCompleteness ? 100 : 60,              // 감사 로그 완전성
+    performance: apiMetrics.p95 < 200 ? 100 : 70,         // 200ms 이하 목표
+    usage: usageMetrics.ratio < 0.8 ? 100 : 70,           // 80% 미만 사용
+    reliability: errorRate < 0.01 ? 100 : 50,              // 1% 미만 오류율
+  };
+
+  const overallScore = Object.values(dimensions).reduce((a, b) => a + b) / 5;
+
+  return {
+    tenantId,
+    overallScore: Math.round(overallScore),
+    dimensions,
+    alerts: generateAlerts(dimensions),
+    lastEvaluatedAt: new Date().toISOString(),
+  };
+}
+```
+
+헬스 스코어카드 항목과 CSAP 연관:
+
+| 차원 | 측정 지표 | 임계값 | CSAP 항목 |
+|------|-----------|--------|-----------|
+| 보안 | 이상 로그인 시도 횟수 | 0건 (7일) | D-08 |
+| 준수 | 감사 로그 누락률 | 0% | D-06 |
+| 성능 | API P95 응답 시간 | < 200ms | NFR-1 |
+| 사용 | 리소스 사용률 | < 80% | NFR-3 |
+| 신뢰성 | API 오류율 | < 1% | NFR-2 |
+
+### 8.5 테넌트 온보딩 자동화 파이프라인
+
+신규 테넌트 온보딩을 완전 자동화하는 파이프라인:
+
+```typescript
+// 테넌트 온보딩 오케스트레이터
+// platform/services/ai-service/src/lib/tenant-onboarding-ai.ts 참조
+
+interface OnboardingPipeline {
+  steps: OnboardingStep[];
+  rollbackOnFailure: boolean;
+}
+
+const STANDARD_ONBOARDING_PIPELINE: OnboardingPipeline = {
+  rollbackOnFailure: true,
+  steps: [
+    {
+      name: 'validate-input',
+      handler: validateTenantInput,
+      required: true,
+      timeout: 5_000,  // 5초
+    },
+    {
+      name: 'create-tenant-record',
+      handler: createTenantRecord,
+      required: true,
+      timeout: 10_000, // 10초
+    },
+    {
+      name: 'setup-vault-namespace',
+      handler: setupVaultNamespace,
+      required: true,
+      timeout: 30_000, // 30초
+    },
+    {
+      name: 'create-admin-user',
+      handler: createAdminUser,
+      required: true,
+      timeout: 15_000, // 15초
+    },
+    {
+      name: 'send-invitation-email',
+      handler: sendInvitationEmail,
+      required: false, // 이메일 실패해도 온보딩 계속
+      timeout: 10_000,
+    },
+    {
+      name: 'setup-default-feature-flags',
+      handler: setupDefaultFeatureFlags,
+      required: true,
+      timeout: 10_000,
+    },
+    {
+      name: 'record-audit-log',
+      handler: recordOnboardingAuditLog,
+      required: true,
+      timeout: 5_000,
+    },
+  ],
+};
+
+async function runOnboardingPipeline(
+  tenantData: CreateTenantInput,
+  pipeline: OnboardingPipeline
+): Promise<OnboardingResult> {
+  const completed: string[] = [];
+  const errors: Record<string, Error> = {};
+
+  for (const step of pipeline.steps) {
+    try {
+      await withTimeout(step.handler(tenantData), step.timeout);
+      completed.push(step.name);
+    } catch (error) {
+      errors[step.name] = error as Error;
+      if (step.required && pipeline.rollbackOnFailure) {
+        // 필수 단계 실패 → 완료된 단계 역순 롤백
+        await rollbackCompletedSteps(completed, tenantData);
+        throw new OnboardingError(step.name, error);
+      }
+    }
+  }
+
+  return { success: true, completedSteps: completed, warnings: errors };
+}
+```
+
+### 8.6 테넌트별 Rate Limiting 정책
+
+플랜별로 차별화된 Rate Limiting을 적용합니다. 실제 `routes.ts`의 Rate Limiter 설정:
+
+```typescript
+// platform/services/tenant-service/src/routes.ts에서 실제 사용
+// Design Ref: CSAP D-08-06: Rate Limiting
+
+import { createRateLimiter } from '@public-saas/rate-limit';
+
+// 읽기/쓰기 분리 Rate Limiter
+const readLimiter = createRateLimiter(100, 60, 'rl:tenant:read');  // 분당 100회
+const writeLimiter = createRateLimiter(30, 60, 'rl:tenant:write'); // 분당 30회
+```
+
+플랜별 Rate Limit 확장:
+
+```typescript
+// 플랜별 Rate Limit 정책
+const PLAN_RATE_LIMITS = {
+  basic: {
+    apiCallsPerMinute: 60,
+    aiCallsPerDay: 100,
+    exportCallsPerHour: 2,
+  },
+  standard: {
+    apiCallsPerMinute: 300,
+    aiCallsPerDay: 10_000,
+    exportCallsPerHour: 10,
+  },
+  enterprise: {
+    apiCallsPerMinute: 3_000,
+    aiCallsPerDay: Infinity,
+    exportCallsPerHour: 100,
+  },
+} as const;
+
+// 동적 Rate Limiter — 테넌트 플랜에 따라 자동 조절
+function createTenantRateLimiter(tenantId: string, plan: keyof typeof PLAN_RATE_LIMITS) {
+  const limits = PLAN_RATE_LIMITS[plan];
+  return createRateLimiter(
+    limits.apiCallsPerMinute,
+    60,
+    `rl:tenant:${tenantId}:api`
+  );
+}
+```
+
+Rate Limit 초과 시 응답:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "분당 API 호출 한도를 초과했습니다",
+    "retryAfter": 45,
+    "limit": 300,
+    "remaining": 0,
+    "plan": "standard",
+    "upgradeUrl": "https://portal.example.go.kr/upgrade"
+  }
+}
+```
+
+---
+
 ## 변경 이력
 
 | 버전 | 일자 | 내용 | 작성자 |

@@ -1173,6 +1173,181 @@ linkerd viz top -n public-saas deploy/ai-service \
 
 ---
 
+## 9. Linkerd 운영 자동화
+
+### 9.1 Linkerd 상태 자동 점검 파이프라인
+
+```yaml
+# .gitea/workflows/linkerd-health.yml
+# Design Ref: INFRA-MESH-16 §9.1
+# 매일 오전 7시 Linkerd 상태 자동 점검
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+
+jobs:
+  linkerd-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Linkerd 컨트롤 플레인 점검
+        run: |
+          linkerd check --quiet
+          if [ $? -ne 0 ]; then
+            echo "::error::Linkerd 컨트롤 플레인 이상 감지"
+            exit 1
+          fi
+
+      - name: 데이터 플레인(프록시) 점검
+        run: |
+          linkerd check --proxy -n public-saas --quiet
+          if [ $? -ne 0 ]; then
+            echo "::warning::일부 프록시 이상 — 확인 필요"
+          fi
+
+      - name: mTLS 적용률 확인 (90% 이상 필수)
+        run: |
+          SECURED=$(linkerd viz edges -n public-saas | \
+            awk 'NR>1 && $NF=="√"' | wc -l)
+          TOTAL=$(linkerd viz edges -n public-saas | \
+            awk 'NR>1' | wc -l)
+          RATE=$(echo "scale=2; $SECURED * 100 / $TOTAL" | bc)
+          echo "mTLS 적용률: ${RATE}%"
+          if (( $(echo "$RATE < 90" | bc -l) )); then
+            echo "::error::mTLS 적용률 90% 미만: ${RATE}%"
+            exit 1
+          fi
+
+      - name: 결과 Slack 전송
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          EMOJI=$([ "$STATUS" = "success" ] && echo ":white_check_mark:" || echo ":rotating_light:")
+          curl -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+            -d "{\"text\":\"${EMOJI} Linkerd 일일 점검: ${STATUS} ($(date '+%Y-%m-%d'))\"}"
+```
+
+### 9.2 인증서 만료 사전 경보
+
+```yaml
+# k8s/monitoring/linkerd-cert-alert.yaml
+# Design Ref: INFRA-MESH-16 §9.2
+# CSAP D-09: 암호화 인증서 관리
+
+groups:
+  - name: linkerd-certificates
+    rules:
+      # Linkerd 루트 인증서 만료 90일 전 경보
+      - alert: LinkerdRootCertExpiringSoon
+        expr: |
+          (linkerd_identity_cert_expiration_seconds - time()) / 86400 < 90
+        labels:
+          severity: warning
+          component: linkerd
+        annotations:
+          summary: "Linkerd 루트 인증서 만료 임박"
+          description: "{{ $value | humanizeDuration }} 후 만료. cert-manager 자동 갱신 확인 필요."
+          runbook: "docs/runbooks/linkerd-cert-renewal.md"
+
+      # Linkerd Issuer 인증서 만료 30일 전 경보
+      - alert: LinkerdIssuerCertExpiringSoon
+        expr: |
+          (linkerd_identity_issuer_cert_expiration_seconds - time()) / 86400 < 30
+        labels:
+          severity: critical
+          component: linkerd
+        annotations:
+          summary: "Linkerd Issuer 인증서 만료 임박 (30일 이내)"
+          description: "즉시 cert-manager 상태 확인 및 수동 갱신 검토 필요."
+          runbook: "docs/runbooks/linkerd-cert-renewal.md"
+
+      # 프록시 인증서 갱신 실패 (24시간 이상 미갱신)
+      - alert: LinkerdProxyCertNotRenewed
+        expr: |
+          (time() - linkerd_identity_cert_last_renewed_seconds) > 86400
+        labels:
+          severity: warning
+        annotations:
+          summary: "Linkerd 프록시 인증서 24시간 이상 미갱신"
+          description: "Pod {{ $labels.pod }}의 인증서가 갱신되지 않았습니다."
+```
+
+### 9.3 Linkerd 일일 운영 Runbook
+
+```markdown
+# Runbook: Linkerd 일반 운영 절차
+# Design Ref: INFRA-MESH-16 §9.3
+# 대상: 온콜 담당자, SRE 팀
+
+## RB-L01: Linkerd 프록시 응답 없음
+
+**증상**: 서비스 간 통신이 간헐적으로 실패. linkerd-proxy가 CPU 100% 사용.
+
+**진단**:
+```bash
+# 프록시 상태 확인
+kubectl top pod -n public-saas --containers | grep linkerd-proxy
+
+# 프록시 로그 확인
+kubectl logs -n public-saas ${POD_NAME} -c linkerd-proxy --tail 100
+
+# 프록시 어드민 엔드포인트 확인
+kubectl exec -n public-saas ${POD_NAME} -c linkerd-proxy \
+  -- curl -s http://localhost:4191/ready
+```
+
+**조치**:
+1. Pod 재시작 (새 프록시 초기화)
+   ```bash
+   kubectl rollout restart -n public-saas deploy/${SERVICE_NAME}
+   ```
+2. 재시작 후 상태 확인
+   ```bash
+   kubectl rollout status -n public-saas deploy/${SERVICE_NAME}
+   linkerd viz stat -n public-saas deploy/${SERVICE_NAME}
+   ```
+3. 원인이 지속되면 프록시 리소스 한도 조정
+   ```bash
+   kubectl annotate deploy ${SERVICE_NAME} -n public-saas \
+     config.linkerd.io/proxy-cpu-limit=500m \
+     config.linkerd.io/proxy-memory-limit=256Mi
+   ```
+
+## RB-L02: mTLS 핸드셰이크 실패
+
+**증상**: 서비스 간 통신이 전혀 안 됨. 로그에 "certificate verify failed" 에러.
+
+**진단**:
+```bash
+# mTLS 상태 확인
+linkerd viz edges -n public-saas
+
+# UNAUTHORIZED 에러 상세 확인
+linkerd viz tap -n public-saas deploy/ai-service 2>&1 | grep -i "tls\|cert\|auth"
+
+# linkerd-identity 서비스 상태
+kubectl get pod -n linkerd -l app=linkerd-identity
+kubectl logs -n linkerd deploy/linkerd-identity --tail 50
+```
+
+**조치**:
+1. linkerd-identity 재시작
+   ```bash
+   kubectl rollout restart -n linkerd deploy/linkerd-identity
+   ```
+2. 영향받은 서비스 재시작 (새 인증서 발급)
+   ```bash
+   kubectl rollout restart -n public-saas \
+     deploy/ai-service deploy/security-monitor-service
+   ```
+3. 인증서 상태 재확인
+   ```bash
+   linkerd check --proxy -n public-saas
+   ```
+```
+
+---
+
 ## 변경 이력
 
 | 버전 | 일자 | 내용 | 작성자 |

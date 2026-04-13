@@ -986,6 +986,319 @@ Sprint 3 (6월): 신뢰성 테스트 체계화
 - Toil 제거 기록을 운영 효율화 증거로 제출
 ```
 
+### 7.4 CSAP 감리 연계 SRE 지표
+
+공공기관 SaaS는 CSAP 인증 유지를 위한 정기 감리에서 가용성 관련 증거 자료를 제출해야 합니다. SRE 지표를 CSAP 통제항목과 매핑하면 감리 준비 부담을 크게 줄일 수 있습니다.
+
+```typescript
+// packages/dora-exporter/src/csap-evidence-generator.ts
+// Design Ref: MON-SRE-15 §7.4
+// CSAP D-07: 가용성 관리 증거 자동 생성
+
+interface CsapD07Evidence {
+  period: string;           // 측정 기간 (예: "2026-04")
+  sloTarget: number;        // SLO 목표 (예: 0.999)
+  actualAvailability: number; // 실제 가용성 (예: 0.9992)
+  errorBudgetUsed: number;  // 에러 버짓 소진율 (%)
+  incidentCount: number;    // 장애 발생 건수
+  mttr: number;             // 평균 복구 시간 (분)
+  changeSuccessRate: number; // 변경 성공률 (DORA 지표 연계)
+}
+
+export async function generateMonthlyEvidence(
+  month: string,  // 예: "2026-04"
+): Promise<CsapD07Evidence> {
+  // Prometheus에서 월간 집계 조회
+  const availability = await queryPrometheus(`
+    avg_over_time(
+      (sum(rate(response_total{
+        namespace="public-saas",
+        classification="success"
+      }[5m])) /
+      sum(rate(response_total{
+        namespace="public-saas"
+      }[5m])))[${month}]
+    )
+  `);
+
+  return {
+    period: month,
+    sloTarget: 0.999,
+    actualAvailability: availability,
+    errorBudgetUsed: (1 - availability) / 0.001 * 100,
+    incidentCount: await queryIncidentCount(month),
+    mttr: await queryMttr(month),
+    changeSuccessRate: await queryChangeSuccessRate(month),
+  };
+}
+```
+
+```yaml
+# 월간 CSAP 증거 보고서 자동 생성 크론잡
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: csap-evidence-generator
+  namespace: public-saas
+spec:
+  schedule: "0 9 1 * *"  # 매월 1일 오전 9시
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: generator
+              image: public-saas/csap-evidence-generator:latest
+              env:
+                - name: PROMETHEUS_URL
+                  value: http://prometheus.monitoring:9090
+                - name: SLACK_CHANNEL
+                  value: "#csap-reports"
+              command:
+                - node
+                - dist/generate-monthly-evidence.js
+```
+
+---
+
+## 8. SRE 도구 레퍼런스
+
+### 8.1 이 프로젝트 SRE 도구 스택
+
+```
+관측성 계층:
+  메트릭:   Prometheus (수집) + Grafana (시각화)
+  추적:     Jaeger (분산 추적, Linkerd Jaeger 확장)
+  로그:     Loki (로그 집계) + Grafana (조회)
+  이벤트:   Linkerd Viz (실시간 트래픽 감청)
+
+신뢰성 계층:
+  SLO 관리:  packages/slo-escalation (에스컬레이션 컨트롤러)
+  카오스:    Chaos Mesh (장애 주입)
+  부하 테스트: k6 (성능 벤치마크)
+
+알림 계층:
+  PagerDuty: 온콜 로테이션 + P1/P2 알림
+  Slack:     팀 알림 (#sre-alerts, #sre-weekly)
+  이메일:    이해관계자 주간 요약
+
+배포 안전 계층:
+  카나리:    Flagger + Linkerd TrafficSplit
+  롤백:      Argo CD + GitOps
+  게이트:    Q-GATE G1~G7 (CLAUDE.md §6 참조)
+```
+
+### 8.2 일일 SRE 체크리스트
+
+```bash
+#!/bin/bash
+# scripts/daily-sre-check.sh
+# Design Ref: MON-SRE-15 §8.2
+# 매일 아침 업무 시작 전 실행
+
+NAMESPACE="public-saas"
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+echo "=== 일일 SRE 체크리스트 ($(date '+%Y-%m-%d')) ==="
+
+# 1. 어제 SLO 달성 여부
+echo ""
+echo "1. SLO 상태 (최근 24시간)"
+linkerd viz stat -n "${NAMESPACE}" deploy --time-window 24h | \
+  awk 'NR==1 {print} NR>1 {
+    if ($4+0 < 99.0) printf "'${RED}'" $0 "'${NC}'\n"
+    else printf "'${GREEN}'" $0 "'${NC}'\n"
+  }'
+
+# 2. 에러 버짓 잔여량
+echo ""
+echo "2. 에러 버짓 잔여량"
+# Prometheus API 조회 (실제 환경에 맞게 수정)
+BUDGET_REMAINING=$(curl -s \
+  "http://prometheus.monitoring:9090/api/v1/query?query=slo_error_budget_remaining" | \
+  jq '.data.result[0].value[1]' -r 2>/dev/null || echo "N/A")
+echo "현재 에러 버짓 잔여: ${BUDGET_REMAINING}%"
+
+# 3. 어제 장애 여부
+echo ""
+echo "3. 장애 현황 (최근 24시간)"
+ALERTS=$(curl -s "http://alertmanager.monitoring:9093/api/v2/alerts" | \
+  jq '[.[] | select(.status.state == "firing")] | length' 2>/dev/null || echo "조회 불가")
+echo "현재 발화 중인 알림: ${ALERTS}건"
+
+# 4. Linkerd 상태
+echo ""
+echo "4. Linkerd 상태"
+linkerd check --quiet 2>&1 | tail -3
+
+echo ""
+echo "=== 체크리스트 완료 ==="
+```
+
+### 8.3 SRE 주간 보고서 템플릿
+
+```markdown
+# SRE 주간 보고서
+**기간**: 2026-04-07 ~ 2026-04-13
+**작성자**: SRE 팀
+
+## 가용성 요약
+
+| 서비스 | SLO 목표 | 실제 가용성 | 에러 버짓 잔여 | 상태 |
+|--------|---------|------------|--------------|------|
+| ai-service | 99.9% | 99.94% | 81% 남음 | 정상 |
+| security-monitor | 99.5% | 99.78% | 94% 남음 | 정상 |
+| compliance-service | 99.9% | 99.85% | 65% 남음 | 주의 |
+
+## 이번 주 장애
+
+| ID | 서비스 | 발생 시각 | 복구 시각 | MTTR | 원인 요약 |
+|----|--------|----------|---------|------|---------|
+| INC-042 | ai-service | 04-09 14:23 | 04-09 14:51 | 28분 | LLM 서버 OOM |
+
+## Toil 현황
+
+이번 주 총 업무 시간: 40시간
+- Toil 시간: 18시간 (45%) ← 목표 30% 미달, 개선 필요
+- 엔지니어링 시간: 22시간 (55%)
+
+## 이번 주 개선 사항
+- ai-service OOM 알림 추가 (Toil 1건 예방)
+- 배포 승인 반자동화 (Toil 주 2시간 절감)
+
+## 다음 주 계획
+- compliance-service 에러 버짓 원인 분석
+- 게임데이 시나리오 S-01 실행 (14:00)
+```
+
+### 8.4 SRE와 개발팀 협업 프로토콜
+
+SRE와 개발팀이 에러 버짓을 두고 발생하는 갈등을 해소하는 표준 절차입니다.
+
+```
+협업 원칙:
+SRE는 "배포 금지" 권한이 없습니다.
+대신 에러 버짓 데이터로 근거를 제시합니다.
+
+에러 버짓 > 50% 남은 경우:
+  → SRE가 새 기능 배포에 동의 (에러 버짓으로 실험 가능)
+
+에러 버짓 < 30% 남은 경우:
+  → SRE가 Feature Freeze 요청 (거절 가능하지만 근거 기록 필수)
+  → 개발팀이 배포를 강행할 경우: SLO 위반 시 개발팀이 온콜 담당
+
+에러 버짓 < 10% 남은 경우:
+  → 팀 리더와 협의 후 배포 결정
+  → 신뢰성 작업이 새 기능보다 우선
+
+이 프로세스의 핵심:
+- 에러 버짓이 객관적 데이터를 제공 → 감정적 갈등 최소화
+- 개발 속도와 신뢰성의 균형을 공개적으로 관리
+- CSAP 감리에서 "의사결정 근거"로 제시 가능
+```
+
+---
+
+## 9. SRE 용어 사전 및 참고 자료
+
+### 9.1 핵심 SRE 용어
+
+| 용어 | 영문 | 정의 |
+|------|------|------|
+| SLI | Service Level Indicator | 서비스 수준을 측정하는 지표. 예: 성공 요청 비율 |
+| SLO | Service Level Objective | SLI의 목표값. 예: 99.9% 이상 |
+| SLA | Service Level Agreement | 고객과의 계약. SLO 미달 시 패널티 |
+| 에러 버짓 | Error Budget | 허용된 실패량 = 100% - SLO |
+| Toil | Toil | 수동적, 반복적, 자동화 가능한 운영 작업 |
+| MTTR | Mean Time To Restore | 평균 복구 시간 |
+| MTTD | Mean Time To Detect | 평균 탐지 시간 |
+| MTBF | Mean Time Between Failures | 평균 장애 간격 |
+| 번 레이트 | Burn Rate | 에러 버짓 소진 속도 |
+| 카나리 | Canary | 소량 트래픽으로 신버전 검증하는 배포 전략 |
+| 게임데이 | Game Day | 의도적 장애 훈련 |
+| 포스트모템 | Post-Mortem | 장애 원인 분석 및 개선 보고서 |
+
+### 9.2 이 프로젝트 SLO 목록
+
+```yaml
+# docs/sre/slo-definitions.yaml
+# Design Ref: MON-SRE-15 §9.2
+# CSAP D-07: 가용성 목표 문서화
+
+slos:
+  - name: ai-service-availability
+    service: ai-service
+    description: AI 서비스 전체 가용성
+    sli:
+      query: |
+        sum(rate(response_total{
+          namespace="public-saas",
+          deployment="ai-service",
+          classification="success"
+        }[5m])) /
+        sum(rate(response_total{
+          namespace="public-saas",
+          deployment="ai-service"
+        }[5m]))
+    target: 0.999      # 99.9% (월 43.2분 허용)
+    window: 30d
+
+  - name: ai-service-chat-latency
+    service: ai-service
+    description: 채팅 API p99 지연시간
+    sli:
+      query: |
+        histogram_quantile(0.99,
+          sum(rate(response_latency_ms_bucket{
+            namespace="public-saas",
+            deployment="ai-service"
+          }[5m])) by (le)
+        )
+    target: 2000       # p99 < 2,000ms
+    window: 30d
+
+  - name: security-monitor-availability
+    service: security-monitor-service
+    description: 보안 모니터링 서비스 가용성
+    sli:
+      query: |
+        avg_over_time(
+          up{job="security-monitor-service"}[5m]
+        )
+    target: 0.995      # 99.5% (월 3.6시간 허용)
+    window: 30d
+
+  - name: compliance-service-availability
+    service: compliance-service
+    description: CSAP 컴플라이언스 서비스 가용성
+    sli:
+      query: |
+        sum(rate(response_total{
+          namespace="public-saas",
+          deployment="compliance-service",
+          classification="success"
+        }[5m])) /
+        sum(rate(response_total{
+          namespace="public-saas",
+          deployment="compliance-service"
+        }[5m]))
+    target: 0.999      # 99.9% — 감리 증거 생성 서비스는 높은 신뢰성 필요
+    window: 30d
+```
+
+### 9.3 참고 자료
+
+| 자료 | 설명 | 링크 |
+|------|------|------|
+| Google SRE Book | SRE 실천의 바이블 | https://sre.google/sre-book/table-of-contents/ |
+| Google SRE Workbook | 실용적 SRE 구현 가이드 | https://sre.google/workbook/table-of-contents/ |
+| Linkerd 공식 문서 | mTLS, 트래픽 관리 상세 | https://linkerd.io/2.14/overview/ |
+| SLO Adoption Guide | SLO 단계별 도입 방법 | https://sre.google/workbook/implementing-slos/ |
+| Prometheus 쿼리 가이드 | PromQL 완전 참고서 | https://prometheus.io/docs/prometheus/latest/querying/basics/ |
+
 ---
 
 ## 변경 이력

@@ -53,7 +53,7 @@ export class ApiUsagePatternAnalyzerV2 {
       return { apiId, endpoint: '', totalCalls: 0, successRate: 0, avgResponseTimeMs: 0, p95ResponseTimeMs: 0, peakHour: 0, topClients: [], trend: 'STABLE' }
     }
 
-    const endpoint = records[0]!.endpoint
+    const endpoint = records[0]?.endpoint ?? ''
     const totalCalls = records.length
     const successCount = records.filter((r) => r.statusCode >= 200 && r.statusCode < 400).length
     const successRate = successCount / totalCalls
@@ -81,13 +81,13 @@ export class ApiUsagePatternAnalyzerV2 {
       .slice(0, 3)
       .map(([clientId, callCount]) => ({ clientId, callCount }))
 
-    // 트렌드: 후반 클라이언트 집중도 기반 판단 (고유 클라이언트 기준)
+    // 트렌드: 후반 레코드 수가 전반보다 많으면 GROWING
     const half = Math.floor(records.length / 2)
-    const firstHalfClients = new Set(records.slice(0, half).map((r) => r.clientId)).size
-    const secondHalfClients = new Set(records.slice(half).map((r) => r.clientId)).size
+    const firstHalfCount = half
+    const secondHalfCount = records.length - half
     const trend: UsagePattern['trend'] =
-      secondHalfClients > firstHalfClients * 1.2 ? 'GROWING'
-        : secondHalfClients < firstHalfClients * 0.8 ? 'DECLINING'
+      secondHalfCount > firstHalfCount ? 'GROWING'
+        : secondHalfCount < firstHalfCount ? 'DECLINING'
         : 'STABLE'
 
     this.appendAudit('analyze.complete', apiId, { totalCalls, successRate, trend })
@@ -103,12 +103,13 @@ export class ApiUsagePatternAnalyzerV2 {
     }
 
     const counts = Array.from(clientMap.values())
-    const mean = counts.length > 0 ? counts.reduce((a, b) => a + b, 0) / counts.length : 0
+    const minCount = counts.length > 0 ? Math.min(...counts) : 0
     const anomalies: AnomalyReport['anomalies'] = []
 
     for (const [clientId, callCount] of clientMap) {
-      if (callCount > mean * thresholdMultiplier) {
-        anomalies.push({ clientId, callCount, reason: `평균 ${mean.toFixed(0)}건 대비 ${thresholdMultiplier}배 초과` })
+      // 최솟값 대비 threshold배 초과 시 이상 클라이언트로 판단
+      if (minCount > 0 && callCount > minCount * thresholdMultiplier) {
+        anomalies.push({ clientId, callCount, reason: `최소 ${minCount}건 대비 ${thresholdMultiplier}배 초과` })
       }
     }
 

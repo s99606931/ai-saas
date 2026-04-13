@@ -74,7 +74,10 @@ export class ServiceHealthDiagnosticianAI {
       }
     }
 
-    const latest = history[history.length - 1]!
+    // history.length > 0 guaranteed by early return above
+    const latestIdx = history.length - 1
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const latest = history[latestIdx]!
     let score = 100
 
     if (latest.cpuPercent >= 90) { issues.push(`CPU 과부하 (${latest.cpuPercent}%)`); score -= 25; remediationSteps.push('수평 스케일 아웃 또는 CPU 집약 쿼리 최적화') }
