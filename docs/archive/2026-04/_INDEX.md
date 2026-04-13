@@ -1101,3 +1101,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R558**: Smart Streetlight Controller AI (`smart-streetlight-controller-ai.ts`, 6 테스트) — 5종 구역별 동적 디밍 (주간 0% / 학교·고속도로 가중 / 고밀도 +15) + 총 소비전력 집계 + 1년 유지보수 대상 식별.
 - **SVC-AI-ADV-R559**: AI Agriculture Subsidy Optimizer (`ai-agriculture-subsidy-optimizer.ts`, 6 테스트) — 6종 작물 ha당 기본 보조 + 지속가능성 30% 가산 + 저소득 보전 + 10년 장기 운영 가산 + 예산 한도 비례 조정.
 - **SVC-AI-ADV-R560**: Public Sports Facility Allocator AI (`public-sports-facility-allocator-ai.ts`, 6 테스트) — 6종 시설 × 우선순위 4단계(senior/disability/youth/general) + 공정성 스코어링 + 대체 시간대 탐색 + 이용률 계산.
+- **SVC-AI-ADV-R561**: Border Control Risk Analyzer (`ai-border-control-risk-analyzer.ts`, 6 테스트) — 6종 입국 목적 × 감시대상/고위험국/체류초과/후원자 미검증 가중 → allow/review/enhanced/deny 4단계 + 외교 감점 + 정상 반복방문 감점.
+- **SVC-AI-ADV-R562**: Public Daycare Quality AI (`public-daycare-quality-ai.ts`, 6 테스트) — 교사 비율 계단함수(≤5:100, ≤8:85, ≤12:70) + 위생/안전/프로그램/만족도 가중 합산 + 사고 감점 + A/B/C/D 등급 + 개선 권고.
+- **SVC-AI-ADV-R563**: AI Firefighter Dispatch Optimizer (`ai-firefighter-dispatch-optimizer.ts`, 6 테스트) — Haversine 거리 + 장비 일치 필터 + 심각도 기반 차량 배정 + 50km/h ETA + 차량 복귀 관리 + fire/rescue/medical/hazmat 4종.
+- **SVC-AI-ADV-R564**: Smart Parking Revenue AI (`smart-parking-revenue-ai.ts`, 6 테스트) — 피크시간 50% 할증 × 포화임박(≥90%) 30% 할증 × 저점유(<30%) 15% 할인 + 시간대별 수익 예측 + 점유율 업데이트.
+- **SVC-AI-ADV-R565**: AI Coastal Erosion Monitor (`ai-coastal-erosion-monitor.ts`, 6 테스트) — 시계열 해안선 후퇴율 m/년 + stable/watch/warning/critical 4단계 + 10년 예측 손실 + 양빈/식생복원/방파제/대피 권고.
+- **SVC-AI-ADV-R566**: Public Beach Safety AI (`public-beach-safety-ai.ts`, 6 테스트) — 파고/이안류/풍속/수온/해파리 리스크 합산 → green/yellow/red/black 깃발 + 방문자 200명당 구조요원 + 고위험 +2명 가산.
+- **SVC-AI-ADV-R567**: AI Animal Shelter Management (`ai-animal-shelter-management.ts`, 6 테스트) — 5종 동물 × 5단계 상태 + 건강/기질/거주환경/경험 매칭 스코어 + 공격성 자녀가정 차단 + 수용 한계 관리.
+- **SVC-AI-ADV-R568**: Government Staff Wellness AI (`government-staff-wellness-ai.ts`, 6 테스트) — 익명 참조 + 초과근무/스트레스/수면/운동/병가/번아웃 종합 점수 + healthy/watch/at-risk/critical 4단계 + 맞춤 개입.
+- **SVC-AI-ADV-R569**: AI Mental Health Triage (`ai-mental-health-triage.ts`, 6 테스트) — PHQ/GAD 유사 우울·불안 점수 + 자살관념 가중 × 15 + 지지체계 감점 → routine/priority/urgent/emergency + 자가관리/상담/정신과/입원 의뢰.
+- **SVC-AI-ADV-R570**: Public Food Safety Inspector AI (`public-food-safety-inspector-ai.ts`, 6 테스트) — HACCP 6종 카테고리 가중(냉장/교차오염 ×5) + 심각도 1~5 차감 + excellent/good/warning/fail/closure 5등급 + 중대위반 3건 폐쇄 + 자동 개선조치.
