@@ -1081,3 +1081,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R538**: Government Report Summarizer AI (`government-report-summarizer-ai.ts`, 6 테스트) — 제·장·절 헤딩 기반 섹션 분리 + 단어 빈도 기반 핵심 문장 추출 + 부서별 조회 + 이메일/주민번호 마스킹.
 - **SVC-AI-ADV-R539**: AI Disability Service Matcher (`ai-disability-service-matcher.ts`, 6 테스트) — 6유형 장애·중증도·소득등급·연령·지역 5기준 자격 검증 + 저소득 우선 점수 + 지역별 서비스 카운트.
 - **SVC-AI-ADV-R540**: Public Cemetery Management AI (`public-cemetery-management-ai.ts`, 6 테스트) — 매장/납골/자연장 3종 구역 + 해시 가족ID(PII 금지) 계약 + 만료 임박 조회 + 구역별 점유율.
+- **SVC-AI-ADV-R541**: Lottery Fairness AI Verifier (`lottery-fairness-ai-verifier.ts`, 6 테스트) — 추첨 엔트로피 + 카이제곱 적합도 + fair/suspicious/biased 3단계 판정 + 당첨자 빈도 추적.
+- **SVC-AI-ADV-R542**: Civil Defense Training AI (`civil-defense-training-ai.ts`, 6 테스트) — 민방위 5시나리오 이수율 + 평균 점수 + advanced/intermediate/needs_improvement 3단계 코칭 + 추천 훈련시간.
+- **SVC-AI-ADV-R543**: Child Allowance Eligibility AI (`child-allowance-eligibility-ai.ts`, 6 테스트) — 연령 개월수·가구 소득·거주·형제 수 기반 자격 판정 + 다자녀 가산금 + 가변 상한.
+- **SVC-AI-ADV-R544**: Farmland Use Compliance AI (`farmland-use-compliance-ai.ts`, 6 테스트) — 지정용도 vs 실제용도 불일치 탐지 + 불법건축물/무단전용/휴경지 위반코드 + low/medium/high 리스크.
+- **SVC-AI-ADV-R545**: Forest Carbon Credit AI (`forest-carbon-credit-ai.ts`, 6 테스트) — 수종별 흡수율 × 면적 × 수령 보정(성숙/청년/유령) + 크레딧 톤 + 시장가치 산정 + 수종별 합계.
+- **SVC-AI-ADV-R546**: Fishery Quota Management AI (`fishery-quota-management-ai.ts`, 6 테스트) — 어종별 TAC 설정 + 어획 누적 + 이용률 계산 + 남획 탐지 + 선박별 총어획량.
+- **SVC-AI-ADV-R547**: Election Anomaly Detector AI (`election-anomaly-detector-ai.ts`, 6 테스트) — 투표율 지역 평균 대비 편차 + 비현실적 투표율 + 극단 득표 쏠림 → normal/watch/alert 경보.
+- **SVC-AI-ADV-R548**: Alcohol License Risk AI (`alcohol-license-risk-ai.ts`, 6 테스트) — 학교 인근 거리·위반 이력·세금 체납·영업 연수 기반 리스크 점수 + approve/conditional/reject 3단계.
+- **SVC-AI-ADV-R549**: Passport Renewal Priority AI (`passport-renewal-priority-ai.ts`, 6 테스트) — 만료일·출국 임박·목적 카테고리·초회 신청 가중 → expedited/standard/low 티어 + 영업일 ETA.
+- **SVC-AI-ADV-R550**: Military Service Exemption AI (`military-service-exemption-ai.ts`, 6 테스트) — 신체등급 5~6 의료/장애부모 독자/3+부양/국제 업적 → medical·family_support·national_interest 카테고리 + 기소자 실격. **R550 달성 — Refactorer dead code 스윕 예정.**
