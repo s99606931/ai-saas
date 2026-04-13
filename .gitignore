@@ -41,6 +41,7 @@ yarn-error.log*
 
 # ─── 테스트 산출물 ─────────────────────────────────────────
 playwright-report/
+tests/browser/.browsers/
 test-results/
 e2e-screenshots/
 coverage/
