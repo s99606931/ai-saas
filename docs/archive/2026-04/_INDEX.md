@@ -971,3 +971,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R428**: Citizen Engagement Analyzer (`citizen-engagement-analyzer.ts`, 6 테스트) — participationRate=participants/target(cap 1) + responseScore=rate*100 + engagementIndex=response*0.5+satisfaction*0.5 + LOW<40/MID<70/HIGH.
 - **SVC-AI-ADV-R429**: AI Policy Impact Simulator v3 (`ai-policy-impact-simulator-v3.ts`, 7 테스트) — revenue=base*(1+elasticityTax*deltaTax) + beneficiaries=base*(1+elasticityBenefit*deltaBenefit) + sideEffect=clip(|dT|*50+|dB|*30) + PROCEED<40/REVIEW<70/REJECT.
 - **SVC-AI-ADV-R430**: Smart Grid Load Balancer AI (`smart-grid-load-balancer-ai.ts`, 7 테스트) — loadRatio>0.9 OVERLOAD, <0.5 SLACK, else NORMAL + overflow=demand-capacity*0.9 + greedy 가장 큰 slack부터 transfer + 과부하 없으면 transfer 없음.
+- **SVC-AI-ADV-R431**: Resident Registration Auto Reviewer AI (`resident-registration-reviewer-ai.ts`, 7 테스트) — 필수필드/주민번호 형식/30일 쿨다운/증빙 2개+ 규칙 → APPROVED/HOLD/REJECTED + S등급 차단.
+- **SVC-AI-ADV-R432**: Passport/Visa AI Processor (`passport-visa-processor-ai.ts`, 6 테스트) — required=photo/idCopy/application/fee + 출국일≤7 URGENT / ≤30 HIGH / else NORMAL + completeness 점수 + urgency rank desc → completeness desc 정렬.
+- **SVC-AI-ADV-R433**: Online Voting Integrity Verifier AI (`online-voting-integrity-verifier-ai.ts`, 6 테스트) — 중복 voterId DUPLICATE + 동일 IP>5 SUSPICIOUS_IP + 동일 voter 간격<2s BOT_SPEED + 사유 병합 보고서.
+- **SVC-AI-ADV-R434**: Welfare Benefits Calculator v2 (`welfare-benefits-calculator-v2.ts`, 6 테스트) — excludes 양방향 정규화 + 2^N(N≤20) 완전탐색으로 충돌 없는 최대 총액 조합 + 충돌쌍 목록.
+- **SVC-AI-ADV-R435**: Tax Audit Risk Assessor AI (`tax-audit-risk-assessor-ai.ts`, 7 테스트) — score=0.4*cash+0.3*gap+0.3*ind + ≥0.7 HIGH/≥0.4 MED/else LOW + topFactors 기여도 상위 2개(설명가능성) + HIGH desc 정렬.
+- **SVC-AI-ADV-R436**: Environmental Complaint Classifier AI (`environmental-complaint-classifier-ai.ts`, 8 테스트) — 키워드 사전(NOISE/AIR/WATER/WASTE) + 유해·긴급·중독 HIGH + 지역 prefix → 수도권/중부/남부/기타 환경청 + confidence=hits/2.
+- **SVC-AI-ADV-R437**: Urban Plan Impact Analyzer AI (`urban-plan-impact-analyzer-ai.ts`, 7 테스트) — traffic=0.01*vehicles, noise=0.05*height+0.3*months/12, sunlight=height/(dist+1)/10 + >0.7 HIGH 완화 권고 생성.
+- **SVC-AI-ADV-R438**: Disaster Pre-Alert Auto Issuer AI (`disaster-pre-alert-issuer-ai.ts`, 8 테스트) — RAINFALL/SEISMIC/FLOOD 임계값 테이블 기반 CAUTION/WARNING/SEVERE 단계 결정 + 알 수 없는 kind/음수 오류.
+- **SVC-AI-ADV-R439**: Open Data Quality Manager AI (`opendata-quality-manager-ai.ts`, 7 테스트) — completeness/freshness(30d=1, 90d=0.6, else=0.3)/accuracy/consistency 4차원 + 0.3/0.2/0.3/0.2 가중합 → A(≥0.9)/B(≥0.7)/C(≥0.5)/D.
+- **SVC-AI-ADV-R440**: Smart City Integrated Dashboard AI (`smart-city-dashboard-ai.ts`, 7 테스트) — KPI z=(v-base)/std + |z|≥2 이상 + 도메인별 score=1-min(|z|,3)/3 평균 + cityIndex=도메인 점수 평균.
