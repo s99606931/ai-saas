@@ -1021,3 +1021,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R478**: AI Environmental Compliance (`ai-environmental-compliance.ts`, 6 테스트) — CO2/NOx/SOx/PM10/VOC 한도 비교 + 1.5배/2배 MAJOR/SEVERE + 벌금 5/20/50M 추정 + WARNING/VIOLATION 판정.
 - **SVC-AI-ADV-R479**: Public Infrastructure Inspector AI (`public-infrastructure-inspector-ai.ts`, 6 테스트) — 노후·결함·교통하중 가중치 → 구조점수 감산 A~E 등급 + CRITICAL 즉시점검 + 재점검 주기 자동 산정.
 - **SVC-AI-ADV-R480**: AI Social Vulnerability Detector (`ai-social-vulnerability-detector.ts`, 6 테스트) — 1인당 소득 빈곤선 기준 + 노약·장애·아동·노숙 가중치 → NONE/WATCH/AT_RISK/URGENT 4단계 + 맞춤 지원 프로그램 추천.
+- **SVC-AI-ADV-R481**: Disaster Response AI Coordinator (`disaster-response-ai-coordinator.ts`, 6 테스트) — severity→P1~P4 우선순위 + ready 시간순 그리디 자원 배정 + ceil(pop/500) 대피소 + log스케일 위험지수.
+- **SVC-AI-ADV-R482**: International Cooperation AI (`international-cooperation-ai.ts`, 6 테스트) — 도메인별 strategicFit + 수익자당 비용 단계화 costEffectiveness + 고위험국 자동 REJECT + 포트폴리오 랭킹.
+- **SVC-AI-ADV-R483**: Statistical Integrity Verifier (`statistical-integrity-verifier.ts`, 6 테스트) — 평균/표준편차 재계산 vs 보고치 1%/5% tolerance VALID/SUSPICIOUS/INVALID + 3σ 이상치 + 벤포드 카이제곱.
+- **SVC-AI-ADV-R484**: AI Legislation Drafter (`ai-legislation-drafter.ts`, 6 테스트) — 6개 카테고리별 조문 템플릿 + 이해관계자 조항 자동 추가 + TAX/SECURITY 충돌 경고 + 문장 평균길이 명확성 평가.
+- **SVC-AI-ADV-R485**: Public Asset Monetization AI (`public-asset-monetization-ai.ts`, 6 테스트) — 자산 유형·활용도·위치 → LEASE/SELL/JV/DIGITIZE/HOLD 5전략 + 회수기간 + 포트폴리오 수익률.
+- **SVC-AI-ADV-R486**: AI Elderly Care Service (`ai-elderly-care-service.ts`, 6 테스트) — 연령·독거·인지·만성질환·이동성 가중합 LIGHT~CRITICAL 4계층 + 주간 방문 횟수 + 응급 모니터링 + 자원 부하 집계.
+- **SVC-AI-ADV-R487**: AI Youth Welfare Optimizer (`ai-youth-welfare-optimizer.ts`, 6 테스트) — 미진학·결손·저소득·정신·행동 위험 GREEN/YELLOW/ORANGE/RED 4단계 + 상담 횟수·월수당 + 예산 예측.
+- **SVC-AI-ADV-R488**: Public Transport Integration AI (`public-transport-integration-ai.ts`, 6 테스트) — 다중 모드 시간표 통합 + 환승 대기 추정 + 모드 다양성 coverage + 점유율 기반 증편/감편 제안.
+- **SVC-AI-ADV-R489**: AI Water Resource Manager (`ai-water-resource-manager.ts`, 6 테스트) — 저수율·강수예보 SURPLUS/NORMAL/WATCH/DROUGHT/FLOOD_RISK 5상태 + 권장 방류량 + 임계 도달 일수 + 유역 수지.
+- **SVC-AI-ADV-R490**: Gov Digital Transformation AI (`gov-digital-transformation-ai.ts`, 6 테스트) — 클라우드·API·디지털화·역량·시민서비스 5축 평균 → 1~5 성숙도 + 우선 액션 + 기간/예산 추정 + 국가 지수.
