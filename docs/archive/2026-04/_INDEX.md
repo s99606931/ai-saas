@@ -1001,3 +1001,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R458**: Public Sector AI Readiness (`public-sector-ai-readiness.ts`, 8 테스트) — data 0.3/infra 0.25/talent 0.25/governance 0.2 가중합 정규화 + ≥0.8 ADVANCED/≥0.6 PROGRESSING/≥0.4 EMERGING/INITIAL + 최약 영역 식별.
 - **SVC-AI-ADV-R459**: Smart Waste Management AI (`smart-waste-management-ai.ts`, 8 테스트) — fillLevel≥0.8 필터 + (0,0) 시작 nearest-neighbor 탐욕 순회 + 총거리 계산 + ≥1.0 overflow 알람.
 - **SVC-AI-ADV-R460**: Interagency Data Exchange AI (`interagency-data-exchange-ai.ts`, 8 테스트) — Mapping 기반 string/number/date(YYYY-MM-DD) 변환 + 누락·NaN·형식 불일치 필드는 lostFields 배열로 보고.
+- **SVC-AI-ADV-R461**: Public Safety Incident Tracker (`public-safety-incident-tracker.ts`, 5 테스트) — 카테고리×지역 그룹핑 + threshold 초과 PatternAlert + 평균 severity≥4 hotspot + 상위 위험 지역 식별.
+- **SVC-AI-ADV-R462**: AI Urban Traffic Controller (`ai-urban-traffic-controller.ts`, 5 테스트) — 방향별 차량 수 비례 녹색 시간 배분 + min10/max60 클램프 + 총 주기 60~120초 + priorityDir 최대 방향.
+- **SVC-AI-ADV-R463**: Public Health Emergency Detector (`public-health-emergency-detector.ts`, 5 테스트) — symptom×region 시계열 그룹 + 최근 count가 baseline 3배 초과 시 anomaly + 2건 warning/5건 critical.
+- **SVC-AI-ADV-R464**: Gov Chatbot Quality Evaluator (`gov-chatbot-quality-evaluator.ts`, 6 테스트) — relevance/clarity/completeness 3축 평균 + 150자 초과 clarity 감점 + 85/70/55 기준 A~D 등급.
+- **SVC-AI-ADV-R465**: Predictive Infrastructure Failure (`predictive-infrastructure-failure.ts`, 5 테스트) — 0.3·age/50 + 0.3·crack + 0.2·vibration + 0.2·corrosion 가중합 + 0.75 high/0.5 mid/low 3단계 점검 우선순위 산출.
+- **SVC-AI-ADV-R466**: Smart Energy Grid Optimizer (`smart-energy-grid-optimizer.ts`, 5 테스트) — surplus/shortage 지역 자동 매칭 + min(잉여,부족) 단순 그리디 이체 배분 + 잔여 shortage/surplus 지역 리포트.
+- **SVC-AI-ADV-R467**: AI Court Scheduling (`ai-court-scheduling.ts`, 5 테스트) — 사건 priority 내림차순 정렬 + specialty 일치 재판부 최소 부하 선택 + capacity 초과 시 unscheduled 기록.
+- **SVC-AI-ADV-R468**: Public Land Use Optimizer (`public-land-use-optimizer.ts`, 5 테스트) — 50·access + area(≥5000?30:15) + demand(housing20/commerce15/park10/industry5) utility + ≥60 convertible, restricted 시 변환 차단.
+- **SVC-AI-ADV-R469**: Social Service Eligibility AI (`social-service-eligibility-ai.ts`, 6 테스트) — 기초생활/노인돌봄/아동수당/한부모 4개 서비스 통합 자격 심사 + 부적격 사유 투명 기록.
+- **SVC-AI-ADV-R470**: Intergovernmental Fund Transfer AI (`intergovernmental-fund-transfer-ai.ts`, 6 테스트) — amount/APR-\d{6} 승인코드/잔액/일일한도 4단계 검증 + 원자적 잔액 갱신 + 감사 추적.
