@@ -1,26 +1,20 @@
-# SVC-AI-ADV-R443 Plan — 지능형 교육 지원 시스템
-
-## Executive Summary
-| 관점 | 내용 |
-|------|------|
-| WHY | 학습 격차 조기 감지 + 맞춤형 학습 경로 권고 |
-| WHO | 초중고 교사, 교육청 장학사 |
-| WHAT | 학생 성적 → 격차 + 개별 학습 경로 |
-| HOW | 평균 비교 + 취약 과목 추출 |
+# SVC-AI-ADV-R443 Plan — AI기반 공공 서비스 접점 자동 분석
 
 ## Context Anchor
-- WHY: 학습 격차 조기 해소
-- WHO: 교사·학부모
-- RISK: 낙인 → 등급 표시 신중
-- SUCCESS: 취약 과목 100% 식별
-- SCOPE: `education-support-system.ts`
+| 항목 | 내용 |
+|------|------|
+| WHY | 공공 서비스 접점별 민원인 경험 데이터를 AI로 분석하여 서비스 품질 향상 |
+| WHO | 서비스 기획자, 품질 관리자 |
+| RISK | 민원인 PII(citizenId) 마스킹 필수 |
+| SUCCESS | SC-R443-1: 접점 등록 / SC-R443-2: 만족도 평균 계산 / SC-R443-3: C/S 등급 차단 |
+| SCOPE | public-service-touchpoint-analyzer.ts 구현 |
 
 ## 요구사항
-- FR-443.1: Student = { id, scores: Record<subject, number> }
-- FR-443.2: cohortAvg = 전체 학생 과목별 평균
-- FR-443.3: 학생 과목 점수 < cohortAvg - 10 → WEAK
-- FR-443.4: recommendations: 각 WEAK 과목 → `${subject} 보충 프로그램`
-- FR-443.5: N2SF C/S 차단 + `getAuditLog()`
+- FR-R443.1: 서비스 접점 등록 (touchpointId, name, channel)
+- FR-R443.2: 상호작용 기록 (citizenId, satisfactionScore 1-5, waitTimeMs)
+- FR-R443.3: PII 마스킹 (citizenId → SHA-256 16자 hex)
+- FR-R443.4: 접점별 평균 만족도 및 대기시간 계산
+- FR-R443.5: N2SF N-05 C/S 등급 차단
 
 ## 추적성
-FR-443.* ↔ `education-support-system.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05
+FR-R443.* ↔ `public-service-touchpoint-analyzer.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05

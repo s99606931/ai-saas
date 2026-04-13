@@ -1,21 +1,21 @@
-# SVC-AI-ADV-R468 Design — 공공 토지 이용 최적화
+# SVC-AI-ADV-R468 Design — digital-transformation-assessor-v2.ts
 
 Plan Ref: SVC-AI-ADV-R468.plan.md
 
-```ts
-export type LandDemand = 'housing'|'commerce'|'park'|'industry';
-export interface Parcel {
-  readonly id: string;
-  readonly areaSqm: number;
-  readonly accessScore: number;
-  readonly demand: LandDemand;
-  readonly currentUse: string;
-  readonly restricted: boolean;
-}
-export interface LandRecommendation {
-  readonly id: string;
-  readonly recommendedUse: string;
-  readonly utilityScore: number;
-  readonly convertible: boolean;
+## 클래스 설계
+
+```typescript
+type DTCategory = 'process' | 'technology' | 'culture' | 'data'
+type DTStage = 'leading' | 'progressing' | 'initiating' | 'lagging'
+
+class DigitalTransformationAssessorV2 {
+  registerOrg(orgId, name, type): Organization
+  recordCategoryScore(orgId, category, score, dataGrade?): void
+  getTransformationScore(orgId): number   // 기록된 category 평균
+  getTransformationStage(orgId): DTStage
+  getAuditLog(): AuditEntry[]
 }
 ```
+
+## 단계 기준
+>=75: leading, >=50: progressing, >=25: initiating, else lagging

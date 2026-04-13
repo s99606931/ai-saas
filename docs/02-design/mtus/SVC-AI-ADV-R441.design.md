@@ -1,25 +1,28 @@
-# SVC-AI-ADV-R441 Design — 공공 서비스 자동화 워크플로우 빌더
+# SVC-AI-ADV-R441 Design — multitenant-cost-allocation-optimizer.ts
 
 Plan Ref: SVC-AI-ADV-R441.plan.md
 
-## 인터페이스
-```ts
-export type Op = 'eq' | 'ne' | 'gt' | 'lt';
-export interface Condition { readonly key: string; readonly op: Op; readonly value: unknown; }
-export interface Step {
-  readonly id: string;
-  readonly when?: Condition;
-  readonly action: string;
-  readonly set?: Record<string, unknown>;
+## 클래스 설계
+
+```typescript
+class MultitenantCostAllocationOptimizer {
+  addUsage(tenantId, resourceType, usageAmount, dataGrade?): void
+  getCostBreakdown(totalCost): CostBreakdown[]
+  getOverBudgetTenants(totalCost, threshold): CostBreakdown[]
+  getAuditLog(): AuditEntry[]
 }
-export interface RunResult {
-  readonly executed: readonly string[];
-  readonly skipped: readonly string[];
-  readonly context: Record<string, unknown>;
+
+interface CostBreakdown {
+  tenantId: string
+  usageAmount: number
+  allocatedCost: number
+  ratio: number  // 0-100 (%)
 }
 ```
 
-## 표현식
-- eq: ctx[key] === value
-- ne: ctx[key] !== value
-- gt/lt: 숫자 비교
+## 비용 배분 공식
+`tenantCost = (tenantUsage / totalUsage) * totalCost`
+`ratio = (tenantUsage / totalUsage) * 100`
+
+## 초과 탐지
+`allocatedCost > threshold`

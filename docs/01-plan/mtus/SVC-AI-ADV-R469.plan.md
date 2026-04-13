@@ -1,26 +1,20 @@
-# SVC-AI-ADV-R469 Plan — 사회 서비스 자격 자동 심사
-
-## Executive Summary
-| 관점 | 내용 |
-|------|------|
-| WHY | 복수 사회 서비스 자격을 통합 심사하여 신청 절차 단축 |
-| WHO | 보건복지부, 시군구 복지과 |
-| WHAT | 신청자 정보 → 자격 가능 서비스 목록 |
-| HOW | 소득·가구원 수·연령 기준 매칭 |
+# SVC-AI-ADV-R469 Plan — AI기반 공공기관 데이터 생명주기 관리 v2
 
 ## Context Anchor
-- WHY: 서비스별 개별 심사의 중복 해소
-- WHO: 복지 상담원
-- RISK: 오판정 → 규칙 투명성 유지
-- SUCCESS: 자격 판정 정확도 ≥ 95%
-- SCOPE: `social-service-eligibility-ai.ts`
+| 항목 | 내용 |
+|------|------|
+| WHY | 공공 데이터 생명주기(생성→보관→폐기)를 자동 관리하여 규정 준수 |
+| WHO | 데이터 관리자, 기록물 담당자 |
+| RISK | 보관 기간 초과 데이터 누락 방지 필요 |
+| SUCCESS | SC-R469-1: 데이터 등록 / SC-R469-2: 폐기 대상 탐지 / SC-R469-3: C/S 등급 차단 |
+| SCOPE | public-data-lifecycle-manager-v2.ts 구현 |
 
 ## 요구사항
-- FR-469.1: `Applicant = { id, age, householdSize, monthlyIncome }`
-- FR-469.2: `evaluate(applicant)` → `{ eligibleServices: string[], reasons: Record<string,string> }`
-- FR-469.3: 서비스 정의 — 기초생활(소득 ≤ 100만×가구), 노인돌봄(age ≥ 65), 아동수당(age < 8), 한부모(household ≤ 2, income ≤ 300만)
-- FR-469.4: 각 서비스 통과 시 eligibleServices 추가, 불통과 시 reasons에 사유 기록
-- FR-469.5: N2SF C/S 차단 + `getAuditLog()`
+- FR-R469.1: 데이터 등록 (dataId, name, category, retentionYears)
+- FR-R469.2: 데이터 생성 일자 기록
+- FR-R469.3: 폐기 대상 조회 (createdAt + retentionYears * 365일 < 현재)
+- FR-R469.4: 데이터 폐기 처리 및 감사 로그 기록
+- FR-R469.5: N2SF N-05 C/S 등급 차단
 
 ## 추적성
-FR-469.* ↔ `social-service-eligibility-ai.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05
+FR-R469.* ↔ `public-data-lifecycle-manager-v2.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05

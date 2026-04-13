@@ -1,12 +1,21 @@
-# SVC-AI-ADV-R444 Design — 공공 부동산 평가 AI
+# SVC-AI-ADV-R444 Design — realtime-health-predictor-v2.ts
 
 Plan Ref: SVC-AI-ADV-R444.plan.md
 
-```ts
-export type UseType = 'residential' | 'commercial' | 'land';
-export interface Target { readonly area: number; readonly use: UseType; readonly year: number; }
-export interface Comparable { readonly area: number; readonly use: UseType; readonly year: number; readonly price: number; }
-export interface Appraisal { readonly estimatedPrice: number; readonly unitPrice: number; readonly usedCount: number; readonly confidence: number; }
+## 클래스 설계
+
+```typescript
+class RealtimeHealthPredictorV2 {
+  registerService(serviceId, name, baselineScore): Service
+  recordMetrics(serviceId, cpuUsage, memUsage, errorRate, dataGrade?): HealthSnapshot
+  getHealthScore(serviceId): number
+  getAtRiskServices(threshold): Service[]
+  getAuditLog(): AuditEntry[]
+}
 ```
 
-가중치: w = max(1, 1 - (targetYear - compYear) * 0.1)
+## 건전성 점수 공식
+`score = Math.max(0, 100 - cpuUsage * 0.3 - memUsage * 0.3 - errorRate * 0.4)`
+
+## 위험 탐지
+`healthScore < threshold`

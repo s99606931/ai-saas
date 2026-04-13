@@ -1,27 +1,20 @@
-# SVC-AI-ADV-R468 Plan — 공공 토지 이용 최적화
-
-## Executive Summary
-| 관점 | 내용 |
-|------|------|
-| WHY | 공공 토지의 용도 전환 가능성을 분석해 활용도 향상 |
-| WHO | 국토교통부, 한국토지주택공사 |
-| WHAT | 토지 현황 → 권장 용도 + 활용 점수 |
-| HOW | 면적·접근성·주변 수요 가중합 |
+# SVC-AI-ADV-R468 Plan — AI기반 자동 디지털 전환 평가 v2
 
 ## Context Anchor
-- WHY: 유휴 공공 토지 증가
-- WHO: 토지정책과
-- RISK: 규제 충돌 → 제한 체크 포함
-- SUCCESS: 권장 용도 수용률 ≥ 70%
-- SCOPE: `public-land-use-optimizer.ts`
+| 항목 | 내용 |
+|------|------|
+| WHY | 공공기관 디지털 전환 수준을 자동 평가하여 전략 수립 지원 |
+| WHO | 디지털 전환 담당자, 정보화 기획팀 |
+| RISK | 평가 항목 간 가중치 산정 오류 방지 필요 |
+| SUCCESS | SC-R468-1: 기관 등록 / SC-R468-2: 전환 점수 계산 / SC-R468-3: C/S 등급 차단 |
+| SCOPE | digital-transformation-assessor-v2.ts 구현 |
 
 ## 요구사항
-- FR-468.1: `Parcel = { id, areaSqm, accessScore: 0..1, demand: 'housing'|'commerce'|'park'|'industry', currentUse: string, restricted: boolean }`
-- FR-468.2: `recommend(parcel)` → `{ id, recommendedUse, utilityScore: 0..100, convertible: boolean }`
-- FR-468.3: restricted=true 시 convertible=false, recommendedUse=currentUse
-- FR-468.4: utilityScore = 50·accessScore + (areaSqm ≥ 5000 ? 30 : 15) + (demand 가중치: housing 20, commerce 15, park 10, industry 5)
-- FR-468.5: convertible = utilityScore ≥ 60
-- FR-468.6: N2SF C/S 차단 + `getAuditLog()`
+- FR-R468.1: 기관 등록 (orgId, name, type)
+- FR-R468.2: 평가 항목 기록 (category: process/technology/culture/data, score 0-100)
+- FR-R468.3: 전환 점수 = 4개 category 평균
+- FR-R468.4: 전환 단계 (>=75: leading, >=50: progressing, >=25: initiating, else lagging)
+- FR-R468.5: N2SF N-05 C/S 등급 차단
 
 ## 추적성
-FR-468.* ↔ `public-land-use-optimizer.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05
+FR-R468.* ↔ `digital-transformation-assessor-v2.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05

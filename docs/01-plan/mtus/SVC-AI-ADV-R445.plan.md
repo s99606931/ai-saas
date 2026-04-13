@@ -1,26 +1,20 @@
-# SVC-AI-ADV-R445 Plan — AI 기반 법원 판례 요약기
-
-## Executive Summary
-| 관점 | 내용 |
-|------|------|
-| WHY | 주요 쟁점/판시사항 자동 추출 → 연구 효율 |
-| WHO | 법원, 검찰, 변호사, 로스쿨 |
-| WHAT | 판결문 원문 → 쟁점/판시/결론 요약 |
-| HOW | 섹션 키워드 기반 파싱 + 문단 추출 |
+# SVC-AI-ADV-R445 Plan — AI기반 자동 감사 추적 강화 v2
 
 ## Context Anchor
-- WHY: 판례 연구 시간 단축
-- WHO: 법원 자료실
-- RISK: 오역 → 원문 링크 병기
-- SUCCESS: 3개 섹션 추출 성공률
-- SCOPE: `court-case-summarizer-ai.ts`
+| 항목 | 내용 |
+|------|------|
+| WHY | CSAP D-06 감사 로그 요건을 강화하여 감리 대비 완전성 확보 |
+| WHO | 보안 감사팀, 컴플라이언스 담당자 |
+| RISK | 감사 로그 무결성 보장 필요 (append-only) |
+| SUCCESS | SC-R445-1: 감사 이벤트 기록 / SC-R445-2: 무결성 체크섬 생성 / SC-R445-3: C/S 등급 차단 |
+| SCOPE | audit-trail-enhancer-v2.ts 구현 |
 
 ## 요구사항
-- FR-445.1: 입력 = 판결문 원문 (문단 배열)
-- FR-445.2: "쟁점"/"판시"/"결론" 키워드로 섹션 시작 탐지
-- FR-445.3: 각 섹션 → 다음 섹션 전까지 병합
-- FR-445.4: 결과 = { issues, rulings, conclusion, found: string[] }
-- FR-445.5: N2SF C/S 차단 + `getAuditLog()`
+- FR-R445.1: 감사 이벤트 기록 (eventType, actorId, resourceId)
+- FR-R445.2: PII 마스킹 (actorId → SHA-256 16자 hex)
+- FR-R445.3: 체크섬 생성 (SHA-256, eventType+maskedActorId+resourceId, 16자 hex)
+- FR-R445.4: 이벤트 타입별 통계 조회
+- FR-R445.5: N2SF N-05 C/S 등급 차단
 
 ## 추적성
-FR-445.* ↔ `court-case-summarizer-ai.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05
+FR-R445.* ↔ `audit-trail-enhancer-v2.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05

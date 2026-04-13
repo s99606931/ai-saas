@@ -1,25 +1,42 @@
-# SVC-AI-ADV-R439 Design — Open Data Quality Manager AI
+# SVC-AI-ADV-R439 Design — failure-scenario-simulator-v2.ts
 
 Plan Ref: SVC-AI-ADV-R439.plan.md
 
-## 인터페이스
-```ts
-export interface DatasetStats {
-  readonly datasetId: string;
-  readonly totalRows: number;
-  readonly nullCount: number;
-  readonly invalidCount: number;
-  readonly schemaViolations: number;
-  readonly lastUpdated: string;
+## 클래스 설계
+
+```typescript
+type Severity = 'critical' | 'high' | 'medium' | 'low'
+type DataGrade = 'O' | 'C' | 'S'
+
+interface FailureScenario {
+  scenarioId: string
+  name: string
+  severity: Severity
+  impactScore: number
+  active: boolean
 }
-export type Grade = 'A' | 'B' | 'C' | 'D';
-export interface Scorecard {
-  readonly datasetId: string;
-  readonly completeness: number;
-  readonly freshness: number;
-  readonly accuracy: number;
-  readonly consistency: number;
-  readonly overall: number;
-  readonly grade: Grade;
+
+interface SimulationResult {
+  scenarioId: string
+  impactScore: number
+  runAt: string
+}
+
+class FailureScenarioSimulatorV2 {
+  registerScenario(scenarioId, name, severity): FailureScenario
+  runSimulation(scenarioId, dataGrade?): SimulationResult
+  getActiveScenarios(): FailureScenario[]
+  getAuditLog(): AuditEntry[]
 }
 ```
+
+## IMPACT_SCORE 매핑
+| severity | score |
+|----------|-------|
+| critical | 100 |
+| high | 70 |
+| medium | 40 |
+| low | 10 |
+
+## N2SF N-05
+C/S 등급 시 `throw new Error('BLOCKED: ${grade}등급 데이터는 AI API 전송 금지 (N2SF N-05)')`

@@ -1,16 +1,24 @@
-# SVC-AI-ADV-R443 Design — 지능형 교육 지원 시스템
+# SVC-AI-ADV-R443 Design — public-service-touchpoint-analyzer.ts
 
 Plan Ref: SVC-AI-ADV-R443.plan.md
 
-```ts
-export interface Student { readonly id: string; readonly scores: Record<string, number>; }
-export interface StudentPlan {
-  readonly id: string;
-  readonly weakSubjects: readonly string[];
-  readonly recommendations: readonly string[];
+## 클래스 설계
+
+```typescript
+class PublicServiceTouchpointAnalyzer {
+  registerTouchpoint(touchpointId, name, channel): Touchpoint
+  recordInteraction(touchpointId, citizenId, satisfactionScore, waitTimeMs, dataGrade?): void
+  getTouchpointStats(touchpointId): TouchpointStats
+  getLowSatisfactionTouchpoints(threshold): Touchpoint[]
+  getAuditLog(): AuditEntry[]
 }
-export interface CohortReport {
-  readonly cohortAvg: Record<string, number>;
-  readonly plans: readonly StudentPlan[];
+
+interface TouchpointStats {
+  avgSatisfaction: number
+  avgWaitTimeMs: number
+  count: number
 }
 ```
+
+## PII 마스킹
+`createHash('sha256').update(citizenId).digest('hex').substring(0, 16)`

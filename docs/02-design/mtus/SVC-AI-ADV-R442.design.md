@@ -1,15 +1,26 @@
-# SVC-AI-ADV-R442 Design — AI 기반 공공 보건 트렌드 분석기
+# SVC-AI-ADV-R442 Design — code-architecture-validator-ai.ts
 
 Plan Ref: SVC-AI-ADV-R442.plan.md
 
-```ts
-export interface TrendInput { readonly category: string; readonly weeks: readonly number[]; }
-export interface TrendReport {
-  readonly category: string;
-  readonly spikes: readonly number[]; // week index
-  readonly growthPct: number;
-  readonly status: 'SPIKE' | 'STABLE';
+## 클래스 설계
+
+```typescript
+type ViolationType = 'circular' | 'layerSkip' | 'god-class'
+
+class CodeArchitectureValidatorAI {
+  registerComponent(componentId, name, layer): Component
+  recordViolation(componentId, violationType, dataGrade?): void
+  getViolationScore(componentId): number
+  getHighRiskComponents(threshold): Component[]
+  getAuditLog(): AuditEntry[]
 }
 ```
 
-알고리즘: i ≥ 3에서 ma = (w[i-3]+w[i-2]+w[i-1]+w[i])/4 계산. w[i]/ma >= 1.5 이면 스파이크. growthPct = (last - first)/first * 100 (first=0 이면 0).
+## VIOLATION_SCORE 매핑
+| type | score |
+|------|-------|
+| circular | 30 |
+| layerSkip | 20 |
+| god-class | 15 |
+
+누적 합산 방식

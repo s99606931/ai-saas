@@ -1,26 +1,20 @@
-# SVC-AI-ADV-R466 Plan — 스마트 에너지 그리드 최적화
-
-## Executive Summary
-| 관점 | 내용 |
-|------|------|
-| WHY | 피크 수요 시간대 부하 분산으로 전력 안정성 확보 |
-| WHO | 한국전력공사, 에너지관리공단 |
-| WHAT | 지역별 수요·공급 → 부하 재분배 계획 |
-| HOW | 수요/공급 잔여량 기반 송전 이동량 계산 |
+# SVC-AI-ADV-R466 Plan — AI기반 서비스 성숙도 자동 평가 v2
 
 ## Context Anchor
-- WHY: 국지적 수요 초과 발생 시 광역 배분
-- WHO: 그리드 운영자
-- RISK: 음수 배분 → 0 이상 클램프
-- SUCCESS: 수요 충족률 ≥ 95%
-- SCOPE: `smart-energy-grid-optimizer.ts`
+| 항목 | 내용 |
+|------|------|
+| WHY | SaaS 서비스 성숙도를 자동 평가하여 개선 로드맵 제공 |
+| WHO | 서비스 관리자, 품질팀 |
+| RISK | 평가 기준 일관성 유지 필요 |
+| SUCCESS | SC-R466-1: 서비스 등록 감사 로그 / SC-R466-2: 성숙도 점수 계산 / SC-R466-3: C/S 등급 차단 |
+| SCOPE | service-maturity-assessor-v2.ts 구현 |
 
 ## 요구사항
-- FR-466.1: `Region = { id, demandKw, supplyKw }`
-- FR-466.2: `optimize(regions[])` → `{ transfers: [{from,to,amountKw}], shortageRegions[], surplusRegions[] }`
-- FR-466.3: surplus = supply > demand, shortage = demand > supply
-- FR-466.4: surplus 지역에서 shortage 지역으로 min(surplus, shortage) 이동
-- FR-466.5: N2SF C/S 차단 + `getAuditLog()`
+- FR-R466.1: 서비스 등록 (serviceId, name, category)
+- FR-R466.2: 성숙도 지표 기록 (dimension: automation/monitoring/security/documentation, score 0-100)
+- FR-R466.3: 서비스 성숙도 점수 = 4개 dimension 평균
+- FR-R466.4: 성숙도 등급 (>=80: platinum, >=60: gold, >=40: silver, else bronze)
+- FR-R466.5: N2SF N-05 C/S 등급 차단
 
 ## 추적성
-FR-466.* ↔ `smart-energy-grid-optimizer.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05
+FR-R466.* ↔ `service-maturity-assessor-v2.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05

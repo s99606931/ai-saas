@@ -1,27 +1,20 @@
-# SVC-AI-ADV-R439 Plan — Open Data Quality Manager AI
-
-## Executive Summary
-| 관점 | 내용 |
-|------|------|
-| WHY | 공공 개방 데이터셋 품질 자동 채점 및 등급화 |
-| WHO | 행안부, 공공데이터포털 운영기관 |
-| WHAT | 메타데이터 + 샘플 통계 → 4개 차원 점수 → 등급 |
-| HOW | 완전성/정확성/최신성/일관성 가중합 |
+# SVC-AI-ADV-R439 Plan — AI기반 자동 장애 시나리오 시뮬레이션 v2
 
 ## Context Anchor
-- WHY: 데이터 활용도 향상
-- WHO: 데이터 개방 담당자
-- RISK: 자동 채점 오탐으로 낮은 점수 분쟁
-- SUCCESS: 4차원 전체 평가, 등급 명시
-- SCOPE: `opendata-quality-manager-ai.ts`
+| 항목 | 내용 |
+|------|------|
+| WHY | 공공 SaaS 장애 대응 훈련을 자동화하여 SRE 팀 실전 대비 강화 |
+| WHO | SRE 엔지니어, 운영팀 |
+| RISK | 시뮬레이션과 실제 환경 혼동 방지 필요 |
+| SUCCESS | SC-R439-1: 시나리오 등록 감사 로그 / SC-R439-2: 심각도별 영향도 계산 / SC-R439-3: C/S 등급 차단 |
+| SCOPE | failure-scenario-simulator-v2.ts 구현 |
 
 ## 요구사항
-- FR-439.1: completeness = 1 - (nullCount / totalRows)
-- FR-439.2: freshness: 최근 업데이트가 30일 이내 → 1, 90일 이내 → 0.6, 이후 → 0.3
-- FR-439.3: accuracy = 1 - (invalidCount / totalRows)
-- FR-439.4: consistency = 1 - (schemaViolations / totalRows)
-- FR-439.5: 종합 = 0.3*완전 + 0.2*신선 + 0.3*정확 + 0.2*일관 → A(≥0.9)/B(≥0.7)/C(≥0.5)/D
-- N2SF C/S 차단 + `getAuditLog()`
+- FR-R439.1: 장애 시나리오 등록 (scenarioId, name, severity: critical/high/medium/low)
+- FR-R439.2: 심각도별 영향도 점수 (critical:100, high:70, medium:40, low:10)
+- FR-R439.3: 시뮬레이션 실행 및 감사 로그 기록
+- FR-R439.4: 활성 시나리오 목록 조회
+- FR-R439.5: N2SF N-05 C/S 등급 차단
 
 ## 추적성
-FR-439.* ↔ `opendata-quality-manager-ai.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05
+FR-R439.* ↔ `failure-scenario-simulator-v2.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05

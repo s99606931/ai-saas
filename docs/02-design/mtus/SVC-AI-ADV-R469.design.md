@@ -1,17 +1,27 @@
-# SVC-AI-ADV-R469 Design — 사회 서비스 자격 자동 심사
+# SVC-AI-ADV-R469 Design — public-data-lifecycle-manager-v2.ts
 
 Plan Ref: SVC-AI-ADV-R469.plan.md
 
-```ts
-export interface Applicant {
-  readonly id: string;
-  readonly age: number;
-  readonly householdSize: number;
-  readonly monthlyIncome: number;
+## 클래스 설계
+
+```typescript
+class PublicDataLifecycleManagerV2 {
+  registerData(dataId, name, category, retentionYears, createdAt?: Date): DataRecord
+  getExpiredData(currentDate?: Date): DataRecord[]
+  disposeData(dataId, dataGrade?): void
+  getActiveData(): DataRecord[]
+  getAuditLog(): AuditEntry[]
 }
-export interface EligibilityResult {
-  readonly id: string;
-  readonly eligibleServices: readonly string[];
-  readonly reasons: Readonly<Record<string, string>>;
+
+interface DataRecord {
+  dataId: string
+  name: string
+  category: string
+  retentionYears: number
+  createdAt: Date
+  disposed: boolean
 }
 ```
+
+## 만료 조건
+`createdAt + retentionYears * 365 * 24 * 60 * 60 * 1000 < currentDate`

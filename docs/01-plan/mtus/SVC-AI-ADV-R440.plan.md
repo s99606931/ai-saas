@@ -1,26 +1,20 @@
-# SVC-AI-ADV-R440 Plan — Smart City Integrated Dashboard AI
-
-## Executive Summary
-| 관점 | 내용 |
-|------|------|
-| WHY | 도시 KPI 실시간 수집 + 이상 감지 + 통합 스냅샷 생성 |
-| WHO | 스마트시티 운영센터, 시장실 |
-| WHAT | 다중 도메인 KPI → 이상 항목 + 종합 지수 |
-| HOW | Z-score 이상 감지 + 도메인별 가중 평균 |
+# SVC-AI-ADV-R440 Plan — AI기반 공공기관 의사소통 패턴 분석
 
 ## Context Anchor
-- WHY: 의사결정 실시간성 확보
-- WHO: 스마트시티 데이터 분석가
-- RISK: 노이즈 → 이상 탐지 임계값 조정 필요
-- SUCCESS: 이상 KPI 100% 플래그
-- SCOPE: `smart-city-dashboard-ai.ts`
+| 항목 | 내용 |
+|------|------|
+| WHY | 공공기관 내부 의사소통 비효율 패턴을 AI로 감지하여 업무 개선 |
+| WHO | 조직 관리자, 인사담당자 |
+| RISK | PII(직원 ID) 마스킹 필수 |
+| SUCCESS | SC-R440-1: 커뮤니케이션 이벤트 등록 / SC-R440-2: 채널별 효율성 계산 / SC-R440-3: C/S 등급 차단 |
+| SCOPE | communication-pattern-analyzer-ai.ts 구현 |
 
 ## 요구사항
-- FR-440.1: KPI 입력 = { domain, name, value, baseline, stddev }
-- FR-440.2: z = (value - baseline) / stddev; |z| ≥ 2 → 이상
-- FR-440.3: 도메인별 정상화 점수 = 1 - min(|z|, 3)/3
-- FR-440.4: cityIndex = 도메인 점수 평균 (0..1)
-- FR-440.5: N2SF C/S 차단 + `getAuditLog()`
+- FR-R440.1: 커뮤니케이션 이벤트 등록 (eventId, channel, participantId, durationMs)
+- FR-R440.2: PII 마스킹 (participantId → SHA-256 16자 hex)
+- FR-R440.3: 채널별 평균 응답 시간 계산
+- FR-R440.4: 비효율 패턴 탐지 (avgDurationMs > threshold)
+- FR-R440.5: N2SF N-05 C/S 등급 차단
 
 ## 추적성
-FR-440.* ↔ `smart-city-dashboard-ai.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05
+FR-R440.* ↔ `communication-pattern-analyzer-ai.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05

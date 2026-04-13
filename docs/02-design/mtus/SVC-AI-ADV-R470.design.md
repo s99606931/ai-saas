@@ -1,24 +1,23 @@
-# SVC-AI-ADV-R470 Design — 부처 간 자금 이체 AI
+# SVC-AI-ADV-R470 Design — security-vuln-priority-classifier-v2.ts
 
 Plan Ref: SVC-AI-ADV-R470.plan.md
 
-```ts
-export interface Account {
-  readonly agency: string;
-  balance: number;
-  readonly dailyLimit: number;
-  usedToday: number;
-}
-export interface TransferRequest {
-  readonly from: string;
-  readonly to: string;
-  readonly amount: number;
-  readonly approvalCode: string;
-}
-export interface TransferResult {
-  readonly success: boolean;
-  readonly reason?: string;
-  readonly newFromBalance: number;
-  readonly newToBalance: number;
+## 클래스 설계
+
+```typescript
+type Exploitability = 'public' | 'private' | 'none'
+type VulnGrade = 'critical' | 'high' | 'medium' | 'low'
+
+const EXPLOIT_BONUS: Record<Exploitability, number> = { public: 30, private: 15, none: 0 }
+
+class SecurityVulnPriorityClassifierV2 {
+  registerVuln(vulnId, title, cvssScore, exploitability, dataGrade?): Vulnerability
+  getPriorityScore(vulnId): number   // cvssScore*10 + exploitBonus
+  getVulnGrade(vulnId): VulnGrade
+  getVulnsByGrade(grade): Vulnerability[]
+  getAuditLog(): AuditEntry[]
 }
 ```
+
+## 등급 기준
+>=90: critical, >=70: high, >=50: medium, else low

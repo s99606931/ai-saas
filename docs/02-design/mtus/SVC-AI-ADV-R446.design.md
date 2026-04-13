@@ -1,16 +1,25 @@
-# SVC-AI-ADV-R446 Design — 공공 에너지 소비 최적화 AI
+# SVC-AI-ADV-R446 Design — policy-compliance-verifier-v2.ts
 
 Plan Ref: SVC-AI-ADV-R446.plan.md
 
-```ts
-export type BuildingUse = 'office' | 'school' | 'hospital';
-export interface Building { readonly id: string; readonly area: number; readonly use: BuildingUse; readonly kwh: number; }
-export interface OptimizationResult {
-  readonly id: string;
-  readonly ratio: number;
-  readonly status: 'WASTE' | 'NORMAL';
-  readonly recommendations: readonly string[];
+## 클래스 설계
+
+```typescript
+type ComplianceResult = 'pass' | 'fail' | 'partial'
+
+class PolicyComplianceVerifierV2 {
+  registerPolicy(policyId, name, category, mandatory): Policy
+  recordComplianceResult(policyId, result, dataGrade?): void
+  getComplianceRate(): number  // 0-100
+  getNonCompliantMandatoryPolicies(): Policy[]
+  getAuditLog(): AuditEntry[]
 }
 ```
 
-기준: office=100, school=80, hospital=150 kWh/㎡
+## 준수율 공식
+`rate = (pass 수 / 전체 기록 수) * 100`
+
+기록 없으면 100 반환
+
+## 미준수 필수 정책
+`mandatory === true` AND 해당 정책 최신 결과가 `pass`가 아닌 경우

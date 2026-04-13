@@ -1,27 +1,20 @@
-# SVC-AI-ADV-R470 Plan — 부처 간 자금 이체 AI
-
-## Executive Summary
-| 관점 | 내용 |
-|------|------|
-| WHY | 부처 간 자금 이체 자동화 및 검증으로 회계 투명성 확보 |
-| WHO | 기획재정부, 국고국 |
-| WHAT | 이체 요청 → 검증 결과 + 실행 상태 |
-| HOW | 잔액·한도·승인 코드 3단계 검증 |
+# SVC-AI-ADV-R470 Plan — AI기반 보안 취약점 우선순위 분류 v2
 
 ## Context Anchor
-- WHY: 수동 이체 시 오류 및 지연 발생
-- WHO: 국고 자금 담당자
-- RISK: 잔액 부족 이체 → 사전 차단
-- SUCCESS: 이체 오류 0건
-- SCOPE: `intergovernmental-fund-transfer-ai.ts`
+| 항목 | 내용 |
+|------|------|
+| WHY | 다수 보안 취약점 중 우선 처리 대상을 AI로 자동 선별하여 대응 효율 향상 |
+| WHO | 보안팀, DevSecOps 담당자 |
+| RISK | 오분류로 인한 중요 취약점 지연 처리 방지 필요 |
+| SUCCESS | SC-R470-1: 취약점 등록 / SC-R470-2: 우선순위 점수 계산 / SC-R470-3: C/S 등급 차단 |
+| SCOPE | security-vuln-priority-classifier-v2.ts 구현 |
 
 ## 요구사항
-- FR-470.1: `Account = { agency, balance, dailyLimit, usedToday }`
-- FR-470.2: `TransferRequest = { from, to, amount, approvalCode: string }`
-- FR-470.3: `process(req, fromAcct, toAcct)` → `{ success: boolean, reason?: string, newFromBalance, newToBalance }`
-- FR-470.4: 검증 — amount > 0, fromAcct.balance ≥ amount, (fromAcct.usedToday + amount) ≤ fromAcct.dailyLimit, approvalCode 패턴 `/^APR-\d{6}$/`
-- FR-470.5: 검증 통과 시 잔액·usedToday 갱신, 실패 시 reason 기록
-- FR-470.6: N2SF C/S 차단 + `getAuditLog()`
+- FR-R470.1: 취약점 등록 (vulnId, title, cvssScore 0-10, exploitability: public/private/none)
+- FR-R470.2: 우선순위 점수 = cvssScore * 10 + exploitBonus (public:30, private:15, none:0)
+- FR-R470.3: 우선순위 등급 (>=90: critical, >=70: high, >=50: medium, else low)
+- FR-R470.4: 등급별 취약점 조회
+- FR-R470.5: N2SF N-05 C/S 등급 차단
 
 ## 추적성
-FR-470.* ↔ `intergovernmental-fund-transfer-ai.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05
+FR-R470.* ↔ `security-vuln-priority-classifier-v2.ts` ↔ 테스트 ↔ CSAP D-06 N2SF N-05
