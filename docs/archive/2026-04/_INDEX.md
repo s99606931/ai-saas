@@ -1011,3 +1011,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R468**: Public Land Use Optimizer (`public-land-use-optimizer.ts`, 5 테스트) — 50·access + area(≥5000?30:15) + demand(housing20/commerce15/park10/industry5) utility + ≥60 convertible, restricted 시 변환 차단.
 - **SVC-AI-ADV-R469**: Social Service Eligibility AI (`social-service-eligibility-ai.ts`, 6 테스트) — 기초생활/노인돌봄/아동수당/한부모 4개 서비스 통합 자격 심사 + 부적격 사유 투명 기록.
 - **SVC-AI-ADV-R470**: Intergovernmental Fund Transfer AI (`intergovernmental-fund-transfer-ai.ts`, 6 테스트) — amount/APR-\d{6} 승인코드/잔액/일일한도 4단계 검증 + 원자적 잔액 갱신 + 감사 추적.
+- **SVC-AI-ADV-R471**: AI Policy Impact Analyzer (`ai-policy-impact-analyzer.ts`, 6 테스트) — 예산·인구 로그스케일 economic/social/environmental 가중합(0.4/0.4/0.2) + A~D 등급 + 정책 비교 내림차순 랭킹.
+- **SVC-AI-ADV-R472**: Gov Supply Chain Risk AI (`gov-supply-chain-risk-ai.ts`, 6 테스트) — 금수국가/단일공급원/재무/Tier3/무인증 5요인 가중합 + LOW/MEDIUM/HIGH/CRITICAL + 배치 평가 CRITICAL 집계.
+- **SVC-AI-ADV-R473**: Public Service Performance AI (`public-service-performance-ai.ts`, 6 테스트) — 처리일수×완료율 efficiency + 만족도·불만 quality + 건당비용 로그스케일 costEff 합성 overall + EXCELLENT~NEEDS_IMPROVEMENT 4단계.
+- **SVC-AI-ADV-R474**: AI Citizen Sentiment Analyzer (`ai-citizen-sentiment-analyzer.ts`, 6 테스트) — 긍·부정 키워드 매칭 polarity (-1..1) + POSITIVE/NEUTRAL/NEGATIVE 분류 + 집계 빈도 Top5 키워드.
+- **SVC-AI-ADV-R475**: Digital Twin City AI (`digital-twin-city-ai.ts`, 6 테스트) — NORMAL/EVENT/EMERGENCY/CONSTRUCTION 시나리오 계수 × traffic/AQI 투영 + 녹지 기반 sustainabilityScore + 시나리오 비교.
+- **SVC-AI-ADV-R476**: AI Public Finance Optimizer (`ai-public-finance-optimizer.ts`, 6 테스트) — mandatory 최우선 완전 배정 + optional 우선순위 가중치 기반 greedy 분배 + 항목별 percentage + 전체 efficiency.
+- **SVC-AI-ADV-R477**: Gov Procurement AI Advisor (`gov-procurement-ai-advisor.ts`, 6 테스트) — 가격 40 + 기술 40 + 실적 15 + 중소기업 5 점수 + 예산 1.1배 이내 1위 추천 + 규정 준수 검사.
+- **SVC-AI-ADV-R478**: AI Environmental Compliance (`ai-environmental-compliance.ts`, 6 테스트) — CO2/NOx/SOx/PM10/VOC 한도 비교 + 1.5배/2배 MAJOR/SEVERE + 벌금 5/20/50M 추정 + WARNING/VIOLATION 판정.
+- **SVC-AI-ADV-R479**: Public Infrastructure Inspector AI (`public-infrastructure-inspector-ai.ts`, 6 테스트) — 노후·결함·교통하중 가중치 → 구조점수 감산 A~E 등급 + CRITICAL 즉시점검 + 재점검 주기 자동 산정.
+- **SVC-AI-ADV-R480**: AI Social Vulnerability Detector (`ai-social-vulnerability-detector.ts`, 6 테스트) — 1인당 소득 빈곤선 기준 + 노약·장애·아동·노숙 가중치 → NONE/WATCH/AT_RISK/URGENT 4단계 + 맞춤 지원 프로그램 추천.
