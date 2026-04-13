@@ -1061,3 +1061,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R518**: Gov Tourism Analytics AI (`gov-tourism-analytics-ai.ts`, 6 테스트) — 월별 방문/체류/지출 통계 + 피크월·계절성 지수 + 지역 요약 + 관광지 순위.
 - **SVC-AI-ADV-R519**: AI Job Placement Service (`ai-job-placement-service.ts`, 6 테스트) — 스킬40+경력20+지역20+급여20 매칭 점수 + 구직자→공고 / 공고→구직자 양방향 추천.
 - **SVC-AI-ADV-R520**: Cultural Heritage Protection AI (`cultural-heritage-protection-ai.ts`, 6 테스트) — 상태·환경·관람압력·연식 통합 위험 + 국가/도/시 등급 가중 + urgent~low 우선순위 + 보존계획 비용·기간 산출.
+- **SVC-AI-ADV-R521**: Childcare Safety Monitor AI (`childcare-safety-monitor-ai.ts`, 6 테스트) — 낙상/화재/질식/침입/알레르기/위생 가중 위험 점수 + 교직원-아동 비율 보정 + safe~critical 4단계 + Top3 위험요인.
+- **SVC-AI-ADV-R522**: Youth Policy Impact AI (`youth-policy-impact-ai.ts`, 6 테스트) — 교육/고용/복지/멘탈/문화 도메인 정책 전후지표 + 만족도 + 예산효율 기반 A~D 영향도 평가.
+- **SVC-AI-ADV-R523**: Agricultural Price Predictor AI (`agricultural-price-predictor-ai.ts`, 6 테스트) — 7일 이동평균 + 표준편차 변동성 + 봄/여름/가을/겨울 계절성 계수 + 성수기 보정 + up/down/stable 트렌드.
+- **SVC-AI-ADV-R524**: AI Senior Care Coordinator (`ai-senior-care-coordinator.ts`, 6 테스트) — 연령/독거/만성질환/이동성 필요도 + 의료/식사/이동/말벗/가사 카테고리 + 지역·용량 기반 공급자 매칭.
+- **SVC-AI-ADV-R525**: Bus Route Optimizer AI (`bus-route-optimizer-ai.ts`, 6 테스트) — 정류장 수요 커버리지 + km당 효율성 + 환승허브 보너스 통합 100점 + approve/revise/reject 권고.
+- **SVC-AI-ADV-R526**: Urban Flood Prediction AI (`urban-flood-prediction-ai.ts`, 6 테스트) — 강수량×지속시간 - 배수용량 초과분 + 해발/불투수 가중 + safe/watch/warning/severe/catastrophic 5단계 + 대피권고.
+- **SVC-AI-ADV-R527**: Youth Housing Match AI (`youth-housing-match-ai.ts`, 6 테스트) — 지역/유형/예산/공공지원/소득대비 5기준 적합도 + 가용 주거 랭킹 + 19~39세 자격 검증.
+- **SVC-AI-ADV-R528**: School Violence Prevention AI (`school-violence-prevention-ai.ts`, 6 테스트) — 결석/성적하락/동료신고/상담사우려/온라인갈등/자해언급 가중 + 학급크기 정규화 + 자해언급 즉시 urgent + 단계별 조치 권고.
+- **SVC-AI-ADV-R529**: Public Data Quality AI (`public-data-quality-ai.ts`, 6 테스트) — 완전성(결측률)·정확성(무효행)·적시성(갱신경과) 3축 + 가중 종합 + A~F 등급 + 자동 이슈 리스트.
+- **SVC-AI-ADV-R530**: Admin Petition Classifier AI (`admin-petition-classifier-ai.ts`, 6 테스트) — 부서 키워드 점수 + 주민등록번호/전화/이메일 자동 마스킹(CSAP D-12) + 긴급 키워드 기반 routine/priority/urgent + 1·2차 부서 + 신뢰도.
