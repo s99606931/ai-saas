@@ -1091,3 +1091,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R548**: Alcohol License Risk AI (`alcohol-license-risk-ai.ts`, 6 테스트) — 학교 인근 거리·위반 이력·세금 체납·영업 연수 기반 리스크 점수 + approve/conditional/reject 3단계.
 - **SVC-AI-ADV-R549**: Passport Renewal Priority AI (`passport-renewal-priority-ai.ts`, 6 테스트) — 만료일·출국 임박·목적 카테고리·초회 신청 가중 → expedited/standard/low 티어 + 영업일 ETA.
 - **SVC-AI-ADV-R550**: Military Service Exemption AI (`military-service-exemption-ai.ts`, 6 테스트) — 신체등급 5~6 의료/장애부모 독자/3+부양/국제 업적 → medical·family_support·national_interest 카테고리 + 기소자 실격. **R550 달성 — Refactorer dead code 스윕 예정.**
+- **SVC-AI-ADV-R551**: Urban Heat Island Detector (`ai-urban-heat-island-detector.ts`, 6 테스트) — 격자 토지용도·표면/대기 온도차 기반 강도 계산 + low/medium/high/critical 4단계 + 녹지/불투수/쿨링센터 맞춤 권고 + 핫스팟 랭킹.
+- **SVC-AI-ADV-R552**: Public Grief Support AI (`public-grief-support-ai.ts`, 6 테스트) — 5종 재난 익명 스트레스 점수 + routine/priority/urgent/critical 트리아지 + hotline/counseling/medication/community 매칭 + 가족지원 보완.
+- **SVC-AI-ADV-R553**: AI School Bus Route Optimizer (`ai-school-bus-route-optimizer.ts`, 6 테스트) — 학생 좌표 Haversine 거리 + 최근접 정류장 배정 + Nearest-neighbor 노선 최적화 + 거리/소요시간 추정.
+- **SVC-AI-ADV-R554**: Government Lease Contract AI (`government-lease-contract-ai.ts`, 6 테스트) — 면적·월세·시세 편차 기반 공정성 점수 + low/medium/high 리스크 + approve/review/reject + 연간 총 임대료 합산.
+- **SVC-AI-ADV-R555**: Foreign Worker Management AI (`ai-foreign-worker-management.ts`, 6 테스트) — E7/E9/H2/F4/F5/D2 6종 비자 + 30일/90일 만료 경보 + 보험 미가입 경보 + 가입률 통계 + 익명 근로자ID.
+- **SVC-AI-ADV-R556**: Public Art Funding Evaluator AI (`public-art-funding-evaluator-ai.ts`, 6 테스트) — 예술성 35% + 공공성 25% + 실현가능성 25% + 지역영향 15% 가중 + 다양성 감점 + 예산 한도 우선순위 배분.
+- **SVC-AI-ADV-R557**: AI Veteran Benefit Advisor (`ai-veteran-benefit-advisor.ts`, 6 테스트) — combat/service/disabled/bereaved/meritorious 5종 + 복무/소득/상이등급 자격 매칭 + 월 총 수당 합산 + 카테고리별 통계.
+- **SVC-AI-ADV-R558**: Smart Streetlight Controller AI (`smart-streetlight-controller-ai.ts`, 6 테스트) — 5종 구역별 동적 디밍 (주간 0% / 학교·고속도로 가중 / 고밀도 +15) + 총 소비전력 집계 + 1년 유지보수 대상 식별.
+- **SVC-AI-ADV-R559**: AI Agriculture Subsidy Optimizer (`ai-agriculture-subsidy-optimizer.ts`, 6 테스트) — 6종 작물 ha당 기본 보조 + 지속가능성 30% 가산 + 저소득 보전 + 10년 장기 운영 가산 + 예산 한도 비례 조정.
+- **SVC-AI-ADV-R560**: Public Sports Facility Allocator AI (`public-sports-facility-allocator-ai.ts`, 6 테스트) — 6종 시설 × 우선순위 4단계(senior/disability/youth/general) + 공정성 스코어링 + 대체 시간대 탐색 + 이용률 계산.
