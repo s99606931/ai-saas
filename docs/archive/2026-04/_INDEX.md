@@ -1031,3 +1031,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R488**: Public Transport Integration AI (`public-transport-integration-ai.ts`, 6 테스트) — 다중 모드 시간표 통합 + 환승 대기 추정 + 모드 다양성 coverage + 점유율 기반 증편/감편 제안.
 - **SVC-AI-ADV-R489**: AI Water Resource Manager (`ai-water-resource-manager.ts`, 6 테스트) — 저수율·강수예보 SURPLUS/NORMAL/WATCH/DROUGHT/FLOOD_RISK 5상태 + 권장 방류량 + 임계 도달 일수 + 유역 수지.
 - **SVC-AI-ADV-R490**: Gov Digital Transformation AI (`gov-digital-transformation-ai.ts`, 6 테스트) — 클라우드·API·디지털화·역량·시민서비스 5축 평균 → 1~5 성숙도 + 우선 액션 + 기간/예산 추정 + 국가 지수.
+- **SVC-AI-ADV-R491**: AI Records Management (`ai-records-management.ts`, 6 테스트) — 공공기록물법 시행령 보존기간 분류(1~영구) + 폐기 계획 + 영구보존·암호화 자동 판정 + 사유 추적.
+- **SVC-AI-ADV-R492**: Civil Petition Auto Responder (`civil-petition-auto-responder.ts`, 6 테스트) — 6개 카테고리 키워드 분류 + urgent/angry/neutral/satisfied 감정 + SLA 2~72h + 사람 검토 필요 자동 판단.
+- **SVC-AI-ADV-R493**: Local Tax Optimizer AI (`local-tax-optimizer-ai.ts`, 6 테스트) — 6세목 시계열 + 성장률 기반 익년 예측 + 징수율 70/85% 임계치 우선 액션 + 체납 합산.
+- **SVC-AI-ADV-R494**: Data Quality Governance AI (`data-quality-governance-ai.ts`, 6 테스트) — 6차원(완전성·정확성·일관성·적시성·고유성·유효성) 점수 + A~F 등급 + 이슈 기반 액션 추천.
+- **SVC-AI-ADV-R495**: Integrated Complaint Center AI (`integrated-complaint-center-ai.ts`, 6 테스트) — 5개 부서 키워드 라우팅 + 채널별 P1~P3 우선순위 + 부서 부하 기반 처리시간 추정 + 큐 부하 집계.
+- **SVC-AI-ADV-R496**: AI Population Trend Analyzer (`ai-population-trend-analyzer.ts`, 6 테스트) — 고령화지수·부양비·자연증가·사회증가 + growing/stable/declining/depopulating 4상태 + 익년 예측.
+- **SVC-AI-ADV-R497**: Gov Contract Compliance AI (`gov-contract-compliance-ai.ts`, 6 테스트) — 국가계약법 2억 공개입찰 임계 + 미등록·이행보증·청렴서약 검사 + risk score 50/20 임계 reject/review.
+- **SVC-AI-ADV-R498**: Public Safety Prediction AI (`public-safety-prediction-ai.ts`, 6 테스트) — 6개 사고 유형 핫스팟 + 사상자 가중 위험점수 + normal/elevated/high/critical 4단계 + 권장 순찰 인원.
+- **SVC-AI-ADV-R499**: AI Subsidy Fraud Detector (`ai-subsidy-fraud-detector.ts`, 6 테스트) — 7개 위험 신호 누적 확률 + 만성수급 이력 + auto_approve/manual_review/investigate/reject 4액션 + 감사 깊이.
+- **SVC-AI-ADV-R500**: Smart Public Office AI (`smart-public-office-ai.ts`, 6 테스트) — **500 라운드 이정표** — IoT 점유·온도·CO2·전력 → 활용도·쾌적도·에너지효율 + 시설 최적화 액션 + KPI 요약.
