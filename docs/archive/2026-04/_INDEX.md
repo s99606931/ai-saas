@@ -1131,3 +1131,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R588**: AI Elder Abuse Detector (`ai-elder-abuse-detector.ts`, 6 테스트) — 10개 관찰 지표(physical/emotional/financial/neglect/abandonment 5종 학대 유형) 가중 합산 + low/moderate/high/severe 4단계 + 등급별 자동 대응 액션(즉시 신고~정기 모니터링).
 - **SVC-AI-ADV-R589**: Government Vehicle Fleet AI (`government-vehicle-fleet-ai.ts`, 6 테스트) — 5종 차종 × 4종 연료 + 10년/20만km 폐차 기준 + 1만km 정비 주기 + EV 7년 배터리 교체 권고 + 화물/승차/EV 우선 배차 알고리즘.
 - **SVC-AI-ADV-R590**: AI Public Toilet Maintenance (`ai-public-toilet-maintenance.ts`, 6 테스트) — 센서 청결도/민원/이용량 3지표 가중 합산 + routine/soon/urgent/immediate 4단계 우선순위 + 칸 수 기반 작업시간 산정 + 우선순위 정렬 스케줄링.
+- **SVC-AI-ADV-R591**: AI Immigration Visa Advisor (`ai-immigration-visa-advisor.ts`, 6 테스트) — E-1/E-7/D-2/D-8/F-2/F-4/H-2 7종 비자 × 학력/TOPIK/소득/투자/고용/동포 자격 요건 가중 스코어 + 적격 판정 + 상위 비자 추천.
+- **SVC-AI-ADV-R592**: Tax Evasion Detection AI (`tax-evasion-detection-ai.ts`, 6 테스트) — 카드매출/신고매출 괴리 + 소득률 3% 미만 + 현금입금 과다 + 해외송금 이상 + 업종×직원 대비 매출 5종 지표 + low/medium/high/critical 4단계 + 추천감사 플래그.
+- **SVC-AI-ADV-R593**: AI Public Park Visitor Counter (`ai-public-park-visitor-counter.ts`, 6 테스트) — 게이트 입/퇴장 누적 방문자 산출 + 정원 대비 이용률 + empty/normal/busy/congested/overflow 5단계 혼잡도 + 입장 제한 권고.
+- **SVC-AI-ADV-R594**: Municipal Waste Tracking AI (`municipal-waste-tracking-ai.ts`, 6 테스트) — 5종 폐기물(일반/재활용/음식/대형/위험) × fillLevel 기반 now/today/tomorrow/this-week 4단계 수거 스케줄 + 오염율 30% 초과 플래그 + 구별 재활용율 통계.
+- **SVC-AI-ADV-R595**: AI Traffic Law Enforcement (`ai-traffic-law-enforcement.ts`, 6 테스트) — 7종 위반 유형 기본 과태료/벌점 + 스쿨존 2배 가중 + 속도초과 20/40/60km 단계 + 대형차량 가중 + 40점 이상 검토 필요 플래그.
+- **SVC-AI-ADV-R596**: Public Housing Maintenance AI (`public-housing-maintenance-ai.ts`, 6 테스트) — 6종 설비(승강기/배관/전기/난방/지붕/외벽) × 수명 대비 연식 + 결함/민원 가중 + monitor/scheduled/urgent/emergency 4단계 + 세대수 비용 배율 + 승강기 안전 추가 가중.
+- **SVC-AI-ADV-R597**: AI Forest Fire Damage Assessor (`ai-forest-fire-damage-assessor.ts`, 6 테스트) — 5종 수종 × low/moderate/high/total 4단계 심각도 × 4종 지형 복원 계수 + 목재/인프라/복원비 3항목 산출 + 50ha/10주택/5부상 우선지역 판정 + 회복기간 연수.
+- **SVC-AI-ADV-R598**: Drug Abuse Prevention AI (`drug-abuse-prevention-ai.ts`, 6 테스트) — 5개 주관 지표 가중 점수(스트레스/고립/또래/과거사용/정신건강) + 재활/마약처방/가족력/청소년 가중 + minimal~severe 5단계 + 등급별 개입 방안 + 긴급연락.
+- **SVC-AI-ADV-R599**: AI Public Wi-Fi Optimizer (`ai-public-wi-fi-optimizer.ts`, 6 테스트) — AP 부하율 90% 초과 offload + 주변 채널 간섭 rechannel + 2.4GHz/5GHz 최적 채널 자동 선택 + 신호 -75dBm 약함 boost + 정상 maintain.
+- **SVC-AI-ADV-R600**: **[R600 이정표]** Gov Knowledge Management AI (`gov-knowledge-management-ai.ts`, 6 테스트) — 7종 문서 카테고리 + 토큰화 Jaccard 검색 + 접근 인기도 보정 + 부서별 카테고리/태그 통계 + 2년 미접근 stale 탐지 + 퇴임자 지식 보존 조회 + `milestoneRound = 600` 공개 필드. **누적 600 라운드 달성**.
