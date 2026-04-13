@@ -981,3 +981,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R438**: Disaster Pre-Alert Auto Issuer AI (`disaster-pre-alert-issuer-ai.ts`, 8 테스트) — RAINFALL/SEISMIC/FLOOD 임계값 테이블 기반 CAUTION/WARNING/SEVERE 단계 결정 + 알 수 없는 kind/음수 오류.
 - **SVC-AI-ADV-R439**: Open Data Quality Manager AI (`opendata-quality-manager-ai.ts`, 7 테스트) — completeness/freshness(30d=1, 90d=0.6, else=0.3)/accuracy/consistency 4차원 + 0.3/0.2/0.3/0.2 가중합 → A(≥0.9)/B(≥0.7)/C(≥0.5)/D.
 - **SVC-AI-ADV-R440**: Smart City Integrated Dashboard AI (`smart-city-dashboard-ai.ts`, 7 테스트) — KPI z=(v-base)/std + |z|≥2 이상 + 도메인별 score=1-min(|z|,3)/3 평균 + cityIndex=도메인 점수 평균.
+- **SVC-AI-ADV-R441**: Public Workflow Builder DSL (`public-workflow-builder.ts`, 7 테스트) — Step DSL 순차 실행 + when eq/ne/gt/lt 조건 분기 + set으로 ctx 병합 + executed/skipped 추적.
+- **SVC-AI-ADV-R442**: Public Health Trend Analyzer (`public-health-trend-analyzer.ts`, 8 테스트) — 4주 이동평균 대비 최근값 ≥1.5 SPIKE + growthPct = (last-first)/first*100 + 첫값 0 처리.
+- **SVC-AI-ADV-R443**: Education Support System (`education-support-system.ts`, 7 테스트) — 과목별 cohortAvg 계산 + 학생점수 < avg-10 WEAK + 보충 프로그램 자동 추천.
+- **SVC-AI-ADV-R444**: Public Real Estate Appraiser AI (`public-real-estate-appraiser-ai.ts`, 7 테스트) — 동일 use 사례만 사용 + 연도차 가중 w=max(0.1,1-diff*0.1) + 단가 가중평균*area + 3건+ 신뢰도 0.95.
+- **SVC-AI-ADV-R445**: Court Case Summarizer AI (`court-case-summarizer-ai.ts`, 7 테스트) — 길이 ≤10 키워드 헤더 탐지(쟁점/판시사항/결론) + 섹션별 본문 병합 + found 배열 반환.
+- **SVC-AI-ADV-R446**: Public Energy Optimizer AI (`public-energy-optimizer-ai.ts`, 8 테스트) — 용도별 benchmark(office=100/school=80/hospital=150 kWh/㎡) + ratio>1.3 WASTE + 단열/LED/HVAC 권고.
+- **SVC-AI-ADV-R447**: Citizen Rights Violation Detector (`citizen-rights-violation-detector-ai.ts`, 8 테스트) — PRIVACY/DISCRIMINATION/LABOR/FREEDOM 키워드 사전 + maxHits primaryType + ≥3 HIGH, ≥1 MED.
+- **SVC-AI-ADV-R448**: Public Contract Monitor (`public-contract-monitor.ts`, 9 테스트) — dueDate<today&progress<1 OVERDUE + daysLeft<7&progress<0.5 AT_RISK + progress≥1 DONE + weighted overallProgress.
+- **SVC-AI-ADV-R449**: Public Finance Audit AI (`public-finance-audit-ai.ts`, 7 테스트) — 한도 테이블(travel=500K/meal=100K/office=200K) + evidence 누락 + date/cat/amount 중복 시그니처 탐지 + HIGH/MED risk.
+- **SVC-AI-ADV-R450**: Public Service Quality Benchmark AI (`public-service-quality-benchmark-ai.ts`, 7 테스트) — 4지표(satisfaction 0.4/response/coverage/transparency 0.2) 가중합 + 동점 satisfaction 우선 + rankings + average.
