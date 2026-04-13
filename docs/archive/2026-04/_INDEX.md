@@ -1121,3 +1121,13 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R578**: Senior Mobility Support AI (`senior-mobility-support-ai.ts`, 6 테스트) — 이동수준(독립/지팡이/보행기/휠체어) × 보호자/휠체어 차량 요건 매칭 + 출발지 근접 + 의료 이동 우선순위 + 배정 히스토리.
 - **SVC-AI-ADV-R579**: Veteran Service Priority AI (`veteran-service-priority-ai.ts`, 6 테스트) — 6종 카테고리(독립/국가유공/전상/6·25/월남/예비) × 장애율/연령/소득/서비스유형 가중 스코어 + 우선순위 큐 랭킹.
 - **SVC-AI-ADV-R580**: Sports Talent Discovery AI (`sports-talent-discovery-ai.ts`, 6 테스트) — 6세~25세 신체프로필 × 6종목(축구/농구/수영/육상/체조/태권도) 적합도 분석 + 신장/점프/스프린트/지구력/유연성/BMI 지표 + 종목별 인재풀.
+- **SVC-AI-ADV-R581**: Environmental Impact Assessment AI (`environmental-impact-assessment-ai.ts`, 6 테스트) — 5종 프로젝트 유형(road/building/plant/park/other) × 5개 카테고리(air/water/soil/noise/biodiversity) 기본 점수 + 면적 계수(최대 1.5배) + high/critical 카테고리별 저감 대책 자동 도출 + low~critical 4단계 등급화.
+- **SVC-AI-ADV-R582**: AI Property Appraisal Assistant (`ai-property-appraisal-assistant.ts`, 6 테스트) — 동일 유형 비교거래 재진성×거리 가중 평균 + 공시지가 25% 블렌딩 + 비교거래 부족/40% 편차 주의 노트 + 0.4~1.0 신뢰도 + apartment/house/land/commercial 4종.
+- **SVC-AI-ADV-R583**: Urban Planning Compliance AI (`urban-planning-compliance-ai.ts`, 6 테스트) — 5종 용도지역(residential/commercial/industrial/greenbelt/historic) × 건폐율/용적률/높이/용도 4중 검증 + BCR/FAR/HEIGHT/USE 위반 코드 + 규칙 오버라이드 지원.
+- **SVC-AI-ADV-R584**: AI Public Pension Optimizer (`ai-public-pension-optimizer.ts`, 6 테스트) — 조기수령 6%/year 감액 × 연기수령 7.2%/year 가산 + 5개 시나리오(60/63/65/67/70세) + 기대수명 기반 생애 총액 최대화 권고 + break-even 연령 산출.
+- **SVC-AI-ADV-R585**: Emergency Call Triage AI (`emergency-call-triage-ai.ts`, 6 테스트) — 119/112 회선별 키워드 매칭(P0: 심정지/총기/폭발, P1: 화재/강도, P2: 경미) + fire/ambulance/police/rescue/advisory 출동 자동 할당 + 위치 미확인 고위험 P0 승급 + 고령자 가중.
+- **SVC-AI-ADV-R586**: AI Groundwater Quality Monitor (`ai-groundwater-quality-monitor.ts`, 6 테스트) — 먹는물 기준 ph(5.8~8.5)/nitrate(10)/chloride(250)/tds(500) 임계값 + warn/critical 2단계 경보 + 관측공별 이동 평균 계산 + 임계값 오버라이드.
+- **SVC-AI-ADV-R587**: Public Market Price Monitor AI (`public-market-price-monitor-ai.ts`, 6 테스트) — 제품×지역 시계열 관리 + 14일 이동 평균 baseline + 15% warn / 30% alert 변동 탐지 + 전국 평균 산출 + 농수산물 가격 이상 조기 경보.
+- **SVC-AI-ADV-R588**: AI Elder Abuse Detector (`ai-elder-abuse-detector.ts`, 6 테스트) — 10개 관찰 지표(physical/emotional/financial/neglect/abandonment 5종 학대 유형) 가중 합산 + low/moderate/high/severe 4단계 + 등급별 자동 대응 액션(즉시 신고~정기 모니터링).
+- **SVC-AI-ADV-R589**: Government Vehicle Fleet AI (`government-vehicle-fleet-ai.ts`, 6 테스트) — 5종 차종 × 4종 연료 + 10년/20만km 폐차 기준 + 1만km 정비 주기 + EV 7년 배터리 교체 권고 + 화물/승차/EV 우선 배차 알고리즘.
+- **SVC-AI-ADV-R590**: AI Public Toilet Maintenance (`ai-public-toilet-maintenance.ts`, 6 테스트) — 센서 청결도/민원/이용량 3지표 가중 합산 + routine/soon/urgent/immediate 4단계 우선순위 + 칸 수 기반 작업시간 산정 + 우선순위 정렬 스케줄링.
