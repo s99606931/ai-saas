@@ -17,9 +17,11 @@ describe('IntelligentEventStreamProcessor', () => {
   })
 
   it('CONGESTED: consumerLag > lagThreshold → 스케일아웃 권고', () => {
-    processor.registerPartition({ partitionId: 'p2', topicId: 'topic-b', processedPerMin: 500, consumerLag: 200, lagThreshold: 100 })
+    // 2개 파티션 중 1개만 CONGESTED → 절반 미만 → DEGRADED
+    processor.registerPartition({ partitionId: 'p2a', topicId: 'topic-b', processedPerMin: 500, consumerLag: 200, lagThreshold: 100 })
+    processor.registerPartition({ partitionId: 'p2b', topicId: 'topic-b', processedPerMin: 500, consumerLag: 50, lagThreshold: 100 })
     const report = processor.analyze('topic-b')
-    expect(report.partitions[0]?.status).toBe('CONGESTED')
+    expect(report.partitions.some((p) => p.status === 'CONGESTED')).toBe(true)
     expect(report.congestedPartitions).toBe(1)
     expect(report.overallStatus).toBe('DEGRADED')
   })

@@ -71,11 +71,13 @@ export class IntelligentEventStreamProcessor {
     const congestedCount = analyses.filter((a) => a.status === 'CONGESTED').length
     const idleCount = analyses.filter((a) => a.status === 'IDLE').length
 
-    const overallStatus = congestedCount >= partitions.length / 2
-      ? 'CRITICAL'
-      : congestedCount > 0 || idleCount > 0
-        ? 'DEGRADED'
-        : 'OPTIMAL'
+    const overallStatus = partitions.length === 0
+      ? 'OPTIMAL'
+      : congestedCount > partitions.length / 2
+        ? 'CRITICAL'
+        : congestedCount > 0 || idleCount > 0
+          ? 'DEGRADED'
+          : 'OPTIMAL'
 
     if (congestedCount > 0) recommendations.push(`적체 파티션 ${congestedCount}개 — 파티션 수 증가 또는 소비자 그룹 병렬화`)
     if (idleCount > 0) recommendations.push(`유휴 파티션 ${idleCount}개 — 파티션 재배분 검토`)

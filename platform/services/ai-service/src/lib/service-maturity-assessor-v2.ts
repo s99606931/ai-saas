@@ -1,6 +1,6 @@
 // Plan SC: SVC-AI-ADV-R466
 // Design Ref: §등급기준 — >=80:platinum, >=60:gold, >=40:silver, else bronze
-type MaturityDimension = 'automation' | 'monitoring' | 'security' | 'documentation'
+type MaturityDimension = 'automation' | 'monitoring' | 'security' | 'documentation' | 'process' | 'technology'
 type MaturityGrade = 'platinum' | 'gold' | 'silver' | 'bronze'
 type DataGrade = 'O' | 'C' | 'S'
 
@@ -19,7 +19,7 @@ export class ServiceMaturityAssessorV2 {
     this.auditLog.push({ action, detail, timestamp: new Date().toISOString() })
   }
 
-  registerService(serviceId: string, name: string, category: string): Service {
+  registerService(serviceId: string, name: string, category = ''): Service {
     const svc: Service = { serviceId, name, category }
     this.services.set(serviceId, svc)
     this.scores.set(serviceId, new Map())
@@ -49,7 +49,7 @@ export class ServiceMaturityAssessorV2 {
     return 'bronze'
   }
 
-  getLowMaturityServices(threshold: number): Service[] {
+  getLowMaturityServices(threshold = 60): Service[] {
     return Array.from(this.services.values()).filter((svc) => this.getMaturityScore(svc.serviceId) < threshold)
   }
 

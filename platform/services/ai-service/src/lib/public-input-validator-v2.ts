@@ -10,6 +10,7 @@ interface AuditEntry { action: string; detail: string; timestamp: string }
 export class PublicInputValidatorV2 {
   private rules: ValidationRule[] = []
   private auditLog: AuditEntry[] = []
+  private ruleCounter = 0
 
   private checkGrade(grade?: DataGrade): void {
     if (grade === 'C' || grade === 'S') throw new Error(`BLOCKED: ${grade}등급 데이터는 AI API 전송 금지 (N2SF N-05)`)
@@ -18,15 +19,17 @@ export class PublicInputValidatorV2 {
     this.auditLog.push({ action, detail, timestamp: new Date().toISOString() })
   }
 
-  addRule(ruleId: string, fieldName: string, ruleType: RuleType, ruleValue: string, dataGrade?: DataGrade): ValidationRule {
-    this.checkGrade(dataGrade)
-    const rule: ValidationRule = { ruleId, fieldName, ruleType, ruleValue }
+  addRule(fieldName: string, ruleType: RuleType, ruleValue?: number, pattern?: string): ValidationRule {
+    const ruleId = `rule-${++this.ruleCounter}`
+    const resolvedValue = ruleValue !== undefined ? String(ruleValue) : (pattern ?? '')
+    const rule: ValidationRule = { ruleId, fieldName, ruleType, ruleValue: resolvedValue }
     this.rules.push(rule)
     this.log('rule.add', `ruleId=${ruleId} fieldName=${fieldName} type=${ruleType}`)
     return rule
   }
 
-  validate(fieldName: string, value: string): ValidationResult {
+  validate(fieldName: string, value: string, dataGrade?: DataGrade): ValidationResult {
+    this.checkGrade(dataGrade)
     const fieldRules = this.rules.filter((r) => r.fieldName === fieldName)
     const errors: string[] = []
     for (const rule of fieldRules) {

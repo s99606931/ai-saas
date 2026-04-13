@@ -1,6 +1,6 @@
 // 공공기관 SaaS 플랫폼 — 공통 UI 컴포넌트 라이브러리
-// Design Ref: DS-TOKEN-R1, DS-ATOM-R1, DS-ATOM-R2, DS-THEME-R1
-// Plan SC: FR-DST.11, FR-DSA.11, FR-DST.13~18
+// Design Ref: DS-TOKEN-R1, DS-ATOM-R1, DS-ATOM-R2, DS-ATOM-R3, DS-THEME-R1
+// Plan SC: FR-DST.11, FR-DSA.11, FR-DSA.21~24, FR-DST.13~18
 
 // ─────────── 디자인 토큰 ───────────
 export {
@@ -13,7 +13,7 @@ export {
   buildThemeClassName,
 } from './tokens/index.js';
 
-// ─────────── Atoms (DS-ATOM-R1 + R2) ───────────
+// ─────────── Atoms (DS-ATOM-R1 + R2 + R3) ───────────
 export {
   cn,
   cva,
@@ -39,10 +39,29 @@ export {
   type SwitchProps,
   Label,
   type LabelProps,
+  // R3
+  Select,
+  type SelectProps,
+  type SelectOption,
+  Radio,
+  RadioGroup,
+  type RadioProps,
+  type RadioGroupProps,
+  Avatar,
+  getInitials,
+  type AvatarProps,
+  type AvatarSize,
+  type AvatarShape,
+  type AvatarStatus,
+  Tooltip,
+  type TooltipProps,
+  type TooltipSide,
   // Variants
   buttonVariants,
   badgeVariants,
   inputVariants,
+  avatarVariants,
+  statusIndicatorVariants,
 } from './atoms/index.js';
 
 // ─────────── Theme System (DS-THEME-R1) ───────────

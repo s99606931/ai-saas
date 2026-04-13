@@ -52,29 +52,31 @@ export class RealtimeTransactionAnomalyV2 {
 
     if (!targetTx) throw new Error(`Unknown transaction: ${txId}`)
 
-    this.appendAudit('tx.detect', accountId, { txId, amount: targetTx.amount })
+    // targetTx is guaranteed non-null: early throw above handles the undefined case
+    const tx = targetTx
+    this.appendAudit('tx.detect', accountId, { txId, amount: tx.amount })
 
     const history = this.txHistory.get(accountId) ?? []
     const anomalies: AnomalyDetectionResult['anomalies'] = []
     let riskScore = 0
 
     // 1. 고액 거래 탐지 (500만원 이상)
-    if (targetTx.amount >= 5_000_000) {
-      anomalies.push({ type: 'LARGE_AMOUNT', severity: 'HIGH', detail: `고액 거래 ${targetTx.amount.toLocaleString()}원` })
+    if (tx.amount >= 5_000_000) {
+      anomalies.push({ type: 'LARGE_AMOUNT', severity: 'HIGH', detail: `고액 거래 ${tx.amount.toLocaleString()}원` })
       riskScore += 25
     }
 
     // 2. 연속 고속 거래 (60초 내 3건 이상)
-    const window60s = history.filter((t) => Math.abs(t.timestamp - targetTx!.timestamp) <= 60_000 && t.txId !== txId)
+    const window60s = history.filter((t) => Math.abs(t.timestamp - tx.timestamp) <= 60_000 && t.txId !== txId)
     if (window60s.length >= 2) {
       anomalies.push({ type: 'RAPID_SUCCESSION', severity: 'HIGH', detail: `60초 내 ${window60s.length + 1}건 연속 거래` })
       riskScore += 30
     }
 
     // 3. 다중 지역 탐지 (1시간 내 다른 지역)
-    const window1h = history.filter((t) => Math.abs(t.timestamp - targetTx!.timestamp) <= 3_600_000 && t.txId !== txId)
+    const window1h = history.filter((t) => Math.abs(t.timestamp - tx.timestamp) <= 3_600_000 && t.txId !== txId)
     const uniqueLocations = new Set(window1h.map((t) => t.locationCode))
-    uniqueLocations.add(targetTx.locationCode)
+    uniqueLocations.add(tx.locationCode)
     if (uniqueLocations.size >= 3) {
       anomalies.push({ type: 'UNUSUAL_LOCATION', severity: 'CRITICAL', detail: `1시간 내 ${uniqueLocations.size}개 지역 거래` })
       riskScore += 40
@@ -84,8 +86,8 @@ export class RealtimeTransactionAnomalyV2 {
     const roundTrip = history.find((t) =>
       t.txId !== txId &&
       t.reversed === true &&
-      Math.abs(t.amount - targetTx!.amount) < targetTx!.amount * 0.01 &&
-      Math.abs(t.timestamp - targetTx!.timestamp) <= 86_400_000,
+      Math.abs(t.amount - tx.amount) < tx.amount * 0.01 &&
+      Math.abs(t.timestamp - tx.timestamp) <= 86_400_000,
     )
     if (roundTrip) {
       anomalies.push({ type: 'ROUND_TRIP', severity: 'MEDIUM', detail: '24시간 내 유사 금액 역방향 거래 탐지' })
@@ -93,7 +95,7 @@ export class RealtimeTransactionAnomalyV2 {
     }
 
     // 5. 야간 거래 (UTC 19~23시 = 한국 04~08시)
-    const hour = new Date(targetTx.timestamp).getUTCHours()
+    const hour = new Date(tx.timestamp).getUTCHours()
     if (hour >= 19 || hour < 2) {
       anomalies.push({ type: 'OFF_HOURS', severity: 'LOW', detail: `야간 시간대 거래 (UTC ${hour}시)` })
       riskScore += 10

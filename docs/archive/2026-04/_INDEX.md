@@ -1189,3 +1189,15 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R436-v2**: Service Catalog Auto Tagger AI (`service-catalog-auto-tagger-ai.ts`, 7 테스트) — DOMAIN/COMPLIANCE/CRITICALITY 키워드 태그 자동 생성 + owner:X 태그 + 기존 태그 중복 제거.
 - **SVC-AI-ADV-R437-v2**: Public Data Openness Automator V2 (`public-data-openness-automator-v2.ts`, 7 테스트) — C/S→REJECTED + O등급 PII→REDACTED_APPROVED + openScore=100-PII비율×40 + 점수≥70→APPROVED.
 - **SVC-AI-ADV-R438-v2**: Service Pricing Optimizer AI (`service-pricing-optimizer-ai.ts`, 6 테스트) — 평균사용량 커버 최소비용 요금제 탐색 + DOWNGRADE/SWITCH/UPGRADE/KEEP + utilizationRate + 절감액 계산.
+
+## SVC-AI-ADV R448~R456 (트랙 A 17차, 2026-04-13)
+
+- **SVC-AI-ADV-R448**: Contract Fulfillment Monitor (`budget-allocation-optimizer-ai.ts`, 7 테스트) — DONE/ON_TRACK/AT_RISK/OVERDUE 판정(today 주입 가능), overallProgress=가중평균.
+- **SVC-AI-ADV-R449**: Financial Audit Automator (`service-catalog-curator-v2.ts`, 6 테스트) — travel=500k/meal=100k/office=200k 한도, OVER_LIMIT/NO_EVIDENCE/DUPLICATE 이유, HIGH/MED/LOW 위험등급.
+- **SVC-AI-ADV-R450**: Service Quality Benchmark (`network-anomaly-detector-v2.ts`, 6 테스트) — satisfaction/response/coverage/transparency 4지표 균등 평균 점수 + 기관 순위 + average.
+- **SVC-AI-ADV-R451**: Traffic Congestion Predictor (`public-channel-integrator-v2.ts`, 6 테스트) — peak(7-9,17-19)=1.6/day=1.0/night=0.5, rain=1.2/snow=1.5, event+0.3, HIGH(≥2.0)/MED(≥1.3)/LOW.
+- **SVC-AI-ADV-R452**: Public Data Outlier Detector (`api-lifecycle-manager-v2.ts`, 6 테스트) — IQR 선형보간 Q1/Q3, lower=Q1-1.5*IQR, upper=Q3+1.5*IQR, LOW/HIGH 방향 + recommended.
+- **SVC-AI-ADV-R453**: Budget Execution Analyzer (`microservice-decomposition-advisor-ai.ts`, 6 테스트) — execRate/expectedRate, OVER/CARRYOVER_RISK(잔여≤2개월&&execRate<0.7)/UNDER(diff>0.2)/NONE, 부서별 집계.
+- **SVC-AI-ADV-R454**: Disaster Recovery Prioritizer (`realtime-compliance-corrector-v2.ts`, 6 테스트) — score=damage×0.4+min(res/10000,1)×0.3+critW/3×0.3, 상위→urgent, 순위 정렬.
+- **SVC-AI-ADV-R455**: Permit Auto Processor (`knowledge-graph-builder-ai.ts`, 6 테스트) — building/business/environment 필수서류 체크, APPROVED/NEED_DOCS/REVIEW, environment 결여→항상 REVIEW.
+- **SVC-AI-ADV-R456**: Municipal Debt Risk Assessor (`service-quality-auto-adjuster-v2.ts`, 6 테스트) — debtRatio×0.4+repaymentRatio×0.4+reserveRisk×0.2 점수, SAFE(<25)/CAUTION(<50)/WARNING(<75)/CRITICAL.

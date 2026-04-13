@@ -1,6 +1,6 @@
 // Plan SC: SVC-AI-ADV-R468
 // Design Ref: §단계기준 — >=75:leading, >=50:progressing, >=25:initiating, else lagging
-type DTCategory = 'process' | 'technology' | 'culture' | 'data'
+type DTCategory = 'process' | 'technology' | 'culture' | 'data' | 'strategy'
 type DTStage = 'leading' | 'progressing' | 'initiating' | 'lagging'
 type DataGrade = 'O' | 'C' | 'S'
 
@@ -19,7 +19,7 @@ export class DigitalTransformationAssessorV2 {
     this.auditLog.push({ action, detail, timestamp: new Date().toISOString() })
   }
 
-  registerOrg(orgId: string, name: string, type: string): Organization {
+  registerOrg(orgId: string, name: string, type = ''): Organization {
     const org: Organization = { orgId, name, type }
     this.orgs.set(orgId, org)
     this.scores.set(orgId, new Map())
