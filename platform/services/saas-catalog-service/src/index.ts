@@ -21,11 +21,11 @@ async function main(): Promise<void> {
   });
 
   await app.register(configPlugin, {
-    defaults: { port: 3016, host: '0.0.0.0' },
-    envMapping: { SAAS_CATALOG_SERVICE_PORT: 'port' },
+    defaults: { port: 3005, host: '0.0.0.0' },
+    envMapping: { CATALOG_SERVICE_PORT: 'port' },
   });
 
-  const PORT = app.config.get<number>('port', 3016);
+  const PORT = app.config.get<number>('port', 3005);
   const HOST = app.config.get<string>('host', '0.0.0.0');
 
   await app.register(meshReadyPlugin, {

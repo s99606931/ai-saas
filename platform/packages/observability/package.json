@@ -4,11 +4,12 @@
   "private": true,
   "description": "공공기관 SaaS 플랫폼 -- 공유 관측성 패키지 (OpenTelemetry + Response Time)",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./dist/index.js"
   },
   "scripts": {
+    "build": "tsc",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

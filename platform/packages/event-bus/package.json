@@ -4,11 +4,12 @@
   "private": true,
   "description": "공공기관 SaaS 플랫폼 -- 이벤트 버스 패키지 (타입 안전 pub/sub, 재시도, 데드레터 큐)",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./dist/index.js"
   },
   "scripts": {
+    "build": "tsc",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

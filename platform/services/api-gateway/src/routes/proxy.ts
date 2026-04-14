@@ -106,6 +106,7 @@ async function authPreHandler(request: FastifyRequest, reply: FastifyReply): Pro
     const mutableHeaders = request.headers as Record<string, string | undefined>;
     mutableHeaders['x-user-id'] = data.sub ?? 'anonymous';
     mutableHeaders['x-user-tenant-id'] = data.tenantId ?? '';
+    mutableHeaders['x-tenant-id'] = data.tenantId ?? ''; // BUG-7: 서비스별 x-tenant-id 호환
     mutableHeaders['x-user-role'] = data.role ?? '';
     // INTERNAL_SERVICE_KEY: 미설정 시 헤더 미주입 (빈 문자열 폴백 방지 MEDIUM-02)
     const internalKey = process.env['INTERNAL_SERVICE_KEY'];
@@ -135,7 +136,9 @@ function makePermissionPreHandler(requiredPermissions: string[]) {
       return;
     }
 
-    const userPermissions = user.permissions ?? ROLE_PERMISSIONS[user.role ?? ''] ?? [];
+    // BUG-6 수정: JWT role은 소문자(super_admin), ROLE_PERMISSIONS 키는 대문자(SUPER_ADMIN) — 정규화 필요
+    const userRole = (user.role ?? '').toUpperCase();
+    const userPermissions = user.permissions?.length ? user.permissions : (ROLE_PERMISSIONS[userRole] ?? []);
     const hasAll = requiredPermissions.every(
       (p) => userPermissions.includes(p) || userPermissions.includes('admin:all'),
     );
@@ -229,7 +232,9 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
       // 플러그인 requiredPermissions RBAC 검사 (MEDIUM-01, CSAP D-08-05)
       if (pluginEntry.requiredPermissions?.length) {
         const user = (request as FastifyRequest & { user?: JwtUser }).user;
-        const userPermissions = user?.permissions ?? ROLE_PERMISSIONS[user?.role ?? ''] ?? [];
+        // BUG-6 수정: JWT role 소문자 → 대문자 정규화 후 ROLE_PERMISSIONS 조회
+        const userRole = (user?.role ?? '').toUpperCase();
+        const userPermissions = user?.permissions?.length ? user.permissions : (ROLE_PERMISSIONS[userRole] ?? []);
         const hasAll = pluginEntry.requiredPermissions.every(
           (p) => userPermissions.includes(p) || userPermissions.includes('admin:all'),
         );

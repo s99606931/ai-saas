@@ -9,12 +9,25 @@ WORKDIR /app
 # pnpm 설치
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
-# 의존성 캐시 레이어
+# 의존성 캐시 레이어 — 모든 워크스페이스 패키지 package.json 복사 (pnpm dep 해결용)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY platform/services/notification-service/package.json ./platform/services/notification-service/
 COPY platform/packages/types/package.json ./platform/packages/types/
 COPY platform/packages/auth-sdk/package.json ./platform/packages/auth-sdk/
 COPY platform/packages/audit-sdk/package.json ./platform/packages/audit-sdk/
+COPY platform/packages/observability/package.json ./platform/packages/observability/
+COPY platform/packages/health/package.json ./platform/packages/health/
+COPY platform/packages/rate-limit/package.json ./platform/packages/rate-limit/
+COPY platform/packages/rbac/package.json ./platform/packages/rbac/
+COPY platform/packages/mesh-ready/package.json ./platform/packages/mesh-ready/
+COPY platform/packages/config-vault/package.json ./platform/packages/config-vault/
+COPY platform/packages/event-bus/package.json ./platform/packages/event-bus/
+COPY platform/packages/ssrf-guard/package.json ./platform/packages/ssrf-guard/
+COPY platform/packages/problem-details/package.json ./platform/packages/problem-details/
+COPY platform/packages/circuit-breaker/package.json ./platform/packages/circuit-breaker/
+COPY platform/packages/structured-logger/package.json ./platform/packages/structured-logger/
+COPY platform/packages/backoff/package.json ./platform/packages/backoff/
+COPY platform/packages/cidr/package.json ./platform/packages/cidr/
 
 RUN pnpm install --frozen-lockfile --filter @public-saas/notification-service...
 
