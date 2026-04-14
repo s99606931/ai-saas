@@ -20,7 +20,7 @@ export const avatarVariants = cva(
       size: {
         xs: 'h-6 w-6 text-[length:var(--font-size-xs)]',
         sm: 'h-8 w-8 text-[length:var(--font-size-sm)]',
-        md: 'h-10 w-10 text-[length:var(--font-size-md)]',
+        md: 'h-10 w-10 text-[length:var(--font-size-base)]',
         lg: 'h-14 w-14 text-[length:var(--font-size-lg)]',
         xl: 'h-20 w-20 text-[length:var(--font-size-xl)]',
       },

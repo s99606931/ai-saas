@@ -56,6 +56,20 @@ export {
   Tooltip,
   type TooltipProps,
   type TooltipSide,
+  // R4
+  Heading,
+  type HeadingProps,
+  type HeadingLevel,
+  type HeadingWeight,
+  Text,
+  type TextProps,
+  type TextSize,
+  type TextWeight,
+  type TextVariant,
+  type TextAs,
+  Code,
+  type CodeProps,
+  type CodeSize,
   // Variants
   buttonVariants,
   badgeVariants,
@@ -83,8 +97,9 @@ export {
   subscribeSystemTheme,
 } from './theme/index.js';
 
-// ─────────── Molecules (DS-MOL-R1) ───────────
+// ─────────── Molecules (DS-MOL-R1 + R2) ───────────
 export {
+  // R1
   FormField,
   type FormFieldProps,
   Alert,
@@ -93,8 +108,20 @@ export {
   type AlertVariant,
   Card,
   type CardProps,
+  // R2
+  DataTable,
+  type DataTableProps,
+  type DataTableColumn,
+  type DataTablePagination,
+  type DataTableSelection,
+  StatusCard,
+  type StatusCardProps,
+  type StatusCardVariant,
+  type StatusCardTrend,
+  type StatusCardTrendDirection,
+  SearchBar,
+  type SearchBarProps,
 } from './molecules/index.js';
 
 // ─────────── Organisms 스텁 (추후 DS-ORG-R1) ───────────
-export type { DataTableProps, StatusCardProps } from './molecules/types.js';
 export type { SidebarProps, HeaderProps } from './organisms/types.js';

@@ -1,13 +1,12 @@
 /**
- * DS-ATOM-R1 + R2 + R3 — atoms 통합 export
- * Plan SC: FR-DSA.11, FR-DSA.21~24
+ * DS-ATOM-R1 + R2 + R3 + R4 — atoms 통합 export
+ * Plan SC: FR-DSA.11, FR-DSA.21~24, FR-DSA.31~35
  *
  * 구현된 컴포넌트:
  *  R1: Button, Badge, Spinner, Icon
  *  R2: Input, Textarea, Checkbox, Switch, Label
  *  R3: Select, Radio/RadioGroup, Avatar, Tooltip
- *
- * 다음 (DS-ATOM-R4): Typography (Pretendard + fluid type)
+ *  R4: Heading, Text, Code (Typography)
  */
 
 // ─────────── 유틸 ───────────
@@ -52,6 +51,23 @@ export {
   type TooltipProps,
   type TooltipSide,
 } from './Tooltip/index.js';
+
+// ─────────── R4: 타이포그래피 ───────────
+export {
+  Heading,
+  type HeadingProps,
+  type HeadingLevel,
+  type HeadingWeight,
+} from './Heading/index.js';
+export {
+  Text,
+  type TextProps,
+  type TextSize,
+  type TextWeight,
+  type TextVariant,
+  type TextAs,
+} from './Text/index.js';
+export { Code, type CodeProps, type CodeSize } from './Code/index.js';
 
 // ─────────── Variants ───────────
 export { buttonVariants } from './Button/Button.variants.js';

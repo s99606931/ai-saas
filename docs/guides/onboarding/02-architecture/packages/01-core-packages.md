@@ -50,10 +50,7 @@ graph TD
         RLA["rate-limit-advanced\nAI/Premium API"]
     end
 
-    style AuthSDK fill:#E8F5E9
-    style RBAC fill:#E8F5E9
-    style AuditSDK fill:#FFF3E0
-    style SecretMgr fill:#FFEBEE
+
 ```
 
 **요청이 들어왔을 때 패키지 실행 순서:**

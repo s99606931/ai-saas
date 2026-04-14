@@ -1201,3 +1201,51 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R454**: Disaster Recovery Prioritizer (`realtime-compliance-corrector-v2.ts`, 6 테스트) — score=damage×0.4+min(res/10000,1)×0.3+critW/3×0.3, 상위→urgent, 순위 정렬.
 - **SVC-AI-ADV-R455**: Permit Auto Processor (`knowledge-graph-builder-ai.ts`, 6 테스트) — building/business/environment 필수서류 체크, APPROVED/NEED_DOCS/REVIEW, environment 결여→항상 REVIEW.
 - **SVC-AI-ADV-R456**: Municipal Debt Risk Assessor (`service-quality-auto-adjuster-v2.ts`, 6 테스트) — debtRatio×0.4+repaymentRatio×0.4+reserveRisk×0.2 점수, SAFE(<25)/CAUTION(<50)/WARNING(<75)/CRITICAL.
+
+## SVC-AI-ADV R475~R483 (트랙 A 18차, 2026-04-13)
+
+- **SVC-AI-ADV-R475**: Public Safety Threat Detector (`public-safety-threat-detector-ai.ts`, 7 테스트) — N2SF C/S 차단, severity≥0.8→CRITICAL/≥0.6→HIGH/≥0.4→MEDIUM/else LOW, location 앞3자+*** 마스킹.
+- **SVC-AI-ADV-R476**: Service Capacity Predictor V2 (`service-capacity-predictor-v2.ts`, 6 테스트) — cpu>80||mem>80→OVERLOADED/>60→WARNING/else HEALTHY, recommendedCapacity=requestRate×(1+growthRate×1.2).
+- **SVC-AI-ADV-R477**: Public Document Summarizer V2 (`public-document-summarizer-v2.ts`, 6 테스트) — N2SF C/S 차단, 첫 문장 요약 + 빈도 상위 5 키워드 추출 (한국어 불용어 제거).
+- **SVC-AI-ADV-R478**: API Performance Optimizer V3 (`api-performance-optimizer-v3.ts`, 6 테스트) — p99>2000||errorRate>0.05→CRITICAL(CACHE+RATE_LIMIT), p99>1000||errorRate>0.01→WARNING(CACHE), 점수=100-p99/20-errorRate×1000.
+- **SVC-AI-ADV-R479**: Realtime Service Health Index AI (`realtime-service-health-index-ai.ts`, 6 테스트) — avail×0.4+latency×0.3+error×0.2+saturation×0.1, ≥90→EXCELLENT/≥75→GOOD/≥60→FAIR/POOR + weakestMetric.
+- **SVC-AI-ADV-R480**: Public Complaint Classifier V3 (`public-complaint-classifier-v3.ts`, 7 테스트) — 키워드 매핑(TRAFFIC/ENVIRONMENT/WELFARE/SAFETY/OTHER), emergency=1/high=2/normal=3/low=4, submitterId 마스킹.
+- **SVC-AI-ADV-R481**: Multitenant Security Auditor V2 (`multitenant-security-auditor-v2.ts`, 6 테스트) — targetTenantId불일치→CROSS_TENANT(CRITICAL), DELETE/ADMIN/EXPORT→UNAUTHORIZED(HIGH), userId 마스킹.
+- **SVC-AI-ADV-R482**: Public Data Linkage Automator V3 (`public-data-linkage-automator-v3.ts`, 6 테스트) — N2SF C/S 차단, 필드 교집합/차집합, compatibilityScore=교집합/합집합×100.
+- **SVC-AI-ADV-R483**: Service Registry Automator V2 (`service-registry-automator-v2.ts`, 7 테스트) — 서비스 등록/헬스 갱신, DOWN||responseMs>5000→UNHEALTHY/DEGRADED→DEGRADED/else HEALTHY.
+
+## SVC-AI-ADV R511~R519 (트랙 A 19차, 2026-04-14)
+
+- **SVC-AI-ADV-R511**: Autoscaling Policy Optimizer (`service-autoscaling-policy-optimizer.ts`, 7 테스트) — rpsP95>rpsAvg×2||cpu>75→SCALE_OUT, cpu<30&&mem<30→SCALE_IN, ceil(rpsAvg/100)+버퍼, sloTarget<0.99+SCALE_IN→HIGH_RISK.
+- **SVC-AI-ADV-R512**: Data Quality Improver V3 (`public-data-quality-improver-v3.ts`, 6 테스트) — N2SF C/S 차단, MISSING_FIELD/FORMAT_ERROR(점구분날짜)/DUPLICATE, qualityScore=정상필드/전체×100.
+- **SVC-AI-ADV-R513**: Realtime Threat Classifier V2 (`realtime-threat-classifier-v2.ts`, 7 테스트) — N2SF C/S 차단, payload 키워드→SQL_INJECTION(CRITICAL)/XSS/BRUTE_FORCE(HIGH)/DDOS(CRITICAL)/UNKNOWN(MEDIUM), BLOCK_AND_ALERT/BLOCK/LOG.
+- **SVC-AI-ADV-R514**: Accessibility Assessor V3 (`public-service-accessibility-assessor-v3.ts`, 6 테스트) — 5항목×20점, ≥80→A/≥60→B/≥40→C/else D, missing 목록 반환.
+- **SVC-AI-ADV-R515**: Deployment Approval Automator (`deployment-approval-automator-ai.ts`, 6 테스트) — prod+40/stg+10/!tests+30/files>20+20/>10+10/!rollback+15, <30→AUTO_APPROVE/<60→MANUAL_REVIEW/≥60→REJECT.
+- **SVC-AI-ADV-R516**: API Gateway Security Enhancer V2 (`api-gateway-security-enhancer-v2.ts`, 6 테스트) — req>1000→RATE_ABUSE, errorRate>0.3→ERROR_STORM, IPs>500→IP_SWEEP, HIGH→BLOCK/MEDIUM→THROTTLE/LOW→ALLOW.
+- **SVC-AI-ADV-R517**: Workflow Bottleneck Detector (`workflow-bottleneck-detector-ai.ts`, 7 테스트) — avg>expected×1.5→BOTTLENECK/×1.2→WARNING/NORMAL, ×2||queue>50→CRITICAL, healthScore=NORMAL/total×100.
+- **SVC-AI-ADV-R518**: Resource Fairness Verifier (`multitenant-resource-fairness-verifier.ts`, 6 테스트) — util>110%→OVER_QUOTA/<10%→UNDER_UTILIZED/else FAIR, overallStatus 우선순위: OVER_QUOTA>UNDER_UTILIZED>FAIR.
+- **SVC-AI-ADV-R519**: Dependency Doc Automator V3 (`service-dependency-doc-automator-v3.ts`, 6 테스트) — BFS depth, impactedBy count, DFS 순환 탐지, hasCycles + cycleServices.
+
+## SVC-AI-ADV R538~R546 (트랙 A 20차, 2026-04-13)
+
+- **SVC-AI-ADV-R538**: Service Innovation Index AI (`service-innovation-index-ai.ts`, 6 테스트) — 혁신지수=digitalServiceRate×0.3+processAutomation×0.3+dataOpen×0.2+satisfaction×0.2, ≥80→INNOVATING/≥60→ADVANCING/≥40→DEVELOPING/LAGGING, lowestMetric 반환.
+- **SVC-AI-ADV-R539**: Root Cause Analyzer V2 (`root-cause-analyzer-v2.ts`, 6 테스트) — errorRate>0.5→CODE_ERROR/latencySpike>5000→RESOURCE_EXHAUSTION/memUsage>90→MEMORY_LEAK, CRITICAL→ROLLBACK/HIGH→SCALE_OUT/MEDIUM→RESTART/LOW→MONITOR.
+- **SVC-AI-ADV-R540**: Public Workflow Automation V2 (`public-workflow-automation-v2.ts`, 5 테스트) — 자동화점수=repetitionRate×40+min(steps/10,1)×30+min(duration/60,1)×20+(errorProne?10:0), ≥70→AUTOMATE/≥40→SEMI_AUTOMATE/MANUAL, timeSavings=duration×rate×0.8.
+- **SVC-AI-ADV-R541**: Realtime Cost Anomaly Detector V2 (`realtime-cost-anomaly-detector-v2.ts`, 7 테스트) — actual>budget×1.2||actual>prevMonth×1.5→이상, >×2→CRITICAL/>×1.5→HIGH/>×1.2→MEDIUM/NORMAL, 초과율 소수점 2자리.
+- **SVC-AI-ADV-R542**: Service Mesh Visibility Enhancer AI (`service-mesh-visibility-enhancer-ai.ts`, 7 테스트) — latency>1000||errorRate>0.1→CRITICAL/latency>500||errorRate>0.05→DEGRADED/HEALTHY, overallScore=HEALTHY수/전체×100, hotspots=CRITICAL엣지 목록.
+- **SVC-AI-ADV-R543**: Public Document Authenticity Verifier (`public-document-authenticity-verifier.ts`, 6 테스트) — 필드완전+체크섬유효(^[0-9a-fA-F]{16,}$)→AUTHENTIC/필드불완전→INCOMPLETE/체크섬무효→TAMPERED, 필드 우선 판정.
+- **SVC-AI-ADV-R544**: API Throttling Optimizer AI (`api-throttling-optimizer-ai.ts`, 6 테스트) — 사용률=req1h/limit×100, >90&&err<0.01→×1.5/<30→×0.7/>90&&err>=0.01→×0.8/else 유지, HIGH_USAGE/NORMAL/LOW_USAGE.
+- **SVC-AI-ADV-R545**: Multitenant Service Isolator V3 (`multitenant-service-isolator-v3.ts`, 7 테스트) — 테넌트불일치+DELETE→CRITICAL/WRITE→HIGH/기타→MEDIUM/SAFE, SAFE→ALLOW/else DENY, requesterId PII 마스킹.
+- **SVC-AI-ADV-R546**: Public Service Channel Analyzer V3 (`public-service-channel-analyzer-v3.ts`, 7 테스트) — 채널점수=completionRate×0.5+(satisfaction/5)×0.3+min(visits/10000,1)×0.2, ≥0.8→EXCELLENT/≥0.6→GOOD/≥0.4→FAIR/POOR, bestChannel/worstChannel 식별.
+
+## SVC-AI-ADV R565~R573 (트랙 A 21차, 2026-04-13)
+
+- **SVC-AI-ADV-R565**: Decision Automation AI V2 (`decision-automation-ai-v2.ts`, 6 테스트) — amount<=1M&&grade>='3'&&hasAttachments→AUTO/urgency=HIGH→FAST_TRACK/STANDARD, 예상처리일 0/1/3.
+- **SVC-AI-ADV-R566**: API Usage Forecaster V3 (`api-usage-forecaster-v3.ts`, 5 테스트) — 평균일일증가율=(last-first)/(n-1)/first, 예측=last*(1+rate)^days(ceil), capacity=ceil(forecast*1.3), 3개 미만→에러.
+- **SVC-AI-ADV-R567**: Info Asset Manager AI (`info-asset-manager-ai.ts`, 6 테스트) — 위험점수=(C→40/S→30/O→10)+exposure×3+min(days/365,1)×30, ≥70→CRITICAL/≥50→HIGH/≥30→MEDIUM/LOW.
+- **SVC-AI-ADV-R568**: Realtime Service Quality Predictor V2 (`realtime-service-quality-predictor-v2.ts`, 6 테스트) — 마지막3개평균: cpu>70→cpuRisk/mem>80→memRisk, cpuRisk&&memRisk→CRITICAL/cpuRisk||memRisk||err>sla→WARNING/STABLE.
+- **SVC-AI-ADV-R569**: Public Procurement Automation V2 (`public-procurement-automation-v2.ts`, 7 테스트) — isEmergency→EMERGENCY/>50M→OPEN_BID/>10M→LIMITED_BID/DIRECT, 자동승인: <=budget10%&&vendor>=3&&비긴급.
+- **SVC-AI-ADV-R570**: Security Vulnerability Scanner V3 (`security-vulnerability-scanner-v3.ts`, 6 테스트) — cvss>=9→CRITICAL/>=7→HIGH/>=4→MEDIUM/LOW, isExploited||cvss>=9→즉시패치.
+- **SVC-AI-ADV-R571**: Public Service Recommender V3 (`public-service-recommender-v3.ts`, 7 테스트) — N2SF C/S BLOCKED, category∈requested&&(region=ALL||match)&&ageGroup∈ageGroups, userId PII 마스킹.
+- **SVC-AI-ADV-R572**: Multicloud Network Optimizer V2 (`multicloud-network-optimizer-v2.ts`, 6 테스트) — 링크점수=(1-lat/1000)×0.5+(1-cost/10)×0.3+bw/1000×0.2, ≥0.7→OPTIMAL/≥0.4→ACCEPTABLE/BOTTLENECK.
+- **SVC-AI-ADV-R573**: Service Cost Anomaly Detector V4 (`service-cost-anomaly-detector-v4.ts`, 7 테스트) — current>baseline×1.3→이상, 이상비율>0.5→CRITICAL/>0.2→WARNING/NORMAL.
