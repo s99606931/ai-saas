@@ -142,5 +142,29 @@ export {
   type DatePickerProps,
 } from './molecules/index.js';
 
-// ─────────── Organisms 스텁 (추후 DS-ORG-R1) ───────────
-export type { SidebarProps, HeaderProps } from './organisms/types.js';
+// ─────────── Organisms (DS-ORG-R1 + R2) ───────────
+export {
+  AppShell,
+  type AppShellProps,
+  Header,
+  type HeaderProps,
+  type HeaderBreadcrumb,
+  type HeaderUser,
+  Sidebar,
+  type SidebarProps,
+  type SidebarMenuItem,
+  Rail,
+  type RailProps,
+  type RailMenuItem,
+  type LegacySidebarProps,
+  type LegacyHeaderProps,
+  // R2
+  PageHeader,
+  type PageHeaderProps,
+  type PageHeaderBreadcrumb,
+  FilterBar,
+  type FilterBarProps,
+  EmptyState,
+  type EmptyStateProps,
+  type EmptyStateVariant,
+} from './organisms/index.js';

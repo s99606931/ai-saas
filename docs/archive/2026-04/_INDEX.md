@@ -1287,3 +1287,15 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R616**: Citizen Journey Optimizer V3 (`citizen-journey-optimizer-v3.ts`, 6 테스트) — 단계별 dropRate=drop/total, avgDuration, dropRate>0.3||avg>기대×1.5→병목, 드롭 우세→단순화/지연 우세→자동화 제안, citizenId 마스킹.
 - **SVC-AI-ADV-R617**: Smart Contract Auditor V2 (`smart-contract-auditor-v2.ts`, 7 테스트) — Solidity 정규식 룰: pragma^0.4→CRITICAL/tx.origin/.send/.call{value:→HIGH/block.timestamp/selfdestruct→MEDIUM, findings 최대 심각도 = overallSeverity.
 - **SVC-AI-ADV-R618**: Quantum Safe Crypto Advisor V2 (`quantum-safe-crypto-advisor-v2.ts`, 7 테스트) — RSA/ECDSA/ECDH/DH→HIGH+ML-KEM/ML-DSA, AES-128→MEDIUM+AES-256, AES-256/ML-KEM/ML-DSA/SHA-384+→SAFE, 위험점수=(HIGH100+MED50+SAFE0)/n.
+
+## SVC-AI-ADV R646~R654 (트랙 C 23차, 2026-04-14)
+
+- **SVC-AI-ADV-R646**: Digital Twin Sync AI V2 (`digital-twin-sync-ai-v2.ts`, 6 테스트) — baselineState vs value |delta| 최근5 평균, ≤0.05 SYNCED/≤0.15 DRIFT/OUT_OF_SYNC, N2SF C/S 차단.
+- **SVC-AI-ADV-R647**: Policy Impact Simulator V2 (`policy-impact-simulator-v2.ts`, 7 테스트) — projectedBeneficiaries=base×(1+elasticity×delta), sideEffectScore=|delta|×50+|costDelta|×30, <40 PROCEED/<70 REVIEW/REJECT.
+- **SVC-AI-ADV-R648**: Zero Trust Access AI V2 (`zero-trust-access-ai-v2.ts`, 6 테스트) — unknownDevice+40/offHours+20/newLocation+20/failed×5, <30 ALLOW/<70 CHALLENGE/DENY, userId SHA-256 16자 마스킹.
+- **SVC-AI-ADV-R649**: Public Data Catalog AI V3 (`public-data-catalog-ai-v3.ts`, 6 테스트) — completeness×0.4+freshness×0.3+standardCompliance×0.3, ≥90 A/≥75 B/≥60 C/D, N2SF C/S 차단.
+- **SVC-AI-ADV-R650**: Event Driven Orchestrator AI V2 (`event-driven-orchestrator-ai-v2.ts`, 6 테스트) — defineWorkflow/handleEvent/recordStep, actualMs>expectedMs×1.5 지연 탐지, N2SF C/S 차단.
+- **SVC-AI-ADV-R651**: AI Model Governance V3 (`ai-model-governance-v3.ts`, 6 테스트) — fairness/explainability/robustness/privacy, 모두≥0.5 && avg≥0.8 APPROVED/≥0.6 CONDITIONAL, 임계 미달→REJECTED, owner SHA-256 16자 마스킹.
+- **SVC-AI-ADV-R652**: Smart Archiving AI V2 (`smart-archiving-ai-v2.ts`, 8 테스트) — permanent→ARCHIVE, age≥retention→DISPOSAL, ≥80%→REVIEW, else ACTIVE, disposalCandidates 추출.
+- **SVC-AI-ADV-R653**: Cross Agency Data Broker V2 (`cross-agency-data-broker-v2.ts`, 7 테스트) — ssn/password/creditCard→DENY, 동일기관→ALLOW, 민감 필드(phone/email/residentId 등)→MASK, requesterEmail SHA-256 16자 마스킹.
+- **SVC-AI-ADV-R654**: Proactive Security Patching AI V2 (`proactive-security-patching-ai-v2.ts`, 8 테스트) — cvss≥9 CRITICAL/≥7 HIGH/≥4 MEDIUM/LOW, CRITICAL·HIGH→IMMEDIATE, MEDIUM→SCHEDULED, LOW→MONITOR, exploitAvailable 한 단계 승격.
