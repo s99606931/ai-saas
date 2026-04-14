@@ -23,8 +23,8 @@ describe('SecurityPatchPrioritizerV2', () => {
     prioritizer.registerPatch('patch-1', 'Low', 3.0, ['sys-a'])
     prioritizer.registerPatch('patch-2', 'High', 9.8, ['sys-a', 'sys-b', 'sys-c'])
     const sorted = prioritizer.getPrioritizedPatches()
-    expect(sorted[0].patchId).toBe('patch-2')
-    expect(sorted[1].patchId).toBe('patch-1')
+    expect(sorted[0]!.patchId).toBe('patch-2')
+    expect(sorted[1]!.patchId).toBe('patch-1')
   })
 
   it('패치 상태 업데이트', () => {

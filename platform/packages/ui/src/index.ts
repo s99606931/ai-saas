@@ -97,7 +97,7 @@ export {
   subscribeSystemTheme,
 } from './theme/index.js';
 
-// ─────────── Molecules (DS-MOL-R1 + R2) ───────────
+// ─────────── Molecules (DS-MOL-R1 + R2 + R3 + R4) ───────────
 export {
   // R1
   FormField,
@@ -121,6 +121,25 @@ export {
   type StatusCardTrendDirection,
   SearchBar,
   type SearchBarProps,
+  // R3
+  Modal,
+  type ModalProps,
+  type ModalSize,
+  ToastProvider,
+  useToast,
+  type ToastProviderProps,
+  type ToastContextValue,
+  type ToastOptions,
+  type ToastItem,
+  type ToastVariant,
+  Drawer,
+  type DrawerProps,
+  type DrawerSide,
+  type DrawerSize,
+  // R4
+  DatePicker,
+  formatKoreanDate,
+  type DatePickerProps,
 } from './molecules/index.js';
 
 // ─────────── Organisms 스텁 (추후 DS-ORG-R1) ───────────

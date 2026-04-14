@@ -1,6 +1,6 @@
 // Design Ref: §설계결정 — AI기반 공공기관 서비스 성과 예측 v2
 // Plan SC: FR-R574.1~5
-import { createHash } from 'crypto'
+// import { createHash } from 'crypto' // NOTE: 미사용, PII 마스킹 불필요 모듈
 
 interface ServiceRecord { serviceId: string; name: string; category: string }
 interface PerformanceEntry { score: number; period: string }

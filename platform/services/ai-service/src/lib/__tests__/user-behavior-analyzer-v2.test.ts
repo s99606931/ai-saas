@@ -47,8 +47,8 @@ describe('UserBehaviorAnalyzerV2', () => {
   it('감사 로그: PII 마스킹 확인', () => {
     analyzer.registerSession('ses-1', 'user-1', 'svc-1')
     const log = analyzer.getAuditLog()
-    expect(log[0].maskedUserId).toBeDefined()
-    expect(log[0].maskedUserId).not.toBe('user-1')
+    expect(log[0]!.maskedUserId).toBeDefined()
+    expect(log[0]!.maskedUserId).not.toBe('user-1')
   })
 
   it('감사 로그 기록', () => {

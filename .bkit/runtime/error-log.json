@@ -1,239 +1,5 @@
 [
   {
-    "timestamp": "2026-04-12T07:39:37.027Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "aeae9e196db4e4f16",
-    "agentType": "pm-lead",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T07:39:38.547Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": null,
-    "agentType": null,
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T07:39:46.883Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "a1da0a4e252a24f77",
-    "agentType": "pm-lead",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T07:39:47.478Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": null,
-    "agentType": null,
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T07:39:49.177Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "a7f32ffef325e7d06",
-    "agentType": "pm-lead",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T07:39:49.707Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": null,
-    "agentType": null,
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T07:40:11.632Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "a494e3e5e5fddb9c3",
-    "agentType": "implementer",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T07:40:12.439Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": null,
-    "agentType": null,
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T13:23:25.686Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "a39c4937dad6a67ac",
-    "agentType": "pm-lead",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T13:23:26.368Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "af409c316fcd4fe86",
-    "agentType": "ai-impl-a",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T13:23:26.478Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": null,
-    "agentType": null,
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T13:23:26.905Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "a3d9ec83019ad316e",
-    "agentType": "ai-impl-a",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T13:23:27.554Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "ab8fa42f2e9185367",
-    "agentType": "ai-impl-a",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T13:23:33.481Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "a7636d961145559f2",
-    "agentType": "ai-impl-b",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T13:23:33.901Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "aa4fba1a4c076016f",
-    "agentType": "ai-impl-b",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T13:23:34.325Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "a4627d9e6bee5a613",
-    "agentType": "ai-impl-b",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T13:23:55.610Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "a2bae1e5d0517fd22",
-    "agentType": "implementer",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T13:24:31.331Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "a72d13d4f7be5c9ff",
-    "agentType": "implementer",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T13:25:06.747Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "a7a863ac2ec4337f5",
-    "agentType": "implementer",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T13:25:07.752Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": null,
-    "agentType": null,
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T23:39:22.958Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "aa5322bda1a3b76f2",
-    "agentType": "pm-lead",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T23:39:23.984Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": null,
-    "agentType": null,
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T23:39:26.656Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "a005f5241df1e8648",
-    "agentType": "implementer",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T23:39:30.543Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "ae20f248c8b689fc6",
-    "agentType": "ai-impl-b",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T23:39:31.407Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "adbd635ebebc709b3",
-    "agentType": "ai-impl-b",
-    "message": ""
-  },
-  {
-    "timestamp": "2026-04-12T23:39:32.151Z",
-    "errorType": "unknown",
-    "category": "unknown",
-    "severity": "low",
-    "agentId": "a19ddaebf06d6e138",
-    "agentType": "ai-impl-b",
-    "message": ""
-  },
-  {
     "timestamp": "2026-04-12T23:39:32.874Z",
     "errorType": "unknown",
     "category": "unknown",
@@ -442,6 +208,240 @@
   },
   {
     "timestamp": "2026-04-13T12:16:18.008Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": null,
+    "agentType": null,
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:31:36.018Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a7068789c4e5b33ac",
+    "agentType": "ai-impl-c",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:31:42.573Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a2ffa4026cf83206b",
+    "agentType": "ai-impl-c",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:31:52.777Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": null,
+    "agentType": null,
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:31:58.760Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a86749c739c18dad6",
+    "agentType": "ai-impl-a",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:32:05.402Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a43183bec6abae315",
+    "agentType": "ai-impl-a",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:32:06.253Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "ae51ebc78c52ca694",
+    "agentType": "ai-impl-c-2",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:32:22.158Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "ae784a67e4c8cd1a6",
+    "agentType": "ai-impl-a",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:32:31.705Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": null,
+    "agentType": null,
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:32:47.872Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "ac914166a51664bc2",
+    "agentType": "ai-impl-b",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:32:54.240Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a07fe872fec8dee98",
+    "agentType": "ai-impl-b",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:32:57.572Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a1847cb5ee86f0aae",
+    "agentType": "ai-impl-b",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:33:04.046Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a052aa77b41a672d4",
+    "agentType": "ai-impl-a-2",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:33:12.125Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "afc7b7404754e3e53",
+    "agentType": "ai-impl-b-2",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:33:19.704Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": null,
+    "agentType": null,
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:33:19.807Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "ab29711a30abd83b7",
+    "agentType": "ai-impl-c-3",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:33:25.766Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": null,
+    "agentType": null,
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:33:29.040Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "af072ad557b72abc7",
+    "agentType": "ai-impl-c",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:33:35.460Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "addde10d55ed03899",
+    "agentType": "ai-impl-c",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:34:06.395Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": null,
+    "agentType": null,
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:34:36.009Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "abb890de465ed72df",
+    "agentType": "ai-impl-b",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:34:38.027Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a8a9ef9e4b8c25a3d",
+    "agentType": "ai-impl-a",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:34:39.325Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": null,
+    "agentType": null,
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:34:42.080Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": null,
+    "agentType": null,
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:34:45.309Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": "a392e4a4a199e2d34",
+    "agentType": "ai-impl-c",
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:34:50.568Z",
+    "errorType": "unknown",
+    "category": "unknown",
+    "severity": "low",
+    "agentId": null,
+    "agentType": null,
+    "message": ""
+  },
+  {
+    "timestamp": "2026-04-13T15:34:57.033Z",
     "errorType": "unknown",
     "category": "unknown",
     "severity": "low",

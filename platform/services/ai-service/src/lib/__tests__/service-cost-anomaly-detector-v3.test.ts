@@ -1,6 +1,6 @@
 // Plan SC: SVC-AI-ADV-R486-SC01
 import { describe, it, expect, beforeEach } from 'vitest'
-import { ServiceCostAnomalyDetectorV3, type CostEntry } from '../service-cost-anomaly-detector-v3'
+import { ServiceCostAnomalyDetectorV3 } from '../service-cost-anomaly-detector-v3'
 
 describe('ServiceCostAnomalyDetectorV3', () => {
   let detector: ServiceCostAnomalyDetectorV3

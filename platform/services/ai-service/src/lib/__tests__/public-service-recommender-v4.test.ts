@@ -17,7 +17,7 @@ describe('PublicServiceRecommenderV4', () => {
     recommender.recordInteraction('user1', 'svc1', 2)
     recommender.recordInteraction('user2', 'svc2', 10)
     const top = recommender.getTopServices(1)
-    expect(top[0].serviceId).toBe('svc2')
+    expect(top[0]!.serviceId).toBe('svc2')
   })
 
   it('should mask userId in audit log', () => {

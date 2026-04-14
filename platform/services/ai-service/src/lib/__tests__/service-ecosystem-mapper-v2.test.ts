@@ -20,7 +20,7 @@ describe('ServiceEcosystemMapperV2', () => {
     mapper.addDependency('node-1', 'node-2', 'sync')
     const deps = mapper.getServiceDependencies('node-1')
     expect(deps.length).toBe(1)
-    expect(deps[0].toId).toBe('node-2')
+    expect(deps[0]!.toId).toBe('node-2')
   })
 
   it('getHighDependencyNodes: 인바운드 의존성 임계값 이상', () => {

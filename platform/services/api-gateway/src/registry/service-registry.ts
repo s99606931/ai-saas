@@ -14,6 +14,12 @@ interface ServiceEntry {
   requiredPermissions?: string[];
   /** Rate Limit 커스텀 (기본: 전역 설정) */
   rateLimit?: { max: number; timeWindow: string };
+  /**
+   * 서비스 내부 라우트 prefix (serviceId와 다를 때만 지정)
+   * BUG-1 수정: 서비스 라우트 prefix가 serviceId와 불일치하는 경우 명시
+   * 예: serviceId='menus' 이지만 실제 라우트는 '/menu/*' → routePrefix: 'menu'
+   */
+  routePrefix?: string;
 }
 
 /**
@@ -38,14 +44,17 @@ export const SERVICE_REGISTRY: Record<string, ServiceEntry> = {
   menus: {
     url: process.env['MENU_SVC_URL'] ?? 'http://menu-service:3004',
     requireAuth: true,
+    routePrefix: 'menu', // menu-service 내부 라우트는 /menu/* (BUG-1)
   },
   services: {
-    url: process.env['CATALOG_SVC_URL'] ?? 'http://catalog-service:3005',
+    url: process.env['CATALOG_SVC_URL'] ?? 'http://saas-catalog-service:3005',
     requireAuth: true,
+    routePrefix: 'saas-catalog', // saas-catalog-service 내부 라우트는 /saas-catalog/* (BUG-1)
   },
   subscriptions: {
     url: process.env['SUBSCRIPTION_SVC_URL'] ?? 'http://subscription-service:3006',
     requireAuth: true,
+    routePrefix: 'subscription', // subscription-service 내부 라우트는 /subscription/* (BUG-1)
   },
   billing: {
     url: process.env['BILLING_SVC_URL'] ?? 'http://billing-service:3007',
@@ -62,10 +71,12 @@ export const SERVICE_REGISTRY: Record<string, ServiceEntry> = {
   notifications: {
     url: process.env['NOTIFICATION_SVC_URL'] ?? 'http://notification-service:3010',
     requireAuth: true,
+    routePrefix: 'notification', // notification-service 내부 라우트는 /notification/* (BUG-1)
   },
   files: {
     url: process.env['FILE_SVC_URL'] ?? 'http://file-service:3011',
     requireAuth: true,
+    routePrefix: 'file', // file-service 내부 라우트는 /file/* (BUG-1)
   },
   audit: {
     url: process.env['AUDIT_SVC_URL'] ?? 'http://audit-service:3012',

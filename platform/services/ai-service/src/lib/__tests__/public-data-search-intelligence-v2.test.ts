@@ -1,6 +1,6 @@
 // Plan SC: SVC-AI-ADV-R522-SC01
 import { describe, it, expect, beforeEach } from 'vitest'
-import { PublicDataSearchIntelligenceV2, type PublicDataset, type SearchQuery } from '../public-data-search-intelligence-v2'
+import { PublicDataSearchIntelligenceV2, type PublicDataset } from '../public-data-search-intelligence-v2'
 
 describe('PublicDataSearchIntelligenceV2', () => {
   let searcher: PublicDataSearchIntelligenceV2

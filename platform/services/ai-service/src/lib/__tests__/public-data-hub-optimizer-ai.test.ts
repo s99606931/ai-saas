@@ -29,7 +29,7 @@ describe('PublicDataHubOptimizerAi', () => {
     optimizer.recordAccessPattern('src-1', 5, 0)
     optimizer.recordAccessPattern('src-2', 100, 0)
     const sorted = optimizer.getOptimizationPriority()
-    expect(sorted[0].sourceId).toBe('src-2')
+    expect(sorted[0]!.sourceId).toBe('src-2')
   })
 
   it('C등급 데이터 전송 차단', () => {

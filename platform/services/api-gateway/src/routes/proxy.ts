@@ -186,10 +186,12 @@ export async function registerProxyRoutes(app: FastifyInstance): Promise<void> {
           }
         : undefined;
 
+    // BUG-1 수정: routePrefix가 명시된 경우 해당 prefix 사용, 없으면 serviceId 사용
+    const upstreamPrefix = entry.routePrefix ?? serviceId;
     await app.register(httpProxy, {
       upstream: entry.url,
       prefix: `/api/v1/${serviceId}`,
-      rewritePrefix: `/${serviceId === 'auth' ? 'auth' : serviceId}`,
+      rewritePrefix: `/${upstreamPrefix}`,
       http2: false,
       preHandler: compositePreHandler,
     });

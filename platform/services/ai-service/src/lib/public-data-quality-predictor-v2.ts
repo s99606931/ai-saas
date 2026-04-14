@@ -29,7 +29,7 @@ export class PublicDataQualityPredictorV2 {
   getQualityScore(datasetId: string): number {
     const entries = this.qualities.get(datasetId) ?? []
     if (entries.length === 0) return 0
-    const recent = entries[entries.length - 1]
+    const recent = entries[entries.length - 1]!
     return (recent.completeness + recent.accuracy) / 2
   }
 

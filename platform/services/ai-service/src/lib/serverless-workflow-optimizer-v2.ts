@@ -29,7 +29,7 @@ export class ServerlessWorkflowOptimizerV2 {
   getOptimizationScore(workflowId: string): number {
     const entries = this.executions.get(workflowId) ?? []
     if (entries.length === 0) return 100
-    const latest = entries[entries.length - 1]
+    const latest = entries[entries.length - 1]!
     // score: penalize high duration and cold starts
     return Math.max(0, 100 - (latest.durationMs / 100) - (latest.coldStarts * 10))
   }

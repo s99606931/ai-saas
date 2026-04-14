@@ -1249,3 +1249,41 @@ API 게이트웨이 최적화·공공 민원 패턴 예측·서비스 의존성 
 - **SVC-AI-ADV-R571**: Public Service Recommender V3 (`public-service-recommender-v3.ts`, 7 테스트) — N2SF C/S BLOCKED, category∈requested&&(region=ALL||match)&&ageGroup∈ageGroups, userId PII 마스킹.
 - **SVC-AI-ADV-R572**: Multicloud Network Optimizer V2 (`multicloud-network-optimizer-v2.ts`, 6 테스트) — 링크점수=(1-lat/1000)×0.5+(1-cost/10)×0.3+bw/1000×0.2, ≥0.7→OPTIMAL/≥0.4→ACCEPTABLE/BOTTLENECK.
 - **SVC-AI-ADV-R573**: Service Cost Anomaly Detector V4 (`service-cost-anomaly-detector-v4.ts`, 7 테스트) — current>baseline×1.3→이상, 이상비율>0.5→CRITICAL/>0.2→WARNING/NORMAL.
+
+## SVC-AI-ADV R619~R627 (트랙 C 22차, 2026-04-14)
+
+- **SVC-AI-ADV-R619**: Permission Recommendation V2 (`permission-recommendation-v3.ts`, 6 테스트) — 최소 권한 원칙: 사용자 접근 이력→역할 매칭 스코어, matched 최대 && excess 최소 역할 추천, N2SF C/S BLOCKED, userId SHA-256 마스킹.
+- **SVC-AI-ADV-R620**: Serverless Cost Optimizer V2 (`serverless-cost-optimizer-v3.ts`, 6 테스트) — 메모리 사용률<0.5→DOWNSIZE/>0.9→UPSIZE/KEEP, GB-sec 기반 월 절감액, 권장 메모리=64MB 단위 올림.
+- **SVC-AI-ADV-R621**: Public Procurement Automation V3 (`public-procurement-automation-v4.ts`, 6 테스트) — HIGH→EMERGENCY/>50M→OPEN_BID/>10M→LIMITED_BID/DIRECT, DIRECT≥1→AUTO_APPROVE, LIMITED≥3→AUTO_APPROVE, OPEN≥5→MANUAL_REVIEW, 외 REJECT.
+- **SVC-AI-ADV-R622**: Realtime Transaction Anomaly V3 (`realtime-transaction-anomaly-v4.ts`, 6 테스트) — 룰: 평균×5 초과/60초 내 3건 이상/1천만원 초과, ≥2개 히트→CRITICAL/1개→WARNING/NORMAL.
+- **SVC-AI-ADV-R623**: Multicloud Network Optimizer V3 (`multicloud-network-optimizer-v4.ts`, 6 테스트) — 종합점수=(1-lat/1000)×0.5+bw/1000×0.3+(1-cost)×0.2, ≥0.7→OPTIMAL/≥0.4→ACCEPTABLE/BOTTLENECK, source→dest 최적 링크 선택.
+- **SVC-AI-ADV-R624**: Microservice Autodiscovery V3 (`microservice-autodiscovery-v4.ts`, 6 테스트) — staleness>60s||health<50→UNHEALTHY/>30s||<80→DEGRADED/HEALTHY, heartbeat 갱신, serviceId PII 마스킹.
+- **SVC-AI-ADV-R625**: API Version Migration V2 (`api-version-migration-v3.ts`, 6 테스트) — deprecated→HIGH/breakingChanges>0→MEDIUM/LOW, fromVersion 필터, METHOD PATH@VERSION 키.
+- **SVC-AI-ADV-R626**: Multimodal Public Search V2 (`multimodal-public-search-v3.ts`, 6 테스트) — 제목매치+5/본문+2/태그매치×3/모달매치+1, 점수 내림차순 정렬, matchedModalities 반환.
+- **SVC-AI-ADV-R627**: Model Drift Corrector V2 (`model-drift-corrector-v3.ts`, 7 테스트) — 최근5샘플 평균 정확도 vs baseline: Δ≤0.02→STABLE/MONITOR, ≤0.05→WARNING/RECALIBRATE, ≤0.15→DRIFT/RETRAIN, 그 외→SEVERE_DRIFT/ROLLBACK.
+
+## SVC-AI-ADV R601~R609 (트랙 A 22차, 2026-04-14)
+
+> Plan/Design 파일: `SVC-AI-ADV-R60{N}-v3.plan.md` / `.design.md` (R601~R609의 v1 plan/design은 별도 트랙에서 사용 중이라 v3 접미사로 신규 작성).
+
+- **SVC-AI-ADV-R601 (v3)**: AI Policy Enforcement V3 (`ai-policy-enforcement-v3.ts`, 6 테스트) — N2SF C/S BLOCKED, actorEmail SHA-256 16자 마스킹, action=DELETE+resource=production→CRITICAL, attemptCount>5→HIGH, else LOW.
+- **SVC-AI-ADV-R602 (v3)**: Knowledge Base Updater V3 (`knowledge-base-updater-v3.ts`, 5 테스트) — N2SF C/S BLOCKED, ageMs > ttlDays*86400000→EXPIRED, else ACTIVE, active/expired 카운트.
+- **SVC-AI-ADV-R603 (v3)**: Service Dependency Mapper V3 (`service-dependency-mapper-v3.ts`, 6 테스트) — 자기 참조 무시, BFS impactedBy, white-grey-black DFS 순환 탐지 (cycles 경로 반환).
+- **SVC-AI-ADV-R604 (v3)**: Compliance Gap Analyzer V3 (`compliance-gap-analyzer-v3.ts`, 5 테스트) — gap=required&&!implemented, gapScore CRITICAL=10/HIGH=5/MEDIUM=2/LOW=1, severity desc 정렬.
+- **SVC-AI-ADV-R605 (v3)**: Incident Root Cause AI V3 (`incident-root-cause-ai-v3.ts`, 6 테스트) — errorRate>0.5→CODE_ERROR/CRITICAL/ROLLBACK, latency>5000→RESOURCE/SCALE_OUT, mem>90→MEMORY_LEAK, deployedRecently→RECENT_DEPLOY/ROLLBACK, else UNKNOWN/MONITOR.
+- **SVC-AI-ADV-R606 (v3)**: Citizen Sentiment Analyzer V3 (`citizen-sentiment-analyzer-v3.ts`, 6 테스트) — N2SF C/S BLOCKED, 부정/긍정 키워드 카운트 차이, ≤-2 NEGATIVE/≥2 POSITIVE/else NEUTRAL, citizenEmail SHA-256 마스킹.
+- **SVC-AI-ADV-R607 (v3)**: Budget Optimization AI V3 (`budget-optimization-ai-v3.ts`, 6 테스트) — utilization=spent/allocated, util<0.5&&LOW→REDUCE, util>0.9&&HIGH→INCREASE, else HOLD, 전체 집계.
+- **SVC-AI-ADV-R608 (v3)**: Document Lifecycle Manager V3 (`document-lifecycle-manager-v3.ts`, 6 테스트) — PERMANENT→ARCHIVE, ageYears≥retentionYears→DISPOSAL, ≥80%→REVIEW, else ACTIVE, disposalCandidates 추출.
+- **SVC-AI-ADV-R609 (v3)**: API Security Scanner V3 (`api-security-scanner-v3.ts`, 6 테스트) — !auth/!https→CRITICAL, !inputValidation→HIGH, !rateLimit→MEDIUM, maxSeverity 집계, criticalCount/highCount/mediumCount.
+
+## SVC-AI-ADV R610~R618 (트랙 B 16차, 2026-04-14)
+
+- **SVC-AI-ADV-R610**: Workflow Bottleneck Detector V3 (`workflow-bottleneck-detector-v3.ts`, 6 테스트) — 평균/기대비율 ≥1.5→BOTTLENECK/≥1.2→WARNING/NORMAL, 비율≥2 또는 큐>50→CRITICAL 승격, assignee SHA-256 16자 마스킹.
+- **SVC-AI-ADV-R611**: Public Feedback Classifier V3 (`public-feedback-classifier-v3.ts`, 6 테스트) — 키워드 사전 카테고리(COMPLAINT/SUGGESTION/PRAISE/QUESTION/OTHER), 감성 NEG/NEU/POS, COMPLAINT+NEG→HIGH/COMPLAINT→MEDIUM/LOW, authorContact 마스킹.
+- **SVC-AI-ADV-R612**: Infrastructure Cost Predictor V3 (`infrastructure-cost-predictor-v3.ts`, 6 테스트) — 선형회귀 slope×n+intercept 차월 예측, >예산×1.1→OVER_BUDGET/>×0.9→WARNING/OK, 음수 0 클램프.
+- **SVC-AI-ADV-R613**: Data Lineage Tracker V3 (`data-lineage-tracker-v3.ts`, 6 테스트) — 양방향 인접리스트, BFS upstream/downstream 전파, DFS 3색 순환 탐지, owner PII 마스킹.
+- **SVC-AI-ADV-R614**: Service Health Predictor V3 (`service-health-predictor-v3.ts`, 6 테스트) — 최근5샘플 평균: cpu>80&mem>85→CRITICAL/cpu>70||mem>75||err>0.05→WARNING/HEALTHY, confidence=count/5.
+- **SVC-AI-ADV-R615**: Regulatory Change Detector V3 (`regulatory-change-detector-v3.ts`, 6 테스트) — clauseId Map diff: added/removed/modified, modified>5||removed>3→HIGH, 고위험 키워드(필수/금지/제재) 포함 시 HIGH 승격.
+- **SVC-AI-ADV-R616**: Citizen Journey Optimizer V3 (`citizen-journey-optimizer-v3.ts`, 6 테스트) — 단계별 dropRate=drop/total, avgDuration, dropRate>0.3||avg>기대×1.5→병목, 드롭 우세→단순화/지연 우세→자동화 제안, citizenId 마스킹.
+- **SVC-AI-ADV-R617**: Smart Contract Auditor V2 (`smart-contract-auditor-v2.ts`, 7 테스트) — Solidity 정규식 룰: pragma^0.4→CRITICAL/tx.origin/.send/.call{value:→HIGH/block.timestamp/selfdestruct→MEDIUM, findings 최대 심각도 = overallSeverity.
+- **SVC-AI-ADV-R618**: Quantum Safe Crypto Advisor V2 (`quantum-safe-crypto-advisor-v2.ts`, 7 테스트) — RSA/ECDSA/ECDH/DH→HIGH+ML-KEM/ML-DSA, AES-128→MEDIUM+AES-256, AES-256/ML-KEM/ML-DSA/SHA-384+→SAFE, 위험점수=(HIGH100+MED50+SAFE0)/n.

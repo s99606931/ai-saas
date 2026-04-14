@@ -36,8 +36,8 @@ describe('MultitenantAlarmOptimizerV2', () => {
     optimizer.recordAlarm('t1', 'rule-1', 90)
     const t1Stats = optimizer.getAlarmStats('t1')
     const t2Stats = optimizer.getAlarmStats('t2')
-    expect(t1Stats[0].count).toBe(1)
-    expect(t2Stats[0].count).toBe(0)
+    expect(t1Stats[0]!.count).toBe(1)
+    expect(t2Stats[0]!.count).toBe(0)
   })
 
   it('C등급 데이터 전송 차단', () => {

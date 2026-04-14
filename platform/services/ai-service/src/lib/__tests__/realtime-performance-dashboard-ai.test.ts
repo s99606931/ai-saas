@@ -25,7 +25,7 @@ describe('RealtimePerformanceDashboardAi', () => {
     dashboard.updateMetric('p1', 85)
     const alerting = dashboard.getAlertingPanels()
     expect(alerting).toHaveLength(1)
-    expect(alerting[0].panelId).toBe('p1')
+    expect(alerting[0]!.panelId).toBe('p1')
   })
 
   it('should not alert when value is below threshold', () => {
