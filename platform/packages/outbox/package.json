@@ -4,13 +4,14 @@
   "private": true,
   "description": "공공기관 SaaS 플랫폼 -- Transactional Outbox (at-least-once, CSAP D-06/D-14)",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./dist/index.js"
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

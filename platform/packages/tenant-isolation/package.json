@@ -4,13 +4,14 @@
   "private": true,
   "description": "공공기관 SaaS 플랫폼 -- 멀티테넌트 데이터 격리 패키지 (RLS, 테넌트별 암호화, 격리 검증)",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./dist/index.js"
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
   },
   "dependencies": {
     "fastify": "^5.0.0",

@@ -4,9 +4,15 @@
   "private": true,
   "description": "공공기관 SaaS 플랫폼 -- 마이데이터 동의 관리 (수명주기 + 범위 제어 + append-only 감사 로그)",
   "type": "module",
-  "main": "./src/index.ts",
-  "exports": { ".": "./src/index.ts" },
-  "scripts": { "test": "vitest run", "typecheck": "tsc --noEmit" },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.0.0",

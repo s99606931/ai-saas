@@ -4,9 +4,15 @@
   "private": true,
   "description": "공공기관 SaaS 플랫폼 -- 연합학습 코디네이터 + 차등 프라이버시 (FedAvg, Laplace/Gaussian, ε·δ 예산)",
   "type": "module",
-  "main": "./src/index.ts",
-  "exports": { ".": "./src/index.ts" },
-  "scripts": { "test": "vitest run", "typecheck": "tsc --noEmit" },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.0.0",

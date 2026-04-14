@@ -4,9 +4,15 @@
   "private": true,
   "description": "공공기관 SaaS 플랫폼 -- 개인정보 보호 컴플라이언스 (PIA 자동화, GDPR 체크, 정보주체 권리)",
   "type": "module",
-  "main": "./src/index.ts",
-  "exports": { ".": "./src/index.ts" },
-  "scripts": { "test": "vitest run", "typecheck": "tsc --noEmit" },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.0.0",

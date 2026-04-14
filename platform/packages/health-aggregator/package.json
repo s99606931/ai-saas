@@ -4,13 +4,14 @@
   "private": true,
   "description": "공공기관 SaaS 플랫폼 -- 다중 서비스 헬스체크 집계기 (종속성 체크 + 상태 이력)",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./dist/index.js"
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
   },
   "dependencies": {
     "fastify": "^5.0.0",

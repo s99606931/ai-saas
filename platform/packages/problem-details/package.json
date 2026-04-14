@@ -4,11 +4,12 @@
   "private": true,
   "description": "공공기관 SaaS -- RFC 7807 Problem Details 빌더 (16종 사전정의, sanitize)",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./dist/index.js"
   },
   "scripts": {
+    "build": "tsc",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

@@ -4,9 +4,15 @@
   "private": true,
   "description": "공공기관 SaaS 플랫폼 -- 재생에너지 사용 최적화 (태양광/풍력 예측 + 부하 이동)",
   "type": "module",
-  "main": "./src/index.ts",
-  "exports": { ".": "./src/index.ts" },
-  "scripts": { "test": "vitest run", "typecheck": "tsc --noEmit" },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.0.0",

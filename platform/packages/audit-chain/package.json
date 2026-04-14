@@ -4,13 +4,14 @@
   "private": true,
   "description": "공공기관 SaaS 플랫폼 -- SHA-256 해시 체인 감사 로그 (CSAP D-06 무결성 보장)",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./dist/index.js"
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
   },
   "dependencies": {
     "fastify": "^5.0.0",

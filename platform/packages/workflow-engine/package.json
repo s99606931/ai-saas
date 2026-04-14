@@ -4,13 +4,14 @@
   "private": true,
   "description": "공공기관 SaaS 플랫폼 -- 비동기 워크플로우 엔진 (Step 기반 상태 머신 + Saga 보상 트랜잭션)",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./dist/index.js"
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
   },
   "dependencies": {
     "fastify": "^5.0.0",

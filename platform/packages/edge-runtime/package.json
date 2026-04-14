@@ -4,9 +4,15 @@
   "private": true,
   "description": "공공기관 SaaS 플랫폼 -- 엣지 런타임 (WASM 매니페스트/정책, PQC 마이그레이션, 서비스 메시 자동 구성)",
   "type": "module",
-  "main": "./src/index.ts",
-  "exports": { ".": "./src/index.ts" },
-  "scripts": { "test": "vitest run", "typecheck": "tsc --noEmit" },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.0.0",
